@@ -22,11 +22,12 @@ export default function Header() {
           Orders
         </NavLink>
         {user ? (
-          user.role === 'staff' ? (
-            <NavLink to="/staff/orders" className="nav-link">
-              Dashboard
-            </NavLink>
-          ) : (
+          <>
+            {user.restaurants?.length > 0 && (
+              <NavLink to="/staff/orders" className="nav-link">
+                Dashboard
+              </NavLink>
+            )}
             <button
               className="nav-link"
               style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
@@ -37,7 +38,7 @@ export default function Header() {
             >
               Sign out
             </button>
-          )
+          </>
         ) : (
           <NavLink to="/login" className="nav-link">
             Sign in

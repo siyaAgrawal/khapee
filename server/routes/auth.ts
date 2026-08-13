@@ -34,7 +34,12 @@ authRouter.post('/register', (req, res) => {
   res.status(201).json({ token, user: userFromToken(token) })
 })
 
-/** Restaurant sign-up: creates the owner account, the restaurant, and a few tables. */
+/**
+ * Creates a restaurant. Signed in, it is added to the account you already have
+ * — a customer stays a customer and simply gains a dashboard, and an existing
+ * owner can run as many restaurants as they like. Signed out, it also creates
+ * the account.
+ */
 authRouter.post('/register-restaurant', (req, res) => {
   const name = String(req.body?.name ?? '').trim()
   const email = String(req.body?.email ?? '').trim().toLowerCase()
@@ -44,13 +49,26 @@ authRouter.post('/register-restaurant', (req, res) => {
   const categoriesInput = req.body?.categories
   const tableCount = Math.max(0, Math.min(40, Math.round(Number(req.body?.tables) || 6)))
 
-  if (name.length < 2) return res.status(400).json({ error: 'Please enter your name.' })
-  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Please enter a valid email address.' })
-  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' })
+  const existingUser = req.user
   if (restaurantName.length < 2) return res.status(400).json({ error: 'Please enter your restaurant name.' })
 
-  if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) {
-    return res.status(409).json({ error: 'An account with that email already exists.' })
+  if (!existingUser) {
+    if (name.length < 2) return res.status(400).json({ error: 'Please enter your name.' })
+    if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Please enter a valid email address.' })
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' })
+    if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) {
+      return res.status(409).json({ error: 'An account with that email already exists. Sign in first to add a restaurant to it.' })
+    }
+  }
+
+  const duplicate = db
+    .prepare(
+      `SELECT 1 FROM restaurant_staff rs JOIN restaurants r ON r.id = rs.restaurant_id
+       WHERE rs.user_id = ? AND lower(r.name) = lower(?)`,
+    )
+    .get(existingUser?.id ?? -1, restaurantName)
+  if (duplicate) {
+    return res.status(409).json({ error: `You already have a restaurant called ${restaurantName}.` })
   }
 
   const baseSlug =
@@ -71,9 +89,13 @@ authRouter.post('/register-restaurant', (req, res) => {
     .join(', ')
 
   const result = db.transaction(() => {
-    const userInfo = db
-      .prepare(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'staff')`)
-      .run(name, email, hashPassword(password))
+    const userId =
+      existingUser?.id ??
+      Number(
+        db
+          .prepare(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'staff')`)
+          .run(name, email, hashPassword(password)).lastInsertRowid,
+      )
     const restaurantInfo = db
       .prepare(
         `INSERT INTO restaurants (slug, name, description, address, categories, emoji, hue, is_open, hours, prep_minutes, rating)
@@ -83,10 +105,12 @@ authRouter.post('/register-restaurant', (req, res) => {
     const restaurantId = Number(restaurantInfo.lastInsertRowid)
 
     db.prepare('INSERT INTO restaurant_staff (user_id, restaurant_id, job_title) VALUES (?, ?, ?)').run(
-      Number(userInfo.lastInsertRowid),
+      userId,
       restaurantId,
       'Owner',
     )
+    // Land on the restaurant just created.
+    db.prepare('UPDATE users SET active_restaurant_id = ? WHERE id = ?').run(restaurantId, userId)
     for (let t = 1; t <= tableCount; t++) {
       db.prepare('INSERT INTO restaurant_tables (restaurant_id, label, seats, token) VALUES (?, ?, 4, ?)').run(
         restaurantId,
@@ -94,12 +118,21 @@ authRouter.post('/register-restaurant', (req, res) => {
         tableToken(),
       )
     }
-    return Number(userInfo.lastInsertRowid)
+    return { userId, restaurantId }
   })()
 
-  const token = createSession(result)
-  res.status(201).json({ token, user: userFromToken(token) })
+  // Signed in already? Keep the session; otherwise start one.
+  if (existingUser) {
+    return res.status(201).json({ user: userFromToken(tokenOf(req)!), restaurantId: result.restaurantId })
+  }
+  const token = createSession(result.userId)
+  res.status(201).json({ token, user: userFromToken(token), restaurantId: result.restaurantId })
 })
+
+function tokenOf(req: any): string | undefined {
+  const header = req.headers.authorization
+  return header?.startsWith('Bearer ') ? header.slice(7).trim() : undefined
+}
 
 authRouter.post('/login', (req, res) => {
   const email = String(req.body?.email ?? '').trim().toLowerCase()

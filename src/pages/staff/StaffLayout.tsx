@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
+import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 
 const LINKS = [
   { to: '/staff/orders', label: 'Orders', icon: '🧾' },
@@ -39,12 +40,7 @@ export default function StaffLayout() {
         <div className="brand">
           <span className="brand-mark">◗</span> Tablo
         </div>
-        <div className="staff-restaurant">
-          <strong>{user?.restaurantName}</strong>
-          <span>
-            {user?.name} · {user?.jobTitle}
-          </span>
-        </div>
+        <RestaurantSwitcher />
         {LINKS.map((l) => (
           <NavLink key={l.to} to={l.to} className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
             <span aria-hidden>{l.icon}</span>
@@ -53,15 +49,21 @@ export default function StaffLayout() {
           </NavLink>
         ))}
         <div className="side-foot">
-          <button
-            className="btn btn-ghost btn-sm btn-block"
-            onClick={async () => {
-              await logout()
-              navigate('/login', { replace: true })
-            }}
-          >
-            Sign out
-          </button>
+          <NavLink to="/restaurants" className="side-link">
+            <span aria-hidden>🍽️</span> Order as a customer
+          </NavLink>
+          <div className="side-user">
+            <span className="tiny muted">{user?.email}</span>
+            <button
+              className="btn btn-ghost btn-sm btn-block"
+              onClick={async () => {
+                await logout()
+                navigate('/login', { replace: true })
+              }}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </aside>
       <main className="staff-main">

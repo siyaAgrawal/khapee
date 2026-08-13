@@ -2178,9 +2178,11 @@ textarea {
     top: 0;
     height: auto;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    overflow-x: auto;
+    /* Not scrolled: a clipping context would cut off the switcher menu. */
+    overflow: visible;
     padding: 10px 12px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
@@ -2448,4 +2450,157 @@ textarea {
 .dining-bar.is-on strong,
 .dining-bar.is-on .tiny {
   color: var(--good);
+}
+
+/* ------------------------------------------------------ restaurant switcher */
+.switcher {
+  position: relative;
+  margin-bottom: 14px;
+}
+.switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+.switcher-trigger:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-tint);
+}
+.switcher-art {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+.switcher-art .art-glyph {
+  font-size: 1.05em;
+}
+.switcher-label {
+  flex: 1;
+  min-width: 0;
+}
+.switcher-label strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.switcher-label .tiny {
+  color: var(--muted);
+}
+.switcher-chevron {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.switcher-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-lg);
+  animation: pop 0.16s var(--ease) both;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+.switcher-item:hover {
+  background: var(--bg-tint);
+}
+.switcher-item.active {
+  background: var(--accent-soft);
+}
+.switcher-item strong {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.switcher-item .tiny {
+  display: block;
+}
+.switcher-emoji {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bg-tint);
+  font-size: 14px;
+}
+.switcher-add {
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  padding-top: 11px;
+}
+.switcher-add .switcher-emoji {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.side-user {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.side-user .tiny {
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 860px) {
+  .switcher {
+    margin-bottom: 0;
+    /* Own row above the links, so the menu drops over the page cleanly. */
+    flex: 1 1 100%;
+    order: -1;
+  }
+  .switcher-menu {
+    max-height: 70vh;
+  }
+  .side-link {
+    padding: 8px 11px;
+    font-size: 13.5px;
+  }
+  .staff-side .switcher {
+    display: block;
+  }
+  .side-user {
+    display: none;
+  }
 }

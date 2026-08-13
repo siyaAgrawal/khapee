@@ -1087,6 +1087,56 @@ async function runTests() {
   ok('a group can start from an open session', groupViaSession.status === 201, groupViaSession.body)
   ok('the group inherits the session table', groupViaSession.body.session.tableLabel === tableRow.label)
 
+  group('ONE ACCOUNT — customer and restaurant owner')
+  const dual = await call('/auth/register', {
+    body: { name: 'Dual Role', email: 'dual@tablo.test', password: 'hunter22' },
+  })
+  const dualToken = dual.body.token
+  ok('a plain customer starts with no restaurants', dual.body.user.restaurants.length === 0, dual.body.user)
+  ok('and cannot reach the dashboard', (await call('/staff/orders', { token: dualToken })).status === 403)
+
+  const firstPlace = await call('/auth/register-restaurant', {
+    token: dualToken,
+    body: { restaurantName: "Dual's Diner", address: 'Indore', categories: 'Cafe', tables: 4 },
+  })
+  ok('a customer can add a restaurant to their own account', firstPlace.status === 201, firstPlace.body)
+  ok('no second account is created', firstPlace.body.user.email === 'dual@tablo.test')
+  ok('the account now runs one restaurant', firstPlace.body.user.restaurants.length === 1)
+  ok('the dashboard opens on it', firstPlace.body.user.restaurantName === "Dual's Diner")
+  ok('the same session still works — no re-login', firstPlace.body.token === undefined)
+  ok('the dashboard is now reachable', (await call('/staff/orders', { token: dualToken })).status === 200)
+  ok('and they can still order as a customer', (await call('/orders/mine', { token: dualToken })).status === 200)
+
+  const secondPlace = await call('/auth/register-restaurant', {
+    token: dualToken,
+    body: { restaurantName: "Dual's Second Spot", address: 'Indore', tables: 2 },
+  })
+  ok('a second restaurant can be added to the same account', secondPlace.status === 201, secondPlace.body)
+  ok('both are listed', secondPlace.body.user.restaurants.length === 2)
+  ok('the newest becomes active', secondPlace.body.user.restaurantName === "Dual's Second Spot")
+
+  const dupName = await call('/auth/register-restaurant', {
+    token: dualToken,
+    body: { restaurantName: "Dual's Diner" },
+  })
+  ok('the same account cannot add the same name twice', dupName.status === 409, dupName.body)
+
+  const firstId = secondPlace.body.user.restaurants.find((r: any) => r.name === "Dual's Diner").id
+  const switched = await call('/staff/switch', { token: dualToken, body: { restaurantId: firstId } })
+  ok('the dashboard switches between them', switched.body.user.restaurantId === firstId, switched.body.user)
+  ok(
+    'and the board follows the switch',
+    (await call('/staff/menu', { token: dualToken })).body.restaurant.name === "Dual's Diner",
+  )
+  const foreignSwitch = await call('/staff/switch', { token: dualToken, body: { restaurantId: mornington.id } })
+  ok('you cannot switch to a restaurant you do not run', foreignSwitch.status === 403, foreignSwitch.body)
+
+  const strangerAdds = await call('/auth/register-restaurant', {
+    body: { name: 'Someone', email: 'dual@tablo.test', password: 'hunter22', restaurantName: 'Sneaky' },
+  })
+  ok('signed out, a taken email is still refused', strangerAdds.status === 409)
+  ok('existing staff accounts keep working', (await call('/staff/orders', { token: basilToken })).status === 200)
+
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [

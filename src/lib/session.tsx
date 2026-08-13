@@ -1,11 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, getToken, setToken } from './api'
 
+export type StaffedRestaurant = { id: number; name: string; emoji: string; jobTitle: string }
+
 export type User = {
   id: number
   name: string
   email: string
   role: 'customer' | 'staff'
+  /** Restaurants this account runs — empty means customer only. */
+  restaurants: StaffedRestaurant[]
   restaurantId: number | null
   restaurantName: string | null
   jobTitle: string | null

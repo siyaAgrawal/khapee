@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
-import { requireStaff } from '../auth.ts'
+import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
 import { publish } from '../events.ts'
 import { getOrder, shapeOrder } from '../orders-service.ts'
@@ -547,6 +547,15 @@ staffRouter.delete('/restaurant/image', (req, res) => {
   db.prepare('UPDATE restaurants SET image_path = NULL WHERE id = ?').run(restaurantId)
   deleteUpload(current?.image_path)
   res.json({ ok: true })
+})
+
+/** Moves the dashboard to another restaurant on this account. */
+staffRouter.post('/switch', (req: any, res) => {
+  const restaurantId = Number(req.body?.restaurantId)
+  if (!setActiveRestaurant(req.user.id, restaurantId)) {
+    return res.status(403).json({ error: 'You do not run that restaurant.' })
+  }
+  res.json({ user: userFromToken(String(req.headers.authorization ?? '').replace('Bearer ', '')) })
 })
 
 staffRouter.get('/summary', (req, res) => {

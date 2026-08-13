@@ -20,7 +20,7 @@ export default function MyOrders() {
 
   useEffect(() => {
     if (loading) return
-    if (user && user.role === 'customer') {
+    if (user) {
       api<{ orders: any[] }>('/orders/mine')
         .then((r) => setOrders(r.orders))
         .catch(() => setOrders([]))

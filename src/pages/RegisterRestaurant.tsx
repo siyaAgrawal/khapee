@@ -7,7 +7,9 @@ import { Spinner } from '../components/ui'
 /** Restaurant owners create their account and their restaurant in one step. */
 export default function RegisterRestaurant() {
   const navigate = useNavigate()
-  const { refresh } = useSession()
+  const { user, refresh } = useSession()
+  // Signed in already? This adds a restaurant to the account you have.
+  const adding = !!user
   const [form, setForm] = useState({
     restaurantName: '',
     address: '',
@@ -27,7 +29,7 @@ export default function RegisterRestaurant() {
     setError('')
     setBusy(true)
     try {
-      const r = await api<{ token: string }>('/auth/register-restaurant', {
+      const r = await api<{ token?: string }>('/auth/register-restaurant', {
         body: {
           restaurantName: form.restaurantName.trim(),
           address: form.address.trim(),
@@ -38,7 +40,7 @@ export default function RegisterRestaurant() {
           tables: form.tables,
         },
       })
-      setToken(r.token)
+      if (r.token) setToken(r.token)
       await refresh()
       navigate('/staff/profile', { replace: true })
     } catch (err) {
@@ -53,8 +55,12 @@ export default function RegisterRestaurant() {
         <Link to="/" className="brand" style={{ marginBottom: 18 }}>
           <span className="brand-mark">◗</span> Tablo
         </Link>
-        <h1>List your restaurant</h1>
-        <p>Create your dashboard, then add your menu, photos and tables yourself.</p>
+        <h1>{adding ? 'Add a restaurant' : 'List your restaurant'}</h1>
+        <p>
+          {adding
+            ? `Adding to ${user!.name}'s account — you'll be able to switch between your restaurants from the dashboard.`
+            : 'Create your dashboard, then add your menu, photos and tables yourself.'}
+        </p>
 
         {error && <div className="form-error">{error}</div>}
 
@@ -105,6 +111,8 @@ export default function RegisterRestaurant() {
             <span className="hint">We&rsquo;ll create them with printable QR codes. You can change them later.</span>
           </div>
 
+          {adding ? null : (
+          <>
           <hr style={{ border: 0, borderTop: '1px solid var(--line)', margin: '18px 0' }} />
 
           <div className="field">
@@ -144,15 +152,29 @@ export default function RegisterRestaurant() {
             />
             <span className="hint">At least 6 characters.</span>
           </div>
+          </>
+          )}
 
           <button className="btn btn-accent btn-block btn-lg" disabled={busy}>
-            {busy ? <Spinner /> : 'Create restaurant'}
+            {busy ? <Spinner /> : adding ? 'Add restaurant' : 'Create restaurant'}
           </button>
         </form>
 
-        <p className="auth-alt">
-          Already listed? <Link to="/login">Sign in</Link>
-        </p>
+        {adding ? (
+          <p className="auth-alt">
+            <Link to="/staff/orders">← Back to the dashboard</Link>
+          </p>
+        ) : (
+          <>
+            <p className="auth-alt">
+              Already listed? <Link to="/login">Sign in</Link>
+            </p>
+            <p className="auth-alt" style={{ marginTop: 6 }}>
+              Already have a customer account? <Link to="/login">Sign in first</Link> — you can run a
+              restaurant from the same account.
+            </p>
+          </>
+        )}
       </div>
     </div>
   )

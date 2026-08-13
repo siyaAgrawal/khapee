@@ -213,6 +213,10 @@ addColumn('orders', 'group_session_id', 'INTEGER')
 addColumn('order_items', 'member_id', 'INTEGER')
 addColumn('order_items', 'paid_at', 'TEXT')
 
+// One account can both order as a customer and run restaurants, so the
+// dashboard needs to know which of their restaurants is currently in view.
+addColumn('users', 'active_restaurant_id', 'INTEGER')
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS dining_sessions (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,

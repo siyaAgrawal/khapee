@@ -30,7 +30,7 @@ function StaffGate({ children }: { children: JSX.Element }) {
   const location = useLocation()
   if (loading) return <LoadingBlock label="Checking your session…" />
   if (!user) return <Navigate to="/login" state={{ from: location.pathname, staff: true }} replace />
-  if (user.role !== 'staff' || !user.restaurantId) return <Navigate to="/" replace />
+  if (!user.restaurants?.length || !user.restaurantId) return <Navigate to="/" replace />
   return children
 }
 

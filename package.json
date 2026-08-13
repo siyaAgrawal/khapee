@@ -14,7 +14,7 @@
     "test": "tsx tests/run.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
     "deploy:build": "npm run build",
-    "build:api": "esbuild server/index.ts --bundle --platform=node --format=esm --target=node20 --outfile=api/_bundle.mjs --external:better-sqlite3 --external:bcryptjs --log-level=warning",
+    "build:api": "esbuild server/index.ts --bundle --platform=node --format=esm --target=node20 --outfile=api/_bundle.mjs --external:better-sqlite3 --external:bcryptjs --banner:js=\"import{createRequire as __cr}from'node:module';const require=__cr(import.meta.url);\" --log-level=warning",
     "vercel-build": "npm run build && npm run build:api"
   },
   "dependencies": {

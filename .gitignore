@@ -11,3 +11,5 @@ data/uploads/
 !data/snapshot.db
 
 .DS_Store
+.vercel
+api/_bundle.mjs

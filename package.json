@@ -13,7 +13,9 @@
     "import": "tsx server/import.ts",
     "test": "tsx tests/run.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.server.json",
-    "deploy:build": "npm run build"
+    "deploy:build": "npm run build",
+    "build:api": "esbuild server/index.ts --bundle --platform=node --format=esm --target=node20 --outfile=api/_bundle.mjs --external:better-sqlite3 --external:bcryptjs --log-level=warning",
+    "vercel-build": "npm run build && npm run build:api"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -37,6 +39,7 @@
     "concurrently": "^9.1.0",
     "tsx": "^4.19.2",
     "typescript": "~5.7.2",
+    "vercel": "^58.11.0",
     "vite": "^6.0.5"
   }
 }

@@ -32,7 +32,7 @@ export default function Login() {
     <div className="auth-wrap">
       <div className="auth-card">
         <Link to="/" className="brand" style={{ marginBottom: 18 }}>
-          <span className="brand-mark">◗</span> Tablo
+          <span className="brand-mark">◗</span> Ordro
         </Link>
         <h1>Welcome back</h1>
         <p>Sign in to track your orders, or to open your restaurant dashboard.</p>
@@ -73,7 +73,7 @@ export default function Login() {
           New here? <Link to="/register">Create an account</Link>
         </p>
         <p className="auth-alt" style={{ marginTop: 6 }}>
-          Run a restaurant? <Link to="/for-restaurants">List it on Tablo</Link>
+          Run a restaurant? <Link to="/for-restaurants">List it on Ordro</Link>
         </p>
 
         <div className="demo-box">

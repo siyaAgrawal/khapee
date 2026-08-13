@@ -1,4 +1,4 @@
-# Putting Tablo online
+# Putting Ordro online
 
 The app is one Node process: it serves the API and the built React app on a
 single port, and keeps its data in a SQLite file plus an uploads folder next to
@@ -28,13 +28,13 @@ adds the external database service the project set out to avoid.
 
 ## Render (recommended)
 
-`render.yaml` in this folder is ready. The disk keeps `tablo.db` and the photos.
+`render.yaml` in this folder is ready. The disk keeps `ordro.db` and the photos.
 
 1. Push this folder to a Git repo (GitHub/GitLab).
 2. On Render: **New → Blueprint**, point it at the repo. It reads `render.yaml`.
 3. Deploy. The `starter` plan is required — the free plan has no persistent disk.
 
-`TABLO_DB` is set to `/var/data/tablo.db` on the mounted disk, so data survives
+`TABLO_DB` is set to `/var/data/ordro.db` on the mounted disk, so data survives
 deploys. Uploads land beside it automatically.
 
 ## Railway / Fly.io
@@ -43,11 +43,11 @@ Both work the same way — a Node service plus a volume:
 
 - Build: `npm install && npm run build`
 - Start: `npm start`
-- Volume mounted at `/var/data`, and `TABLO_DB=/var/data/tablo.db`
+- Volume mounted at `/var/data`, and `TABLO_DB=/var/data/ordro.db`
 
 ## Moving your existing data up
 
-The restaurants and menus already imported live in `data/tablo.db`. To carry
+The restaurants and menus already imported live in `data/ordro.db`. To carry
 them over, copy that file onto the host's disk (Render and Railway both offer a
 shell), or re-run the importers against the deployed instance:
 

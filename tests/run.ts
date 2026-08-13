@@ -176,7 +176,7 @@ async function runTests() {
   ok('staff can generate an access code', gen.status === 201 && /^[A-Z0-9]{6}$/.test(gen.body.code.code), gen.body)
   const code1 = gen.body.code.code
   ok('code carries an expiry countdown', gen.body.code.secondsLeft > 500)
-  ok('code QR payload identifies restaurant + code', gen.body.code.qrPayload === `TABLO:ACCESS:${mornington.id}:${code1}`)
+  ok('code QR payload identifies restaurant + code', gen.body.code.qrPayload === `ORDRO:ACCESS:${mornington.id}:${code1}`)
 
   const gen2 = await call('/staff/codes', { token: staffToken, body: { minutes: 10 } })
   ok('generated codes are unique', gen2.body.code.code !== code1)
@@ -187,7 +187,7 @@ async function runTests() {
   const verifyLower = await call('/orders/verify-code', { body: { restaurantId: mornington.id, code: code1.toLowerCase() } })
   ok('code entry is case-insensitive', verifyLower.status === 200)
 
-  const resolveCode = await call('/resolve', { body: { value: `TABLO:ACCESS:${mornington.id}:${code1}` } })
+  const resolveCode = await call('/resolve', { body: { value: `ORDRO:ACCESS:${mornington.id}:${code1}` } })
   ok('scanned access QR resolves to the restaurant', resolveCode.body.kind === 'access' && resolveCode.body.restaurantId === mornington.id)
 
   const tablesRes = await call(`/orders/tables/${mornington.id}`)
@@ -286,11 +286,13 @@ async function runTests() {
   const tableRow = db
     .prepare('SELECT * FROM restaurant_tables WHERE restaurant_id = ? ORDER BY id LIMIT 1')
     .get(mornington.id) as any
-  const resolveTable = await call('/resolve', { body: { value: `TABLO:TABLE:${tableRow.token}` } })
+  const resolveTable = await call('/resolve', { body: { value: `ORDRO:TABLE:${tableRow.token}` } })
   ok('a scanned table QR resolves to restaurant + table', resolveTable.body.kind === 'table' && resolveTable.body.tableLabel === tableRow.label, resolveTable.body)
 
   const bareToken = await call('/resolve', { body: { value: tableRow.token } })
   ok('a bare table token also resolves', bareToken.body.kind === 'table')
+  const legacyQr = await call('/resolve', { body: { value: `TABLO:TABLE:${tableRow.token}` } })
+  ok('QR codes printed before the rename still scan', legacyQr.body.kind === 'table', legacyQr.body)
 
   const order2 = await call('/orders', {
     token: customerToken,
@@ -357,7 +359,7 @@ async function runTests() {
 
   const scan = await call('/staff/verify-order', {
     token: basilToken,
-    body: { value: `TABLO:ORDER:${o3.orderNumber}:${o3.verifyToken}` },
+    body: { value: `ORDRO:ORDER:${o3.orderNumber}:${o3.verifyToken}` },
   })
   ok('staff can verify the customer QR at handover', scan.status === 200 && scan.body.order.id === o3.id, scan.body)
 
@@ -366,7 +368,7 @@ async function runTests() {
 
   const badToken = await call('/staff/verify-order', {
     token: basilToken,
-    body: { value: `TABLO:ORDER:${o3.orderNumber}:deadbeefdead` },
+    body: { value: `ORDRO:ORDER:${o3.orderNumber}:deadbeefdead` },
   })
   ok('a forged order QR is rejected', badToken.status === 400, badToken.body)
 
@@ -508,7 +510,7 @@ async function runTests() {
 
   group('Tables & restaurant controls')
   const newTable = await call('/staff/tables', { token: staffToken, body: { label: 'Terrace 1', seats: 6 } })
-  ok('staff can add a table', newTable.status === 201 && newTable.body.table.qrPayload.startsWith('TABLO:TABLE:'))
+  ok('staff can add a table', newTable.status === 201 && newTable.body.table.qrPayload.startsWith('ORDRO:TABLE:'))
   const dupTable = await call('/staff/tables', { token: staffToken, body: { label: 'Terrace 1', seats: 2 } })
   ok('duplicate table names are refused', dupTable.status === 409)
   const delTable = await call(`/staff/tables/${newTable.body.table.id}`, { token: staffToken, method: 'DELETE' })
@@ -1021,7 +1023,7 @@ async function runTests() {
   })
   ok('a session cannot be used at another restaurant', sessionElsewhere.status === 400, sessionElsewhere.body)
 
-  const tableSession = await call('/sessions', { body: { value: `TABLO:TABLE:${tableRow.token}` } })
+  const tableSession = await call('/sessions', { body: { value: `ORDRO:TABLE:${tableRow.token}` } })
   ok('a scanned table QR opens a session with the table set', tableSession.body.session.tableLabel === tableRow.label && tableSession.body.session.source === 'table_qr', tableSession.body)
   const urlSession = await call('/sessions', { body: { value: `http://localhost:5273/t/${tableRow.token}` } })
   ok('a table QR URL opens a session too', urlSession.status === 201)
@@ -1080,7 +1082,7 @@ async function runTests() {
   })
   ok('ordering with neither code, session nor payment is still refused', stillNoProof.status === 400, stillNoProof.body)
 
-  const groupFromSession = await call('/sessions', { body: { value: `TABLO:TABLE:${tableRow.token}` } })
+  const groupFromSession = await call('/sessions', { body: { value: `ORDRO:TABLE:${tableRow.token}` } })
   const groupViaSession = await call('/groups', {
     body: { restaurantId: mornington.id, hostName: 'Session Host', sessionToken: groupFromSession.body.session.token },
   })
@@ -1140,8 +1142,8 @@ async function runTests() {
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [
-    `TABLO:ORDER:${o3.orderNumber}:${o3.verifyToken}`,
-    `TABLO:ACCESS:${mornington.id}:${code1}`,
+    `ORDRO:ORDER:${o3.orderNumber}:${o3.verifyToken}`,
+    `ORDRO:ACCESS:${mornington.id}:${code1}`,
     `http://localhost:5273/t/${tableToScan.token}`,
   ]
   for (const payload of payloads) {

@@ -96,7 +96,7 @@ staffRouter.post('/verify-order', (req, res) => {
 
   let orderNumber = raw
   let token: string | null = null
-  const match = raw.match(/TABLO:ORDER:([A-Za-z0-9]+):([a-f0-9]+)/i)
+  const match = raw.match(/(?:ORDRO|TABLO):ORDER:([A-Za-z0-9]+):([a-f0-9]+)/i)
   if (match) {
     orderNumber = match[1]
     token = match[2].toLowerCase()
@@ -129,7 +129,7 @@ function shapeCode(row: any) {
     usedAt: row.used_at,
     revokedAt: row.revoked_at,
     usedByOrder: row.used_order_number ?? null,
-    qrPayload: `TABLO:ACCESS:${row.restaurant_id}:${row.code}`,
+    qrPayload: `ORDRO:ACCESS:${row.restaurant_id}:${row.code}`,
   }
 }
 
@@ -196,7 +196,7 @@ staffRouter.get('/tables', (req, res) => {
       seats: t.seats,
       token: t.token,
       activeOrders: t.active_orders,
-      qrPayload: `TABLO:TABLE:${t.token}`,
+      qrPayload: `ORDRO:TABLE:${t.token}`,
     })),
   })
 })
@@ -216,7 +216,7 @@ staffRouter.post('/tables', (req, res) => {
     .run(restaurantId, label, seats, tableToken())
   const t = db.prepare('SELECT * FROM restaurant_tables WHERE id = ?').get(Number(info.lastInsertRowid)) as any
   res.status(201).json({
-    table: { id: t.id, label: t.label, seats: t.seats, token: t.token, activeOrders: 0, qrPayload: `TABLO:TABLE:${t.token}` },
+    table: { id: t.id, label: t.label, seats: t.seats, token: t.token, activeOrders: 0, qrPayload: `ORDRO:TABLE:${t.token}` },
   })
 })
 

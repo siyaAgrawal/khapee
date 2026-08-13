@@ -37,15 +37,18 @@ export default function Landing() {
     <div className="landing">
       <header className="landing-nav">
         <Link to="/" className="brand">
-          <span className="brand-mark">◗</span> Tablo
+          <span className="brand-mark">◗</span> Ordro
         </Link>
         <span style={{ flex: 1 }} />
         <Link to="/restaurants" className="nav-link">
           Browse
         </Link>
         {user ? (
-          <Link to={user.role === 'staff' ? '/staff/orders' : '/orders'} className="btn btn-secondary btn-sm">
-            {user.role === 'staff' ? 'Dashboard' : 'Your orders'}
+          <Link
+            to={user.restaurants?.length ? '/staff/orders' : '/orders'}
+            className="btn btn-secondary btn-sm"
+          >
+            {user.restaurants?.length ? 'Dashboard' : 'Your orders'}
           </Link>
         ) : (
           <Link to="/login" className="btn btn-secondary btn-sm">
@@ -55,20 +58,28 @@ export default function Landing() {
       </header>
 
       <section className="landing-hero">
+        <span className="hero-glow" aria-hidden />
+        <div className="hero-orbit" aria-hidden>
+          <span className="hero-bite">🍜</span>
+          <span className="hero-bite">🍕</span>
+          <span className="hero-bite">🍣</span>
+          <span className="hero-bite">🥐</span>
+        </div>
+
         <span className="eyebrow">Indore · dine in &amp; pickup</span>
         <h1>
-          The menu is already{' '}
-          {/* The break is decorative — CSS drops it on narrow screens. */}
-          <br />
-          in your hand.
+          <span className="hero-line">Your table is</span>
+          <span className="hero-line hero-line-2">
+            <span className="hero-hot">already ordering.</span>
+          </span>
         </h1>
         <p>
-          Order from your table without waving anyone down, or have it waiting before you arrive.
-          No app store, no card details, no queue.
+          Scan, browse, eat. Order from your seat without waving anyone down — or have it hot and
+          waiting the moment you walk in.
         </p>
         <div className="landing-cta">
           <Link to="/restaurants" className="btn btn-accent btn-lg">
-            Browse restaurants
+            Order now
           </Link>
           <Link to="/for-restaurants" className="btn btn-ghost btn-lg">
             I run a restaurant
@@ -153,7 +164,7 @@ export default function Landing() {
 
       <footer className="landing-foot">
         <div className="brand">
-          <span className="brand-mark">◗</span> Tablo
+          <span className="brand-mark">◗</span> Ordro
         </div>
         <span className="tiny muted">Runs entirely on your own machine. No third-party services.</span>
         <div className="row" style={{ gap: 14 }}>

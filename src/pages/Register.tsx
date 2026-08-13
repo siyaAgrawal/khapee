@@ -30,7 +30,7 @@ export default function Register() {
     <div className="auth-wrap">
       <div className="auth-card">
         <Link to="/" className="brand" style={{ marginBottom: 18 }}>
-          <span className="brand-mark">◗</span> Tablo
+          <span className="brand-mark">◗</span> Ordro
         </Link>
         <h1>Create your account</h1>
         <p>Keep your orders in one place and reorder in a couple of taps.</p>
@@ -84,7 +84,7 @@ export default function Register() {
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
         <p className="auth-alt" style={{ marginTop: 6 }}>
-          Run a restaurant? <Link to="/for-restaurants">List it on Tablo</Link>
+          Run a restaurant? <Link to="/for-restaurants">List it on Ordro</Link>
         </p>
       </div>
     </div>

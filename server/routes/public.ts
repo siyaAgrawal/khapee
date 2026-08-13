@@ -146,15 +146,15 @@ publicRouter.post('/resolve', (req, res) => {
 
   const tableUrl = raw.match(/\/t\/([a-f0-9]{16})/i)
 
-  if (upper.includes('TABLO:TABLE:')) {
+  if (upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) {
     kind = 'table'
-    value = raw.split(/TABLO:TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
+    value = raw.split(/(?:ORDRO|TABLO):TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
   } else if (tableUrl) {
     kind = 'table'
     value = tableUrl[1]
-  } else if (upper.includes('TABLO:ACCESS:')) {
+  } else if (upper.includes('ORDRO:ACCESS:') || upper.includes('TABLO:ACCESS:')) {
     kind = 'access'
-    const tail = raw.split(/TABLO:ACCESS:/i)[1] ?? ''
+    const tail = raw.split(/(?:ORDRO|TABLO):ACCESS:/i)[1] ?? ''
     value = tail.split(':').pop() ?? ''
   }
 

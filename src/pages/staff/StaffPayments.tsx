@@ -66,7 +66,7 @@ export default function StaffPayments() {
         <div>
           <strong>Money arrives in your own UPI account</strong>
           <p className="tiny">
-            Tablo builds the payment request and records what the customer says they sent. Check your
+            Ordro builds the payment request and records what the customer says they sent. Check your
             own UPI app, then confirm here — nothing is marked paid until you do.
           </p>
         </div>

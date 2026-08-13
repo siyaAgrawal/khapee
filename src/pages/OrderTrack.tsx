@@ -88,7 +88,7 @@ export default function OrderTrack() {
             {order.restaurantName} · {order.customerName}
           </p>
 
-          <QRCanvas value={`TABLO:ORDER:${order.orderNumber}:${order.verifyToken}`} size={168} />
+          <QRCanvas value={`ORDRO:ORDER:${order.orderNumber}:${order.verifyToken}`} size={168} />
           <p className="tiny muted">
             {order.type === 'pickup'
               ? 'Show this at the counter to collect your order.'

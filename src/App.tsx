@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useSession } from './lib/session'
 import { LoadingBlock } from './components/ui'
+import Splash from './components/Splash'
 
 import Landing from './pages/Landing'
 import Home from './pages/Home'
@@ -35,8 +37,13 @@ function StaffGate({ children }: { children: JSX.Element }) {
 }
 
 export default function App() {
+  // The title sequence covers the app for its first couple of seconds.
+  const [intro, setIntro] = useState(true)
+
   return (
-    <Routes>
+    <>
+      {intro && <Splash onDone={() => setIntro(false)} />}
+      <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/restaurants" element={<Home />} />
       <Route path="/r/:id" element={<Restaurant />} />
@@ -70,6 +77,7 @@ export default function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }

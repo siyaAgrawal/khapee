@@ -7,9 +7,29 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const dataDir = path.resolve(__dirname, '..', 'data')
 fs.mkdirSync(dataDir, { recursive: true })
 
-export const DB_PATH = process.env.TABLO_DB
-  ? path.resolve(process.env.TABLO_DB)
-  : path.join(dataDir, 'tablo.db')
+/**
+ * Serverless hosts (Vercel) give a read-only filesystem with only /tmp
+ * writable, and that /tmp does not survive a cold start. So there we run on a
+ * copy of the committed snapshot: the whole catalogue is browsable and the app
+ * fully works, but anything written is scoped to that instance's lifetime.
+ * A host with a real disk (see DEPLOY.md) keeps everything permanently.
+ */
+const SERVERLESS = !!process.env.VERCEL
+const SNAPSHOT = path.join(dataDir, 'snapshot.db')
+
+function resolveDbPath(): string {
+  if (process.env.TABLO_DB) return path.resolve(process.env.TABLO_DB)
+  if (!SERVERLESS) return path.join(dataDir, 'tablo.db')
+
+  const ephemeral = '/tmp/tablo.db'
+  if (!fs.existsSync(ephemeral) && fs.existsSync(SNAPSHOT)) {
+    fs.copyFileSync(SNAPSHOT, ephemeral)
+  }
+  return ephemeral
+}
+
+export const DB_PATH = resolveDbPath()
+export const IS_EPHEMERAL = SERVERLESS && !process.env.TABLO_DB
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 
@@ -249,7 +269,7 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id, status);
 `)
 
-export const UPLOAD_DIR = path.join(path.dirname(DB_PATH), 'uploads')
+export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 
 export type Row = Record<string, any>

@@ -1,7 +1,13 @@
 node_modules/
 dist/
+.vercel/
+
+# Working database and photos stay local; the committed snapshot seeds deploys.
 data/*.db
 data/*.db-wal
 data/*.db-shm
+data/*.backup-*
 data/uploads/
+!data/snapshot.db
+
 .DS_Store

@@ -90,7 +90,9 @@ app.get('/api/stream', (req, res) => {
 setInterval(heartbeat, 25_000).unref?.()
 
 // Serve the built SPA when it exists (npm run build), otherwise Vite serves it in dev.
-const dist = path.resolve(__dirname, '..', 'dist')
+const dist = process.env.VERCEL
+  ? path.resolve(process.cwd(), 'dist')
+  : path.resolve(__dirname, '..', 'dist')
 if (fs.existsSync(path.join(dist, 'index.html'))) {
   app.use(express.static(dist))
   app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(dist, 'index.html')))
@@ -104,7 +106,12 @@ app.use((err: any, _req: any, res: any, _next: any) => {
   res.status(500).json({ error: 'Something went wrong on our side. Please try again.' })
 })
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n  ▲ Tablo API  →  http://localhost:${PORT}`)
-  console.log(`    database   →  ${path.relative(process.cwd(), db.name)}\n`)
-})
+// On serverless the platform owns the listener; everywhere else we bind here.
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n  ▲ Tablo API  →  http://localhost:${PORT}`)
+    console.log(`    database   →  ${path.relative(process.cwd(), db.name)}\n`)
+  })
+}
+
+export default app

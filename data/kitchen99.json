@@ -1,0 +1,136 @@
+[
+  {
+    "name": "99 Kitchen & Co.",
+    "menu": [
+      {
+        "category": "Brunch — Savouries",
+        "items": [
+          { "name": "Eggs to Order", "price": 350, "veg": false, "emoji": "🍳", "description": "Two eggs cooked to your liking, served with sourdough toast and hashbrowns" },
+          { "name": "Omelette or Scramble", "price": 400, "veg": false, "emoji": "🍳", "description": "Two eggs, choose classic masala, truffle mushroom & cheese or spinach & cheese. With sourdough toast and hashbrowns" },
+          { "name": "Spiced Turkish Shakshuka", "price": 450, "veg": false, "emoji": "🍲", "description": "Spiced bell pepper and tomato sauce baked with two eggs, served with sourdough toast" },
+          { "name": "Tofu Truffle Scramble", "price": 450, "veg": true, "emoji": "🥘", "description": "Vegan tofu scramble with truffle oil, served with sourdough toast and hashbrowns" },
+          { "name": "Breakfast Bagelwich", "price": 350, "veg": true, "emoji": "🥯", "description": "Toasted bagel served with herbed cream cheese" }
+        ]
+      },
+      {
+        "category": "Brunch — Sweeties",
+        "items": [
+          { "name": "Smoothie Bowl", "price": 400, "veg": true, "emoji": "🥣", "description": "Gluten free. Mango cacao, berry blend or choco banana, served with fresh fruit and housemade granola" },
+          { "name": "Artisan Ricotta Blueberry Toast", "price": 400, "veg": true, "emoji": "🍞", "description": "Sourdough topped with whipped ricotta and tart blueberry compote with honey granola" },
+          { "name": "Hot Butter Toast", "price": 400, "veg": true, "emoji": "🥜", "description": "Almond or peanut butter on toasted sourdough, topped with fruit and housemade granola" },
+          { "name": "Brekkie Pancakes", "price": 400, "veg": true, "emoji": "🥞", "description": "Pancakes served with maple syrup and whipped cream" },
+          { "name": "Toasted Butter Croissant", "price": 350, "veg": true, "emoji": "🥐", "description": "Flaky croissant toasted and layered with butter, nutella or blueberry compote" }
+        ]
+      },
+      {
+        "category": "Brunch — Sides",
+        "items": [
+          { "name": "Toasted Bread", "price": 100, "veg": true, "emoji": "🍞" },
+          { "name": "Hashbrowns", "price": 100, "veg": true, "emoji": "🥔" },
+          { "name": "Chicken Sausages", "price": 300, "veg": false, "emoji": "🌭" },
+          { "name": "Crispy Bacon", "price": 300, "veg": false, "emoji": "🥓" }
+        ]
+      },
+      {
+        "category": "Tartine",
+        "items": [
+          { "name": "Avo with Blistered Tomato & Feta", "price": 550, "veg": true, "emoji": "🥑", "description": "Avocado topped with blistered tomatoes and feta, drizzled with truffle oil" },
+          { "name": "Avo & Egg on Toast", "price": 590, "veg": false, "emoji": "🥑", "description": "Fried eggs layered with avocado on toasted sourdough, drizzled with truffle oil" },
+          { "name": "Hummus & Greek Salad", "price": 550, "veg": true, "emoji": "🥗", "description": "Fluffy beetroot hummus topped with fresh Greek salad" },
+          { "name": "Truffle Shrooms & Cream Cheese", "price": 550, "veg": true, "emoji": "🍄", "description": "Caramelised mushrooms and onion jam with truffle herbed cream cheese" }
+        ]
+      },
+      {
+        "category": "Sandwiches",
+        "items": [
+          { "name": "Classic Caprese Croissant Toastie", "price": 450, "veg": true, "emoji": "🥪", "description": "Caramelised onion jam paired with tomatoes, basil and balsamic" },
+          { "name": "OG Grilled Cheese Toastie", "price": 450, "veg": true, "emoji": "🧀", "description": "Caramelised onion jam paired with cheddar and mozzarella grilled in fluffy milk bread" },
+          { "name": "BBQ Chicken with Leafy Greens Croissant Sandwich", "price": 600, "veg": false, "emoji": "🥪", "description": "Smoky pulled BBQ chicken layered with cheese and lettuce" },
+          { "name": "Chilli Crisp Fried Egg Sandwich with Honey Mustard Slaw", "price": 450, "veg": false, "emoji": "🍳", "description": "Fried egg sandwich in milk bread with chilli crisp and crunchy slaw" }
+        ]
+      },
+      {
+        "category": "Neapolitan Pizzeria — Vegetarian",
+        "items": [
+          { "name": "OG Margarita", "price": 400, "veg": true, "emoji": "🍕", "description": "Pomodoro sauce with basil and fresh mozzarella" },
+          { "name": "Wood Fired Garlic Bread", "price": 400, "veg": true, "emoji": "🥖", "description": "Confit garlic butter and mozzarella" },
+          { "name": "Burrata Fungi Pie", "price": 600, "veg": true, "emoji": "🍕", "description": "Wild mushrooms paired with pomodoro and fresh burrata" },
+          { "name": "Eat Your Veggies", "price": 500, "veg": true, "emoji": "🍕", "description": "Medley of exotic veggies with olives and jalapeños on pomodoro sauce" },
+          { "name": "Pesto with Sundried Tomatoes", "price": 500, "veg": true, "emoji": "🍕", "description": "House made pesto paired with sundried tomatoes and fresh mozzarella" },
+          { "name": "Hot & Spicy Cottage Cheese", "price": 500, "veg": true, "emoji": "🌶️", "description": "Spicy cottage cheese and bell peppers with basil and pomodoro sauce" },
+          { "name": "Quattro Formaggi", "price": 550, "veg": true, "emoji": "🧀", "description": "Creamy béchamel topped with bocconcini, cheddar, parmesan and ricotta" },
+          { "name": "Truffle Bloc", "price": 550, "veg": true, "emoji": "🍕", "description": "Alfredo sauce paired with truffle cream, roasted garlic and button mushrooms" },
+          { "name": "Pizza Picasso (Veg)", "price": 650, "veg": true, "emoji": "🎨", "description": "From ₹650. Build your own — ask your server for the checklist and start designing your perfect pizza" }
+        ]
+      },
+      {
+        "category": "Neapolitan Pizzeria — Non Vegetarian",
+        "items": [
+          { "name": "Kiki's BBQ Chicken", "price": 600, "veg": false, "emoji": "🍕", "description": "Smokey BBQ chicken with roasted peppers and pomodoro sauce" },
+          { "name": "Popeye's Shrimp Scampi", "price": 650, "veg": false, "emoji": "🍤", "description": "Garlic butter shrimp and sautéed spinach paired with alfredo sauce" },
+          { "name": "Smoked Hot Chicken", "price": 600, "veg": false, "emoji": "🔥", "description": "Grilled chicken with chicken pepperoni and jalapeños" },
+          { "name": "Verde Pollo Burrata", "price": 650, "veg": false, "emoji": "🍕", "description": "House made pesto topped with grilled chicken, cherry tomatoes and fresh burrata" },
+          { "name": "Pizza Picasso (Non-Veg)", "price": 750, "veg": false, "emoji": "🎨", "description": "From ₹750. Build your own — ask your server for the checklist and start designing your perfect pizza" }
+        ]
+      },
+      {
+        "category": "Littles — Small Plates",
+        "items": [
+          { "name": "Medley of Fries", "price": 200, "veg": true, "emoji": "🍟", "description": "Trio of fries with cheese sauce, peri peri and truffle" },
+          { "name": "Kiddie Fries", "price": 200, "veg": true, "emoji": "🍟", "description": "Classic salted fries" },
+          { "name": "Pull Apart Garlic Bread", "price": 400, "veg": true, "emoji": "🥖", "description": "Roasted herb garlic butter and cheese stuffed bread" },
+          { "name": "Truffle Mushroom Bao", "price": 500, "veg": true, "emoji": "🥟", "description": "Mushroom and truffle cream cheese" },
+          { "name": "Korean Veggie Bao", "price": 450, "veg": true, "emoji": "🥟", "description": "Smokey gochujang tossed garlic with sriracha mayo" },
+          { "name": "Peri Peri Grilled Cottage Cheese", "price": 450, "veg": true, "emoji": "🧀", "description": "Chargrilled spicy cottage cheese" },
+          { "name": "Mini Veg Slider", "price": 400, "veg": true, "emoji": "🍔", "description": "Signature mini buns with veggie patty and cheese" },
+          { "name": "Nacho Nibbles", "price": 400, "veg": true, "emoji": "🌮", "description": "Nachos with dips" },
+          { "name": "Fried Truffle Gnocchi", "price": 450, "veg": true, "emoji": "🥔", "description": "Crispy gnocchi served with garlic aioli" },
+          { "name": "Burrata & Confit Tomatoes", "price": 550, "veg": true, "emoji": "🧀", "description": "Served with garlic crostini" }
+        ]
+      },
+      {
+        "category": "Littles — Sushi",
+        "items": [
+          { "name": "Veg Maki Roll", "price": 600, "veg": true, "emoji": "🍣", "description": "Gluten free. Crunchy veggie nori roll with sriracha cream cheese" },
+          { "name": "Uramaki Roll", "price": 600, "veg": true, "emoji": "🍣", "description": "Gluten free. Veggie inside out sushi with spicy mayo" },
+          { "name": "Avo Tempura Sushi", "price": 650, "veg": true, "emoji": "🍣", "description": "Uramaki with avocado rolled in crispy tempura" },
+          { "name": "Asparagus Uramaki Tempura Roll", "price": 750, "veg": true, "emoji": "🍣", "description": "Asparagus sushi inside out roll with tempura" },
+          { "name": "Crispy Mushroom Gochugaru Sushi", "price": 650, "veg": true, "emoji": "🍣", "description": "Crunchy mushroom uramaki in gochugaru tempura" },
+          { "name": "Cream Cheese Truffle Spiced Sushi", "price": 700, "veg": true, "emoji": "🍣", "description": "Edamame and cucumber with truffle cream cheese and tempura flakes" },
+          { "name": "Baby Onion Paprika Jam Katchu", "price": 700, "veg": true, "emoji": "🍣", "description": "Caramelised onion and paprika chilli jam paired with tostada" }
+        ]
+      },
+      {
+        "category": "Coffee",
+        "items": [
+          { "name": "Espresso", "price": 120, "veg": true, "emoji": "☕" },
+          { "name": "Cortado", "price": 180, "veg": true, "emoji": "☕" },
+          { "name": "Cappuccino", "price": 200, "veg": true, "emoji": "☕" },
+          { "name": "Macchiato", "price": 230, "veg": true, "emoji": "☕" },
+          { "name": "Flat White", "price": 250, "veg": true, "emoji": "☕" },
+          { "name": "Mochaccino", "price": 260, "veg": true, "emoji": "☕" },
+          { "name": "Cafe Frappe", "price": 280, "veg": true, "emoji": "🥤" },
+          { "name": "Classic Cold Brew with Ice", "price": 250, "veg": true, "emoji": "🧊" },
+          { "name": "Extra Espresso Shot", "price": 30, "veg": true, "emoji": "☕" },
+          { "name": "Almond Milk", "price": 100, "veg": true, "emoji": "🥛" }
+        ]
+      },
+      {
+        "category": "Signature Affogato",
+        "items": [
+          { "name": "Vanilla Affogato", "price": 320, "veg": true, "emoji": "🍨" },
+          { "name": "Vanilla Bourbon Affogato", "price": 380, "veg": true, "emoji": "🍨" },
+          { "name": "Almond Biscotti Affogato", "price": 380, "veg": true, "emoji": "🍨" }
+        ]
+      },
+      {
+        "category": "Manual Brews",
+        "items": [
+          { "name": "Clever Dripper", "price": 200, "veg": true, "emoji": "☕", "description": "Bright and balanced" },
+          { "name": "French Press", "price": 250, "veg": true, "emoji": "☕", "description": "Bold and rich" },
+          { "name": "AeroPress", "price": 250, "veg": true, "emoji": "☕", "description": "Clean and smooth" }
+        ]
+      }
+    ]
+  }
+]

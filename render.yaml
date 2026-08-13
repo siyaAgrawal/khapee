@@ -1,0 +1,19 @@
+# Render blueprint: one Node process serving the API and the built app, with a
+# persistent disk so SQLite and uploaded photos survive restarts and deploys.
+services:
+  - type: web
+    name: tablo
+    runtime: node
+    plan: starter          # the free plan has no persistent disk
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TABLO_DB
+        value: /var/data/tablo.db
+    disk:
+      name: tablo-data
+      mountPath: /var/data
+      sizeGB: 1

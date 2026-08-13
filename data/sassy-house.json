@@ -1,0 +1,1112 @@
+[
+  {
+    "name": "Sassy House",
+    "address": "Indore",
+    "emoji": "🍽️",
+    "hue": 210,
+    "isOpen": true,
+    "tables": 10,
+    "staff": {
+      "name": "Sassy House",
+      "email": "sassy-house@tablo.local",
+      "password": "password123",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Veg Starters",
+        "items": [
+          {
+            "name": "Honey Chilli Potato",
+            "description": "Crispy potatoes tossed with chillies and honey",
+            "price": 260,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Crispy Vegetable",
+            "description": "Crispy vegetable tossed with onion, garlic and schezwan sauce",
+            "price": 295,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer Chilli",
+            "description": "Spicy paneer and bell peppers in chinese gravy",
+            "price": 335,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Chilli Mushroom",
+            "description": "Spicy mushroom and bell peppers in chinese gravy",
+            "price": 320,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer 65",
+            "description": "Famous south indian delicacy with garlic, mustard, curry leaves, chilli paste and yoghurt",
+            "price": 335,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Paneer Tangy",
+            "description": "Paneer tossed in tangy sauce with a hint of spinach",
+            "price": 345,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Fries",
+            "price": 240,
+            "emoji": "🍟",
+            "veg": true
+          },
+          {
+            "name": "Plain Fries",
+            "price": 240,
+            "emoji": "🍟",
+            "veg": true
+          },
+          {
+            "name": "American Crispy Corn",
+            "description": "Fresh american corn tossed with onions and bell peppers",
+            "price": 250,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer Roll",
+            "description": "Bell peppers, onion, paneer mixed with salsa",
+            "price": 275,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Mexican Roll",
+            "description": "Bell peppers, onion, paneer mixed with salsa",
+            "price": 275,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Desi Chilli Toast",
+            "description": "Crispy bread toasted with chilly and cheese",
+            "price": 275,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Crispy Potato Wedges",
+            "description": "Served with sriracha mayo",
+            "price": 280,
+            "emoji": "🍟",
+            "veg": true
+          },
+          {
+            "name": "Exotic Garlic Bread",
+            "description": "Crispy bread topped with spicy garlic butter, cheese and veggies",
+            "price": 280,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Pita With Hummus",
+            "description": "Pita with beetroot hummus, peri peri hummus",
+            "price": 285,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Quesadilla",
+            "description": "Tortilla filled with exotic veggie, mozzarella and cheddar cheese",
+            "price": 340,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Hakka Noodles",
+            "description": "Stir-fried noodles tossed with vegetables, sauces, and spices for a quick, flavour-packed bite.",
+            "price": 275,
+            "emoji": "🍝",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Starters",
+        "items": [
+          {
+            "name": "Chicken 65",
+            "description": "Famous south indian delicacy with garlic, mustard, curry leaves, chilli paste and yoghurt",
+            "price": 420,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Chilli Chicken",
+            "description": "Chicken pieces fried and served in chinese gravy",
+            "price": 420,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Mangolian Chicken",
+            "description": "Zucchini, peppers, broccoli, succulent chicken, hoisin sauce, chilli, soya sauce and spring onion",
+            "price": 425,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Lemon Chicken",
+            "description": "A canadian special dish served with lemon sauce and herbs",
+            "price": 445,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Chicken Nuggets [8 Pieces]",
+            "price": 320,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Chicken Tikka Quesadilla",
+            "description": "Smoky chicken tikka, onion, peppers, green chilli, coriander leaves, cheese, served with tomato salsa",
+            "price": 455,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Fish And Chips",
+            "description": "Served with tartar sauce",
+            "price": 455,
+            "emoji": "🍗",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Veg Tandoori Starters",
+        "items": [
+          {
+            "name": "Tandoori Aloo",
+            "price": 360,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer Peri Peri Tikka",
+            "price": 460,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer Mediterenean Tikka",
+            "price": 460,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer Punjabi Tikka",
+            "price": 460,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Tandoori Mushroom",
+            "price": 390,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Tandoori Starters",
+        "items": [
+          {
+            "name": "Chicken Mediterenean Tikka",
+            "price": 495,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Chicken Peri Peri Tikka",
+            "price": 495,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Fish Punjabi Tikka",
+            "description": "Succulent fish marinated in bold Punjabi spices and grilled to perfection with a smoky finish.",
+            "price": 510,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Fish Zafrani Tikka",
+            "price": 510,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Chicken Punjabi Tikka",
+            "price": 495,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Chicken Malai Tikka",
+            "price": 495,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Tandoori Chicken",
+            "description": "Juicy chicken marinated in spices and yogurt, roasted in a tandoor for a smoky, charred flavour.",
+            "price": 390,
+            "emoji": "🍢",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Veg Main Course",
+        "items": [
+          {
+            "name": "Dal Makhani",
+            "description": "Creamy and rich black lentils slow-cooked with butter and mild spices for a classic, indulgent North Indian dish.",
+            "price": 330,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Yellow Dal Tadka",
+            "description": "Simple and comforting yellow lentils tempered with ghee, garlic, and spices for a homely, flavourful taste.",
+            "price": 300,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Sev Tamatar",
+            "description": "A tangy and spicy tomato-based curry topped with crunchy sev, offering a perfect balance of flavours and textures.",
+            "price": 345,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Mixed Vegetable Sabji",
+            "price": 345,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Kadhai Paneer",
+            "description": "Paneer cubes cooked with capsicum, onions, and bold spices in a thick, flavourful gravy.",
+            "price": 430,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Butter Paneer",
+            "description": "Soft paneer cubes cooked in a smooth, buttery tomato gravy, mildly spiced and perfectly balanced in flavour.",
+            "price": 370,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Paneer Lababdar",
+            "price": 370,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Paneer Hari Mirch",
+            "price": 370,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Paneer Tikka Masala",
+            "description": "Grilled paneer tikka pieces cooked in a rich, spiced tomato gravy for a smoky and flavourful dish.",
+            "price": 370,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Main Course",
+        "items": [
+          {
+            "name": "Home Style Chicken Semi Gravy",
+            "description": "Tender chicken cooked in a light, flavourful gravy with homestyle spices, perfect for a balanced and comforting meal.",
+            "price": 430,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Butter Chicken",
+            "description": "Juicy chicken cooked in a rich, creamy tomato-based gravy, infused with butter and aromatic spices for a classic North Indian favourite.",
+            "price": 430,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Kadhai Chicken",
+            "description": "Chicken cooked with capsicum, onions, and freshly ground spices in a thick, aromatic gravy.",
+            "price": 430,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Chicken Tikka Masala",
+            "price": 430,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Chicken Lababdar",
+            "price": 430,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Bhuna Chicken",
+            "price": 430,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Mutton Keema Pav",
+            "price": 560,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Fish Curry",
+            "price": 465,
+            "emoji": "🍗",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Rice",
+        "items": [
+          {
+            "name": "Jeera Rice",
+            "description": "Steamed basmati rice tossed with aromatic cumin seeds for a light, fragrant and perfect accompaniment.",
+            "price": 240,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Butter Khichdi",
+            "description": "Comforting and rich khichdi made with rice and lentils, slow-cooked in butter for a smooth, creamy texture and homely flavours.",
+            "price": 340,
+            "emoji": "🍚",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Biryani",
+        "items": [
+          {
+            "name": "Veg Biryani",
+            "description": "Fragrant basmati rice layered with fresh vegetables and aromatic spices, slow-cooked to deliver rich flavour in every bite.",
+            "price": 360,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Chicken Biryani",
+            "description": "A tempting bowl of rich, aromatic and well seasoned biryani loaded with tender chicken marinated in exotic spices",
+            "price": 440,
+            "emoji": "🍚",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Breads",
+        "items": [
+          {
+            "name": "Tandoori Roti",
+            "description": "Traditional whole wheat flatbread baked in a tandoor, crisp on the outside and soft inside.",
+            "price": 40,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Laccha Paratha",
+            "description": "Flaky, multi-layered paratha cooked to golden perfection, crisp and buttery with every bite.",
+            "price": 55,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Naan",
+            "price": 55,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Garlic Naan",
+            "price": 75,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Chilli Garlic Naan",
+            "price": 75,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Butter Tandoori Roti",
+            "description": "Soft whole wheat roti baked in a tandoor and finished with a generous layer of butter.",
+            "price": 50,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Butter Laccha Paratha",
+            "price": 65,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Butter Naan",
+            "description": "Soft and fluffy naan baked in a tandoor, brushed with butter for a rich and classic taste.",
+            "price": 65,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Butter Garlic Naan",
+            "price": 85,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Butter Chilli Garlic Naan",
+            "price": 85,
+            "emoji": "🫓",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Desserts",
+        "items": [
+          {
+            "name": "Belgian Chocolate Brownie",
+            "price": 355,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Pizookie With Vanilla Ice Cream",
+            "description": "A warm, gooey cookie baked to perfection, topped with a scoop of creamy vanilla ice cream. The perfect mix of hot and cold indulgence.",
+            "price": 475,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Chocolate Cheese Cake [1 Slice]",
+            "price": 395,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Chocolate Ice Cream",
+            "price": 45,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Vanilla Ice Cream",
+            "price": 45,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Strawberry Ice Cream",
+            "price": 45,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Pizza",
+        "items": [
+          {
+            "name": "Margherita Pizza [10 Inches]",
+            "description": "Named after princess margherita of savoy this pizza is topped with fresh tomato, basil, parmesan and mozzarella cheese",
+            "price": 395,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Tri Chilli Pizza [10 Inches]",
+            "description": "Tingle your senses with jalapenos and peri peri chillies",
+            "price": 410,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Farm House Pizza [10 Inches]",
+            "description": "A vegetarian delight with mix bell peppers, tomatoes, onion, corn and cheese",
+            "price": 430,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Fajita Pizza [10 Inches]",
+            "description": "Melody of veggies in every bite topped on a thin crust",
+            "price": 440,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Tandoori Paneer Pizza [10 Inches]",
+            "description": "Paneer Tikka, onion, capsicum, tomato, green chilli, coriander",
+            "price": 470,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Four Cheese Pizza [10 Inches]",
+            "description": "A cheese burst pizza includes mozzarella, gorgonzola, parmesan and cheddar cheese",
+            "price": 470,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Veg Mediterranean Pizza [10 Inches]",
+            "description": "Mushroom, zucchini, olives and bell peppers make it very special",
+            "price": 480,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Hummus Pizza [10 Inches]",
+            "description": "Hummus, garlic, chili flakes, peppers, carrot, mushroom, zucchini and mozzarella cheese",
+            "price": 480,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Chicken Loaded Pizza [10 Inches]",
+            "description": "Flavourful pizza loaded with chicken, parmesan cheese and mozzarella cheese",
+            "price": 490,
+            "emoji": "🍕",
+            "veg": false
+          },
+          {
+            "name": "Chicken Tikka Pizza [10 Inches]",
+            "description": "The wholesome flavour of chicken tikka with onion, capsicum and chillies",
+            "price": 490,
+            "emoji": "🍕",
+            "veg": false
+          },
+          {
+            "name": "Mutton Keema Pizza [10 Inches]",
+            "description": "Mutton keema, onion, green chilli, parmesan and mozzarella cheese",
+            "price": 535,
+            "emoji": "🍕",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Pasta",
+        "items": [
+          {
+            "name": "Cream Alfredo Pasta",
+            "description": "A cream based sauce flavoured in italian herbs",
+            "price": 380,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Arrabbiata Pasta",
+            "description": "Pasta tossed in tomato and basil sauce",
+            "price": 385,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Aglio Olio Pasta",
+            "description": "Burnt garlic, chili flakes, parsley and extra virgin olive oil will explain in best",
+            "price": 390,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Pink Pasta",
+            "description": "A combination of tomato basil sauce with cream and Italian herbs",
+            "price": 390,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Pesto Pasta",
+            "description": "Prepared by blending olive oil, basil, garlic, pine nuts, and parmesan cheese",
+            "price": 400,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Chicken Cream Alfredo Pasta",
+            "description": "A cream based sauce flavoured in italian herbs",
+            "price": 515,
+            "emoji": "🍝",
+            "veg": false
+          },
+          {
+            "name": "Chicken Arrabbiata Pasta",
+            "description": "Pasta tossed in tomato and basil sauce",
+            "price": 520,
+            "emoji": "🍝",
+            "veg": false
+          },
+          {
+            "name": "Chicken Aglio Olio Pasta",
+            "description": "Burnt garlic, chili flakes, parsley and extra virgin olive oil will explain in best",
+            "price": 525,
+            "emoji": "🍝",
+            "veg": false
+          },
+          {
+            "name": "Chicken Pink Pasta",
+            "description": "A combination of tomato basil sauce with cream and Italian herbs",
+            "price": 525,
+            "emoji": "🍝",
+            "veg": false
+          },
+          {
+            "name": "Chicken Pesto Pasta",
+            "description": "Prepared by blending olive oil, basil, garlic, pine nuts, and parmesan cheese",
+            "price": 535,
+            "emoji": "🍝",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Burgers",
+        "items": [
+          {
+            "name": "Aloo Tikki Burger",
+            "description": "Veg aloo patty with vegetables and cheese",
+            "price": 249,
+            "emoji": "🍔",
+            "veg": true
+          },
+          {
+            "name": "Crispy Chicken Burger",
+            "price": 345,
+            "emoji": "🍔",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Sandwiches",
+        "items": [
+          {
+            "name": "Paneer Tikka Sandwich",
+            "price": 345,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Grilled Veggies And Hummus Sandwich",
+            "price": 355,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Veg Medium Grilled Sandwich",
+            "price": 355,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Chicken Tikka Sandwich",
+            "price": 379,
+            "emoji": "🥪",
+            "veg": false
+          },
+          {
+            "name": "Asian Chicken Sandwich",
+            "price": 395,
+            "emoji": "🥪",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Eggs",
+        "items": [
+          {
+            "name": "Sunny Side Up",
+            "description": "A healthy half fried style with 2 eggs.",
+            "price": 210,
+            "emoji": "🍳",
+            "veg": true
+          },
+          {
+            "name": "Fried Masala Omelette",
+            "description": "3 Eggs pan fried with tomato, onion and green chillies",
+            "price": 249,
+            "emoji": "🍳",
+            "veg": true
+          },
+          {
+            "name": "Pickled Omelette",
+            "description": "Gherkins, jalapenos and onions in an omlette makes an intresting choice",
+            "price": 259,
+            "emoji": "🍳",
+            "veg": true
+          },
+          {
+            "name": "Cheesy Omelette",
+            "description": "Omelette with mozzarella cheese",
+            "price": 259,
+            "emoji": "🍳",
+            "veg": true
+          },
+          {
+            "name": "Verde Omelette",
+            "description": "Classic italian omelet with basil pesto and cream cheese",
+            "price": 259,
+            "emoji": "🍳",
+            "veg": true
+          },
+          {
+            "name": "Egg Bhurji",
+            "description": "Spicy masala bhurji",
+            "price": 249,
+            "emoji": "🍳",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Drinks",
+        "items": [
+          {
+            "name": "Cafe Dark Frappe",
+            "description": "Rich basic creamy cold coffee.",
+            "price": 210,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Vanilla Iced Cafe Frappe",
+            "price": 220,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Caramel Macchiato",
+            "description": "Cold milk vanilla syrup caramel sauce espresso.",
+            "price": 230,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mocha Frappe",
+            "price": 230,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Mint Mocha Frappe",
+            "price": 230,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Cafe Americano",
+            "price": 160,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Espresso Coffee",
+            "price": 170,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Hot Chocolate",
+            "description": "Rich chocolate with hot milk.",
+            "price": 200,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Cappuccino",
+            "description": "Espresso topped with frothy steamed milk.",
+            "price": 215,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Cafe Latte",
+            "description": "Original cappuccino with more milk and less froth.",
+            "price": 215,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Irish Coffee",
+            "description": "Hot coffee with irish whiskey and thick cream.",
+            "price": 220,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Cafe Mocha",
+            "description": "Espresso with hot milk and sinful chocolate sauce.",
+            "price": 220,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Elaichi Tea",
+            "price": 100,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Desi Masala Chai",
+            "price": 100,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Green Tea",
+            "price": 125,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Strawberry Shake",
+            "price": 205,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Chocolate Shake",
+            "price": 225,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Oreo Milkshake",
+            "price": 240,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Mixed Berry Shake",
+            "price": 260,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Brownie Shake",
+            "price": 270,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "KitKat Shake",
+            "price": 300,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Ferrero Rocher Shake",
+            "price": 310,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Mineral Water",
+            "price": 30,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Aerated Water",
+            "price": 120,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Lemon Iced Tea",
+            "price": 185,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Cranberry Boston Iced Tea",
+            "price": 230,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Red Bull",
+            "price": 230,
+            "emoji": "🍽️",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Soups",
+        "items": [
+          {
+            "name": "Veg Hot And Sour Soup",
+            "price": 220,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Roasted Cherry Tomato Soup",
+            "price": 225,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Broccoli Soup",
+            "price": 230,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Cream Of Mushroom Soup",
+            "price": 230,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Chicken Hot And Sour Soup",
+            "price": 290,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Chicken Roasted Cherry Tomato Soup",
+            "price": 295,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Chicken Broccoli Soup",
+            "price": 300,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Chicken Cream Of Mushroom Soup",
+            "price": 300,
+            "emoji": "🍜",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Salads",
+        "items": [
+          {
+            "name": "Greek Salad",
+            "description": "Feta, lettuce, onion, cucumber, olives, tomatoes, and lemon dressing makes this salad an all time favourite",
+            "price": 355,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Thai Salad",
+            "description": "Lettuce, cucumber, cherry tomato, bell pepper, mushroom, broccoli and peanut tossed with sweet chili dressing",
+            "price": 380,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Honey Mustard Salad",
+            "description": "Bell peppers, lettuce, onions, cherry tomatoes, cucumber, mint mingled with tangy wholegrain mustard dressing",
+            "price": 380,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Ceaser Salad",
+            "description": "Iceberg lettuce, parmesan, pepper tossed with Ceaser Dressing",
+            "price": 380,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Vegetable Cob Salad",
+            "description": "Cucumber, cherry tomato, corn, broccoli, zucchini, beetroot, Danish feta cheese tossed with walnut lemon dressing",
+            "price": 390,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Grilled Chicken Greek Salad",
+            "description": "Feta, lettuce, onion, cucumber, olives, tomatoes, and lemon dressing makes this salad an all time favourite",
+            "price": 495,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Grilled Chicken Thai Salad",
+            "description": "Lettuce, cucumber, cherry tomato, bell pepper, mushroom, broccoli and peanut tossed with sweet chili dressing",
+            "price": 505,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Grilled Chicken Honey Mustard Salad",
+            "description": "Bell peppers, lettuce, onions, cherry tomatoes, cucumber, mint mingled with tangy wholegrain mustard dressing",
+            "price": 505,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Grilled Chicken Ceaser Salad",
+            "description": "Iceberg lettuce, parmesan, pepper tossed with Ceaser Dressing",
+            "price": 505,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Grilled Chicken Vegetable Cob Salad",
+            "description": "Cucumber, cherry tomato, corn, broccoli, zucchini, beetroot, Danish feta cheese tossed with walnut lemon dressing",
+            "price": 505,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Onion Salad",
+            "price": 90,
+            "emoji": "🥗",
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,674 @@
+[
+  {
+    "name": "Mr. Beans — Vijay Nagar",
+    "address": "Indore",
+    "emoji": "🍽️",
+    "hue": 210,
+    "isOpen": true,
+    "tables": 10,
+    "staff": {
+      "name": "Mr. Beans — Vijay Nagar",
+      "email": "mr-beans-vijay-nagar@tablo.local",
+      "password": "password123",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Freshly Baked From The Gourmet Store Bakery",
+        "items": [
+          {
+            "name": "Almond Biscottis",
+            "price": 50,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Almond Florentine",
+            "price": 75,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Belgian Chocolate Brownies",
+            "description": "Dark chocolate and walnut brownies served with fudge.",
+            "price": 440,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Biscoff Cheeese Cake (1 Slice)",
+            "price": 410,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Cheese Cake In A Jar",
+            "description": "A modern take on a classic recipe",
+            "price": 400,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Chocolate Chip Cookie",
+            "price": 75,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Devil Fudge Cake (1 Slice)",
+            "price": 425,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Dark Chocolate Cheese Cake (1 Slice)",
+            "description": "Every morsel is heavenly in this chocolate and cream cheese dessert.",
+            "price": 400,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Missipie Mud Pie",
+            "price": 385,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "New York Cheese Cake (1 Slice)",
+            "price": 410,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Eggs, Eggs & More Eggs",
+        "items": [
+          {
+            "name": "Classic Indian Masala Omelette",
+            "description": "Tomatoes, onion, green chillies & corriander always are a perfect choice",
+            "price": 450,
+            "emoji": "🍳",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Tartine, Toasty & Flat Breads",
+        "items": [
+          {
+            "name": "Creamy Mushroom Tartine",
+            "price": 450,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Creamy Mushroom On Toast",
+            "description": "Crisp pieces toast topped with creamy mushroom mince and cheese.",
+            "price": 475,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Desi Chilli Cheese Toast",
+            "description": "A crisp toast of cheese, green chillies and coriander.",
+            "price": 425,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Garlic Bread",
+            "price": 375,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Garlic Bread With Cheddar Cheese",
+            "price": 455,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Tabasco Pizza",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Salads & Healthy Bowls",
+        "items": [
+          {
+            "name": "Asian Cucumber Soy Vermicelli Salad",
+            "price": 700,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Avocado Chicken Salad",
+            "description": "Tangy, creamy avocado served with smoked chicken & crispy greens with lemon vinaigrette.",
+            "price": 705,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Greek Salad",
+            "description": "Feta, lettuce, cucumbers, tomatoes, onions, olives and lemon dressing make this salad an all time favourite.",
+            "price": 625,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Spring Greens & Orange Feta Salad",
+            "description": "Romaine lettuce, basil, iceberg lettuce served with orange segments, apricots in a orange feta dressing.",
+            "price": 625,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Thai Tri Quinoa Salad",
+            "price": 675,
+            "emoji": "🥗",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Sandwiches",
+        "items": [
+          {
+            "name": "Fresh Harissa Chicken & Avocado Sandwich",
+            "price": 700,
+            "emoji": "🥪",
+            "veg": false
+          },
+          {
+            "name": "Grilled Four Cheese Panini",
+            "price": 600,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Ham Chicken Boccincini Sandwich",
+            "price": 650,
+            "emoji": "🥪",
+            "veg": false
+          },
+          {
+            "name": "Low Calorie Hummus Pickled Veg Sandwich",
+            "description": "Whole wheat bread, zero dairy fat and pickled carrots, beetroots, cucumber, lettuce explains it well.",
+            "price": 575,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Pesto Tomato Boccincini Sandwich",
+            "price": 575,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Smoked Pulled Chicken Sandwich",
+            "description": "Slow cooked puffed chicken with hints of smokiness and cider grilled with scarmoza cheese.",
+            "price": 675,
+            "emoji": "🥪",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Entree",
+        "items": [
+          {
+            "name": "Argentinian Chimichurri Chicken Skewer",
+            "description": "Spicy chimichurri marinated chicken served on skewers with Romanesco dip.",
+            "price": 625,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Bell Pepper & Cheese Quesdilla",
+            "description": "Signature Mr beans appetizer makes it a house special.",
+            "price": 600,
+            "emoji": "🧀",
+            "veg": true
+          },
+          {
+            "name": "Go Brit With Fish And Chips",
+            "description": "Crispy fillet of fish deep fried in a beer batter served with country fries.",
+            "price": 675,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Grilled Chicken Sausages",
+            "description": "Cocktail sausages sauteed with smoked barbeque flavours.",
+            "price": 625,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Mexican Jar With Cheesy Nachos",
+            "description": "Cherry tomato salsa, guacamole and sour cream served with oozing chessy tortilla chips.",
+            "price": 575,
+            "emoji": "🍟",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Pizzas",
+        "items": [
+          {
+            "name": "Authentic Italian Pizza",
+            "description": "Thin pizza crust topped with tomato puree, bocconcini cheese, basil pesto and fresh herbs.",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Full On Chicken Pizza",
+            "description": "Chicken breast, salami and sausages make this a full of chicken pizza",
+            "price": 725,
+            "emoji": "🍕",
+            "veg": false
+          },
+          {
+            "name": "Fungi Blanc Pizza",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Garden In A Basket Pizza",
+            "description": "A vegetarian delight red and yellow peppers, corn, onion and broccoli make it a popular veg pick.",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Mediterranean Veg Pizza",
+            "description": "Mushroom, zucchini, squash, sundried tomato, olives and peppers make it very special",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Pepperoni Pizza",
+            "description": "Spicy pork pepperoni is topped on a thin crust.",
+            "price": 725,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Pizza Margherita",
+            "description": "Named after princess margherita of savory this pizza is topped with fresh tomato, basil, mozzarella and parmesan.",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Pizza Verde",
+            "description": "Verde meaning green in Italian, it is cooked with a pesto base, broccoli, cherry tomato, piri piri, goat cheese and mushrooms.",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Quattro Fromage Pizza",
+            "description": "An Italian classic of blue roquefort cheese, goat cheese, mozzarella and parmesan cheese.",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Tobasco Pizza In Pala Romano Crust",
+            "price": 625,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Totally Smoked Chicken & Scarmoza Pizza",
+            "price": 725,
+            "emoji": "🍕",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Pasta & Noodles",
+        "items": [
+          {
+            "name": "Aglio E Olio Pasta",
+            "description": "Burnt garlic, chilli flakes, parsley and extra virgin olive oil explain it best.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Cream Alfredo Broccoli Pasta",
+            "description": "A cream based sauce flavoured with rosemary and thyme.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Cream Alfredo Mushroom Pasta",
+            "description": "A cream based sauce flavoured with rosemary and thyme.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Fettuccine In Rose Sauce Pasta",
+            "description": "Freshly made pasta ribbons are tossed in creamy marinara sauce, jewelled with spinach, garlic chips and sundried tomato.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Homemade Gnocchi Pasta",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Korean Chilli Garlic Wok-Fried Noodles",
+            "description": "Tossed with tofu, edamame, bokchoy and zucchini.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Pasta Arrabiata",
+            "description": "Pasta tossed in tomato and basil sauce.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Spaghetti With Pesto Genovese Pasta",
+            "description": "Spaghetti in basil pesto tossed with peppers, zucchini ribbons and pinenuts.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Spinach & Ricotta Ravioli Red Sauce",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Spinach & Ricotta Ravioli White Sauce",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Thai Style Pan Fried Noodles",
+            "description": "Served with medley of vegetables, mushroom and sweet sour Thai sauce.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Truffle Macaroni & Cheese Pasta",
+            "description": "An all time comfort food.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Not Pasta",
+        "items": [
+          {
+            "name": "Mediterranean Tri-Quinoa Pepper Risotto",
+            "description": "Served with mediterranean vegetables, pumpkin seeds and mascarpone cheese.",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Mexican Spice Bowl",
+            "description": "Served with chipotle rice, guacamole, peppers & sour cream",
+            "price": 625,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Broccoli Risotto",
+            "price": 675,
+            "emoji": "🍝",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Meat Feasts",
+        "items": [
+          {
+            "name": "Chicken Cordon Bleu",
+            "description": "Chicken roulade stuffed with Swiss cheese, wrapped with bacon.",
+            "price": 700,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Classic Grilled Fish",
+            "description": "Served with creamy green pepper corn sauce, salsa verde & crisp greens",
+            "price": 700,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "Grilled Rosemary Thyme Chicken",
+            "description": "Chicken breast marinated in olive oil and herbs served with brown mushroom sauce.",
+            "price": 700,
+            "emoji": "🍗",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Asian Selection",
+        "items": [
+          {
+            "name": "Asian Chicken Wings",
+            "description": "Thai style deep fried chicken wings served with tangy sauce.",
+            "price": 625,
+            "emoji": "🍗",
+            "veg": false
+          },
+          {
+            "name": "California Roll",
+            "description": "A rebel roll made with avocado cream cheese & veg",
+            "price": 700,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Chicken Teriyaki & Avocado Uramaki",
+            "description": "Nori sheet, rice & succulent teriyaki chicken pair up well with avocado in this rebel roll",
+            "price": 700,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Edamame Pod Bowl",
+            "price": 625,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Prawn Tempura Uramaki",
+            "description": "Crunchy tempura fried prawns are rolled with cream cheese & veg",
+            "price": 750,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Veg Maki",
+            "description": "Nori sheet & rice rolled with cucumber, carrot & peppers.",
+            "price": 575,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Veg Tempura Uramaki",
+            "description": "Uramaki meaning reverse sushi rolled with fried veg tempura",
+            "price": 625,
+            "emoji": "🍣",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Asian Curry",
+        "items": [
+          {
+            "name": "Aromatic Green Thai Curry",
+            "description": "Green chilli, coriander & Thai herbs ground to a paste & cooked with coconut milk & exotic vegetables.",
+            "price": 675,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Spicy Thai Red Curry",
+            "description": "Coconut milk is infused with homemade red chilli Thai herb curry paste, cooked with exotic vegetables.",
+            "price": 675,
+            "emoji": "🍛",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Desserts",
+        "items": [
+          {
+            "name": "Piz Cookie Choco Chip And Nutella",
+            "description": "Jumbo fudgy freshly baked chocolate chip cookie with nutella layer.",
+            "price": 625,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Not Coffee",
+        "items": [
+          {
+            "name": "Boston Cranberry Iced Tea",
+            "price": 315,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Brownie Millionaire",
+            "price": 390,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Chocolate Chill",
+            "price": 340,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Fresh Garden Juice",
+            "price": 400,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Fresh Ginger Ale",
+            "price": 345,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Lemon Mint Iced Tea",
+            "price": 315,
+            "emoji": "🍵",
+            "veg": true
+          },
+          {
+            "name": "Morning De-Tox Juice",
+            "price": 400,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Oreo Shake",
+            "price": 340,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Specialised Orange Juice",
+            "price": 400,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Truly Lemon Lemonade",
+            "price": 365,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Vegan Almond Milk Berry Banana Smoothie",
+            "price": 390,
+            "emoji": "🥤",
+            "veg": true
+          },
+          {
+            "name": "Virgin Mojito",
+            "price": 365,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Cold Coffee",
+        "items": [
+          {
+            "name": "Cafe Anaconda",
+            "price": 340,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Cafe Frappe",
+            "price": 340,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Choco Irish",
+            "price": 340,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Frozen Mochaccino",
+            "price": 340,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Nutella & Coffee Delight",
+            "price": 390,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Example Cafe & Kitchen",
+    "description": "One-line description shown on the restaurant card.",
+    "address": "12 Example Road, Vijay Nagar, Indore",
+    "phone": "+91 90000 00000",
+    "categories": ["Cafe", "Coffee", "Snacks"],
+    "emoji": "☕",
+    "hue": 28,
+    "hours": "8:00 AM – 11:00 PM",
+    "prepMinutes": 15,
+    "rating": 4.4,
+    "isOpen": true,
+    "tables": 8,
+    "image": "./photos/example-cafe.jpg",
+    "staff": {
+      "name": "Owner Name",
+      "email": "owner@example-cafe.test",
+      "password": "password123",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Coffee",
+        "items": [
+          {
+            "name": "Cold Coffee",
+            "description": "Double shot, milk, ice, blended till frothy",
+            "price": 140,
+            "emoji": "🥤",
+            "veg": true,
+            "image": "./photos/cold-coffee.jpg"
+          },
+          { "name": "Filter Kaapi", "price": 90, "emoji": "🍵", "veg": true }
+        ]
+      },
+      {
+        "category": "Snacks",
+        "items": [
+          { "name": "Poha Jalebi", "description": "Indori poha with sev and hot jalebi", "price": 70, "emoji": "🍛" },
+          { "name": "Grilled Sandwich", "price": 120, "emoji": "🥪", "veg": true, "available": false }
+        ]
+      }
+    ]
+  }
+]

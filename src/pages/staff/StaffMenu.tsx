@@ -1,0 +1,495 @@
+import { useCallback, useEffect, useState } from 'react'
+import { api, ApiError } from '../../lib/api'
+import ImagePicker from '../../components/ImagePicker'
+import { Art, EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../../components/ui'
+
+type Item = {
+  id: number
+  categoryId: number
+  name: string
+  description: string
+  priceCents: number
+  emoji: string
+  hue: number
+  imageUrl: string | null
+  isVeg: boolean
+  isAvailable: boolean
+}
+type Category = { id: number; name: string; items: Item[] }
+
+const EMOJI_CHOICES = ['🍽️', '🥤', '☕', '🍵', '🥐', '🍰', '🍕', '🍝', '🍜', '🍛', '🍚', '🫓', '🥪', '🥗', '🍗', '🍤', '🌶️', '🧀', '🍮', '🍦']
+
+type Draft = {
+  id: number | null
+  categoryId: number
+  name: string
+  description: string
+  price: string
+  emoji: string
+  hue: number
+  isVeg: boolean
+  isAvailable: boolean
+  imageUrl: string | null
+}
+
+function emptyDraft(categoryId: number): Draft {
+  return {
+    id: null,
+    categoryId,
+    name: '',
+    description: '',
+    price: '',
+    emoji: '🍽️',
+    hue: 24,
+    isVeg: true,
+    isAvailable: true,
+    imageUrl: null,
+  }
+}
+
+export default function StaffMenu() {
+  const toast = useToast()
+  const [data, setData] = useState<{ restaurant: any; categories: Category[] } | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [newSection, setNewSection] = useState('')
+  const [addingSection, setAddingSection] = useState(false)
+
+  const load = useCallback(() => {
+    api<{ restaurant: any; categories: Category[] }>('/staff/menu')
+      .then(setData)
+      .catch((e: ApiError) => toast(e.message, 'bad'))
+  }, [toast])
+
+  useEffect(load, [load])
+
+  const toggleItem = async (item: Item) => {
+    try {
+      await api(`/staff/menu/${item.id}/availability`, { body: { isAvailable: !item.isAvailable } })
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              categories: prev.categories.map((c) => ({
+                ...c,
+                items: c.items.map((i) => (i.id === item.id ? { ...i, isAvailable: !i.isAvailable } : i)),
+              })),
+            }
+          : prev,
+      )
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    }
+  }
+
+  const toggleOpen = async () => {
+    if (!data) return
+    try {
+      const r = await api<{ isOpen: boolean }>('/staff/restaurant/open', {
+        body: { isOpen: !data.restaurant.isOpen },
+      })
+      setData({ ...data, restaurant: { ...data.restaurant, isOpen: r.isOpen } })
+      toast(r.isOpen ? 'You are open for orders' : 'Closed — customers cannot order', r.isOpen ? 'good' : 'info')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    }
+  }
+
+  const addSection = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAddingSection(true)
+    try {
+      await api('/staff/categories', { body: { name: newSection.trim() } })
+      setNewSection('')
+      load()
+      toast('Section added', 'good')
+    } catch (err) {
+      toast((err as ApiError).message, 'bad')
+    } finally {
+      setAddingSection(false)
+    }
+  }
+
+  const renameSection = async (category: Category) => {
+    const name = window.prompt('Rename this section', category.name)?.trim()
+    if (!name || name === category.name) return
+    try {
+      await api(`/staff/categories/${category.id}`, { method: 'PATCH', body: { name } })
+      load()
+    } catch (err) {
+      toast((err as ApiError).message, 'bad')
+    }
+  }
+
+  const deleteSection = async (category: Category) => {
+    const count = category.items.length
+    const message = count
+      ? `Delete "${category.name}" and its ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`
+      : `Delete "${category.name}"?`
+    if (!window.confirm(message)) return
+    try {
+      await api(`/staff/categories/${category.id}`, { method: 'DELETE' })
+      load()
+      toast('Section deleted', 'info')
+    } catch (err) {
+      toast((err as ApiError).message, 'bad')
+    }
+  }
+
+  const deleteItem = async (item: Item) => {
+    if (!window.confirm(`Remove "${item.name}" from the menu?`)) return
+    try {
+      await api(`/staff/menu/${item.id}`, { method: 'DELETE' })
+      load()
+      toast(`${item.name} removed`, 'info')
+    } catch (err) {
+      toast((err as ApiError).message, 'bad')
+    }
+  }
+
+  const saveDraft = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!draft) return
+    setSaving(true)
+    setFormError('')
+    try {
+      const body = {
+        categoryId: draft.categoryId,
+        name: draft.name,
+        description: draft.description,
+        price: draft.price,
+        emoji: draft.emoji,
+        hue: draft.hue,
+        isVeg: draft.isVeg,
+        isAvailable: draft.isAvailable,
+      }
+      if (draft.id) {
+        await api(`/staff/menu/${draft.id}`, { method: 'PATCH', body })
+        toast('Dish updated', 'good')
+        setDraft(null)
+      } else {
+        const r = await api<{ item: Item }>('/staff/menu', { body })
+        toast('Dish added', 'good')
+        // Keep the sheet open on the new dish so a photo can go straight on.
+        setDraft({ ...draft, id: r.item.id, imageUrl: r.item.imageUrl })
+      }
+      load()
+    } catch (err) {
+      setFormError((err as ApiError).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!data) return <LoadingBlock />
+
+  const itemCount = data.categories.reduce((n, c) => n + c.items.length, 0)
+  const liveCount = data.categories.reduce((n, c) => n + c.items.filter((i) => i.isAvailable).length, 0)
+
+  return (
+    <>
+      <div className="staff-head">
+        <h1>Menu</h1>
+        <div className="spacer" />
+        <span className={`badge ${data.restaurant.isOpen ? 'badge-open' : 'badge-closed'}`}>
+          {data.restaurant.isOpen ? 'Accepting orders' : 'Closed'}
+        </span>
+        <button
+          className={`switch ${data.restaurant.isOpen ? 'on' : ''}`}
+          onClick={toggleOpen}
+          aria-pressed={data.restaurant.isOpen}
+          aria-label="Toggle open for orders"
+        />
+      </div>
+
+      {liveCount === 0 && (
+        <div className="notice mb-2">
+          <span aria-hidden>👀</span>
+          <div>
+            <strong>Not visible to customers yet</strong>
+            <p className="tiny">
+              Your restaurant appears in the app as soon as one dish is on the menu and available.
+              {!data.restaurant.isOpen && ' Remember to switch yourself open too.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <form className="card card-pad mb-2" onSubmit={addSection}>
+        <div className="row row-wrap">
+          <input
+            className="input"
+            style={{ maxWidth: 240 }}
+            placeholder="New section, e.g. Starters"
+            value={newSection}
+            onChange={(e) => setNewSection(e.target.value)}
+            aria-label="New menu section"
+          />
+          <button className="btn btn-secondary" disabled={!newSection.trim() || addingSection}>
+            {addingSection ? <Spinner /> : 'Add section'}
+          </button>
+          {data.categories.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-accent"
+              onClick={() => {
+                setFormError('')
+                setDraft(emptyDraft(data.categories[0].id))
+              }}
+            >
+              + Add dish
+            </button>
+          )}
+          <span className="spacer" style={{ flex: 1 }} />
+          <span className="tiny muted">
+            {itemCount} dish{itemCount === 1 ? '' : 'es'} in {data.categories.length} section
+            {data.categories.length === 1 ? '' : 's'}
+          </span>
+        </div>
+        <p className="tiny muted mt-3">
+          Turn a dish off the moment it runs out — customers see it as sold out straight away and cannot order it.
+        </p>
+      </form>
+
+      {data.categories.length === 0 && (
+        <EmptyState
+          emoji="📋"
+          title="No menu yet"
+          body="Add a section like “Coffee” or “Mains”, then start adding dishes to it."
+        />
+      )}
+
+      {data.categories.map((c) => (
+        <section key={c.id} className="card card-pad mt-3">
+          <div className="row" style={{ marginBottom: 6 }}>
+            <h2>{c.name}</h2>
+            <span className="spacer" style={{ flex: 1 }} />
+            <button className="btn btn-ghost btn-sm" onClick={() => renameSection(c)}>
+              Rename
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => deleteSection(c)}>
+              Delete
+            </button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setFormError('')
+                setDraft(emptyDraft(c.id))
+              }}
+            >
+              + Dish
+            </button>
+          </div>
+
+          {c.items.length === 0 ? (
+            <p className="tiny muted" style={{ padding: '10px 2px' }}>
+              Nothing in this section yet.
+            </p>
+          ) : (
+            c.items.map((item) => (
+              <div key={item.id} className="list-row">
+                <Art
+                  emoji={item.emoji}
+                  hue={item.hue}
+                  imageUrl={item.imageUrl}
+                  className="cart-line-art"
+                  rounded={12}
+                  alt={item.name}
+                />
+                <div style={{ minWidth: 0 }}>
+                  <strong style={{ fontSize: 14.5 }}>{item.name}</strong>
+                  <p className="tiny muted">{money(item.priceCents)}</p>
+                </div>
+                <span className="spacer" />
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setFormError('')
+                    setDraft({
+                      id: item.id,
+                      categoryId: item.categoryId ?? c.id,
+                      name: item.name,
+                      description: item.description,
+                      price: (item.priceCents / 100).toString(),
+                      emoji: item.emoji,
+                      hue: item.hue,
+                      isVeg: item.isVeg,
+                      isAvailable: item.isAvailable,
+                      imageUrl: item.imageUrl,
+                    })
+                  }}
+                >
+                  Edit
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => deleteItem(item)}>
+                  Delete
+                </button>
+                <span className={`badge ${item.isAvailable ? 'badge-open' : 'badge-closed'}`}>
+                  {item.isAvailable ? 'Available' : 'Sold out'}
+                </span>
+                <button
+                  className={`switch ${item.isAvailable ? 'on' : ''}`}
+                  onClick={() => toggleItem(item)}
+                  aria-pressed={item.isAvailable}
+                  aria-label={`Toggle ${item.name}`}
+                />
+              </div>
+            ))
+          )}
+        </section>
+      ))}
+
+      <Modal
+        open={!!draft}
+        onClose={() => setDraft(null)}
+        title={draft?.id ? 'Edit dish' : 'Add a dish'}
+        wide
+      >
+        {draft && (
+          <form onSubmit={saveDraft}>
+            {formError && <div className="form-error">{formError}</div>}
+
+            <div className="edit-grid-narrow">
+              <div>
+                <div className="field">
+                  <label htmlFor="d-name">Name</label>
+                  <input
+                    id="d-name"
+                    className="input"
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    placeholder="Cold Coffee"
+                    autoFocus
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="d-desc">Description</label>
+                  <textarea
+                    id="d-desc"
+                    className="textarea"
+                    style={{ minHeight: 62 }}
+                    value={draft.description}
+                    maxLength={200}
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    placeholder="Double shot, milk, ice, blended till frothy"
+                  />
+                </div>
+                <div className="row row-wrap" style={{ alignItems: 'flex-start', gap: 12 }}>
+                  <div className="field" style={{ width: 130 }}>
+                    <label htmlFor="d-price">Price (₹)</label>
+                    <input
+                      id="d-price"
+                      className="input"
+                      inputMode="decimal"
+                      value={draft.price}
+                      onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+                      placeholder="220"
+                    />
+                  </div>
+                  <div className="field" style={{ flex: 1, minWidth: 150 }}>
+                    <label htmlFor="d-section">Section</label>
+                    <select
+                      id="d-section"
+                      className="select"
+                      value={draft.categoryId}
+                      onChange={(e) => setDraft({ ...draft, categoryId: Number(e.target.value) })}
+                    >
+                      {data.categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="row row-wrap" style={{ gap: 18, margin: '4px 0 14px' }}>
+                  <label className="row tiny" style={{ gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`switch ${draft.isVeg ? 'on' : ''}`}
+                      onClick={() => setDraft({ ...draft, isVeg: !draft.isVeg })}
+                      aria-pressed={draft.isVeg}
+                      aria-label="Vegetarian"
+                    />
+                    Vegetarian
+                  </label>
+                  <label className="row tiny" style={{ gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`switch ${draft.isAvailable ? 'on' : ''}`}
+                      onClick={() => setDraft({ ...draft, isAvailable: !draft.isAvailable })}
+                      aria-pressed={draft.isAvailable}
+                      aria-label="Available"
+                    />
+                    Available
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="tiny" style={{ fontWeight: 600 }}>
+                  Photo
+                </label>
+                {draft.id ? (
+                  <ImagePicker
+                    imageUrl={draft.imageUrl}
+                    emoji={draft.emoji}
+                    hue={draft.hue}
+                    uploadPath={`/staff/menu/${draft.id}/image`}
+                    label={draft.name}
+                    aspect="1 / 1"
+                    onChange={(imageUrl) => {
+                      setDraft({ ...draft, imageUrl })
+                      load()
+                    }}
+                  />
+                ) : (
+                  <p className="tiny muted" style={{ margin: '6px 0 12px' }}>
+                    Save the dish first, then add a photo.
+                  </p>
+                )}
+
+                <label className="tiny" style={{ fontWeight: 600 }}>
+                  Fallback artwork
+                </label>
+                <div className="emoji-grid" style={{ marginTop: 6 }}>
+                  {EMOJI_CHOICES.map((e) => (
+                    <button
+                      key={e}
+                      type="button"
+                      className={`emoji-btn ${draft.emoji === e ? 'selected' : ''}`}
+                      onClick={() => setDraft({ ...draft, emoji: e })}
+                    >
+                      {e}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  className="hue-slider"
+                  style={{ marginTop: 10 }}
+                  type="range"
+                  min={0}
+                  max={360}
+                  value={draft.hue}
+                  onChange={(e) => setDraft({ ...draft, hue: Number(e.target.value) })}
+                  aria-label="Artwork colour"
+                />
+              </div>
+            </div>
+
+            <div className="row" style={{ marginTop: 8 }}>
+              <button className="btn btn-accent" disabled={saving}>
+                {saving ? <Spinner /> : draft.id ? 'Save dish' : 'Add dish'}
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setDraft(null)}>
+                {draft.id ? 'Done' : 'Cancel'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+    </>
+  )
+}

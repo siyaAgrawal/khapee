@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Chapter One",
+    "address": "Indore",
+    "categories": ["Cafe"],
+    "emoji": "📖",
+    "hue": 26,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "chapterone@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Kitchen 99",
+    "address": "Indore",
+    "categories": ["Multi-cuisine"],
+    "emoji": "🍽️",
+    "hue": 200,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "kitchen99@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Sassy Nouse",
+    "address": "Indore",
+    "categories": ["Cafe"],
+    "emoji": "🍸",
+    "hue": 320,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "sassynouse@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Inizio",
+    "address": "Indore",
+    "categories": ["Italian"],
+    "emoji": "🍕",
+    "hue": 350,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "inizio@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Sapna Sandukier",
+    "address": "Indore",
+    "categories": ["Indian"],
+    "emoji": "🍛",
+    "hue": 14,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "sapnasandukier@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Mopping",
+    "address": "Indore",
+    "categories": ["Desserts"],
+    "emoji": "🍨",
+    "hue": 300,
+    "tables": 6,
+    "isOpen": false,
+    "staff": { "email": "mopping@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Ice Balls",
+    "address": "Indore",
+    "categories": ["Desserts", "Street Food"],
+    "emoji": "🍧",
+    "hue": 190,
+    "tables": 4,
+    "isOpen": false,
+    "staff": { "email": "iceballs@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Revery",
+    "address": "Indore",
+    "categories": ["Cafe"],
+    "emoji": "☕",
+    "hue": 30,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "revery@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Juné",
+    "address": "Indore",
+    "categories": ["Cafe"],
+    "emoji": "🥐",
+    "hue": 44,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "june@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Neighbourhood",
+    "address": "Indore",
+    "categories": ["Cafe", "Continental"],
+    "emoji": "🥪",
+    "hue": 100,
+    "tables": 10,
+    "isOpen": false,
+    "staff": { "email": "neighbourhood@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Sleep",
+    "address": "Indore",
+    "categories": ["Cafe"],
+    "emoji": "🌙",
+    "hue": 240,
+    "tables": 8,
+    "isOpen": false,
+    "staff": { "email": "sleep@tablo.local", "password": "password123", "title": "Owner" }
+  },
+  {
+    "name": "Reunion",
+    "address": "Indore",
+    "categories": ["Multi-cuisine"],
+    "emoji": "🥂",
+    "hue": 340,
+    "tables": 10,
+    "isOpen": false,
+    "staff": { "email": "reunion@tablo.local", "password": "password123", "title": "Owner" }
+  }
+]

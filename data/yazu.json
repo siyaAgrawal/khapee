@@ -1,0 +1,1756 @@
+[
+  {
+    "name": "Yazu at the Dome",
+    "description": "Pan-Asian small plates, sushi and dim sum, with Juliette at the Dome upstairs.",
+    "address": "Indore",
+    "categories": [
+      "Asian",
+      "Japanese",
+      "Sushi",
+      "Continental"
+    ],
+    "emoji": "🍣",
+    "hue": 340,
+    "hours": "12:00 PM – 1:00 AM",
+    "prepMinutes": 25,
+    "isOpen": true,
+    "tables": 12,
+    "staff": {
+      "name": "Yazu at the Dome",
+      "email": "yazu-at-the-dome@tablo.local",
+      "password": "password123",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Soups",
+        "items": [
+          {
+            "name": "Chicken Clear Soup",
+            "description": "Clear Soup With Chicken, Herbs, And Delicate Asian Flavours.",
+            "price": 375,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Chicken Hot And Sour Soup",
+            "description": "Bold Hot And Sour Soup With Shredded Chicken.",
+            "price": 375,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Chicken Manchow Soup",
+            "description": "Classic Manchow Soup With Tender Chicken And Bold Indo-Chinese Flavours.",
+            "price": 375,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Chicken Sweet Corn Soup",
+            "description": "Sweet Corn Soup Enriched With Tender Chicken Bits.",
+            "price": 375,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Miso Shiro",
+            "description": "Japanese Soy Beans Soup With Silken Tofu And Wakame Seaweed",
+            "price": 395,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Prawns Clear Soup",
+            "description": "Light Clear Soup Infused With Prawn Stock And Aromatics.",
+            "price": 425,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Prawns Hot And Sour Soup",
+            "description": "Hot And Sour Soup With Succulent Prawns And Sharp Flavours.",
+            "price": 425,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Prawns Manchow Soup",
+            "description": "Hearty Manchow Soup With Succulent Prawns And Aromatic Spices.",
+            "price": 425,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Prawns Sweet Corn Soup",
+            "description": "Sweet Corn Soup With Juicy Prawns And A Smooth Finish.",
+            "price": 425,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Seafood Treasure",
+            "description": "Mixed Seafood Soup In A Spicy Broth",
+            "price": 445,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Shin Muguk",
+            "description": "Korean Radish Soup With Rich Flavour Of Daikon Radish With Exotic Vegetables Seasoned With Japanese Kabayaki Sauce (Contains Rice Wine)",
+            "price": 395,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Spicy Lamb Chop Soup",
+            "description": "Spicy Rich Broth Made Of Cinnamon, Star Anise, Ginger, Garlic, Oyster Sauce, Soy Sauce With 1 Pcs Of Lamb Chop",
+            "price": 445,
+            "emoji": "🍜",
+            "veg": false
+          },
+          {
+            "name": "Tibetan Thenthuk Soup",
+            "description": "Traditional Tibetan Soup With Noodles Shaped Wonton Sheets.",
+            "price": 395,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Tom Kha Soup",
+            "description": "Aromatic Broth Flavored With Fresh Thai Herbs And Vegetables.",
+            "price": 395,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Tom Yum Soup",
+            "description": "Aromatic Broth Flavored With Fresh Thai Herbs And Vegetables.",
+            "price": 395,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Veg Clear Soup",
+            "description": "Light And Soothing Clear Vegetable Broth With Mild Seasoning.",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Veg Hot And Sour Soup",
+            "description": "Tangy And Spicy Vegetable Soup With Balanced Heat And Acidity.",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Veg Manchow Soup",
+            "description": "Spicy And Flavourful Vegetable Broth With Garlic, Soy, And Crunchy Garnishes.",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Veg Sweet Corn Soup",
+            "description": "Comforting Sweet Corn Soup With Lightly Seasoned Vegetable Stock.",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Salads",
+        "items": [
+          {
+            "name": "Prawn Palta Rellena",
+            "description": "Prawns, Maiz, Mango, Fried Onion, Cilantro, Cherry Tomato, Tiger Milk, Yuzu Mango Mayo & Orange Zest",
+            "price": 645,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Prawn Som Tam Salad",
+            "description": "Juicy Prawns Tossed With Crisp Green Papaya, Fresh Vegetables, Roasted Peanuts, And A Tangy Lime Dressing For A Perfect Balance Of Flavors.",
+            "price": 595,
+            "emoji": "🥗",
+            "veg": false
+          },
+          {
+            "name": "Veg Palta Rellena",
+            "description": "Stuffed Avocado, Maiz, Mango, Fried Onion, Cilantro, Cherry Tomato, Tiger Milk, Yuzu Mango Mayo & Orange Zest",
+            "price": 545,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Veg Som Tam Salad",
+            "description": "A Refreshing Thai Inspired Salad Made With Crisp Green Papaya, Crunchy Vegetables, Roasted Peanuts, And A Zesty Lime Dressing.",
+            "price": 495,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Wafu Yasai Salad",
+            "description": "Mixed Greens, Avocado, Carrots, Cucumber, Cherry Tomatoes, Edamame With Homemade Yazu Dressing.",
+            "price": 495,
+            "emoji": "🥗",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Veg Dim Sum",
+        "items": [
+          {
+            "name": "Cream Cheese And Truffle Dumpling",
+            "description": "Truffle Flavoured Cream Cheese And Garlic",
+            "price": 495,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Poached Mushroom & Beetroot Dumpling (4 Pcs)",
+            "description": "Shitake, Button Mushrooms, Spicy Beetroot And Apple Broth",
+            "price": 495,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Truffle Edamame Dumpling",
+            "description": "Creamy Edamame Filling With Hints Of White Truffle",
+            "price": 545,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Veg Crystal Dumpling",
+            "description": "Water Chestnut, Carrot, And Celery.",
+            "price": 450,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Veg Pan Fried Gyoza",
+            "description": "Combination Of Shitake And Tofu",
+            "price": 650,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Yazu Vegetarian Experience Dim Sum Basket (7 Pcs)",
+            "description": "Selection Of The Best Vegetarian Yazu Dim Sums",
+            "price": 995,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Truffle Mushroom Dumpling",
+            "description": "Wild Mushroom Ragout With Hints Of White Truffle Oil.",
+            "price": 575,
+            "emoji": "🥟",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Dim Sum",
+        "items": [
+          {
+            "name": "Chicken & Enoki",
+            "description": "Chicken, Enoki, Shitake Mushroom, Carrot, Pak Choi",
+            "price": 595,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Chicken & Water Chestnut Dumplings",
+            "description": "Chicken, Water Chestnut, Chilli Paste, Coriander Leave And Spring Onion",
+            "price": 520,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Lamb Shumai",
+            "description": "Hong Kong Street Style Open Face Lamb Dumpling",
+            "price": 675,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Pan Fried Chicken Shanghai Dimsum (5 Pcs)",
+            "description": "Shanghai Style Chicken Pan Fried Dumpling Served With Spicy Shanghai Sauce",
+            "price": 645,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Prawn Hargow",
+            "description": "Fresh Cutted Chunks Of Prawn With Fresh Bamboo Shoot",
+            "price": 575,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Prawn Xo Dim Sum",
+            "description": "Spicy Prawns With Fermented Shellfish Sauce.",
+            "price": 575,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Yazu Non Vegetarian Experience Dim Sum Basket (7 Pcs)",
+            "description": "Selection Of The Best Non Vegetarian Yazu Dim Sums",
+            "price": 1245,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Lobster Dumpling",
+            "description": "Lobster Mixture With Mild Spicy Crab Sauce.",
+            "price": 835,
+            "emoji": "🥟",
+            "veg": false
+          },
+          {
+            "name": "Sriracha Chicken Dim Sum",
+            "description": "Spicy Chicken Pieces In Fiery Sriracha Sauce, Steamed.",
+            "price": 575,
+            "emoji": "🥟",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Bao",
+        "items": [
+          {
+            "name": "Charcoal Aubergine Open Bao",
+            "description": "Home-Made Open Bao With Activated Charcoal Filled With Aubergine Fries, Fresh Iceberg & Jalapenos Topped With Orange Togarashi Mayo And Spicy Cheese Sauce",
+            "price": 575,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Pan Fried Mushroom Bao",
+            "description": "Pan Fried Wild Mushroom Stuffed In Homemade Bao",
+            "price": 515,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Spicy Chicken Bao",
+            "description": "Steaming Hot Soft Bao Stuffed With Spicy Chicken And Scallions",
+            "price": 595,
+            "emoji": "🫓",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Cheung Fung",
+        "items": [
+          {
+            "name": "Crispy Chicken Cheung Fung",
+            "description": "Crispy Roll Filled With Spicy Prawn Mixture And Steamed With Rice Crepe",
+            "price": 709,
+            "emoji": "🫓",
+            "veg": false
+          },
+          {
+            "name": "Crispy Mushroom & Water Chestnut Cheung Fung",
+            "description": "Mushroom And Water Chestnut Wrapped In Crispy Roll, Steamed With Rice Crepe",
+            "price": 572,
+            "emoji": "🫓",
+            "veg": true
+          },
+          {
+            "name": "Crispy Prawn Cheung Fung",
+            "description": "Chicken Thigh, Activated Charcoal Wrapped In Crispy Roll, Steamed With Rice Crepe",
+            "price": 709,
+            "emoji": "🫓",
+            "veg": false
+          },
+          {
+            "name": "Steamed Veg Cheung Fung",
+            "description": "Water Chestnut, Baby Corn, Celery, Lightly Seasoned And Steamed With Rice Crepe",
+            "price": 552,
+            "emoji": "🫓",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Veg Maki Sushi",
+        "items": [
+          {
+            "name": "Avocado Sensei Sushi Roll",
+            "description": "Cream Cheese, Cucumber With Tanuki, Topped With Avocado With Truffle Mayo",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Black Rice Crispy Asparagus Sushi Roll",
+            "description": "Black Rice With Crispy Tempura Fried Asparagus",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Crispy Avocado & Cucumber Sushi Roll",
+            "description": "Cream Cheese, Cucumber & Avocado With Tanuki",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Spicy Furikake Sushi Roll",
+            "description": "Uramaki Sushi Coated With Crispy Furikake And Rolled Inside With Avocado, Iceberg Lettuce And Cream Cheese",
+            "price": 520,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Veg Classic California Sushi Roll",
+            "description": "Classic Vegetarian Roll With Innari, Avocado, Cucumber, Cream Cheese",
+            "price": 499,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "White Rice Crispy Asparagus Sushi Roll",
+            "description": "White Rice With Crispy Tempura Fried Asparagus",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Yakuza Roll (5 Pcs)",
+            "description": "Uramaki Roll With Black Rice, Enoki Tempura, Spicy Mayonnaise Topped With Bell Pepper Tartare & Truffle Oil",
+            "price": 835,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Yazu Signature Asparagus Nikkei Sushi Roll",
+            "description": "Tempura Asparagus, Chipotle Sauce, Maiz Picante Truffle Cheese Sauce, Co-Ca Puree With Black Cherry Salsa",
+            "price": 625,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Yazu Signature Dragon Sushi Roll",
+            "description": "Vegetarian Roll With Innari, Avocado, Topped With Creamy Mascarpone Cheese (Aburi Style)",
+            "price": 552,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Yazu Signature Mexican Sushi Roll",
+            "description": "Black Rice, Avocado, Tanuki, Topped With Guacamole",
+            "price": 552,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Yazu Signature Watermelon Sushi Roll",
+            "description": "Cured Watermelon, Avocado, Cream Cheese And Tomato Salsa",
+            "price": 552,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Yazu Veg Experience Platter",
+            "description": "A Culmination Of Our Best Vegetarian Sushi Selection",
+            "price": 1522,
+            "emoji": "🍣",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Maki Sushi",
+        "items": [
+          {
+            "name": "Alaska Roll",
+            "description": "Uramaki Style Sushi, Avocado, Norwegian Salmon, Cream Cheese & Crab Stick",
+            "price": 682,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Non Veg Classic California Sushi Roll",
+            "description": "Crab Stick, Avocado, Cucumber, Cream Cheese, Tobiko (Flying Fish Roe).",
+            "price": 640,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Philadelphia Sushi Roll",
+            "description": "Norwegian Salmon With Avocado And Cream Cheese",
+            "price": 683,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Prawn Tempura Sushi Roll",
+            "description": "Prawn Tempura, Avocado, Cucumber With Salmon Tartare And Togarashi Sauce",
+            "price": 678,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Sake Kunsei Sushi Roll",
+            "description": "Norwegian Smoked Salmon With Cream Cheese And Cucumber",
+            "price": 682,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Salmon Nikkei - Sake Shiawase Sushi Roll",
+            "description": "Tempura Prawn, Chipotle Sauce, Salmon Tataki, Pickle Jalapeno With Co-Ca Puree",
+            "price": 730,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Spicy Salmon Sushi Roll",
+            "description": "Marinated Spicy Salmon With Togarashi Japanese Spices",
+            "price": 699,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Spicy Tuna Sushi Roll",
+            "description": "Marinated Spicy Yellowfin Tuna With Togarashi Japanese Spices",
+            "price": 699,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Tuna Flakes Bonito Sushi Roll",
+            "description": "Marinated Spicy Yellowfin Tuna With Bonito Flakes",
+            "price": 730,
+            "emoji": "🍣",
+            "veg": false
+          },
+          {
+            "name": "Yazu Non Veg Experience Platter",
+            "description": "A Culmination Of Our Best Non Vegetarian Sushi Selection",
+            "price": 1900,
+            "emoji": "🍣",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Poke Bowls",
+        "items": [
+          {
+            "name": "Ahi Tuna Poke Bowl",
+            "description": "Fresh Yellowfin Tuna, Cucumber, Edamame With Crispy Onion, Wonton Sheets Served On A Bed Of Sushi Rice Drizzled With Sesame Oil And Teriyaki Sauce",
+            "price": 799,
+            "emoji": "🍱",
+            "veg": false
+          },
+          {
+            "name": "Avocado Poke Bowl",
+            "description": "Fresh Hass Avocado, Cucumber, Edamame With Crispy Onion, Wonton Sheets Served On A Bed Of Sushi Rice Drizzled With Sesame Oil And Teriyaki Sauce",
+            "price": 595,
+            "emoji": "🍱",
+            "veg": true
+          },
+          {
+            "name": "Crab Stick Poke Bowl",
+            "description": "Imitation Crab Meat, Cucumber, Edamame, Tamago (Japanese Rolled Omelet) With Crispy Onion, Wonton Sheets Served On A Bed Of Sushi Rice Drizzled With Sesame Oil And Teriyaki Sauce",
+            "price": 695,
+            "emoji": "🍱",
+            "veg": false
+          },
+          {
+            "name": "Spicy Salmon Poke Bowl",
+            "description": "Norwegian Salmon, Cucumber, Edamame, Shichimi Togarashi With Crispy Onion, Wonton Sheets Served On A Bed Of Sushi Rice Drizzled With Sesame Oil Teriyaki Sauce And Sriracha",
+            "price": 795,
+            "emoji": "🍱",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Veg Appetizers",
+        "items": [
+          {
+            "name": "Avocado Tartare",
+            "description": "Fresh Avocado With Garlic Chips, Crispy Onion, Wantons And Tanuki On A Bed Of Sushi Rice With Chef's Special Dressing",
+            "price": 565,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Potato Wedges With Honey Chilli Sauce",
+            "description": "Boiled Potato Wedges Finishing With Honey Chilli Sauce And Sesame Seeds",
+            "price": 445,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Smokey Devil Cottage Cheese",
+            "description": "Cottage Cheese Spheres And Onion Drizzled With Fresh Thai Chillies Sauce",
+            "price": 552,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Spicy Edamame",
+            "description": "Fresh Edamame Pods Tossed In Spicy Japanese Sauce.",
+            "price": 541,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Spicy Mock Meat",
+            "description": "Mock Meat Chunks Tossed In Homemade Black Pepper Sauce",
+            "price": 575,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Spicy Thai Lotus Root",
+            "description": "Thai Lotus Root Slices Tossed In Our Signature Sweet And Spicy Sauce",
+            "price": 799,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Steamed Edamame",
+            "description": "Fresh Edamame Pods Steamed.",
+            "price": 541,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Thai Crispy Spring Roll",
+            "description": "Thai Blend Mixture Of Rice Noodles With Fresh Vegetables Wrapped In Spring Roll Sheet And Deep Fried",
+            "price": 505,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Turnip Cake (7 Pcs)",
+            "description": "Burnt Chili, Fried Garlic, Scallions.",
+            "price": 572,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Yazu Crispy Cottage Cheese",
+            "description": "Oats Crusted Cottage Cheese, Tossed In Curry Leaves And Fresh Bird Eye Chilli",
+            "price": 575,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Appetizers",
+        "items": [
+          {
+            "name": "Fish In Dark Sichuan Sauce",
+            "description": "Batter Fried Fish Tossed In Dark Sichuan Sauce",
+            "price": 795,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Fish In Lemon Coriander Sauce",
+            "description": "Batter Fried Fish Tossed In Lemon Coriander Sauce",
+            "price": 795,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Salmon Teriyaki (165 Gms)",
+            "description": "Fresh Norwegian Salmon Steak Served With Teriyaki Glazed Sauce Finished On Teppan",
+            "price": 995,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Sichuan Chicken Peppercorn",
+            "description": "Sichuan Flavored Chicken With Peanuts And Dry Chilies",
+            "price": 715,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Spicy Chicken Teriyaki",
+            "description": "Spicy Chicken In Teriyaki Sauce (Chicken) Finished On The Teppan",
+            "price": 745,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Stir Fried Chicken",
+            "description": "Exotic Vegetables Stir Fried With Chicken Breast And Finishing In Garlic Sauce",
+            "price": 675,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Yazu Signature Chicken",
+            "description": "Crispy Chicken Chunks Salted Cashews Tossed In Chef'S Signature Sweet And Spicy Sauce",
+            "price": 715,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Yazu Signature Pork Belly",
+            "description": "Braised Belgian Pork Belly Glazed With Signature Char Siu (Bbq) Sauce",
+            "price": 895,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Yazu Signature Sichuan Garlic Prawn (8 Pcs)",
+            "description": "Batter Fried Prawn Tossed With Signature Sichuan Sauce",
+            "price": 845,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Yuzu Spicy Lamb",
+            "description": "Spicy Lamb Starter Infused With Citrusy Yuzu And Bold Seasonings.",
+            "price": 795,
+            "emoji": "🍢",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Curries",
+        "items": [
+          {
+            "name": "Japanese Katsu Curry",
+            "description": "Sumptuous And Umami Flavour Curry Served With Japanese Rice",
+            "price": 675,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Singaporean Style Curry",
+            "description": "Spicy And Sweet With Asian Spices Flavoured Curry",
+            "price": 675,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Thai Green Curry",
+            "description": "Traditional Thai Green Curry With Aromatic Herbs And Spices.",
+            "price": 645,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Thai Red Curry",
+            "description": "Traditional Thai Red Curry With Aromatic Herbs And Spices.",
+            "price": 645,
+            "emoji": "🍛",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Veg Main Course",
+        "items": [
+          {
+            "name": "Cantonese Asian Greens",
+            "description": "Assorted Vegetables Tossed With Mild Garlic Sauce",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Crispy Turnip Spheres In Malay Sauce",
+            "description": "Crispy Fried Turnip Spheres With Mild Spicy Malay Sauce",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Dubu Kimchi Tofu",
+            "description": "Steamed Silken Tofu With Fried Kimchi",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Exotic Veg In Pumpkin Sauce",
+            "description": "Vegetables Served With Emulsified Pumpkin Sauce.",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mah Poh Cottage Cheese",
+            "description": "Cottage Cheese And Vegetables In Chilli Bean Sauce",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mah Poh Tofu",
+            "description": "Silken Tofu And Vegetables In Chilli Bean Sauce",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mock Duck & Tofu Clay Pot",
+            "description": "Mock Meat, Silken Tofu, Aubergine, Shiitake Mushrooms In Chili Soy Sauce With Fresh Basil.",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Preserved Cottage Cheese In Black Bean Sauce",
+            "description": "Braised Cottage Cheese In Fermented Black Bean Sauce",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Veg Kimchi Jjigae",
+            "description": "Traditional Korean Stew Made Of Fermented Korean Cabbage (Kimchi) And Tofu, Spicy & Sour",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Vegetables In Preserved Mountain Chilli Sauce",
+            "description": "Assorted Veggies Served In Bullet Chilli Sauce",
+            "price": 625,
+            "emoji": "🍽️",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Main Course",
+        "items": [
+          {
+            "name": "Chicken In Hot Garlic Sauce",
+            "description": "Chicken Cooked In Our Speciality Homemade Sauce",
+            "price": 709,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Chicken Lao Gan Ma",
+            "description": "Braised Chicken And Sauteed Mushrooms In Our Signature Black Bean Sauce",
+            "price": 709,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Dubu Kimchi Chicken",
+            "description": "Steamed Silken Tofu With Fried Kimchi With Chicken",
+            "price": 709,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Dubu Kimchi Pork",
+            "description": "Steamed Silken Tofu With Fried Kimchi With Pork",
+            "price": 761,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Fish In Chilli Basil Sauce",
+            "description": "Indian Salmon Wok Tossed With Thai Style Chilli Basil Sauce",
+            "price": 762,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Gai Pad Krapow",
+            "description": "Minced Chicken With Spicy Thai Basil Flavour",
+            "price": 730,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Lamb In Black Pepper Sauce",
+            "description": "Slow Cooked Lamb And Veggies In Black Pepper Sauce.",
+            "price": 730,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Mah Poh Tofu Chicken",
+            "description": "Silken Tofu & Minced Meat In Sichuan Chilli Bean Sauce",
+            "price": 725,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Mah Poh Tofu Pork",
+            "description": "Silken Tofu & Minced Meat In Sichuan Chilli Bean Sauce",
+            "price": 815,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Prawns In Spicy Xo Sauce",
+            "description": "Wok Fried Prawns With Mushrooms And Fermented Shellfish Sauce",
+            "price": 775,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Steamed Chicken In Malay Sauce",
+            "description": "Steamed Chicken In Mild Spicy Malay Sauce",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Steamed Fish In Malay Sauce",
+            "description": "Steamed Fish In Mild Spicy Malay Sauce",
+            "price": 715,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Steamed Prawn In Malay Sauce",
+            "description": "Steamed Prawns In Mild Spicy Malay Sauce",
+            "price": 725,
+            "emoji": "🍽️",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Rice",
+        "items": [
+          {
+            "name": "Burnt Garlic Fried Rice",
+            "description": "Fried Rice With Garlic.",
+            "price": 609,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Hibachi Fried Rice",
+            "description": "Japanese-Style Fried Rice Tossed On A Hot Grill With Soy And Sesame Flavors",
+            "price": 645,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Khao Pad Bai Kaprow Rice",
+            "description": "Thai Style Fried Rice With Basil, Chili, And Authentic Seasonings.",
+            "price": 692,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Signature Pork Belly Fried Rice",
+            "description": "Wok-Tossed Fried Rice With Tender Pork Belly And House Seasoning",
+            "price": 745,
+            "emoji": "🍚",
+            "veg": false
+          },
+          {
+            "name": "Signature Truffle Edamame Rice",
+            "description": "Rich Truffle Infused Rice Mixed With Tender Edamame Beans For A Gourmet Touch.",
+            "price": 645,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Spicy Kimchi Fried Rice",
+            "description": "Tangy And Spicy Fried Rice Loaded With Fermented Kimchi And Asian Flavors.",
+            "price": 645,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Steamed Jasmine Rice",
+            "description": "Fragrant, Fluffy Jasmine Rice, Perfectly Steamed For A Light And Delicate Meal.",
+            "price": 408,
+            "emoji": "🍚",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Noodles",
+        "items": [
+          {
+            "name": "Crispy Hunan Style Noodles",
+            "description": "Hunan Style Vegetables With White Garlic Sauce Served Over A Bed Of Crispy Noodles",
+            "price": 515,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Hakka Noodles",
+            "description": "Classic Wok Tossed Noodles With Fresh Vegetables And Soy Based Sauces.",
+            "price": 497,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Phad Thai Noodles",
+            "description": "Classic Thai Noodles.",
+            "price": 515,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Spicy Korean Ramyun Noodles",
+            "description": "Fiery Korean Noodles With A Bold And Spicy Kick, Packed With Flavor.",
+            "price": 497,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Truffle Udon Noodles",
+            "description": "Luxuriously Creamy Udon Noodles Infused With Truffle Essence.",
+            "price": 548,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Yaki Udon Noodles",
+            "description": "Thick Japanese Udon Noodles Stir Fried With Savory Soy And Veggies.",
+            "price": 497,
+            "emoji": "🍚",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Desserts",
+        "items": [
+          {
+            "name": "Mango Cheesecake (160 Gms)",
+            "description": "Creamy Cheesecake Layered With Blueberry Compote",
+            "price": 635,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Pull Me Up Matilda Cake",
+            "description": "Decadent Chocolate Sponge Layered With Rich Mousse And Ganache, Served With A Warm Chocolate Pour For An Indulgent Pull Me Up Experience",
+            "price": 635,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Pull Me Up Tiramisu",
+            "description": "A Decadent Tiramisu Drenched In Rich Coffee Sauce, Revealed As You Pull Up The Surrounding Ring.",
+            "price": 635,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Salted Caramel Tart",
+            "description": "A Buttery Tart Filled With Luscious Salted Caramel And Topped With A Delicate Layer Of Chocolate.",
+            "price": 635,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Tres Leches Cake (160 Gms)",
+            "description": "Soft Sponge Soaked In Three Kinds Of Milk, Topped With Whipped Cream",
+            "price": 595,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Soups",
+        "items": [
+          {
+            "name": "Jain Asian Green Soup",
+            "description": "Clear Broth With Asian Greens & Silken Tofu",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Jain Manchow Soup",
+            "description": "Chinese Style Spicy Soup With Garden Vegetables",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Jain Sweet Corn Soup",
+            "description": "Creamy American Sweet Corn",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Jain Tibetan Thenthuk Soup",
+            "description": "Traditional Tibetan Soup With Noodles Shaped Wonton Sheets.",
+            "price": 325,
+            "emoji": "🍜",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Dim Sum",
+        "items": [
+          {
+            "name": "Quinoa Dumpling",
+            "description": "Water Chestnut, Quinoa, Asparagus & Celery",
+            "price": 470,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Jain Crystal Dumpling",
+            "description": "Water Chestnut, Carrot, And Celery.",
+            "price": 431,
+            "emoji": "🥟",
+            "veg": true
+          },
+          {
+            "name": "Jain Edamame Dumpling",
+            "description": "Creamy Jain Edamame Filling",
+            "price": 545,
+            "emoji": "🥟",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Cheung Fung",
+        "items": [
+          {
+            "name": "Jain Steamed Asian Greens & Water Chestnut Cheung Fung",
+            "description": "Soft Rice Rolls Filled With Greens And Water Chestnuts, Steamed Jain Style.",
+            "price": 595,
+            "emoji": "🫓",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Sushi Rolls",
+        "items": [
+          {
+            "name": "Jain Avocado Sensei Roll",
+            "description": "Avocado Inside & Outside The Roll With Cream Cheese",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Jain California Roll",
+            "description": "Innari, Avocado, Cucumber, And Cream Cheese Topped With Sesame Seeds",
+            "price": 499,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Jain Crispy Asparagus Roll",
+            "description": "Tempura Fried Asparagus With Spicy Mayo",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Jain Crispy Avocado & Cucumber Roll",
+            "description": "Tempura Flakes Roll With Avocado And Cucumber",
+            "price": 536,
+            "emoji": "🍣",
+            "veg": true
+          },
+          {
+            "name": "Jain Spicy Furikake Roll",
+            "description": "Avocado, Cucumber & Iceberg With Spicy Mayo And Cream Cheese, Coated With Spicy Furikake Condiments",
+            "price": 520,
+            "emoji": "🍣",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Appetizers",
+        "items": [
+          {
+            "name": "Jain Chilli Cottage Cheese",
+            "description": "Cottage Cheese Tossed With Jain Chilli Sauce",
+            "price": 525,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Jain Crispy Cottage Cheese",
+            "description": "Cloud Soft Cottage Cheese Bites Tossed With Instant Oats, Flavoured With Curry Leaves & Fresh Bird's Eye Chilli",
+            "price": 475,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Jain Crispy Tofu Sweet & Sour",
+            "description": "Batter Fried Silken Tofu Drizzled With Our Homemade Sweet & Sour Sauce",
+            "price": 453,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Jain Salted Edamame",
+            "description": "Freshly Steamed Japanese Soy Beans Pods",
+            "price": 453,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Jain Spicy Edamame",
+            "description": "Freshly Steamed Japanese Soy Beans Pods",
+            "price": 453,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Jain Thai Crispy Spring Roll",
+            "description": "Thai Blend Mixture Of Rice Noodles With Fresh Vegetables Wrapped In Spring Roll Sheet And Deep Fried",
+            "price": 505,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Main Course",
+        "items": [
+          {
+            "name": "Jain Exotic Vegetables In Preserved Mountain Chilli Sauce",
+            "description": "Assorted Vegetables In Bullet Chilli Sauce",
+            "price": 625,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Jain Green Beans",
+            "description": "Wok Tossed Long Beans Seasoned With Jain Chilli Sauce",
+            "price": 545,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Jain Mah Poh Tofu",
+            "description": "Silken Tofu And Vegetables In Bora Chilli Sauce",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Jain Mock Duck & Tofu Clay Pot",
+            "description": "Mock Meat, Silken Tofu, Aubergine And Jain Chilli Soy Sauce Flavoured With Fresh Basil Leaves",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Jain Spicy Cottage Cheese",
+            "description": "Cottage Cheese Braised In Soy Chilli Sauce",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Jain Rice & Noodles",
+        "items": [
+          {
+            "name": "Jain Edamame Rice",
+            "description": "Rice Stir Fried With Edamame And Mild Asian Spices",
+            "price": 609,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Jain Fried Rice",
+            "description": "Fragrant Fried Rice Tossed With Jain Style Vegetables",
+            "price": 609,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Jain Hakka Style Noodles",
+            "description": "Wok Tossed Noodles With Fresh Vegetables, No Onion Or Garlic",
+            "price": 497,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Jain Spicy Korean Ramyun Noodles",
+            "description": "Korean Style Noodles In A Bold, Jain Friendly Sauce",
+            "price": 497,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Jain Yaki Udon Noodles",
+            "description": "Thick Udon Noodles Stir Fried With Veggies And Soy Sauce, Jain Style",
+            "price": 497,
+            "emoji": "🍚",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Nibbles",
+        "items": [
+          {
+            "name": "Butter Popcorn",
+            "description": "Light And Freshly Popped Popcorn Tossed With Butter",
+            "price": 250,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Classic French Fries",
+            "description": "Crisp Golden Fries With A Light Salt Seasoning",
+            "price": 250,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Gunpowder Lotus Root Chips",
+            "description": "Golden Fried Thinly Sliced Lotus Root Tossed In A Homemade Blend Of Spices",
+            "price": 250,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Fries",
+            "description": "Fries Coated In Spicy Peri Peri Seasoning",
+            "price": 295,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Thai Styled Peanuts",
+            "description": "Roasted Peanuts Tossed With A Selection Of Thai Herbs And Spices With A Hint Of Sweetness",
+            "price": 250,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Truffle & Parmesan Fries",
+            "description": "Fries Tossed With Truffle Oil And Grated Parmesan",
+            "price": 325,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Sharing Plates",
+        "items": [
+          {
+            "name": "Hand Muddled Guacamole",
+            "description": "Nachos Chips, Cheese Sauce, Sour Cream, & Pico De Gallo",
+            "price": 695,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Mediterranean Mezze Platter",
+            "description": "Jerusalem Hummus, Muhammara, Tzatziki, Baba Ganoush, Pita, Pickled Veggies & Falafel",
+            "price": 775,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Textures Of Chickpea",
+            "description": "Spiced Chana Masala Topped Over Smooth Hummus, Served With Nimki Crackers And Adorned With Fresh Leaves And Pickled Chilli, Basil Oil",
+            "price": 595,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Veg Small Plates",
+        "items": [
+          {
+            "name": "Avocado On Toast (3 Pcs)",
+            "description": "Crispy Seed Cracker, Sesame, Feta Crumble, Harissa Cream Cheese And Chili Orange Drizzle",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Crispy Stuffed Pepper Bites (180 Grams)",
+            "description": "Fresh Jalapeno Chilli Stuffed With A Spiced Cheese Sauce Blend And Batter Fried Till Crunchy Paired With Charmoula Mayo For The Perfect Symphony",
+            "price": 545,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Grilled Cottage Cheese Medallion",
+            "description": "Chimichurri Cottage Cheese, Raw Mango Salsa & Red Pepper Coulis",
+            "price": 595,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Juliette Pull Apart Garlic Bread",
+            "description": "Soft Roll, Double Reduce Bechamel, Mozzarella, Cheddar & Garlic Butter",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Kasuri Stuffed Mushroom",
+            "description": "Stuffed Button Mushrooms, In A Fenugreek, Herb And Yoghurt Marination, Finished Over Open Grill Served With House Pineapple Chutney",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Lemon Zest Labneh With Fresh Veggies",
+            "description": "Roasted Roots And Grilled Pita",
+            "price": 545,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Paneer 65",
+            "description": "The Dome's Take On A Southern Classic",
+            "price": 595,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Spiced Sweet Potato Wedges With Tamarind Aioli",
+            "description": "Thrice Cooked Sweet Potato, Young Leaves, Tamarind Aioli, Chilli Oil",
+            "price": 545,
+            "emoji": "🍢",
+            "veg": true
+          },
+          {
+            "name": "Spicy Batata Harra",
+            "description": "Crispy Potato, Garlic, Dried Chili, Herbs And Sour Cream",
+            "price": 495,
+            "emoji": "🍢",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Small Plates",
+        "items": [
+          {
+            "name": "Burnt Butter Garlic Prawns (8 Pcs)",
+            "description": "Brown Butter, Mix Herbs, White Wine & Sour Dough",
+            "price": 695,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Chicken 65",
+            "description": "Battered Chunks Of Chicken Tossed In A Southern Blend Of Spices",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Ghee Roast Chicken",
+            "description": "Succulent Chunks Of Chicken, Cooked With Clarified Butter, Southern Chilli Spice Mix, Cashews And Curry Leaves",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Ghee Roast Mutton",
+            "description": "Succulent Chunks Of Mutton, Cooked With Clarified Butter, Southern Chilli Spice Mix, Cashews And Curry Leaves",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Grilled Turkish Chicken Seekh Kebab (2 Pcs)",
+            "description": "Minced Chicken Kebab, Fresh Herbs, Labneh, Pineapple Chutney, Fresh Pita, Charred Tomato And Chilli, Sumac Onions",
+            "price": 795,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Kasuri Chicken Tikka (6 Pcs)",
+            "description": "Morsels Of Chicken Marinated With Fenugreek And Yoghurt, Finished Over Charcoal",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Mediterranean River Sole Kebab (6 Pcs)",
+            "description": "Ras El Hanout Rubbed Snapper, Grilled To Perfection, Accompanied With Mint Tahini, Paprika Tzatziki",
+            "price": 695,
+            "emoji": "🍢",
+            "veg": false
+          },
+          {
+            "name": "Za'atar Spiced Chicken Skewers (6 Pcs)",
+            "description": "Zaatar And Mix Herbs Spiced Chicken Served With Pickled Veggies",
+            "price": 645,
+            "emoji": "🍢",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Sourdough Pizzas",
+        "items": [
+          {
+            "name": "Classic Pepperoni Pizza (11 Inches)",
+            "description": "Cured And Spiced Pepperoni Atop Basil Infused Marinara And Shredded Mozzarella",
+            "price": 775,
+            "emoji": "🍕",
+            "veg": false
+          },
+          {
+            "name": "Mushroom Duxelle & Fresh Burrata Pizza (11 Inches)",
+            "description": "Field Mushrooms, Mushroom Puree, Brie, Rocket Leaves, Truffle Oil",
+            "price": 775,
+            "emoji": "🍕",
+            "veg": true
+          },
+          {
+            "name": "Pesto Chicken And Buffalo Mozzarella Pizza (11 Inches)",
+            "description": "Grilled Chunks Of Chicken Tossed In A Creamy Pesto Sauce, Adorned Over Freshly Baked Flatbread, Topped With Buffalo Mozzarella And Pesto Dollops",
+            "price": 745,
+            "emoji": "🍕",
+            "veg": false
+          },
+          {
+            "name": "Spice Route Supreme Pizza (11 Inches)",
+            "description": "Juicy Charcoal Grilled Morsels Of Chicken Marinated In Fenugreek And Yoghurt, Spread Over Basil Infused Marinara, Garnished With Peppers And Jalapenos",
+            "price": 775,
+            "emoji": "🍕",
+            "veg": false
+          },
+          {
+            "name": "Springtime Primavera & Feta Pizza (11 Inches)",
+            "description": "Asparagus, Peppers, Broccoli, Zucchini, Sundried Tomato, Jalapeno, Bocconcini, Cheddar",
+            "price": 695,
+            "emoji": "🍕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Salads Juliette At The Dome",
+        "items": [
+          {
+            "name": "Chimichurri Burrata Salad",
+            "description": "Creamy Burrata Served On A Bed Of Balsamic Onion, Charred Cherry Tomato, Baby Spinach & Rocket Leaf With Balsamic Glaze And Seed Cracker",
+            "price": 745,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Jardiniere Salad (Vegan)",
+            "description": "Mesclun Salad, Baby Carrot, Avocado, Crumble Feta, Dry Cranberry, Pickled Onion, Nut Praline & Maple Chili Dressing",
+            "price": 545,
+            "emoji": "🥗",
+            "veg": true
+          },
+          {
+            "name": "Whipped Feta & Watermelon Salad",
+            "description": "Masculan Mix, Millets, Cherry Tomato, Kalamata, Whipped Feta & Balsamic Glaze",
+            "price": 545,
+            "emoji": "🥗",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Veg Main Course Juliette",
+        "items": [
+          {
+            "name": "Chipotle Jackfruit Quesadilla",
+            "description": "Chipotle Simmered Pulled Jackfruit, Layered Between Tortillas And A Blend Of Cheese, Served With Guacamole, Salsa, Sour Cream",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Homemade Potato Gnocchi With Mushroom Stroganoff",
+            "description": "Homemade Gnocchi, Sauteed Mushroom, Shimeji And Parmesan Shaving",
+            "price": 775,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mediterranean Cottage Cheese Shawarma",
+            "description": "Spiced Yoghurt Marinated Cottage Cheese, Wrapped In A Freshly Baked Pita, Smothered With Garlic Thumb And Harissa",
+            "price": 725,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mediterranean Falafel Shawarma",
+            "description": "Spiced Yoghurt Marinated Spiced Falafel, Wrapped In A Freshly Baked Pita, Smothered With Garlic Thumb And Harissa",
+            "price": 725,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Mexican Rice Bowl",
+            "description": "Spicy Tomato Rice, Pico De Gallo, Guacamole, Charred Zucchini Corn, Refried Beans & Sour Cream",
+            "price": 745,
+            "emoji": "🍚",
+            "veg": true
+          },
+          {
+            "name": "Piquant Paprika Penne",
+            "description": "Creamy Paprika, Cherry Tomato, Asparagus, Parmigiana",
+            "price": 775,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Spinach & Mascarpone Ravioli",
+            "description": "Almond Slivers, Burnt Butter Garlic, Parmesan Crisp, House Salad",
+            "price": 775,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Sri Lankan Curry With Tofu",
+            "description": "A Spiced Onion And Tomato Based Curry, Coconut Milk And Whole Spices, Served With Herbed Rice",
+            "price": 745,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Sri Lankan Curry With Veggies",
+            "description": "A Spiced Onion And Tomato Based Curry, Coconut Milk And Whole Spices, Served With Herbed Rice",
+            "price": 675,
+            "emoji": "🍛",
+            "veg": true
+          },
+          {
+            "name": "Sundried Tomato Pesto Risotto",
+            "description": "Arugula, Olives, Parmigiano Reggiano & Crispy Garlic",
+            "price": 795,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Trio Of Mushroom Medley Risotto",
+            "description": "Arborio Cooked In Aqua De Parmigiana, Flavored With Truffle Butter, Truffle Paste & Topped With Crispy Enoki",
+            "price": 795,
+            "emoji": "🍽️",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Non Veg Main Course Juliette",
+        "items": [
+          {
+            "name": "Chicken Sri Lankan Curry",
+            "description": "A Spiced Onion And Tomato Based Curry, Coconut Milk And Whole Spices, Served With Herbed Rice",
+            "price": 745,
+            "emoji": "🍛",
+            "veg": false
+          },
+          {
+            "name": "Chipotle Chicken Quesadilla",
+            "description": "Chipotle Simmered Pulled Chicken, Layered Between Tortillas And A Blend Of Cheese, Served With Guacamole, Salsa, Sour Cream",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Garlic Crusted Indian Seabass",
+            "description": "Beetroot Risotto, Sauteed Bok Choy, Raw Mango Salsa, Arugula & Caper Beurre Blanc",
+            "price": 895,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Homemade Potato Gnocchi With Chicken Stroganoff",
+            "description": "Homemade Gnocchi, Sauteed Mushroom, Shimeji And Parmesan Shaving",
+            "price": 775,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Kashmiri Chicken Borek",
+            "description": "Whole Kashmiri Spiced Chicken, Pulled And Laid Out In Filo Pastry",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Mediterranean Chicken Shawarma Wrap",
+            "description": "Spiced Yoghurt Marinated Chicken, Wrapped In A Freshly Baked Pita, Smothered With Garlic Thumb And Harissa",
+            "price": 725,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Norwegian Salmon With Caribbean Slaw",
+            "description": "Salmon Cooked To Perfection, Green Herb Marination, Thai Chili, Caribbean Slaw",
+            "price": 1495,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Peri Peri Grilled Chicken",
+            "description": "Grilled Chicken Spicy Marinade, Garlic Mash, Sauteed Veggies & Peppercorn Jus",
+            "price": 775,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Peruvian Chicken Bowl",
+            "description": "Puy Lentil & Black Rice Ragout, Avocado, Baked Root Veggies & Green Apple Jalapeno Chutney",
+            "price": 695,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Prawns Sri Lankan Curry",
+            "description": "A Spiced Onion And Tomato Based Curry, Coconut Milk And Whole Spices, Served With Herbed Rice",
+            "price": 795,
+            "emoji": "🍛",
+            "veg": false
+          },
+          {
+            "name": "Spaghetti Chicken Meatball",
+            "description": "Arrabiata Sauce, Fresh Basil, Chili & Parmigiano",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": false
+          },
+          {
+            "name": "Warm Lamb Galouti Pate With Garlic Pita Strips",
+            "description": "Whole Spices And A Rich Creamy Lamb Mousse",
+            "price": 795,
+            "emoji": "🍽️",
+            "veg": false
+          }
+        ]
+      }
+    ],
+    "city": "Indore"
+  }
+]

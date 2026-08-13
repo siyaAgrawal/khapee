@@ -1,0 +1,151 @@
+Food
+Dessert
+Beverage
+Breakfast Menu
+Winter Specials
+Frappe
+Cold Brew
+Matcha
+Cold Beverages
+Neapolitan Pizza (13')
+Napoli Garlic Breads
+Salad - Fresh From The Garden
+Manual Brewed Coffee
+Frappe - Icecream Blended
+Shaken Iced Coffee - Without Ice Cream
+Food
+Ravioli Amore
+₹550.00
+Handmade ravioli in classic pomodoro sauce
+Scarlet Avo Tartine
+₹450.00
+Beetroot hummus, avocado, feta on sourdough bread slice
+Dessert
+Strawberry Dark Indulgence
+₹450.00
+Dark chocolate cake with almond praline and strawberry
+Nutella Strawberry Crossiant
+₹450.00
+Crossiant filled with nutella, strawberry cream and strawberries
+Beverage
+Cold Brew Cupid
+₹350.00
+Cold brew, cranberry juice, ginger ale.
+Gentleman Jack
+₹350.00
+Rum barrel espresso, ginger ale
+Breakfast Menu
+Live Bagel/Mollete Open Toast Bar
+₹320.00
+Head to the open garden area for our bagel grazing table and get your toast custom made
+Live Yogurt Breakfast Bowl Station
+₹460.00
+Head to the open garden area for our live build your own yogurt granola bowl station
+Fresh Mawa Cake Slice
+₹230.00
+A rich, buttery mawa cake baked fresh with a delicate aroma and a golden crust best paired with a black coffee.
+Viral Dot Cake In A Jar
+₹320.00
+Layers of soft vanilla sponge, silky cream and playful rainbow dots in a perfectly portioned dessert cup.
+Hazelnut Crunch Cake In A Jar
+₹360.00
+Layers of moist chocolate cake, hazelnut cream and crunchy praline for a rich, nutty dessert.
+Dcsp Muffin
+₹275.00
+Death by chocolate, saved by protein. A rich, fudgy chocolate muffin packed with 10 gms protein, finished with dark chocolate for the perfect guilt-free indulgence. (Vegan)
+Sticky Toffee Madeleine
+₹440.00
+Our signature sticky toffee cake is back finished with buttery sea salt toffee glaze and served warm with a scoop of vanilla icecream for the ultimate comforting treat.
+Winter Specials
+Strawberry Blondie
+Buttery strawberry blondie cake topped with strawberry compote and airy chantilly mousse, finished with fresh strawberries and a light dusting of caster sugar.
+Baked Apple Strudel
+Delicate strudel pastry filled with spiced apples and raisins, baked until crisp and served warm with vanilla sauce.
+Gluten-Free Chocolate Strawberry Delice
+Rich gluten free chocolate sponge layered with strawberry compote and silky chocolate ganache, finished with strawberry compote topped with a strawberry
+Pistachio & Cream Cheese Gateaux
+Pistachio sponge layered with pistachio butter and cream cheese frosting, finished with pistachio crumbs.
+Frappe
+Classic Frappe
+Salted Caramel Frappe
+Banoffee Frappe
+Cold Brew
+Classic Cold Brew
+Lychee Cold Brew
+Tiramisu Cold Brew
+Matcha
+Iced Matcha
+Lychee Matcha
+Cold Beverages
+Classic Limonata
+Iced Passion Spritzer
+Sunset In The Glass
+Neapolitan Pizza (13')
+Classic Margherita
+Marinara, fresh buffalo mozzarella, fermented dough freshly baked in a wood fired oven
+Pesto Caprese
+Pesto, cherry tomatoes, fresh basil, evoo
+La Spezia
+Roasted garlic, caramelised onions, tangy jalapenos
+Tres Cheese
+Fresh buffalo mozzarella, cream cheese, english cheddar cheese
+Assorted Shrooms
+Button and shiitake mushrooms, tossed alongside piping hot marinara
+Ortolano
+Bell peppers, spinach, jalapenos, olives and baby corn
+Chilli Bianca
+Alfredo sauce, cream cheese, jalapenos and seasoned green chilli
+Napoli Garlic Breads
+Pepper And Parmesan
+Peperoncino
+Funghi
+Salad - Fresh From The Garden
+Waldorf Salad
+Refreshing blend of apples, crunchy walnuts, and celery tossed in a yogurt-based dressing (contains nuts)
+Beetroot Carpaccio
+Thinly sliced beetroot topped with arugula lettuce and feta.
+Melon Bocconcini
+Melon and bocconcini cheese, drizzled with a honey-mint dressing.
+Avocado Quinoa Salad
+Avocado and quinoa come together with a tangy and sweet lemon dressing. (vegan)
+Classic Greek Salad
+Fresh cucumbers, tomatoes, olives, lettuce and feta, tossed with oregano and olive oil.
+Tomato Burrata Salad
+Juicy tomatoes paired with soft burrata cheese, drizzled with balsamic glaze.
+Falafel Hummus Salad
+Two varieties of types of hummus and medley of sauteed vegetables, fajita salad topped with crispy falafel. (vegan)
+Manual Brewed Coffee
+Pourover
+₹240.00
+Slow-brewed coffee using fresh, high-quality beans, allowing the flavors to develop fully.
+Aeropress
+₹240.00
+Press-brewed coffee with a rich, full-bodied taste and smooth finish.
+Syphon
+₹240.00
+A visually impressive and scientifically precise brewing method for a clean, delicate coffee flavour.
+French Press
+₹240.00
+Classic full-immersion brewing for a rich, bold, and intense coffee experience.
+Frappe - Icecream Blended
+Classic Cold Coffee
+Espresso blended with icecream for a creamy bold cold coffee.
+Mocha Praline
+Cold coffee blended with 54.5% callebaut chocolate, and hazelnut topped with whipped cream.
+Banoffee Frappe
+Cold coffee blended with in-house banana sauce and caramel, topped with whipped cream.
+Salted Caramel Frappe
+Cold coffee blended with our in-house salted caramel sauce, topped with whipped cream.
+Dtml Frappe
+A secret blend of espresso and other house ingredients offering a nostalgic taste
+Belgian Dark Frappe
+Cold coffee with 54.5% callebaut dark chocolate for a smooth, strong and indulgent drink.
+Shaken Iced Coffee - Without Ice Cream
+Nhood Special
+Espresso shaken with milk and ice, sweetened with jaggery.
+Iced Capuccino
+Milk, ice, espresso shot, and topped with frothy cold milk.
+Caramel Delight
+Espresso shot shaken with ice, milk, and our in-house caramel and vanilla extract sauce for a sweet indulgence.
+Vietnamese Shakerato
+Condensed milk shaken with double shot espresso (no added water or milk)

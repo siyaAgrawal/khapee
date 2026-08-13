@@ -1,0 +1,480 @@
+[
+  {
+    "name": "Juné",
+    "address": "Indore",
+    "emoji": "🍽️",
+    "hue": 210,
+    "isOpen": true,
+    "tables": 10,
+    "staff": {
+      "name": "Juné",
+      "email": "jun@tablo.local",
+      "password": "password123",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Breakfast",
+        "items": [
+          {
+            "name": "The Morning Parfait",
+            "description": "Greek yogurt layered with house-made granola, a drizzle of honey, and fresh-cut seasonal fruits.",
+            "price": 425,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Classic Oat Meal Bowl",
+            "description": "Slow cooked oats in milk, peanut butter, finished with fresh fruits, honey & crunchy toasted nuts.",
+            "price": 475,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Good Old Pancakes",
+            "description": "Fluffy golden pancakes, served with butter / maple syrup. (add ons blueberry / nutella / strawberry)",
+            "price": 475,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Classic French Toast",
+            "description": "Brioche dipped in cinnamon vanilla custard, grilled to golden perfection, served with maple syrup & seasonal fruits.",
+            "price": 425,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Quinoa's Kick",
+            "description": "Fluffy quinoa tossed with shredded carrots, cucumber, purple cabbage, and creamy avocado. Finished with a bold sriracha-soy dressing, crumbled cheese, and a tangy kick.",
+            "price": 550,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "The June Breakfast Platter",
+            "description": "Butter croissant / eggs of your choice - omelette or scrambled / coffee of your choice / baked potatoes / toasted sourdough slice",
+            "price": 775,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "All Things Toasted",
+        "items": [
+          {
+            "name": "Clean Green Tartine",
+            "description": "Toasted sourdough with herbed cream cheese, fresh cucumber ribbons, and ripe avocado slices.",
+            "price": 450,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Beetroot Hummus Tartine",
+            "description": "Beetroot hummus laid over a bed of sourdough with sauteed veggies on top",
+            "price": 475,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Smashed Avocado Toast",
+            "description": "Lime-seasoned freshly churned guacamole on sourdough toast",
+            "price": 475,
+            "emoji": "🥪",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Frappes",
+        "items": [
+          {
+            "name": "Classic Frappe",
+            "price": 330,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Salted Caramel Frappe",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Belgian Dark Chocolate Frappe",
+            "price": 400,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Hazelnut Frappe",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Banoffee Frappe",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Matcha's",
+        "items": [
+          {
+            "name": "Matcha Latte (Hot)",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Biscoff Matcha Latte (Hot / Iced)",
+            "price": 400,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Iced Matcha (Oat Milk)",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Lychee Matcha",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Tender Coconut Matcha",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Coconut Matcha Cloud",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Matcha Colada",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Espresso Fusions",
+        "items": [
+          {
+            "name": "Coconut Espresso Cloud",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Sweet Lime Espresso",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Kafir Lime Espresso",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Cold Brews",
+        "items": [
+          {
+            "name": "Classic Cold Brew",
+            "price": 300,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Orange Cold Brew",
+            "price": 320,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Lychee Cold Brew",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Tiramisu Cold Brew",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Cranberry Cold Brew With Tonic",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Blueberry Cold Brew",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Barrel Aged Cold Brew",
+        "items": [
+          {
+            "name": "Whiskey Barrel Cold Brew",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Rum Barrel Cold Brew",
+            "price": 380,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Affogato",
+        "items": [
+          {
+            "name": "Affogato",
+            "price": 300,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "New Additions",
+        "items": [
+          {
+            "name": "Roasted Pepper Soup",
+            "description": "Velvety roasted bell pepper soup, smoky and slightly sweet, served warm for a comforting, flavourful experience",
+            "price": 475,
+            "emoji": "🍜",
+            "veg": true
+          },
+          {
+            "name": "Sriracha Cottage Cheese Sandwich",
+            "description": "Creamy cottage cheese tossed in a spicy sriracha sauce, layered with crisp bell peppers and fresh lollo rosso, all tucked between our house-made soft milk bread.",
+            "price": 475,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Panini Sandwich",
+            "description": "Grilled house-made panini layered with sun-dried tomato pesto, fresh bell peppers, and ripe tomatoes.",
+            "price": 475,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Avocado Toast With Sunny-Side-Up",
+            "description": "Sourdough toast layered with seasoned yogurt, creamy smashed avocado and a sunny-side-up egg.",
+            "price": 475,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Savoury Egg Croissant",
+            "description": "Buttery croissant stuffed with a fluffy cheese omelette, fresh pesto, sliced tomato and cucumber.",
+            "price": 425,
+            "emoji": "🍳",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Pasta Bar",
+        "items": [
+          {
+            "name": "Pomodoro Spaghetti",
+            "description": "Spaghetti pasta tossed in steaming italian marinara",
+            "price": 650,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Fettuccini Alfredo",
+            "description": "Creamy alfredo sauce blended with the classic fettuccini pasta",
+            "price": 675,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Penne Arrabiata",
+            "description": "Penne pasta tossed in spicy arrabbiata sauce",
+            "price": 585,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Pesto Fusilli",
+            "description": "Fusilli pasta, garlic aioli; in-house pesto blend, white crema",
+            "price": 675,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Crema Rigatoni",
+            "description": "Primavera sauce, rigatoni pasta & cream cheese",
+            "price": 675,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "K'pop Mac 'N' Cheese",
+            "description": "Korean spicy gochujang infused classical american macaroni and cheese",
+            "price": 675,
+            "emoji": "🧀",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "June Bowls",
+        "items": [
+          {
+            "name": "Red Pepper Hummus Bowl",
+            "description": "Served with pita breads/crisps",
+            "price": 475,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Burrata Panzanella Bowl",
+            "description": "The og burrata salad",
+            "price": 650,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "June Mex Bowl",
+            "description": "June style burrito bowl",
+            "price": 595,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Truffle & Mushrooms Risotto",
+            "description": "Arborio rice and assorted mushroom tossed in alfredo sauce topped with truffle oil served with toasted sourdough bread on side",
+            "price": 675,
+            "emoji": "🍽️",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Desserts & Bakes",
+        "items": [
+          {
+            "name": "Dark Chocolate Cupcakes",
+            "price": 160,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Banana Walnut Cake Slice",
+            "price": 200,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Butter Croissant",
+            "price": 200,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Nutella Croissant",
+            "price": 275,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Pistachio Croissant",
+            "price": 325,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Almond Croissant",
+            "price": 325,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Classic Ny Style Cheesecake",
+            "price": 300,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Nutella Cheesecake",
+            "price": 320,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Biscoff Cheesecake",
+            "price": 350,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Whole Wheat & Jaggery Cake",
+            "price": 350,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Carrot Cake With Cream Cheese Frosting",
+            "price": 375,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Dark Chocolate & Salted Caramel Mini Cake",
+            "price": 450,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Dark Chocolate & Raspberry Mini Cake",
+            "price": 470,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Almond Lemon Cake",
+            "price": 325,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Classic Tres Leches",
+            "price": 450,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "name": "Neighbourhood",
+    "address": "Indore",
+    "emoji": "🍽️",
+    "hue": 210,
+    "isOpen": true,
+    "tables": 10,
+    "staff": {
+      "name": "Neighbourhood",
+      "email": "neighbourhood@tablo.local",
+      "password": "password123",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Food",
+        "items": [
+          {
+            "name": "Ravioli Amore",
+            "description": "Handmade ravioli in classic pomodoro sauce",
+            "price": 550,
+            "emoji": "🍝",
+            "veg": true
+          },
+          {
+            "name": "Scarlet Avo Tartine",
+            "description": "Beetroot hummus, avocado, feta on sourdough bread slice",
+            "price": 450,
+            "emoji": "🥪",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Dessert",
+        "items": [
+          {
+            "name": "Strawberry Dark Indulgence",
+            "description": "Dark chocolate cake with almond praline and strawberry",
+            "price": 450,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Nutella Strawberry Crossiant",
+            "description": "Crossiant filled with nutella, strawberry cream and strawberries",
+            "price": 450,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Beverage",
+        "items": [
+          {
+            "name": "Cold Brew Cupid",
+            "description": "Cold brew, cranberry juice, ginger ale.",
+            "price": 350,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Gentleman Jack",
+            "description": "Rum barrel espresso, ginger ale",
+            "price": 350,
+            "emoji": "🍽️",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Breakfast Menu",
+        "items": [
+          {
+            "name": "Live Bagel/Mollete Open Toast Bar",
+            "description": "Head to the open garden area for our bagel grazing table and get your toast custom made",
+            "price": 320,
+            "emoji": "🥪",
+            "veg": true
+          },
+          {
+            "name": "Live Yogurt Breakfast Bowl Station",
+            "description": "Head to the open garden area for our live build your own yogurt granola bowl station",
+            "price": 460,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Fresh Mawa Cake Slice",
+            "description": "A rich, buttery mawa cake baked fresh with a delicate aroma and a golden crust best paired with a black coffee.",
+            "price": 230,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Viral Dot Cake In A Jar",
+            "description": "Layers of soft vanilla sponge, silky cream and playful rainbow dots in a perfectly portioned dessert cup.",
+            "price": 320,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Hazelnut Crunch Cake In A Jar",
+            "description": "Layers of moist chocolate cake, hazelnut cream and crunchy praline for a rich, nutty dessert.",
+            "price": 360,
+            "emoji": "🍰",
+            "veg": true
+          },
+          {
+            "name": "Dcsp Muffin",
+            "description": "Death by chocolate, saved by protein. A rich, fudgy chocolate muffin packed with 10 gms protein, finished with dark chocolate for the perfect guilt-free indulgence. (Vegan)",
+            "price": 275,
+            "emoji": "🍽️",
+            "veg": true
+          },
+          {
+            "name": "Sticky Toffee Madeleine",
+            "description": "Our signature sticky toffee cake is back finished with buttery sea salt toffee glaze and served warm with a scoop of vanilla icecream for the ultimate comforting treat.",
+            "price": 440,
+            "emoji": "🍰",
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Manual Brewed Coffee",
+        "items": [
+          {
+            "name": "Pourover",
+            "description": "Slow-brewed coffee using fresh, high-quality beans, allowing the flavors to develop fully.",
+            "price": 240,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Aeropress",
+            "description": "Press-brewed coffee with a rich, full-bodied taste and smooth finish.",
+            "price": 240,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "Syphon",
+            "description": "A visually impressive and scientifically precise brewing method for a clean, delicate coffee flavour.",
+            "price": 240,
+            "emoji": "☕",
+            "veg": true
+          },
+          {
+            "name": "French Press",
+            "description": "Classic full-immersion brewing for a rich, bold, and intense coffee experience.",
+            "price": 240,
+            "emoji": "☕",
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

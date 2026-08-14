@@ -40,6 +40,9 @@ export default function Checkout() {
   const [options, setOptions] = useState<any>(null)
 
   const [verifyOpen, setVerifyOpen] = useState(false)
+  // Set when the customer tapped the main button and only the code was missing:
+  // once they verify, the order goes through without a second tap.
+  const [placeAfterVerify, setPlaceAfterVerify] = useState(false)
   const [payRequest, setPayRequest] = useState<any>(null)
   const [placing, setPlacing] = useState(false)
   const [error, setError] = useState('')
@@ -85,7 +88,7 @@ export default function Checkout() {
   const needsTable = where === 'here' && !seated
   const needsProof = where !== 'later' && !verified && !payNow
   const needsName = name.trim().length < 2
-  const ready = !needsTable && !needsProof && !needsName && !placing
+  const ready = !needsTable && !needsProof && !needsName
 
   const startPayment = async () => {
     setPlacing(true)
@@ -107,7 +110,7 @@ export default function Checkout() {
     }
   }
 
-  const place = async (paymentClaim?: { upiRef: string }) => {
+  const place = async (paymentClaim?: { upiRef: string }, withSession?: string) => {
     setPlacing(true)
     setError('')
     try {
@@ -121,7 +124,7 @@ export default function Checkout() {
           note,
           paymentMethod: paymentClaim ? 'app' : 'counter',
           tableId: seated,
-          sessionToken: dining?.token ?? null,
+          sessionToken: withSession ?? dining?.token ?? null,
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
         },
       })
@@ -314,13 +317,34 @@ export default function Checkout() {
 
           <button
             className="btn btn-accent btn-lg btn-block"
-            disabled={!ready}
-            onClick={() => (payNow && canPayInApp ? startPayment() : place())}
+            disabled={placing}
+            onClick={() => {
+              if (needsName) {
+                document.getElementById('co-name')?.focus()
+                toast('Add a name so the kitchen knows whose order it is.', 'info')
+                return
+              }
+              if (needsTable) {
+                document.querySelector('.table-grid')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                toast('Tap your table number.', 'info')
+                return
+              }
+              if (needsProof) {
+                // Only the code is missing — ask for it here and continue straight on.
+                setPlaceAfterVerify(true)
+                setVerifyOpen(true)
+                return
+              }
+              if (payNow && canPayInApp) startPayment()
+              else place()
+            }}
           >
             {placing ? (
               <Spinner />
             ) : payNow && canPayInApp ? (
               `Pay ${money(totalCents)}`
+            ) : needsProof ? (
+              `Place order · ${money(totalCents)}`
             ) : (
               `Place order · ${money(totalCents)}`
             )}
@@ -329,10 +353,10 @@ export default function Checkout() {
           {!ready && !placing && (
             <p className="tiny muted center" style={{ marginTop: 10 }}>
               {needsName
-                ? 'Add a name so the kitchen knows whose order it is.'
+                ? 'We just need a name for the order.'
                 : needsTable
-                  ? 'Tap your table number.'
-                  : 'Enter the code, or pay in the app.'}
+                  ? 'Tap your table number above.'
+                  : "Tap above and we'll ask for the code — or switch to paying in the app."}
             </p>
           )}
         </section>
@@ -346,6 +370,11 @@ export default function Checkout() {
             if (s.tableId) {
               setTableId(s.tableId)
               setTableLabel(s.tableLabel)
+            }
+            if (placeAfterVerify) {
+              setPlaceAfterVerify(false)
+              // The session is proof enough now; send the order with it.
+              setTimeout(() => place(undefined, s.token), 0)
             }
           }}
         />

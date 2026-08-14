@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, openStream } from '../../lib/api'
 import { EmptyState, LoadingBlock, money, timeAgo, useToast, clockTime } from '../../components/ui'
+import { announceOrder, askToNotify, notifyPermission } from '../../lib/notify'
 import {
   nextStatus,
   SERVICE_LABEL,
@@ -38,6 +39,8 @@ export default function StaffOrders() {
   const [scope, setScope] = useState<'active' | 'all'>('active')
   const [busyId, setBusyId] = useState<number | null>(null)
   const [error, setError] = useState('')
+  const [view, setView] = useState<'board' | 'list'>('board')
+  const [alerts, setAlerts] = useState(notifyPermission())
   const knownIds = useRef<Set<number>>(new Set())
   const firstLoad = useRef(true)
 
@@ -51,6 +54,13 @@ export default function StaffOrders() {
         const fresh = o.orders.filter((x) => x.status === 'NEW' && !knownIds.current.has(x.id))
         if (fresh.length === 1) toast(`New order #${fresh[0].orderNumber}`, 'good')
         else if (fresh.length > 1) toast(`${fresh.length} new orders came in`, 'good')
+        for (const order of fresh) {
+          const where = order.serviceType === 'dine_in' ? order.tableLabel : 'Counter'
+          announceOrder(
+            order.orderNumber,
+            `${where} · ${order.customerName} · ${order.items.reduce((n: number, i: any) => n + i.quantity, 0)} items · ${money(order.totalCents)}`,
+          )
+        }
       }
       knownIds.current = new Set(o.orders.map((x) => x.id))
       firstLoad.current = false
@@ -121,12 +131,28 @@ export default function StaffOrders() {
             </button>
           ))}
         </div>
+        <div className="tabs" style={{ marginBottom: 0 }}>
+          <button className={`tab ${view === 'board' ? 'active' : ''}`} onClick={() => setView('board')}>
+            Board
+          </button>
+          <button className={`tab ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>
+            All orders
+          </button>
+        </div>
         <button
           className="btn btn-secondary btn-sm"
           onClick={() => setScope(scope === 'active' ? 'all' : 'active')}
         >
           {scope === 'active' ? 'Show history' : 'Active only'}
         </button>
+        {alerts !== 'granted' && alerts !== 'unsupported' && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={async () => setAlerts((await askToNotify()) ? 'granted' : notifyPermission())}
+          >
+            🔔 Alert me
+          </button>
+        )}
       </div>
 
       {summary && (
@@ -165,7 +191,68 @@ export default function StaffOrders() {
         />
       )}
 
-      {orders && visible.length > 0 && (
+      {orders && visible.length > 0 && view === 'list' && (
+        <div className="card ledger-wrap">
+          <table className="ledger">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Where</th>
+                <th>Who</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Status</th>
+                <th>Placed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((o) => (
+                <tr key={o.id} className={o.status === 'NEW' ? 'is-new' : ''}>
+                  <td>
+                    <strong className="mono">#{o.orderNumber}</strong>
+                    {o.isGroup && <span className="o-group-tag" style={{ marginLeft: 6 }}>GROUP</span>}
+                  </td>
+                  <td>
+                    {o.serviceType === 'dine_in' ? o.tableLabel : SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]}
+                  </td>
+                  <td>{o.customerName}</td>
+                  <td className="ledger-items">
+                    {groupByPerson(o.items).map((person) => (
+                      <div key={person.name}>
+                        {o.isGroup && <span className="tiny muted">{person.name}: </span>}
+                        {person.items.map((i: any) => `${i.quantity}× ${i.name}`).join(', ')}
+                      </div>
+                    ))}
+                  </td>
+                  <td>
+                    <strong>{money(o.totalCents)}</strong>
+                  </td>
+                  <td>
+                    <button
+                      className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}
+                      style={{ border: 0, cursor: 'pointer' }}
+                      disabled={busyId === o.id}
+                      onClick={() => togglePaid(o)}
+                    >
+                      {o.paymentStatus}
+                    </button>
+                    {o.claimedCents > 0 && o.paymentStatus !== 'PAID' && (
+                      <span className="tiny muted"> claim {money(o.claimedCents)}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="badge">{STATUS_LABEL[o.status as OrderStatus]}</span>
+                  </td>
+                  <td className="tiny muted">{clockTime(o.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {orders && visible.length > 0 && view === 'board' && (
         <div className="board">
           {COLUMNS.map((col) => {
             const cards = visible.filter((o) => col.statuses.includes(o.status))

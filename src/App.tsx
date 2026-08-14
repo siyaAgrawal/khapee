@@ -22,6 +22,7 @@ import StaffLayout from './pages/staff/StaffLayout'
 import StaffOrders from './pages/staff/StaffOrders'
 import StaffProfile from './pages/staff/StaffProfile'
 import StaffPayments from './pages/staff/StaffPayments'
+import StaffPhotos from './pages/staff/StaffPhotos'
 import StaffCodes from './pages/staff/StaffCodes'
 import StaffTables from './pages/staff/StaffTables'
 import StaffMenu from './pages/staff/StaffMenu'
@@ -73,6 +74,7 @@ export default function App() {
         <Route path="codes" element={<StaffCodes />} />
         <Route path="tables" element={<StaffTables />} />
         <Route path="menu" element={<StaffMenu />} />
+        <Route path="photos" element={<StaffPhotos />} />
         <Route path="verify" element={<StaffVerify />} />
       </Route>
 

@@ -663,3 +663,94 @@ staffRouter.get('/groups', (req, res) => {
     .all(restaurantId) as any[]
   res.json({ groups: rows.map((r) => shapeSession(r.id)).filter(Boolean) })
 })
+
+// --- Photo library ----------------------------------------------------------
+
+/**
+ * Photos imported in bulk but not yet attached to a dish. Restaurants send over
+ * a folder of shots with no reliable names, so assigning them is a visual job
+ * done here rather than guessed at on import.
+ */
+staffRouter.get('/photos', (req, res) => {
+  const restaurantId = myRestaurant(req)
+  const photos = db
+    .prepare(
+      `SELECT p.*, m.name AS item_name FROM photo_library p
+       LEFT JOIN menu_items m ON m.id = p.assigned_item
+       WHERE p.restaurant_id = ? ORDER BY (p.assigned_item IS NOT NULL), p.id`,
+    )
+    .all(restaurantId) as any[]
+  const items = db
+    .prepare(
+      `SELECT m.id, m.name, c.name AS section, m.image_path
+       FROM menu_items m JOIN menu_categories c ON c.id = m.category_id
+       WHERE m.restaurant_id = ? ORDER BY c.sort_order, m.sort_order`,
+    )
+    .all(restaurantId) as any[]
+  res.json({
+    photos: photos.map((p) => ({
+      id: p.id,
+      url: imageUrl(p.file),
+      assignedItemId: p.assigned_item,
+      assignedName: p.item_name,
+    })),
+    items: items.map((i) => ({
+      id: i.id,
+      name: i.name,
+      section: i.section,
+      hasPhoto: !!i.image_path,
+    })),
+  })
+})
+
+staffRouter.post('/photos/:id/assign', (req, res) => {
+  const restaurantId = myRestaurant(req)
+  const photo = db.prepare('SELECT * FROM photo_library WHERE id = ?').get(Number(req.params.id)) as any
+  if (!photo || photo.restaurant_id !== restaurantId) {
+    return res.status(404).json({ error: 'Photo not found.' })
+  }
+  const itemId = req.body?.itemId ? Number(req.body.itemId) : null
+
+  if (itemId === null) {
+    if (photo.assigned_item) {
+      db.prepare('UPDATE menu_items SET image_path = NULL WHERE id = ? AND image_path = ?').run(
+        photo.assigned_item,
+        photo.file,
+      )
+    }
+    db.prepare('UPDATE photo_library SET assigned_item = NULL WHERE id = ?').run(photo.id)
+    return res.json({ ok: true })
+  }
+
+  const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(itemId) as any
+  if (!item || item.restaurant_id !== restaurantId) {
+    return res.status(400).json({ error: 'That dish is not on your menu.' })
+  }
+
+  db.transaction(() => {
+    // One photo per dish: release whatever was on it before.
+    db.prepare('UPDATE photo_library SET assigned_item = NULL WHERE assigned_item = ?').run(itemId)
+    db.prepare('UPDATE photo_library SET assigned_item = ? WHERE id = ?').run(itemId, photo.id)
+    db.prepare('UPDATE menu_items SET image_path = ? WHERE id = ?').run(photo.file, itemId)
+  })()
+  res.json({ ok: true, itemName: item.name })
+})
+
+staffRouter.delete('/photos/:id', (req, res) => {
+  const restaurantId = myRestaurant(req)
+  const photo = db.prepare('SELECT * FROM photo_library WHERE id = ?').get(Number(req.params.id)) as any
+  if (!photo || photo.restaurant_id !== restaurantId) {
+    return res.status(404).json({ error: 'Photo not found.' })
+  }
+  db.transaction(() => {
+    if (photo.assigned_item) {
+      db.prepare('UPDATE menu_items SET image_path = NULL WHERE id = ? AND image_path = ?').run(
+        photo.assigned_item,
+        photo.file,
+      )
+    }
+    db.prepare('DELETE FROM photo_library WHERE id = ?').run(photo.id)
+  })()
+  deleteUpload(photo.file)
+  res.json({ ok: true })
+})

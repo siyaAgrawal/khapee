@@ -218,6 +218,18 @@ addColumn('order_items', 'paid_at', 'TEXT')
 addColumn('users', 'active_restaurant_id', 'INTEGER')
 
 db.exec(`
+CREATE TABLE IF NOT EXISTS photo_library (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  file          TEXT    NOT NULL,
+  source        TEXT    NOT NULL DEFAULT 'upload',
+  assigned_item INTEGER REFERENCES menu_items(id) ON DELETE SET NULL,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_photo_library_restaurant ON photo_library(restaurant_id);
+`)
+
+db.exec(`
 CREATE TABLE IF NOT EXISTS dining_sessions (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   token          TEXT    NOT NULL UNIQUE,

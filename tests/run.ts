@@ -1139,6 +1139,66 @@ async function runTests() {
   ok('signed out, a taken email is still refused', strangerAdds.status === 409)
   ok('existing staff accounts keep working', (await call('/staff/orders', { token: basilToken })).status === 200)
 
+  group('EVERY ORDER IS A ROOM')
+  const roomCode2 = await call('/staff/codes', { token: reLogin.body.token, body: { minutes: 20 } })
+  const roomSess = await call('/sessions', { body: { value: roomCode2.body.code.code } })
+  const roomTables = (await call(`/sessions/${roomSess.body.session.token}/tables`)).body.tables
+  const soloOrder = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Solo Diner',
+      tableId: roomTables[1].id,
+      sessionToken: roomSess.body.session.token,
+    },
+  })
+  ok('an ordinary dine-in order opens a room', soloOrder.status === 201 && /^[A-Z0-9]{4}$/.test(soloOrder.body.order.roomCode), soloOrder.body.order?.roomCode)
+  ok('the person who ordered is the host', typeof soloOrder.body.order.groupToken === 'string')
+
+  const roomPreview = await call(`/groups/${soloOrder.body.order.roomCode}`)
+  ok('the room can be previewed by code', roomPreview.body.group.tableLabel === roomTables[1].label, roomPreview.body)
+
+  const friend = await call('/groups/join', {
+    body: { code: soloOrder.body.order.roomCode, displayName: 'Friend' },
+  })
+  ok('a friend joins with no new order', friend.status === 201)
+  const friendAdds = await call('/groups/session/items', {
+    body: { groupToken: friend.body.groupToken, items: [{ menuItemId: croissant.id, quantity: 1 }] },
+  })
+  ok("the friend's food joins the same ticket", friendAdds.status === 201, friendAdds.body)
+
+  const roomState = await call(`/groups/session/state?groupToken=${soloOrder.body.order.groupToken}`)
+  ok('both people are on the table', roomState.body.session.members.length === 2, roomState.body.session.members)
+  ok(
+    "the original order is attributed to whoever placed it",
+    roomState.body.session.members.find((m: any) => m.name === 'Solo Diner')?.items.length === 1,
+    roomState.body.session.members,
+  )
+  ok(
+    'one kitchen ticket, not two',
+    roomState.body.session.order.orderNumber === soloOrder.body.order.orderNumber,
+  )
+  ok(
+    'the ticket totals both people',
+    roomState.body.session.totalCents === coldCoffee.priceCents + croissant.priceCents,
+    roomState.body.session.totalCents,
+  )
+  const roomOrder = await call(`/orders/${soloOrder.body.order.orderNumber}?token=${soloOrder.body.order.verifyToken}`)
+  ok('the receipt shows the room code', roomOrder.body.order.roomCode === soloOrder.body.order.roomCode)
+
+  const takeawayNoRoom = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      takeaway: true,
+      items: [{ menuItemId: croissant.id, quantity: 1 }],
+      customerName: 'Takeaway Solo',
+      sessionToken: roomSess.body.session.token,
+    },
+  })
+  ok('takeaway opens no room — there is no table to share', takeawayNoRoom.body.order.roomCode == null, takeawayNoRoom.body.order?.roomCode)
+
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [

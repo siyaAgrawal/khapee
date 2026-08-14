@@ -3,6 +3,7 @@ import { generateOrderNumber, randomToken } from './ids.ts'
 import { publish } from './events.ts'
 import { money, type OrderStatus, type OrderType, type ServiceType } from '../shared/orders.ts'
 import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
+import { openRoomForOrder } from './rooms.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -241,6 +242,21 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   const orderId = run()
   const order: any = getOrder(orderId)
 
+  // Every dine-in order is a room the rest of the table can join — no separate
+  // "start a group" step, it is simply how ordering works.
+  if (input.type === 'dine_in' && !takeaway && tableId) {
+    const room = openRoomForOrder({
+      orderId,
+      restaurantId: input.restaurantId,
+      tableId,
+      tableLabel,
+      hostName: customerName,
+      userId: input.userId,
+    })
+    order.roomCode = room.code
+    order.groupToken = room.hostToken
+  }
+
   // Paying up front opens the session, so the next round needs no code.
   if (input.type === 'dine_in' && input.paymentClaim && !input.sessionToken) {
     const opened = startPaidSession({
@@ -304,6 +320,9 @@ export function shapeOrder(row: any) {
     note: row.note,
     verifyToken: row.verify_token,
     verifiedAt: row.verified_at,
+    roomCode: row.group_session_id
+      ? ((db.prepare('SELECT code FROM group_sessions WHERE id = ?').get(row.group_session_id) as any)?.code ?? null)
+      : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     itemCount: items.reduce((n, i) => n + i.quantity, 0),

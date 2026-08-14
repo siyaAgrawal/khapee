@@ -3033,3 +3033,7 @@ textarea {
   padding: 9px 10px;
   font-size: 13px;
 }
+
+.room-card {
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+}

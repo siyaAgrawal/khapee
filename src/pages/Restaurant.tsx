@@ -6,7 +6,6 @@ import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../c
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
 import { readGroup } from '../lib/group'
-import StartGroup from '../components/StartGroup'
 import DiningBar from '../components/DiningBar'
 import type { RestaurantCard } from './Home'
 
@@ -32,7 +31,6 @@ export default function Restaurant() {
 
   const [data, setData] = useState<{ restaurant: RestaurantCard; menu: Category[] } | null>(null)
   const [error, setError] = useState('')
-  const [startingGroup, setStartingGroup] = useState(false)
   const tableCtx = readTableContext(restaurantId)
   const activeGroup = readGroup()
   const inThisGroup = activeGroup?.restaurantId === restaurantId
@@ -107,26 +105,12 @@ export default function Restaurant() {
                     Scanned {tableCtx.tableLabel}.
                   </p>
                 )}
-                {inThisGroup ? (
-                  <div className="row row-wrap" style={{ marginTop: 14 }}>
+                {inThisGroup && (
+                  <div className="row row-wrap" style={{ marginTop: 12 }}>
                     <Link className="btn btn-secondary btn-sm" to="/group">
-                      👥 You&rsquo;re in group {activeGroup!.code}
+                      👥 You&rsquo;re at table {activeGroup!.code} — add to it
                     </Link>
                   </div>
-                ) : (
-                  data.restaurant.acceptsGroups &&
-                  data.restaurant.isOpen && (
-                    <div className="row row-wrap" style={{ marginTop: 14 }}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        disabled={startingGroup}
-                        onClick={() => setStartingGroup(true)}
-                      >
-                        👥 Eating as a group?
-                      </button>
-                      <span className="tiny muted">One table, everyone orders for themselves.</span>
-                    </div>
-                  )
                 )}
               </div>
             </div>
@@ -217,14 +201,6 @@ export default function Restaurant() {
         </div>
       )}
 
-      {data && (
-        <StartGroup
-          restaurantId={restaurantId}
-          restaurantName={data.restaurant.name}
-          open={startingGroup}
-          onClose={() => setStartingGroup(false)}
-        />
-      )}
 
       {count > 0 && cart.restaurantId !== restaurantId && (
         <div className="cart-bar">

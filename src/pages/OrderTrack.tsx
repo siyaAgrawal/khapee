@@ -5,6 +5,7 @@ import { api, ApiError, openStream } from '../lib/api'
 import { Art, ErrorState, LoadingBlock, clockTime, money } from '../components/ui'
 import { QRCanvas } from '../lib/qr'
 import { receiptToken } from '../lib/table-context'
+import { readGroup } from '../lib/group'
 import { flowFor, STATUS_LABEL, type OrderStatus } from '../../shared/orders'
 
 export default function OrderTrack() {
@@ -137,6 +138,27 @@ export default function OrderTrack() {
           )}
         </div>
 
+        {order.roomCode && (
+          <div className="card card-pad mt-3 room-card">
+            <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+              <h2>Anyone else eating?</h2>
+              <span className="group-code mono">{order.roomCode}</span>
+            </div>
+            <p className="tiny muted mb-2">
+              They scan this and add their own food to this same table — no new order, one bill,
+              and everyone can pay for just their own bit.
+            </p>
+            <div style={{ display: 'grid', placeItems: 'center', margin: '6px 0 10px' }}>
+              <QRCanvas value={`${window.location.origin}/g/${order.roomCode}`} size={150} />
+            </div>
+            <div className="center">
+              <Link className="btn btn-secondary btn-sm" to="/group">
+                Open the table
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="card card-pad mt-3">
           <h2 style={{ marginBottom: 10 }}>Your order</h2>
           {order.items.map((item: any) => (
@@ -146,6 +168,7 @@ export default function OrderTrack() {
                 <strong>{item.name}</strong>
                 <span className="tiny muted">
                   {item.quantity} × {money(item.unitPriceCents)}
+                  {item.memberName ? ` · ${item.memberName}` : ''}
                 </span>
               </div>
               <strong>{money(item.unitPriceCents * item.quantity)}</strong>

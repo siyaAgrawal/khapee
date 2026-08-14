@@ -301,7 +301,17 @@ export default function StaffProfile() {
               />
             </div>
             {!form.upiVpa && (
-              <p className="tiny muted">Leave blank to take payment only at the counter.</p>
+              <div className="notice" style={{ marginTop: 4 }}>
+                <span aria-hidden>⚡</span>
+                <div>
+                  <strong>Add this and customers skip the code</strong>
+                  <p className="tiny">
+                    When someone pays in the app, paying is itself the proof they are here — no
+                    asking staff for a code, no typing. Leave it blank to take payment at the
+                    counter only.
+                  </p>
+                </div>
+              </div>
             )}
           </section>
 

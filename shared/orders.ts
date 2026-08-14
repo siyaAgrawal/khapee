@@ -53,5 +53,5 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 }
 
 export function money(cents: number): string {
-  return '$' + (cents / 100).toFixed(2)
+  return '₹' + (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)
 }

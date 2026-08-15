@@ -60,7 +60,7 @@ export default function GroupSession() {
             title="You're not in a group"
             body="Start one from a restaurant page, or scan a friend's group QR to join theirs."
             action={
-              <Link className="btn btn-accent" to="/restaurants">
+              <Link className="btn btn-accent" to="/">
                 Browse restaurants
               </Link>
             }
@@ -188,7 +188,7 @@ export default function GroupSession() {
 
           {session.order && (
             <p className="tiny muted" style={{ marginTop: 10 }}>
-              Kitchen status: <strong>{STATUS_LABEL[session.order.status as OrderStatus]}</strong>
+              <strong>{STATUS_LABEL[session.order.status as OrderStatus]}</strong>
             </p>
           )}
         </div>
@@ -208,7 +208,7 @@ export default function GroupSession() {
           </div>
 
           {session.totalCents === 0 && (
-            <p className="tiny muted">Nothing ordered yet. Whoever is ready can add the first round.</p>
+            <p className="tiny muted">Nothing ordered yet</p>
           )}
 
           {session.members.map((m: any) => (
@@ -338,7 +338,6 @@ export default function GroupSession() {
         <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Invite the table">
           <div className="center">
             <div className="code-display">{session.code}</div>
-            <p className="tiny muted">Everyone scans this, or types the code on the group screen.</p>
             <div style={{ display: 'grid', placeItems: 'center', margin: '16px 0' }}>
               <QRCanvas value={joinUrl} size={220} />
             </div>

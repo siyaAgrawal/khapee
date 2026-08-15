@@ -664,6 +664,67 @@ async function runTests() {
   ok('customers can order a newly created dish', orderFromNew.status === 201, orderFromNew.body)
   ok('the new dish is priced from the edit', orderFromNew.body.order.totalCents === 31100)
 
+  group("This month's specials")
+  const notSpecialYet = await call(`/restaurants/${newRestaurantId}`)
+  ok(
+    'a menu with no specials has no specials section',
+    !notSpecialYet.body.menu.some((c: any) => c.name === 'This month'),
+    notSpecialYet.body.menu.map((c: any) => c.name),
+  )
+
+  const marked = await call(`/staff/menu/${dishId}`, {
+    token: ownerToken,
+    method: 'PATCH',
+    body: { isSpecial: true },
+  })
+  ok('staff can mark a dish as this month\u2019s special', marked.body.item.isSpecial === true, marked.body)
+
+  const withSpecials = await call(`/restaurants/${newRestaurantId}`)
+  ok('the specials section leads the menu', withSpecials.body.menu[0]?.name === 'This month')
+  ok(
+    'the special is inside it, priced and whole',
+    withSpecials.body.menu[0].items.length === 1 &&
+      withSpecials.body.menu[0].items[0].id === dishId &&
+      withSpecials.body.menu[0].items[0].priceCents === 15550,
+    withSpecials.body.menu[0].items,
+  )
+  ok(
+    'the dish still appears in its own section',
+    withSpecials.body.menu.some((c: any) => c.id === sectionId && c.items.some((i: any) => i.id === dishId)),
+  )
+
+  await call(`/staff/menu/${dishId}/availability`, { token: ownerToken, body: { isAvailable: false } })
+  const soldOutSpecial = await call(`/restaurants/${newRestaurantId}`)
+  ok(
+    'a sold-out special drops out of the specials section',
+    !soldOutSpecial.body.menu.some((c: any) => c.name === 'This month'),
+  )
+  await call(`/staff/menu/${dishId}/availability`, { token: ownerToken, body: { isAvailable: true } })
+
+  const foreignSpecial = await call(`/staff/menu/${dishId}`, {
+    token: basilToken,
+    method: 'PATCH',
+    body: { isSpecial: false },
+  })
+  ok('another restaurant cannot change what is special', foreignSpecial.status === 404)
+
+  const unmarked = await call(`/staff/menu/${dishId}`, {
+    token: ownerToken,
+    method: 'PATCH',
+    body: { isSpecial: false },
+  })
+  ok('a special can be taken off the list', unmarked.body.item.isSpecial === false)
+  ok(
+    'and the section disappears with it',
+    !(await call(`/restaurants/${newRestaurantId}`)).body.menu.some((c: any) => c.name === 'This month'),
+  )
+
+  const bornSpecial = await call('/staff/menu', {
+    token: ownerToken,
+    body: { categoryId: sectionId, name: 'August Plate', price: '400', isSpecial: true },
+  })
+  ok('a dish can be created as a special', bornSpecial.body.item.isSpecial === true, bornSpecial.body)
+
   group('Photos (stored locally)')
   // A 1x1 PNG is enough to prove the upload, storage and serving path.
   const PNG_1PX =
@@ -674,7 +735,9 @@ async function runTests() {
   ok('the photo is served back from this machine', served.ok && !!served.headers.get('content-type')?.includes('png'))
   ok(
     'the photo appears on the customer menu',
-    (await call(`/restaurants/${newRestaurantId}`)).body.menu[0].items[0].imageUrl === dishPhoto.body.imageUrl,
+    (await call(`/restaurants/${newRestaurantId}`)).body.menu
+      .flatMap((c: any) => c.items)
+      .find((i: any) => i.id === dishId)?.imageUrl === dishPhoto.body.imageUrl,
   )
 
   const coverPhoto = await call('/staff/restaurant/image', { token: ownerToken, body: { dataUrl: PNG_1PX } })
@@ -733,7 +796,9 @@ async function runTests() {
   ok('staff can delete their own dish', deletedDish.status === 200)
   ok(
     'a deleted dish disappears from the menu',
-    (await call(`/restaurants/${newRestaurantId}`)).body.menu[0].items.length === 0,
+    !(await call(`/restaurants/${newRestaurantId}`)).body.menu.some((c: any) =>
+      c.items.some((i: any) => i.id === dishId),
+    ),
   )
   ok(
     'past orders keep the deleted dish on the receipt',
@@ -1198,6 +1263,59 @@ async function runTests() {
     },
   })
   ok('takeaway opens no room — there is no table to share', takeawayNoRoom.body.order.roomCode == null, takeawayNoRoom.body.order?.roomCode)
+
+  group('TABLE SERVICE — waiter adds, bill settles')
+  const svcCode2 = (await call('/staff/codes', { token: reLogin.body.token, body: { minutes: 10 } })).body.code.code
+  const svcSess = (await call('/sessions', { body: { value: svcCode2 } })).body.session.token
+  const svcTable = (await call(`/sessions/${svcSess}/tables`)).body.tables[0]
+  await call(`/sessions/${svcSess}/table`, { body: { tableId: svcTable.id } })
+  const appOrder = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Half And Half',
+      sessionToken: svcSess,
+    },
+  })
+  ok('customer orders part of the meal in the app', appOrder.status === 201, appOrder.body)
+  const svcOrderId = appOrder.body.order.id
+  const appOnly = appOrder.body.order.totalCents
+
+  const waiterAdd = await call(`/staff/orders/${svcOrderId}/items`, {
+    token: reLogin.body.token,
+    body: { items: [{ menuItemId: croissant.id, quantity: 2 }] },
+  })
+  ok('a waiter adds the rest by hand', waiterAdd.status === 201, waiterAdd.body)
+  ok('both halves land on one bill', waiterAdd.body.order.totalCents === appOnly + croissant.priceCents * 2)
+  ok('the hand-added items are marked as such', waiterAdd.body.order.items.some((i: any) => i.addedByStaff))
+  ok('the app items are not', waiterAdd.body.order.items.some((i: any) => !i.addedByStaff))
+
+  const bill = await call(`/staff/bill/${svcOrderId}`, { token: reLogin.body.token })
+  ok('a bill can be drawn for the table', bill.status === 200, bill.body)
+  ok('the bill totals everything', bill.body.bill.totalCents === appOnly + croissant.priceCents * 2)
+  ok('the bill shows what is still due', bill.body.bill.dueCents === bill.body.bill.totalCents)
+  ok('the bill carries the restaurant header', bill.body.bill.restaurant.name === 'Mornington Coffee House')
+  ok('the bill is itemised per person', bill.body.bill.byPerson.length >= 1, bill.body.bill.byPerson)
+
+  const billSettled = await call(`/staff/bill/${svcOrderId}/settle`, { token: reLogin.body.token, body: { method: 'cash' } })
+  ok('settling marks the order paid', billSettled.body.order.paymentStatus === 'PAID', billSettled.body.order?.paymentStatus)
+  const afterSettle = await call(`/staff/bill/${svcOrderId}`, { token: reLogin.body.token })
+  ok('nothing is left due', afterSettle.body.bill.dueCents === 0)
+  ok('the bill is closed', afterSettle.body.bill.closed === true)
+  const addAfterSettle = await call(`/staff/orders/${svcOrderId}/items`, {
+    token: reLogin.body.token,
+    body: { items: [{ menuItemId: croissant.id, quantity: 1 }] },
+  })
+  ok('nothing can be added to a settled bill', addAfterSettle.status === 409, addAfterSettle.body)
+  ok(
+    'another restaurant cannot see the bill',
+    (await call(`/staff/bill/${svcOrderId}`, { token: basilToken })).status === 404,
+  )
+  ok(
+    'another restaurant cannot add to the table',
+    (await call(`/staff/orders/${svcOrderId}/items`, { token: basilToken, body: { items: [{ menuItemId: pasta.id, quantity: 1 }] } })).status === 404,
+  )
 
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any

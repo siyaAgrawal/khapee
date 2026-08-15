@@ -6,7 +6,7 @@ import { publish } from '../events.ts'
 import { getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
-import { markMemberItemsPaid, shapePayment, syncOrderPayment } from '../payments.ts'
+import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 
 export const staffRouter = Router()
@@ -261,6 +261,7 @@ function shapeMenuItem(i: any) {
     imageUrl: imageUrl(i.image_path),
     isVeg: !!i.is_veg,
     isAvailable: !!i.is_available,
+    isSpecial: !!i.is_special,
   }
 }
 
@@ -337,8 +338,8 @@ staffRouter.post('/menu', (req, res) => {
   const info = db
     .prepare(
       `INSERT INTO menu_items
-        (restaurant_id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (restaurant_id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, is_special, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       restaurantId,
@@ -350,6 +351,7 @@ staffRouter.post('/menu', (req, res) => {
       Math.max(0, Math.min(360, Number(req.body?.hue) || 24)),
       req.body?.isVeg === false ? 0 : 1,
       req.body?.isAvailable === false ? 0 : 1,
+      req.body?.isSpecial ? 1 : 0,
       next.n,
     )
   res.status(201).json({ item: shapeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(info.lastInsertRowid))) })
@@ -375,6 +377,7 @@ staffRouter.patch('/menu/:id', (req, res) => {
   if (req.body?.hue !== undefined) updates.hue = Math.max(0, Math.min(360, Number(req.body.hue) || 24))
   if (req.body?.isVeg !== undefined) updates.is_veg = req.body.isVeg ? 1 : 0
   if (req.body?.isAvailable !== undefined) updates.is_available = req.body.isAvailable ? 1 : 0
+  if (req.body?.isSpecial !== undefined) updates.is_special = req.body.isSpecial ? 1 : 0
   if (req.body?.categoryId !== undefined) {
     const category = ownCategory(req, Number(req.body.categoryId))
     if (!category) return res.status(400).json({ error: 'That menu section does not exist.' })
@@ -753,4 +756,126 @@ staffRouter.delete('/photos/:id', (req, res) => {
   })()
   deleteUpload(photo.file)
   res.json({ ok: true })
+})
+
+// --- Table service ----------------------------------------------------------
+
+/**
+ * A waiter adding to an order the customer started in the app. Half a table's
+ * food often gets ordered by voice, and it has to land on the same bill.
+ */
+staffRouter.post('/orders/:id/items', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(Number(req.params.id)) as any
+  if (!order || order.restaurant_id !== restaurantId) {
+    return res.status(404).json({ error: 'Order not found.' })
+  }
+  if (order.bill_closed_at) return res.status(409).json({ error: 'That bill is already closed.' })
+
+  const lines = Array.isArray(req.body?.items) ? req.body.items : []
+  if (!lines.length) return res.status(400).json({ error: 'Pick at least one dish.' })
+
+  const priced: { item: any; quantity: number }[] = []
+  for (const line of lines) {
+    const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line?.menuItemId)) as any
+    if (!item || item.restaurant_id !== restaurantId) {
+      return res.status(400).json({ error: 'That dish is not on your menu.' })
+    }
+    priced.push({ item, quantity: Math.min(50, Math.max(1, Math.floor(Number(line.quantity) || 1))) })
+  }
+
+  db.transaction(() => {
+    const insert = db.prepare(
+      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, added_by_staff)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+    )
+    for (const l of priced) {
+      insert.run(order.id, l.item.id, l.item.name, l.item.emoji, l.item.price_cents, l.quantity)
+    }
+    const total = db
+      .prepare('SELECT COALESCE(SUM(unit_price_cents * quantity), 0) AS n FROM order_items WHERE order_id = ?')
+      .get(order.id) as any
+    db.prepare(`UPDATE orders SET total_cents = ?, updated_at = datetime('now') WHERE id = ?`).run(total.n, order.id)
+    syncOrderPayment(order.id)
+  })()
+
+  const updated = getOrder(order.id)
+  publish('order:update', { restaurantId, userId: order.user_id, orderId: order.id, order: updated })
+  res.status(201).json({ order: updated })
+})
+
+/** Everything owed on a table, ready to print or settle at the counter. */
+staffRouter.get('/bill/:id', (req, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(Number(req.params.id)) as any
+  if (!order || order.restaurant_id !== restaurantId) {
+    return res.status(404).json({ error: 'Order not found.' })
+  }
+  const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(restaurantId) as any
+  const shaped = getOrder(order.id)!
+  const paid = paidCents(order.id)
+  const claimed = claimedCents(order.id)
+
+  res.json({
+    bill: {
+      restaurant: {
+        name: restaurant.name,
+        address: restaurant.address,
+        phone: restaurant.phone,
+        upiVpa: restaurant.upi_vpa,
+      },
+      orderNumber: shaped.orderNumber,
+      tableLabel: shaped.tableLabel,
+      serviceType: shaped.serviceType,
+      customerName: shaped.customerName,
+      placedAt: shaped.createdAt,
+      items: shaped.items,
+      byPerson: shaped.items.reduce((acc: any[], i: any) => {
+        const key = i.memberName ?? shaped.customerName
+        const bucket = acc.find((b) => b.name === key)
+        const line = { ...i, lineTotal: i.unitPriceCents * i.quantity }
+        if (bucket) bucket.items.push(line)
+        else acc.push({ name: key, items: [line] })
+        return acc
+      }, []),
+      totalCents: shaped.totalCents,
+      paidCents: paid,
+      claimedCents: claimed,
+      dueCents: Math.max(0, shaped.totalCents - paid),
+      closed: !!order.bill_closed_at,
+    },
+  })
+})
+
+/** Settles the bill: marks it paid in full and closes it to further items. */
+staffRouter.post('/bill/:id/settle', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(Number(req.params.id)) as any
+  if (!order || order.restaurant_id !== restaurantId) {
+    return res.status(404).json({ error: 'Order not found.' })
+  }
+  const method = String(req.body?.method ?? 'cash')
+  const due = Math.max(0, order.total_cents - paidCents(order.id))
+
+  db.transaction(() => {
+    if (due > 0) {
+      db.prepare(
+        `INSERT INTO payments (order_id, payer_name, amount_cents, method, status, covers, settled_at)
+         VALUES (?, ?, ?, ?, 'CONFIRMED', 'all', datetime('now'))`,
+      ).run(order.id, order.customer_name, due, method)
+    }
+    db.prepare(`UPDATE order_items SET paid_at = datetime('now') WHERE order_id = ? AND paid_at IS NULL`).run(order.id)
+    db.prepare(
+      `UPDATE orders SET payment_status = 'PAID', bill_closed_at = datetime('now'), updated_at = datetime('now')
+       WHERE id = ?`,
+    ).run(order.id)
+    const session = db.prepare('SELECT id FROM group_sessions WHERE order_id = ?').get(order.id) as any
+    if (session) {
+      db.prepare(`UPDATE group_sessions SET status = 'CLOSED', closed_at = datetime('now') WHERE id = ?`).run(session.id)
+    }
+  })()
+
+  const updated = getOrder(order.id)
+  publish('order:update', { restaurantId, userId: order.user_id, orderId: order.id, order: updated })
+  res.json({ order: updated })
 })

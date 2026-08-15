@@ -146,7 +146,7 @@ export default function StaffProfile() {
               onChange={(e) => set('categories', e.target.value.split(',').map((c) => c.trim()))}
               placeholder="Cafe, Coffee, Bakery"
             />
-            <span className="hint">Comma separated, up to six. These power search and filters.</span>
+            <span className="hint">Comma separated, up to six.</span>
           </div>
 
           <div className="field">
@@ -192,7 +192,6 @@ export default function StaffProfile() {
               onChange={(e) => set('city', e.target.value)}
               placeholder="Indore"
             />
-            <span className="hint">Used to group you with nearby restaurants.</span>
           </div>
 
           <div className="field">

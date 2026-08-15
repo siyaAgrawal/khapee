@@ -58,7 +58,7 @@ export default function MyOrders() {
             title="No orders yet"
             body="When you place an order it will show up here with live status."
             action={
-              <Link className="btn btn-accent" to="/restaurants">
+              <Link className="btn btn-accent" to="/">
                 Browse restaurants
               </Link>
             }

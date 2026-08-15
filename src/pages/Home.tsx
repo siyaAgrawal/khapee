@@ -102,10 +102,6 @@ export default function Home() {
       <main className="page">
         <div className="hero">
           <h1>Order at the table, or ahead of time.</h1>
-          <p>
-            Browse the menu, add what you want, then tell us where you are. No queue, no waiting to catch
-            someone&rsquo;s eye.
-          </p>
         </div>
 
         <div className="search-row">
@@ -126,7 +122,7 @@ export default function Home() {
         </div>
         {coords && nearestCity && (
           <p className="tiny muted" style={{ marginTop: 8 }}>
-            Looks like you&rsquo;re near <strong>{nearestCity}</strong> — closest places first.
+            Near <strong>{nearestCity}</strong>
           </p>
         )}
         {locationNote && (

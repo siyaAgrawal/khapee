@@ -49,7 +49,7 @@ export default function OrderTrack() {
         <main className="page page-narrow">
           <ErrorState message={error} onRetry={load} />
           <div className="center">
-            <Link className="btn btn-secondary" to="/restaurants">
+            <Link className="btn btn-secondary" to="/">
               Back to restaurants
             </Link>
           </div>
@@ -91,9 +91,7 @@ export default function OrderTrack() {
 
           <QRCanvas value={`ORDRO:ORDER:${order.orderNumber}:${order.verifyToken}`} size={168} />
           <p className="tiny muted">
-            {order.type === 'pickup'
-              ? 'Show this at the counter to collect your order.'
-              : 'Show this if staff need to confirm your order.'}
+            {order.type === 'pickup' ? 'Show at the counter' : 'Show if asked'}
           </p>
         </div>
 
@@ -189,17 +187,15 @@ export default function OrderTrack() {
               {order.paymentStatus}
             </span>
           </div>
-          <p className="tiny muted" style={{ marginTop: 8 }}>
-            {order.paymentStatus === 'PAID'
-              ? 'The restaurant has marked this as paid.'
-              : order.paymentMethod === 'app'
-                ? 'You chose to pay through the app — staff will confirm and mark it paid.'
-                : 'Pay at the restaurant however they normally accept payment.'}
-          </p>
+          {order.paymentStatus !== 'PAID' && (
+            <p className="tiny muted" style={{ marginTop: 8 }}>
+              {order.paymentMethod === 'app' ? 'Staff will confirm' : 'Pay at the restaurant'}
+            </p>
+          )}
         </div>
 
         <div className="center mt-3">
-          <Link className="btn btn-secondary" to="/restaurants">
+          <Link className="btn btn-secondary" to="/">
             Order something else
           </Link>
         </div>

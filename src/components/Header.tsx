@@ -15,7 +15,7 @@ export default function Header() {
       </Link>
       <div className="header-spacer" />
       <nav className="header-nav">
-        <NavLink to="/restaurants" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+        <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Restaurants
         </NavLink>
         <NavLink to="/orders" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>

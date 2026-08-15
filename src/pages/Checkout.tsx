@@ -69,7 +69,7 @@ export default function Checkout() {
             title="Nothing to order yet"
             body="Add a few things first."
             action={
-              <Link className="btn btn-accent" to="/restaurants">
+              <Link className="btn btn-accent" to="/">
                 Browse restaurants
               </Link>
             }
@@ -263,13 +263,9 @@ export default function Checkout() {
                 )}
               </div>
               {canPayInApp ? (
-                <span className="hint">
-                  Paying now means no code and no waiting — you&rsquo;re verified the moment it goes through.
-                </span>
+                <span className="hint">No code needed.</span>
               ) : (
-                <span className="hint">
-                  {cart.restaurantName} hasn&rsquo;t set up UPI yet, so payment happens at the counter.
-                </span>
+                <span className="hint">UPI not set up here.</span>
               )}
             </div>
           )}

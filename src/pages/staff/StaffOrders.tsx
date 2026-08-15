@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError, openStream } from '../../lib/api'
 import { EmptyState, LoadingBlock, money, timeAgo, useToast, clockTime } from '../../components/ui'
+import { Link } from 'react-router-dom'
 import { announceOrder, askToNotify, notifyPermission } from '../../lib/notify'
 import {
   nextStatus,
@@ -210,7 +211,9 @@ export default function StaffOrders() {
               {visible.map((o) => (
                 <tr key={o.id} className={o.status === 'NEW' ? 'is-new' : ''}>
                   <td>
-                    <strong className="mono">#{o.orderNumber}</strong>
+                    <Link className="mono" to={`/staff/table/${o.id}`}>
+                      <strong>#{o.orderNumber}</strong>
+                    </Link>
                     {o.isGroup && <span className="o-group-tag" style={{ marginLeft: 6 }}>GROUP</span>}
                   </td>
                   <td>
@@ -270,7 +273,9 @@ export default function StaffOrders() {
                     return (
                       <article key={o.id} className={`o-card ${o.status === 'NEW' ? 'is-new' : ''}`}>
                         <div className="o-card-top">
-                          <span className="o-number">#{o.orderNumber}</span>
+                          <Link className="o-number" to={`/staff/table/${o.id}`}>
+                            #{o.orderNumber}
+                          </Link>
                           <span className={`badge ${o.serviceType === 'dine_in' ? 'badge-accent' : 'badge-info'}`}>
                             {SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]}
                           </span>

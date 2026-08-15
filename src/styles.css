@@ -3073,3 +3073,62 @@ textarea {
   max-width: 380px;
   line-height: 1.45;
 }
+
+/* ------------------------------------------------------------- table service */
+.bill-due {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--bg-tint);
+  margin-bottom: 14px;
+}
+.bill-due strong {
+  font-family: var(--serif);
+  font-size: 30px;
+  letter-spacing: -0.02em;
+}
+.add-list {
+  max-height: 44vh;
+  overflow-y: auto;
+  margin: 12px 0;
+}
+.bill-print {
+  display: none;
+}
+@media print {
+  /* Only the receipt survives a print. */
+  body * {
+    visibility: hidden;
+  }
+  .bill-print,
+  .bill-print * {
+    visibility: visible;
+  }
+  .bill-print {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .bill-print table {
+    width: 100%;
+    margin: 10px 0;
+  }
+  .bill-print td:last-child {
+    text-align: right;
+  }
+}
+
+/* This month's specials — a mark, not a banner. */
+.star {
+  color: var(--ink);
+  font-size: 11px;
+  margin-left: 5px;
+  vertical-align: 1px;
+  opacity: 0.55;
+}

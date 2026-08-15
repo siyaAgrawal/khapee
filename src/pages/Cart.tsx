@@ -54,7 +54,7 @@ export default function Cart() {
             title="Your cart is empty"
             body="Pick a restaurant and add a few things — it only takes a moment."
             action={
-              <Link className="btn btn-accent" to="/restaurants">
+              <Link className="btn btn-accent" to="/">
                 Browse restaurants
               </Link>
             }

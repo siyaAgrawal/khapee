@@ -287,7 +287,7 @@ export function shapeOrder(row: any) {
   const items = db
     .prepare(
       `SELECT i.id, i.name, i.emoji, i.unit_price_cents, i.quantity, i.paid_at, i.member_id,
-              m.display_name AS member_name
+              i.added_by_staff, m.display_name AS member_name
        FROM order_items i LEFT JOIN group_members m ON m.id = i.member_id
        WHERE i.order_id = ? ORDER BY i.id`,
     )
@@ -334,6 +334,7 @@ export function shapeOrder(row: any) {
       quantity: i.quantity,
       memberId: i.member_id ?? null,
       memberName: i.member_name ?? null,
+      addedByStaff: !!i.added_by_staff,
       paid: !!i.paid_at,
     })),
     payments: payments.map((p) => ({

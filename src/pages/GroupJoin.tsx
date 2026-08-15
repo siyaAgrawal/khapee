@@ -53,7 +53,7 @@ export default function GroupJoin() {
           <>
             <ErrorState message={error} />
             <div className="center">
-              <Link className="btn btn-accent" to="/restaurants">
+              <Link className="btn btn-accent" to="/">
                 Browse restaurants
               </Link>
             </div>
@@ -103,7 +103,6 @@ export default function GroupJoin() {
                     autoComplete="name"
                     required
                   />
-                  <span className="hint">So the table knows whose food is whose.</span>
                 </div>
                 <button className="btn btn-accent btn-lg btn-block" disabled={busy || name.trim().length < 2}>
                   {busy ? <Spinner /> : 'Join'}

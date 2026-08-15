@@ -83,11 +83,7 @@ export default function StaffCodes() {
       </div>
 
       <div className="card card-pad mb-2">
-        <p className="tiny muted">
-          Give this code to a customer who is already seated. They enter it (or scan the QR) to prove they are in
-          the restaurant before ordering.
-        </p>
-        <div className="row row-wrap mt-3">
+        <div className="row row-wrap">
           <label className="tiny muted">Valid for</label>
           <select className="select" style={{ width: 130 }} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
             {[5, 10, 15, 30, 60].map((m) => (
@@ -172,9 +168,6 @@ export default function StaffCodes() {
             <div style={{ display: 'grid', placeItems: 'center', margin: '16px 0' }}>
               <QRCanvas value={showQr.qrPayload} size={220} />
             </div>
-            <p className="tiny muted">
-              The customer can scan this, or type the six characters at checkout.
-            </p>
           </div>
         )}
       </Modal>

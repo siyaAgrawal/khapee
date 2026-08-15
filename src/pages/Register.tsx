@@ -10,6 +10,7 @@ export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [owner, setOwner] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -19,7 +20,9 @@ export default function Register() {
     setBusy(true)
     try {
       await register(name.trim(), email.trim(), password)
-      navigate('/', { replace: true })
+      // One account, both ends. Ticking the box just carries you straight on to
+      // the restaurant's details — nothing about the account itself differs.
+      navigate(owner ? '/for-restaurants' : '/', { replace: true })
     } catch (err) {
       setError((err as ApiError).message)
       setBusy(false)
@@ -33,7 +36,6 @@ export default function Register() {
           <span className="brand-mark">◗</span> Ordro
         </Link>
         <h1>Create your account</h1>
-        <p>Keep your orders in one place and reorder in a couple of taps.</p>
 
         {error && <div className="form-error">{error}</div>}
 
@@ -75,16 +77,25 @@ export default function Register() {
             />
             <span className="hint">At least 6 characters.</span>
           </div>
+
+          <label className="row tiny" style={{ gap: 10, margin: '2px 0 16px' }}>
+            <button
+              type="button"
+              className={`switch ${owner ? 'on' : ''}`}
+              onClick={() => setOwner(!owner)}
+              aria-pressed={owner}
+              aria-label="I run a restaurant"
+            />
+            I run a restaurant
+          </label>
+
           <button className="btn btn-accent btn-block btn-lg" disabled={busy}>
-            {busy ? <Spinner /> : 'Create account'}
+            {busy ? <Spinner /> : owner ? 'Continue' : 'Create account'}
           </button>
         </form>
 
         <p className="auth-alt">
           Already have an account? <Link to="/login">Sign in</Link>
-        </p>
-        <p className="auth-alt" style={{ marginTop: 6 }}>
-          Run a restaurant? <Link to="/for-restaurants">List it on Ordro</Link>
         </p>
       </div>
     </div>

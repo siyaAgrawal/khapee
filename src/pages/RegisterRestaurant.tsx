@@ -56,11 +56,7 @@ export default function RegisterRestaurant() {
           <span className="brand-mark">◗</span> Ordro
         </Link>
         <h1>{adding ? 'Add a restaurant' : 'List your restaurant'}</h1>
-        <p>
-          {adding
-            ? `Adding to ${user!.name}'s account — you'll be able to switch between your restaurants from the dashboard.`
-            : 'Create your dashboard, then add your menu, photos and tables yourself.'}
-        </p>
+        {adding && <p>On {user!.name}&rsquo;s account</p>}
 
         {error && <div className="form-error">{error}</div>}
 
@@ -108,7 +104,7 @@ export default function RegisterRestaurant() {
               value={form.tables}
               onChange={(e) => set('tables', Number(e.target.value))}
             />
-            <span className="hint">We&rsquo;ll create them with printable QR codes. You can change them later.</span>
+            <span className="hint">Each gets a printable QR code.</span>
           </div>
 
           {adding ? null : (

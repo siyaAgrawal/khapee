@@ -35,7 +35,6 @@ export default function Login() {
           <span className="brand-mark">◗</span> Ordro
         </Link>
         <h1>Welcome back</h1>
-        <p>Sign in to track your orders, or to open your restaurant dashboard.</p>
 
         {error && <div className="form-error">{error}</div>}
 

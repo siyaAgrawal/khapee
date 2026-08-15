@@ -4,7 +4,6 @@ import { useSession } from './lib/session'
 import { LoadingBlock } from './components/ui'
 import Splash from './components/Splash'
 
-import Landing from './pages/Landing'
 import Home from './pages/Home'
 import Restaurant from './pages/Restaurant'
 import Cart from './pages/Cart'
@@ -23,6 +22,7 @@ import StaffOrders from './pages/staff/StaffOrders'
 import StaffProfile from './pages/staff/StaffProfile'
 import StaffPayments from './pages/staff/StaffPayments'
 import StaffPhotos from './pages/staff/StaffPhotos'
+import StaffTable from './pages/staff/StaffTable'
 import StaffCodes from './pages/staff/StaffCodes'
 import StaffTables from './pages/staff/StaffTables'
 import StaffMenu from './pages/staff/StaffMenu'
@@ -45,8 +45,8 @@ export default function App() {
     <>
       {intro && <Splash onDone={() => setIntro(false)} />}
       <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/restaurants" element={<Home />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/restaurants" element={<Navigate to="/" replace />} />
       <Route path="/r/:id" element={<Restaurant />} />
       <Route path="/t/:token" element={<TableEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
@@ -75,6 +75,7 @@ export default function App() {
         <Route path="tables" element={<StaffTables />} />
         <Route path="menu" element={<StaffMenu />} />
         <Route path="photos" element={<StaffPhotos />} />
+        <Route path="table/:id" element={<StaffTable />} />
         <Route path="verify" element={<StaffVerify />} />
       </Route>
 

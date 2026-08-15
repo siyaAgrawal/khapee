@@ -14,6 +14,7 @@ type Item = {
   imageUrl: string | null
   isVeg: boolean
   isAvailable: boolean
+  isSpecial: boolean
 }
 type Category = { id: number; name: string; items: Item[] }
 
@@ -29,6 +30,7 @@ type Draft = {
   hue: number
   isVeg: boolean
   isAvailable: boolean
+  isSpecial: boolean
   imageUrl: string | null
 }
 
@@ -43,6 +45,7 @@ function emptyDraft(categoryId: number): Draft {
     hue: 24,
     isVeg: true,
     isAvailable: true,
+    isSpecial: false,
     imageUrl: null,
   }
 }
@@ -163,6 +166,7 @@ export default function StaffMenu() {
         hue: draft.hue,
         isVeg: draft.isVeg,
         isAvailable: draft.isAvailable,
+        isSpecial: draft.isSpecial,
       }
       if (draft.id) {
         await api(`/staff/menu/${draft.id}`, { method: 'PATCH', body })
@@ -298,7 +302,10 @@ export default function StaffMenu() {
                   alt={item.name}
                 />
                 <div style={{ minWidth: 0 }}>
-                  <strong style={{ fontSize: 14.5 }}>{item.name}</strong>
+                  <strong style={{ fontSize: 14.5 }}>
+                    {item.name}
+                    {item.isSpecial && <span className="star" title="This month">★</span>}
+                  </strong>
                   <p className="tiny muted">{money(item.priceCents)}</p>
                 </div>
                 <span className="spacer" />
@@ -316,6 +323,7 @@ export default function StaffMenu() {
                       hue: item.hue,
                       isVeg: item.isVeg,
                       isAvailable: item.isAvailable,
+                      isSpecial: item.isSpecial,
                       imageUrl: item.imageUrl,
                     })
                   }}
@@ -424,6 +432,16 @@ export default function StaffMenu() {
                       aria-label="Available"
                     />
                     Available
+                  </label>
+                  <label className="row tiny" style={{ gap: 8 }}>
+                    <button
+                      type="button"
+                      className={`switch ${draft.isSpecial ? 'on' : ''}`}
+                      onClick={() => setDraft({ ...draft, isSpecial: !draft.isSpecial })}
+                      aria-pressed={draft.isSpecial}
+                      aria-label="This month's special"
+                    />
+                    This month
                   </label>
                 </div>
               </div>

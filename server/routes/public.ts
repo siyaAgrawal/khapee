@@ -103,32 +103,43 @@ publicRouter.get('/restaurants/:id', (req, res) => {
     .all(id) as any[]
   const items = db
     .prepare(
-      `SELECT id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, sort_order, image_path
+      `SELECT id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, is_special, sort_order, image_path
        FROM menu_items WHERE restaurant_id = ? ORDER BY sort_order, id`,
     )
     .all(id) as any[]
 
-  res.json({
-    restaurant: shapeRestaurant(row),
-    menu: categories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      items: items
-        .filter((i) => i.category_id === c.id)
-        .map((i) => ({
-          id: i.id,
-          name: i.name,
-          description: i.description,
-          priceCents: i.price_cents,
-          emoji: i.emoji,
-          hue: i.hue,
-          imageUrl: imageUrl(i.image_path),
-          isVeg: !!i.is_veg,
-          isAvailable: !!i.is_available,
-        })),
-    })),
-  })
+  // This month's specials ride at the top of the menu as a section of their own.
+  // The dishes stay in their real section too — this is a shortcut, not a move.
+  const specials = items.filter((i) => i.is_special && i.is_available)
+  const sections = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    items: items.filter((i) => i.category_id === c.id).map(shapeMenuItem),
+  }))
+  if (specials.length) {
+    sections.unshift({ id: SPECIALS_SECTION_ID, name: 'This month', items: specials.map(shapeMenuItem) })
+  }
+
+  res.json({ restaurant: shapeRestaurant(row), menu: sections })
 })
+
+/** Not a real category row — the specials section is assembled per request. */
+const SPECIALS_SECTION_ID = -1
+
+function shapeMenuItem(i: any) {
+  return {
+    id: i.id,
+    name: i.name,
+    description: i.description,
+    priceCents: i.price_cents,
+    emoji: i.emoji,
+    hue: i.hue,
+    imageUrl: imageUrl(i.image_path),
+    isVeg: !!i.is_veg,
+    isAvailable: !!i.is_available,
+    isSpecial: !!i.is_special,
+  }
+}
 
 /**
  * Resolves whatever a customer scanned or typed.

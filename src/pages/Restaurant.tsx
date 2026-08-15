@@ -19,6 +19,7 @@ type MenuItem = {
   imageUrl: string | null
   isVeg: boolean
   isAvailable: boolean
+  isSpecial: boolean
 }
 type Category = { id: number; name: string; items: MenuItem[] }
 
@@ -90,11 +91,6 @@ export default function Restaurant() {
                   <span className="dot-sep">{data.restaurant.hours}</span>
                   <span className="dot-sep">~{data.restaurant.prepMinutes} min</span>
                 </div>
-                {!data.restaurant.isOpen && (
-                  <p className="tiny" style={{ marginTop: 10, color: 'var(--bad)' }}>
-                    This restaurant is not accepting orders right now. You can still browse the menu.
-                  </p>
-                )}
                 {data.restaurant.isOpen && (
                   <div style={{ marginTop: 14 }}>
                     <DiningBar restaurantId={restaurantId} />
@@ -102,7 +98,7 @@ export default function Restaurant() {
                 )}
                 {tableCtx && (
                   <p className="tiny muted" style={{ marginTop: 8 }}>
-                    Scanned {tableCtx.tableLabel}.
+                    {tableCtx.tableLabel}
                   </p>
                 )}
                 {inThisGroup && (
@@ -149,6 +145,7 @@ export default function Restaurant() {
                         <div className="item-body">
                           <div className="item-title">
                             <span className={`veg-dot ${item.isVeg ? '' : 'nonveg'}`} aria-hidden />
+                            {item.isSpecial && <span className="star" title="This month">★</span>}
                             {item.name}
                           </div>
                           <p className="item-desc">{item.description}</p>

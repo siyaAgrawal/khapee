@@ -35,7 +35,7 @@ export default function TableEntry() {
           <>
             <ErrorState message={error} />
             <div className="center">
-              <Link className="btn btn-accent" to="/restaurants">
+              <Link className="btn btn-accent" to="/">
                 Browse restaurants
               </Link>
             </div>

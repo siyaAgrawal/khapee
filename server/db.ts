@@ -217,6 +217,13 @@ addColumn('order_items', 'paid_at', 'TEXT')
 // dashboard needs to know which of their restaurants is currently in view.
 addColumn('users', 'active_restaurant_id', 'INTEGER')
 
+// A dish the restaurant is running this month.
+addColumn('menu_items', 'is_special', 'INTEGER NOT NULL DEFAULT 0')
+// Items a waiter added at the table rather than the customer through the app.
+addColumn('order_items', 'added_by_staff', 'INTEGER NOT NULL DEFAULT 0')
+// Bill printed / settled at the counter.
+addColumn('orders', 'bill_closed_at', 'TEXT')
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS photo_library (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

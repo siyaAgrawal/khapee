@@ -50,7 +50,7 @@ export default function StaffLayout() {
           </NavLink>
         ))}
         <div className="side-foot">
-          <NavLink to="/restaurants" className="side-link">
+          <NavLink to="/" className="side-link">
             <span aria-hidden>🍽️</span> Order as a customer
           </NavLink>
           <div className="side-user">

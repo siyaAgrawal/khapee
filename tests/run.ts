@@ -1317,6 +1317,115 @@ async function runTests() {
     (await call(`/staff/orders/${svcOrderId}/items`, { token: basilToken, body: { items: [{ menuItemId: pasta.id, quantity: 1 }] } })).status === 404,
   )
 
+  group('GOING LIVE — Done puts the restaurant on the app')
+  const liveReg = await call('/auth/register-restaurant', {
+    body: {
+      name: 'Nadia Fernandes',
+      email: 'nadia@golive.test',
+      password: 'password123',
+      restaurantName: 'Go Live Cafe',
+      address: 'Palasia, Indore',
+      tables: 2,
+    },
+  })
+  const liveToken = liveReg.body.token as string
+  const liveId = (await call('/staff/restaurant', { token: liveToken })).body.restaurant.id as number
+
+  const beforeAnything = await call('/staff/restaurant', { token: liveToken })
+  ok('a brand new restaurant is not on the app', beforeAnything.body.restaurant.isListed === false)
+  ok('and it has not been published', beforeAnything.body.restaurant.publishedAt === null)
+  ok(
+    'customers browsing do not see it',
+    !(await call('/restaurants')).body.restaurants.some((r: any) => r.id === liveId),
+  )
+
+  const emptyDone = await call('/staff/restaurant', {
+    token: liveToken,
+    method: 'PATCH',
+    body: { publish: true, phone: '+91 90000 00000', city: 'Indore' },
+  })
+  ok('Done saves the details', emptyDone.body.restaurant.phone === '+91 90000 00000')
+  ok('but an empty menu cannot go live', emptyDone.body.justPublished === false)
+  ok('so it stays closed', emptyDone.body.restaurant.isOpen === false, emptyDone.body.restaurant)
+
+  const liveCat = (await call('/staff/categories', { token: liveToken, body: { name: 'All day' } })).body.category.id
+  const liveDish = (
+    await call('/staff/menu', { token: liveToken, body: { categoryId: liveCat, name: 'Filter Coffee', price: '90' } })
+  ).body.item.id
+
+  const done = await call('/staff/restaurant', {
+    token: liveToken,
+    method: 'PATCH',
+    body: { publish: true, hours: '8:00 AM – 10:00 PM' },
+  })
+  ok('with a dish on the menu, Done publishes', done.body.justPublished === true, done.body)
+  ok('it opens for orders', done.body.restaurant.isOpen === true)
+  ok('it is on the app', done.body.restaurant.isListed === true)
+  ok('and the last edit saved with it', done.body.restaurant.hours === '8:00 AM – 10:00 PM')
+
+  const browse = await call('/restaurants')
+  ok(
+    'customers can now see it',
+    browse.body.restaurants.some((r: any) => r.id === liveId),
+    browse.body.restaurants.map((r: any) => r.name),
+  )
+
+  const liveOrder = await call('/orders', {
+    body: {
+      restaurantId: liveId,
+      type: 'pickup',
+      items: [{ menuItemId: liveDish, quantity: 2 }],
+      customerName: 'First Guest',
+    },
+  })
+  ok('and order from it', liveOrder.status === 201, liveOrder.body)
+  ok('at the price on the menu', liveOrder.body.order.totalCents === 18000)
+
+  await call('/staff/restaurant/open', { token: liveToken, body: { isOpen: false } })
+  const secondDone = await call('/staff/restaurant', {
+    token: liveToken,
+    method: 'PATCH',
+    body: { publish: true, description: 'Filter coffee and not much else' },
+  })
+  ok('a later Done does not publish twice', secondDone.body.justPublished === false)
+  ok(
+    'and does not reopen a restaurant its owner closed',
+    secondDone.body.restaurant.isOpen === false,
+    secondDone.body.restaurant,
+  )
+  ok('while still saving the edit', secondDone.body.restaurant.description === 'Filter coffee and not much else')
+  ok(
+    'a closed restaurant cannot be ordered from',
+    (
+      await call('/orders', {
+        body: { restaurantId: liveId, type: 'pickup', items: [{ menuItemId: liveDish, quantity: 1 }], customerName: 'Too Late' },
+      })
+    ).status === 409,
+  )
+
+  const openReg = await call('/auth/register-restaurant', {
+    body: {
+      name: 'Imran Qureshi',
+      email: 'imran@openpublish.test',
+      password: 'password123',
+      restaurantName: 'Open Publish Kitchen',
+      address: 'Saket, Indore',
+      tables: 1,
+    },
+  })
+  const openToken = openReg.body.token as string
+  const openCat = (await call('/staff/categories', { token: openToken, body: { name: 'Rolls' } })).body.category.id
+  await call('/staff/menu', { token: openToken, body: { categoryId: openCat, name: 'Paneer Roll', price: '140' } })
+  await call('/staff/restaurant/open', { token: openToken, body: { isOpen: true } })
+  const viaSwitch = await call('/staff/restaurant', { token: openToken })
+  ok('opening from the menu screen publishes too', viaSwitch.body.restaurant.publishedAt !== null)
+  const afterSwitch = await call('/staff/restaurant', {
+    token: openToken,
+    method: 'PATCH',
+    body: { publish: true, phone: '+91 98888 77777' },
+  })
+  ok('so a later Done has nothing left to publish', afterSwitch.body.justPublished === false)
+
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, ApiError } from '../../lib/api'
 import ImagePicker from '../../components/ImagePicker'
+import LiveStrip from '../../components/LiveStrip'
 import { Art, LoadingBlock, Spinner, useToast } from '../../components/ui'
 
 type Profile = {
@@ -24,6 +25,9 @@ type Profile = {
   acceptsPickup: boolean
   acceptsTakeaway: boolean
   acceptsGroups: boolean
+  publishedAt: string | null
+  itemCount: number
+  isListed: boolean
 }
 
 const EMOJI_CHOICES = ['🍽️', '☕', '🍕', '🍝', '🍔', '🍜', '🍛', '🥘', '🌮', '🍣', '🥗', '🧁', '🍦', '🥤', '🫓', '🍢']
@@ -48,16 +52,16 @@ export default function StaffProfile() {
   if (!form || !profile) return <LoadingBlock />
 
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) => setForm({ ...form, [key]: value })
-  const dirty = JSON.stringify(form) !== JSON.stringify(profile)
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     setError('')
     try {
-      const r = await api<{ restaurant: Profile }>('/staff/restaurant', {
+      const r = await api<{ restaurant: Profile; justPublished: boolean }>('/staff/restaurant', {
         method: 'PATCH',
         body: {
+          publish: true,
           name: form.name,
           description: form.description,
           address: form.address,
@@ -79,7 +83,10 @@ export default function StaffProfile() {
       })
       setProfile(r.restaurant)
       setForm(r.restaurant)
-      toast('Restaurant details saved', 'good')
+      toast(
+        r.justPublished ? "You're on the app" : r.restaurant.isListed ? 'Saved' : 'Add a dish to go live',
+        r.justPublished || r.restaurant.isListed ? 'good' : 'info',
+      )
     } catch (err) {
       setError((err as ApiError).message)
     } finally {
@@ -115,6 +122,8 @@ export default function StaffProfile() {
       </div>
 
       {error && <div className="form-error">{error}</div>}
+
+      <LiveStrip restaurantId={form.id} isListed={form.isListed} isOpen={form.isOpen} onOpen={toggleOpen} />
 
       <div className="edit-grid">
         <form className="card card-pad" onSubmit={save}>
@@ -226,8 +235,8 @@ export default function StaffProfile() {
             </div>
           </div>
 
-          <button className="btn btn-accent btn-lg" disabled={!dirty || saving}>
-            {saving ? <Spinner /> : dirty ? 'Save changes' : 'Saved'}
+          <button className="btn btn-accent btn-lg" disabled={saving}>
+            {saving ? <Spinner /> : 'Done'}
           </button>
         </form>
 

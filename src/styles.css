@@ -3132,3 +3132,20 @@ textarea {
   vertical-align: 1px;
   opacity: 0.55;
 }
+
+/* Where the restaurant stands with customers, above its own details. */
+.live-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: 14px;
+}
+.live-strip > span:first-child {
+  flex: 1;
+  min-width: 0;
+}

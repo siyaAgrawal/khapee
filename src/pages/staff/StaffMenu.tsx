@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import LiveStrip from '../../components/LiveStrip'
 import { api, ApiError } from '../../lib/api'
 import ImagePicker from '../../components/ImagePicker'
 import { Art, EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../../components/ui'
@@ -189,7 +190,6 @@ export default function StaffMenu() {
   if (!data) return <LoadingBlock />
 
   const itemCount = data.categories.reduce((n, c) => n + c.items.length, 0)
-  const liveCount = data.categories.reduce((n, c) => n + c.items.filter((i) => i.isAvailable).length, 0)
 
   return (
     <>
@@ -207,17 +207,13 @@ export default function StaffMenu() {
         />
       </div>
 
-      {liveCount === 0 && (
-        <div className="notice mb-2">
-          <span aria-hidden>👀</span>
-          <div>
-            <strong>Not visible to customers yet</strong>
-            <p className="tiny">
-              Your restaurant appears in the app as soon as one dish is on the menu and available.
-              {!data.restaurant.isOpen && ' Remember to switch yourself open too.'}
-            </p>
-          </div>
-        </div>
+      {!(data.restaurant.isListed && data.restaurant.isOpen) && (
+        <LiveStrip
+          restaurantId={data.restaurant.id}
+          isListed={!!data.restaurant.isListed}
+          isOpen={!!data.restaurant.isOpen}
+          onOpen={toggleOpen}
+        />
       )}
 
       <form className="card card-pad mb-2" onSubmit={addSection}>
@@ -251,9 +247,6 @@ export default function StaffMenu() {
             {data.categories.length === 1 ? '' : 's'}
           </span>
         </div>
-        <p className="tiny muted mt-3">
-          Turn a dish off the moment it runs out — customers see it as sold out straight away and cannot order it.
-        </p>
       </form>
 
       {data.categories.length === 0 && (

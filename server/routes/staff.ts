@@ -240,7 +240,13 @@ staffRouter.get('/menu', (req, res) => {
     .prepare('SELECT * FROM menu_items WHERE restaurant_id = ? ORDER BY sort_order, id')
     .all(restaurantId) as any[]
   res.json({
-    restaurant: { id: restaurant.id, name: restaurant.name, isOpen: !!restaurant.is_open, hours: restaurant.hours },
+    restaurant: {
+      id: restaurant.id,
+      name: restaurant.name,
+      isOpen: !!restaurant.is_open,
+      hours: restaurant.hours,
+      isListed: countLiveItems(restaurantId) > 0,
+    },
     categories: categories.map((c) => ({
       id: c.id,
       name: c.name,
@@ -433,6 +439,12 @@ staffRouter.post('/restaurant/open', (req, res) => {
   const restaurantId = myRestaurant(req)
   const isOpen = req.body?.isOpen ? 1 : 0
   db.prepare('UPDATE restaurants SET is_open = ? WHERE id = ?').run(isOpen, restaurantId)
+  // Opening the doors counts as going live, whichever screen it happened from.
+  if (isOpen) {
+    db.prepare("UPDATE restaurants SET published_at = datetime('now') WHERE id = ? AND published_at IS NULL").run(
+      restaurantId,
+    )
+  }
   res.json({ ok: true, isOpen: !!isOpen })
 })
 
@@ -464,7 +476,19 @@ function shapeOwnRestaurant(row: any) {
     acceptsPickup: !!row.accepts_pickup,
     acceptsTakeaway: !!row.accepts_takeaway,
     acceptsGroups: !!row.accepts_groups,
+    publishedAt: row.published_at ?? null,
+    itemCount: countLiveItems(row.id),
+    // Exactly what the browse list asks of a restaurant before it shows it.
+    isListed: countLiveItems(row.id) > 0,
   }
+}
+
+/** Dishes a customer could order right now. */
+function countLiveItems(restaurantId: number): number {
+  const row = db
+    .prepare('SELECT COUNT(*) AS n FROM menu_items WHERE restaurant_id = ? AND is_available = 1')
+    .get(restaurantId) as any
+  return row.n as number
 }
 
 staffRouter.get('/restaurant', (req, res) => {
@@ -530,8 +554,21 @@ staffRouter.patch('/restaurant', (req, res) => {
       restaurantId,
     )
   }
+  // "Done" is the moment a restaurant goes live: once it has a dish to sell we
+  // open it for orders and remember that it has been published. Later edits
+  // leave it alone — after the first time, open and closed is the owner's call.
+  let justPublished = false
+  const before = db.prepare('SELECT published_at FROM restaurants WHERE id = ?').get(restaurantId) as any
+  if (body.publish && !before.published_at && countLiveItems(restaurantId) > 0) {
+    db.prepare('UPDATE restaurants SET published_at = ?, is_open = 1 WHERE id = ?').run(
+      new Date().toISOString(),
+      restaurantId,
+    )
+    justPublished = true
+  }
+
   const row = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(restaurantId) as any
-  res.json({ restaurant: shapeOwnRestaurant(row) })
+  res.json({ restaurant: shapeOwnRestaurant(row), justPublished })
 })
 
 staffRouter.post('/restaurant/image', (req, res) => {

@@ -207,6 +207,11 @@ addColumn('restaurants', 'city', "TEXT NOT NULL DEFAULT ''")
 addColumn('restaurants', 'lat', 'REAL')
 addColumn('restaurants', 'lng', 'REAL')
 
+// When the restaurant first went live. Set the first time its owner finishes
+// the details form with a dish on the menu, and never cleared after that —
+// closing for the night is `is_open`, which is a different thing entirely.
+addColumn('restaurants', 'published_at', 'TEXT')
+
 // A dine-in order the customer is carrying out rather than eating at a table.
 addColumn('orders', 'takeaway', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('orders', 'group_session_id', 'INTEGER')

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { useVegMode } from '../lib/veg'
+import { cuisineBackground, cuisineEmoji } from '../lib/cuisine-art'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 
 export type RestaurantCard = {
@@ -29,7 +30,7 @@ export type RestaurantCard = {
   acceptsUpi?: boolean
 }
 
-export type CuisineTile = { name: string; emoji: string; hue: number; imageUrl: string | null; count: number }
+export type CuisineTile = { name: string; count: number }
 
 export default function Home() {
   const [veg, setVeg] = useVegMode()
@@ -151,14 +152,14 @@ export default function Home() {
 
         {tiles.length > 0 && (
           <div className="cuisine-bar">
-            {[{ name: 'All', emoji: '🍽️', hue: 24, imageUrl: null, count: 0 }, ...tiles].map((c) => (
+            {[{ name: 'All', count: 0 }, ...tiles].map((c) => (
               <button
                 key={c.name}
                 className={`cuisine ${filter === c.name ? 'active' : ''}`}
                 onClick={() => setFilter(c.name)}
               >
-                <span className="cuisine-art" style={{ background: `hsl(${c.hue} 32% 22%)` }}>
-                  {c.imageUrl ? <img src={c.imageUrl} alt="" loading="lazy" /> : <span>{c.emoji}</span>}
+                <span className="cuisine-art" style={{ background: cuisineBackground(c.name) }} aria-hidden>
+                  {cuisineEmoji(c.name)}
                 </span>
                 {c.name}
               </button>

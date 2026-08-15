@@ -80,58 +80,32 @@ publicRouter.get('/restaurants', (req, res) => {
 
   res.json({
     restaurants: shaped,
-    cuisines: cuisineTiles(visible, vegOnly),
+    cuisines: cuisineTiles(visible),
     cities,
     nearestCity,
     draftCount: rows.length - visible.length,
   })
 })
 
-/**
- * The cuisines on offer, each with a real dish photo from a restaurant that
- * serves it. Nothing is fetched or invented — if no kitchen in that cuisine has
- * uploaded a photo yet, the tile falls back to the restaurant's own emoji.
- */
-function cuisineTiles(restaurants: any[], vegOnly: boolean) {
+/** The cuisines on offer, most-served first. The picture is drawn client-side. */
+function cuisineTiles(restaurants: any[]) {
   // Restaurants type their own cuisines, so "Cafe" and "cafe" arrive as two.
   // They are one tile, labelled the way most owners wrote it.
-  const byCuisine = new Map<string, { label: string; emoji: string; hue: number; restaurantIds: number[] }>()
+  const byCuisine = new Map<string, { label: string; count: number }>()
   for (const r of restaurants) {
     for (const raw of String(r.categories || '').split(',')) {
       const name = raw.trim()
       if (!name) continue
       const key = name.toLowerCase()
-      const tile = byCuisine.get(key) ?? { label: name, emoji: r.emoji, hue: r.hue, restaurantIds: [] as number[] }
+      const tile = byCuisine.get(key) ?? { label: name, count: 0 }
       if (name[0] === name[0].toUpperCase() && tile.label[0] !== tile.label[0].toUpperCase()) tile.label = name
-      tile.restaurantIds.push(r.id)
+      tile.count++
       byCuisine.set(key, tile)
     }
   }
 
-  const photo = db.prepare(
-    `SELECT image_path FROM menu_items
-     WHERE restaurant_id = ? AND is_available = 1 AND image_path IS NOT NULL AND (0 = ? OR is_veg = 1)
-     ORDER BY sort_order, id LIMIT 1`,
-  )
-
   return [...byCuisine.values()]
-    .map((tile) => {
-      let found: string | null = null
-      for (const id of tile.restaurantIds) {
-        const row = photo.get(id, vegOnly ? 1 : 0) as any
-        if (row?.image_path) {
-          found = row.image_path
-          break
-        }
-      }
-      return {
-        name: tile.label,
-        emoji: tile.emoji,
-        hue: tile.hue,
-        imageUrl: imageUrl(found),
-        count: tile.restaurantIds.length,
-      }
-    })
+    .map((t) => ({ name: t.label, count: t.count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 

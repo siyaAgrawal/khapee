@@ -7,7 +7,7 @@ import { sessionByToken as diningByToken, sessionIsValid as diningIsValid } from
 
 const GROUP_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 
-function groupCode(): string {
+export function groupCode(): string {
   for (let attempt = 0; attempt < 60; attempt++) {
     let code = 'G'
     for (let i = 0; i < 4; i++) code += GROUP_ALPHABET[Math.floor(Math.random() * GROUP_ALPHABET.length)]
@@ -37,6 +37,8 @@ export function createSession(input: {
   tableToken?: string | null
   accessCode?: string | null
   sessionToken?: string | null
+  /** Ordering ahead: a room with no table, needing no presence proof. */
+  ahead?: boolean
 }): CreateResult {
   const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(input.restaurantId) as any
   if (!restaurant) return { ok: false, status: 404, error: 'That restaurant no longer exists.' }
@@ -73,6 +75,14 @@ export function createSession(input: {
     tableId = dining.table_id
     tableLabel = dining.table_label
   }
+  // A room opened from a cart before anyone has arrived is the group version of
+  // ordering ahead, so it asks for no more proof than a solo ahead order does.
+  if (input.ahead && !input.tableToken && !input.accessCode && !hasDining) {
+    if (!restaurant.accepts_pickup) {
+      return { ok: false, status: 409, error: `${restaurant.name} only takes orders at the table.` }
+    }
+    return finishSession(input, null, null)
+  }
   if (!input.tableToken && !input.accessCode && !hasDining) {
     return {
       ok: false,
@@ -90,6 +100,15 @@ export function createSession(input: {
   }
   if (!tableId) return { ok: false, status: 400, error: 'Please choose your table number.' }
 
+  return finishSession(input, tableId, tableLabel)
+}
+
+/** Writes the room and seats whoever opened it as the host. */
+function finishSession(
+  input: { restaurantId: number; hostName: string; userId: number | null },
+  tableId: number | null,
+  tableLabel: string | null,
+): CreateResult {
   const result = db.transaction(() => {
     const info = db
       .prepare(
@@ -101,7 +120,7 @@ export function createSession(input: {
       .prepare(
         `INSERT INTO group_members (session_id, user_id, display_name, token, is_host) VALUES (?, ?, ?, ?, 1)`,
       )
-      .run(sessionId, input.userId, hostName, randomToken(12))
+      .run(sessionId, input.userId, String(input.hostName).trim(), randomToken(12))
     return { sessionId, memberId: Number(memberInfo.lastInsertRowid) }
   })()
 

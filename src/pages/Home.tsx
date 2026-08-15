@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
+import { useVegMode } from '../lib/veg'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 
 export type RestaurantCard = {
@@ -28,8 +29,12 @@ export type RestaurantCard = {
   acceptsUpi?: boolean
 }
 
+export type CuisineTile = { name: string; emoji: string; hue: number; imageUrl: string | null; count: number }
+
 export default function Home() {
+  const [veg, setVeg] = useVegMode()
   const [restaurants, setRestaurants] = useState<RestaurantCard[] | null>(null)
+  const [tiles, setTiles] = useState<CuisineTile[]>([])
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('All')
@@ -38,21 +43,30 @@ export default function Home() {
   const [locating, setLocating] = useState(false)
   const [locationNote, setLocationNote] = useState('')
 
-  const load = (position?: { lat: number; lng: number } | null) => {
+  const load = (position?: { lat: number; lng: number } | null, vegOnly?: boolean) => {
     setError('')
     setRestaurants(null)
-    const q = position ? `?lat=${position.lat}&lng=${position.lng}` : ''
-    api<{ restaurants: RestaurantCard[]; nearestCity: string | null }>(`/restaurants${q}`)
+    const params = new URLSearchParams()
+    if (position) {
+      params.set('lat', String(position.lat))
+      params.set('lng', String(position.lng))
+    }
+    if (vegOnly) params.set('veg', '1')
+    const q = params.toString()
+    api<{ restaurants: RestaurantCard[]; cuisines: CuisineTile[]; nearestCity: string | null }>(
+      `/restaurants${q ? `?${q}` : ''}`,
+    )
       .then((r) => {
         setRestaurants(r.restaurants)
+        setTiles(r.cuisines)
         setNearestCity(r.nearestCity)
       })
       .catch((e: ApiError) => setError(e.message))
   }
 
   useEffect(() => {
-    load(coords)
-  }, [coords])
+    load(coords, veg)
+  }, [coords, veg])
 
   /**
    * Uses the browser's own geolocation. The coordinates go to this app's API
@@ -78,12 +92,6 @@ export default function Home() {
     )
   }
 
-  const cuisines = useMemo(() => {
-    const set = new Set<string>()
-    restaurants?.forEach((r) => r.categories.forEach((c) => set.add(c)))
-    return ['All', ...[...set].sort()]
-  }, [restaurants])
-
   const visible = useMemo(() => {
     if (!restaurants) return []
     const q = query.trim().toLowerCase()
@@ -91,7 +99,8 @@ export default function Home() {
       const matchesQuery =
         !q || r.name.toLowerCase().includes(q) || r.categories.join(' ').toLowerCase().includes(q) ||
         r.description.toLowerCase().includes(q)
-      const matchesFilter = filter === 'All' || r.categories.includes(filter)
+      const matchesFilter =
+        filter === 'All' || r.categories.some((c) => c.toLowerCase() === filter.toLowerCase())
       return matchesQuery && matchesFilter
     })
   }, [restaurants, query, filter])
@@ -119,6 +128,15 @@ export default function Home() {
           >
             {locating ? <Spinner /> : coords ? '📍 Nearest first' : '📍 Near me'}
           </button>
+          <button
+            className={`veg-toggle ${veg ? 'on' : ''}`}
+            onClick={() => setVeg(!veg)}
+            aria-pressed={veg}
+            aria-label="Veg only"
+          >
+            <span className="veg-mark" aria-hidden />
+            Veg
+          </button>
         </div>
         {coords && nearestCity && (
           <p className="tiny muted" style={{ marginTop: 8 }}>
@@ -131,11 +149,18 @@ export default function Home() {
           </p>
         )}
 
-        {restaurants && restaurants.length > 0 && (
-          <div className="chip-row">
-            {cuisines.map((c) => (
-              <button key={c} className={`chip ${filter === c ? 'active' : ''}`} onClick={() => setFilter(c)}>
-                {c}
+        {tiles.length > 0 && (
+          <div className="cuisine-bar">
+            {[{ name: 'All', emoji: '🍽️', hue: 24, imageUrl: null, count: 0 }, ...tiles].map((c) => (
+              <button
+                key={c.name}
+                className={`cuisine ${filter === c.name ? 'active' : ''}`}
+                onClick={() => setFilter(c.name)}
+              >
+                <span className="cuisine-art" style={{ background: `hsl(${c.hue} 32% 22%)` }}>
+                  {c.imageUrl ? <img src={c.imageUrl} alt="" loading="lazy" /> : <span>{c.emoji}</span>}
+                </span>
+                {c.name}
               </button>
             ))}
           </div>

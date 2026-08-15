@@ -1,22 +1,12 @@
 import { db } from './db.ts'
 import { randomToken } from './ids.ts'
+import { groupCode } from './groups.ts'
 
 /**
  * A room is the table's shared order. Every dine-in order opens one, so nobody
  * has to decide up front whether they are "ordering as a group" — friends can
  * join at any point and add their own food to the same ticket.
  */
-const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
-
-function newCode(): string {
-  for (let attempt = 0; attempt < 60; attempt++) {
-    let code = ''
-    for (let i = 0; i < 4; i++) code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
-    if (!db.prepare('SELECT 1 FROM group_sessions WHERE code = ?').get(code)) return code
-  }
-  throw new Error('Could not generate a unique room code')
-}
-
 export function openRoomForOrder(opts: {
   orderId: number
   restaurantId: number
@@ -25,7 +15,7 @@ export function openRoomForOrder(opts: {
   hostName: string
   userId: number | null
 }): { code: string; hostToken: string; sessionId: number } {
-  const code = newCode()
+  const code = groupCode()
   const info = db
     .prepare(
       `INSERT INTO group_sessions (code, restaurant_id, table_id, table_label, order_id)

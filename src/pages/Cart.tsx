@@ -3,16 +3,24 @@ import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import { useCart } from '../lib/cart'
 import { api, ApiError } from '../lib/api'
-import { readGroup } from '../lib/group'
-import { Art, EmptyState, money, Spinner, useToast } from '../components/ui'
+import { readGroup, saveGroup } from '../lib/group'
+import { readDining } from '../lib/dining'
+import { readTableContext } from '../lib/table-context'
+import { useSession } from '../lib/session'
+import { QRCanvas } from '../lib/qr'
+import { Art, EmptyState, Modal, money, Spinner, useToast } from '../components/ui'
 
 export default function Cart() {
   const { cart, count, totalCents, setQuantity, clear } = useCart()
   const navigate = useNavigate()
   const toast = useToast()
+  const { user } = useSession()
   const group = readGroup()
   const inGroup = !!group && group.restaurantId === cart.restaurantId
   const [adding, setAdding] = useState(false)
+  const [roomCode, setRoomCode] = useState<string | null>(inGroup ? group!.code : null)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [opening, setOpening] = useState(false)
 
   // In a group, the cart is a staging area: items go onto the shared table
   // order attributed to you, rather than becoming an order of their own.
@@ -34,6 +42,38 @@ export default function Cart() {
       setAdding(false)
     }
   }
+
+  /**
+   * Opens a room around this cart so friends can add their own food to it.
+   * If you have already scanned a table or entered a code, the room takes that
+   * table; otherwise it is an order-ahead room, needing no code from anyone.
+   */
+  const invite = async () => {
+    if (!cart.restaurantId) return
+    setOpening(true)
+    try {
+      const dining = readDining(cart.restaurantId)
+      const scanned = readTableContext(cart.restaurantId)
+      const r = await api<{ groupToken: string; session: { code: string } }>('/groups', {
+        body: {
+          restaurantId: cart.restaurantId,
+          hostName: user?.name || 'Me',
+          tableToken: scanned?.tableToken ?? null,
+          sessionToken: dining?.token ?? null,
+          ahead: true,
+        },
+      })
+      saveGroup({ token: r.groupToken, code: r.session.code, restaurantId: cart.restaurantId })
+      setRoomCode(r.session.code)
+      setShareOpen(true)
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setOpening(false)
+    }
+  }
+
+  const joinUrl = roomCode ? `${window.location.origin}/g/${roomCode}` : ''
 
   return (
     <div className="app">
@@ -62,10 +102,21 @@ export default function Cart() {
         ) : (
           <>
             <div className="card card-pad">
-              <p className="tiny muted" style={{ marginBottom: 6 }}>
-                Ordering from
-              </p>
-              <h2 style={{ marginBottom: 6 }}>{cart.restaurantName}</h2>
+              <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <p className="tiny muted" style={{ marginBottom: 6 }}>
+                    Ordering from
+                  </p>
+                  <h2 style={{ marginBottom: 6 }}>{cart.restaurantName}</h2>
+                </div>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={roomCode ? () => setShareOpen(true) : invite}
+                  disabled={opening}
+                >
+                  {opening ? <Spinner /> : roomCode ? `👥 ${roomCode}` : '👥 Invite'}
+                </button>
+              </div>
               {cart.lines.map((line) => (
                 <div key={line.menuItemId} className="cart-line">
                   <Art emoji={line.emoji} hue={line.hue} className="cart-line-art" rounded={14} />
@@ -127,6 +178,30 @@ export default function Cart() {
             </div>
           </>
         )}
+
+        <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Ask them to join">
+          {roomCode && (
+            <div className="center">
+              <div className="code-display">{roomCode}</div>
+              <div style={{ display: 'grid', placeItems: 'center', margin: '16px 0' }}>
+                <QRCanvas value={joinUrl} size={220} />
+              </div>
+              <button
+                className="btn btn-accent btn-block"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(joinUrl)
+                    toast('Link copied', 'good')
+                  } catch {
+                    toast(joinUrl, 'info')
+                  }
+                }}
+              >
+                Copy link
+              </button>
+            </div>
+          )}
+        </Modal>
       </main>
     </div>
   )

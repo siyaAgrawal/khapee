@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 
 /* ------------------------------------------------------------------ toasts */
 
@@ -176,7 +177,9 @@ export function Modal({
   }, [open, onClose])
 
   if (!open) return null
-  return (
+  // Rendered on the body: a sheet opened from inside the header would otherwise
+  // be positioned against it, since backdrop-filter makes a containing block.
+  return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className={`modal ${wide ? 'modal-wide' : ''}`}
@@ -193,7 +196,8 @@ export function Modal({
         </header>
         <div className="modal-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

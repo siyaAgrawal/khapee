@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
+import { useVegMode } from '../lib/veg'
 import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../components/ui'
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
@@ -29,6 +30,7 @@ export default function Restaurant() {
   const navigate = useNavigate()
   const toast = useToast()
   const { add, quantityOf, setQuantity, count, totalCents, cart } = useCart()
+  const [veg, setVeg] = useVegMode()
 
   const [data, setData] = useState<{ restaurant: RestaurantCard; menu: Category[] } | null>(null)
   const [error, setError] = useState('')
@@ -39,12 +41,14 @@ export default function Restaurant() {
   const load = () => {
     setError('')
     setData(null)
-    api<{ restaurant: RestaurantCard; menu: Category[] }>(`/restaurants/${restaurantId}`)
+    api<{ restaurant: RestaurantCard; menu: Category[] }>(
+      `/restaurants/${restaurantId}${veg ? '?veg=1' : ''}`,
+    )
       .then(setData)
       .catch((e: ApiError) => setError(e.message))
   }
 
-  useEffect(load, [restaurantId])
+  useEffect(load, [restaurantId, veg])
 
   const onAdd = (item: MenuItem) => {
     if (!data) return
@@ -112,6 +116,15 @@ export default function Restaurant() {
             </div>
 
             <nav className="menu-nav">
+              <button
+                className={`veg-toggle veg-toggle-sm ${veg ? 'on' : ''}`}
+                onClick={() => setVeg(!veg)}
+                aria-pressed={veg}
+                aria-label="Veg only"
+              >
+                <span className="veg-mark" aria-hidden />
+                Veg
+              </button>
               {data.menu.map((c) => (
                 <a key={c.id} href={`#cat-${c.id}`} className="chip">
                   {c.name}
@@ -119,9 +132,20 @@ export default function Restaurant() {
               ))}
             </nav>
 
-            {data.menu.every((c) => c.items.length === 0) && (
-              <EmptyState emoji="📋" title="No dishes yet" body="This restaurant hasn't published a menu." />
-            )}
+            {data.menu.every((c) => c.items.length === 0) &&
+              (veg ? (
+                <EmptyState
+                  emoji="🥬"
+                  title="Nothing veg here"
+                  action={
+                    <button className="btn btn-secondary" onClick={() => setVeg(false)}>
+                      Show everything
+                    </button>
+                  }
+                />
+              ) : (
+                <EmptyState emoji="📋" title="No dishes yet" body="This restaurant hasn't published a menu." />
+              ))}
 
             {data.menu.map((category) => (
               <section key={category.id} id={`cat-${category.id}`} className="menu-section">

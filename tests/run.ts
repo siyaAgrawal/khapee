@@ -1218,7 +1218,11 @@ async function runTests() {
       sessionToken: roomSess.body.session.token,
     },
   })
-  ok('an ordinary dine-in order opens a room', soloOrder.status === 201 && /^[A-Z0-9]{4}$/.test(soloOrder.body.order.roomCode), soloOrder.body.order?.roomCode)
+  ok(
+    'an ordinary dine-in order opens a room',
+    soloOrder.status === 201 && /^G[A-Z0-9]{4}$/.test(soloOrder.body.order.roomCode),
+    soloOrder.body.order?.roomCode,
+  )
   ok('the person who ordered is the host', typeof soloOrder.body.order.groupToken === 'string')
 
   const roomPreview = await call(`/groups/${soloOrder.body.order.roomCode}`)
@@ -1425,6 +1429,52 @@ async function runTests() {
     body: { publish: true, phone: '+91 98888 77777' },
   })
   ok('so a later Done has nothing left to publish', afterSwitch.body.justPublished === false)
+
+  group('JOINING A ROOM — a code, a link, or a QR')
+  const aheadRoom = await call('/groups', {
+    body: { restaurantId: mornington.id, hostName: 'Siya', ahead: true },
+  })
+  ok('a room can be opened around a cart with no code at all', aheadRoom.status === 201, aheadRoom.body)
+  ok('and it has no table until someone arrives', aheadRoom.body.session.tableLabel === null)
+  const aheadCode = aheadRoom.body.session.code as string
+
+  const byCode = await call('/resolve', { body: { value: aheadCode } })
+  ok('a typed room code resolves to the room', byCode.body.kind === 'room' && byCode.body.code === aheadCode, byCode.body)
+  ok('and names the restaurant so nobody joins the wrong one', byCode.body.restaurantName === mornington.name)
+  ok(
+    'a room link resolves the same way',
+    (await call('/resolve', { body: { value: `http://localhost:5273/g/${aheadCode}` } })).body.code === aheadCode,
+  )
+  ok(
+    'so does a scanned room QR',
+    (await call('/resolve', { body: { value: `ORDRO:ROOM:${aheadCode}` } })).body.code === aheadCode,
+  )
+  ok('lowercase typing still works', (await call('/resolve', { body: { value: aheadCode.toLowerCase() } })).body.kind === 'room')
+  ok('an unknown room code is refused', (await call('/resolve', { body: { value: 'ZZZZ' } })).status === 404)
+
+  // A six-character code is still the restaurant's, not a room's.
+  const resolvedStaff = await call('/resolve', { body: { value: code1 } })
+  ok('a six-character code is still read as the restaurant code', resolvedStaff.body.kind === 'access', resolvedStaff.body)
+
+  const roomFriend = await call('/groups/join', { body: { code: aheadCode, displayName: 'Aarav' } })
+  ok('a friend can join the room', roomFriend.status === 201, roomFriend.body)
+  const friendToken = roomFriend.body.groupToken as string
+  const friendAdd = await call('/groups/session/items', {
+    body: { groupToken: friendToken, items: [{ menuItemId: coldCoffee.id, quantity: 1 }] },
+  })
+  ok('and add their own food to it', friendAdd.status === 201, friendAdd.body)
+  const roomStateAfterJoin = await call('/groups/session/state', { body: { groupToken: friendToken }, method: 'POST' })
+  ok(
+    'everything lands on one ticket',
+    !!(await call(`/groups/${aheadCode}`)).body.group,
+    roomStateAfterJoin.body,
+  )
+
+  await call('/groups/session/close', { body: { groupToken: aheadRoom.body.groupToken, force: true } })
+  ok(
+    'a closed room cannot be joined',
+    (await call('/resolve', { body: { value: aheadCode } })).status === 409,
+  )
 
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any

@@ -50,6 +50,7 @@ groupsRouter.post('/', (req, res) => {
     tableToken: req.body?.tableToken ?? null,
     accessCode: req.body?.accessCode ?? null,
     sessionToken: req.body?.sessionToken ?? null,
+    ahead: !!req.body?.ahead,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({

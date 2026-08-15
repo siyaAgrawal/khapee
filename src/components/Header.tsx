@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useSession } from '../lib/session'
 import { useCart } from '../lib/cart'
+import JoinRoom from './JoinRoom'
 
 export default function Header() {
   const { user, logout } = useSession()
   const { count } = useCart()
   const navigate = useNavigate()
+  const [joining, setJoining] = useState(false)
 
   return (
     <header className="header">
@@ -44,12 +47,16 @@ export default function Header() {
             Sign in
           </NavLink>
         )}
+        <button className="nav-link" onClick={() => setJoining(true)}>
+          Join
+        </button>
         {count > 0 && (
           <Link to="/cart" className="cart-pill">
             Cart <span className="cart-count">{count}</span>
           </Link>
         )}
       </nav>
+      <JoinRoom open={joining} onClose={() => setJoining(false)} />
     </header>
   )
 }

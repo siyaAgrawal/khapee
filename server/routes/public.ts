@@ -40,12 +40,16 @@ function shapeRestaurant(row: any) {
  */
 publicRouter.get('/restaurants', (req, res) => {
   const includeDrafts = req.query.include === 'drafts'
+  // Veg mode counts only vegetarian dishes, so a place with nothing veg on the
+  // menu drops out of the list rather than opening to an empty page.
+  const vegOnly = req.query.veg === '1'
   const rows = db
     .prepare(
-      `SELECT r.*, (SELECT COUNT(*) FROM menu_items m WHERE m.restaurant_id = r.id AND m.is_available = 1) AS item_count
+      `SELECT r.*, (SELECT COUNT(*) FROM menu_items m
+                    WHERE m.restaurant_id = r.id AND m.is_available = 1 AND (0 = ? OR m.is_veg = 1)) AS item_count
        FROM restaurants r ORDER BY r.is_open DESC, r.name ASC`,
     )
-    .all() as any[]
+    .all(vegOnly ? 1 : 0) as any[]
   const visible = includeDrafts ? rows : rows.filter((r) => r.item_count > 0)
 
   // "Near me" is computed here from coordinates the restaurants entered
@@ -76,11 +80,60 @@ publicRouter.get('/restaurants', (req, res) => {
 
   res.json({
     restaurants: shaped,
+    cuisines: cuisineTiles(visible, vegOnly),
     cities,
     nearestCity,
     draftCount: rows.length - visible.length,
   })
 })
+
+/**
+ * The cuisines on offer, each with a real dish photo from a restaurant that
+ * serves it. Nothing is fetched or invented — if no kitchen in that cuisine has
+ * uploaded a photo yet, the tile falls back to the restaurant's own emoji.
+ */
+function cuisineTiles(restaurants: any[], vegOnly: boolean) {
+  // Restaurants type their own cuisines, so "Cafe" and "cafe" arrive as two.
+  // They are one tile, labelled the way most owners wrote it.
+  const byCuisine = new Map<string, { label: string; emoji: string; hue: number; restaurantIds: number[] }>()
+  for (const r of restaurants) {
+    for (const raw of String(r.categories || '').split(',')) {
+      const name = raw.trim()
+      if (!name) continue
+      const key = name.toLowerCase()
+      const tile = byCuisine.get(key) ?? { label: name, emoji: r.emoji, hue: r.hue, restaurantIds: [] as number[] }
+      if (name[0] === name[0].toUpperCase() && tile.label[0] !== tile.label[0].toUpperCase()) tile.label = name
+      tile.restaurantIds.push(r.id)
+      byCuisine.set(key, tile)
+    }
+  }
+
+  const photo = db.prepare(
+    `SELECT image_path FROM menu_items
+     WHERE restaurant_id = ? AND is_available = 1 AND image_path IS NOT NULL AND (0 = ? OR is_veg = 1)
+     ORDER BY sort_order, id LIMIT 1`,
+  )
+
+  return [...byCuisine.values()]
+    .map((tile) => {
+      let found: string | null = null
+      for (const id of tile.restaurantIds) {
+        const row = photo.get(id, vegOnly ? 1 : 0) as any
+        if (row?.image_path) {
+          found = row.image_path
+          break
+        }
+      }
+      return {
+        name: tile.label,
+        emoji: tile.emoji,
+        hue: tile.hue,
+        imageUrl: imageUrl(found),
+        count: tile.restaurantIds.length,
+      }
+    })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
 
 /** Great-circle distance in kilometres. */
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -95,6 +148,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 
 publicRouter.get('/restaurants/:id', (req, res) => {
   const id = Number(req.params.id)
+  const vegOnly = req.query.veg === '1'
   const row = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(id) as any
   if (!row) return res.status(404).json({ error: 'That restaurant no longer exists.' })
 
@@ -106,7 +160,8 @@ publicRouter.get('/restaurants/:id', (req, res) => {
       `SELECT id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, is_special, sort_order, image_path
        FROM menu_items WHERE restaurant_id = ? ORDER BY sort_order, id`,
     )
-    .all(id) as any[]
+    .all(id)
+    .filter((i: any) => !vegOnly || i.is_veg) as any[]
 
   // This month's specials ride at the top of the menu as a section of their own.
   // The dishes stay in their real section too — this is a shortcut, not a move.
@@ -120,7 +175,8 @@ publicRouter.get('/restaurants/:id', (req, res) => {
     sections.unshift({ id: SPECIALS_SECTION_ID, name: 'This month', items: specials.map(shapeMenuItem) })
   }
 
-  res.json({ restaurant: shapeRestaurant(row), menu: sections })
+  // An empty section is noise once veg mode has filtered the menu down.
+  res.json({ restaurant: shapeRestaurant(row), menu: sections.filter((s) => s.items.length > 0) })
 })
 
 /** Not a real category row — the specials section is assembled per request. */
@@ -149,15 +205,24 @@ publicRouter.post('/resolve', (req, res) => {
   const raw = String(req.body?.value ?? '').trim()
   if (!raw) return res.status(400).json({ error: 'Enter a code to continue.' })
 
-  // Accepted payloads: TABLO:TABLE:<token>, a table QR URL (…/t/<token>),
-  // TABLO:ACCESS:<restaurantId>:<code>, a bare token, or a typed access code.
+  // Accepted payloads: ORDRO:TABLE:<token>, a table QR URL (…/t/<token>),
+  // ORDRO:ACCESS:<restaurantId>:<code>, ORDRO:ROOM:<code>, a room link
+  // (…/g/<code>), a bare table token, a typed access code, or a room code.
   const upper = raw.toUpperCase()
-  let kind: 'access' | 'table' | 'unknown' = 'unknown'
+  let kind: 'access' | 'table' | 'room' | 'unknown' = 'unknown'
   let value = raw
 
   const tableUrl = raw.match(/\/t\/([a-f0-9]{16})/i)
+  // Rooms are G plus four; the earliest ones were four bare characters.
+  const roomUrl = raw.match(/\/g\/([A-Za-z0-9]{4,5})(?:[^A-Za-z0-9]|$)/)
 
-  if (upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) {
+  if (upper.includes('ORDRO:ROOM:') || upper.includes('TABLO:ROOM:')) {
+    kind = 'room'
+    value = raw.split(/(?:ORDRO|TABLO):ROOM:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
+  } else if (roomUrl) {
+    kind = 'room'
+    value = roomUrl[1]
+  } else if (upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) {
     kind = 'table'
     value = raw.split(/(?:ORDRO|TABLO):TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
   } else if (tableUrl) {
@@ -188,7 +253,28 @@ publicRouter.post('/resolve', (req, res) => {
     })
   }
 
-  const code = normalizeCode(value)
+  // Room codes are shorter than the restaurant's six-character access code, so
+  // one box takes whatever the customer happens to have.
+  const typed = normalizeCode(value)
+  if (kind === 'room' || (kind === 'unknown' && typed.length >= 4 && typed.length <= 5)) {
+    const room = db
+      .prepare(
+        `SELECT g.code, g.status, g.table_label, g.restaurant_id, r.name AS restaurant_name
+         FROM group_sessions g JOIN restaurants r ON r.id = g.restaurant_id WHERE g.code = ?`,
+      )
+      .get(typed) as any
+    if (!room) return res.status(404).json({ error: "That room code isn't valid." })
+    if (room.status === 'CLOSED') return res.status(409).json({ error: 'That room has already closed.' })
+    return res.json({
+      kind: 'room',
+      restaurantId: room.restaurant_id,
+      restaurantName: room.restaurant_name,
+      tableLabel: room.table_label,
+      code: room.code,
+    })
+  }
+
+  const code = typed
   if (code.length !== 6) return res.status(400).json({ error: 'Access codes are 6 characters, like K7X92P.' })
 
   const row = db

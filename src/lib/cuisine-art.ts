@@ -51,8 +51,14 @@ export function cuisineHue(name: string): number {
   return hash
 }
 
-/** A soft two-stop wash the emoji sits on. */
+/**
+ * A soft glow behind the symbol rather than a disc around it, so the food
+ * floats in the strip instead of sitting in a chip.
+ */
 export function cuisineBackground(name: string): string {
   const hue = cuisineHue(name)
-  return `linear-gradient(150deg, hsl(${hue} 46% 32%), hsl(${(hue + 38) % 360} 40% 20%))`
+  return (
+    `radial-gradient(circle at 50% 58%, hsl(${hue} 70% 52% / 0.34) 0%,` +
+    ` hsl(${(hue + 30) % 360} 65% 45% / 0.16) 42%, transparent 70%)`
+  )
 }

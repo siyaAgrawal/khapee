@@ -5,6 +5,7 @@ import {
   destroySession,
   hashPassword,
   requireAuth,
+  userById,
   userFromToken,
   verifyPassword,
 } from '../auth.ts'
@@ -154,4 +155,24 @@ authRouter.post('/logout', (req, res) => {
 
 authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user })
+})
+
+/** The handful of things an account holder can change about themselves. */
+authRouter.patch('/me', requireAuth, (req, res) => {
+  const updates: Record<string, unknown> = {}
+  if (req.body?.name !== undefined) {
+    const name = String(req.body.name).trim().slice(0, 80)
+    if (name.length < 2) return res.status(400).json({ error: 'Enter your name.' })
+    updates.name = name
+  }
+  if (req.body?.phone !== undefined) updates.phone = String(req.body.phone).trim().slice(0, 30)
+
+  const keys = Object.keys(updates)
+  if (keys.length) {
+    db.prepare(`UPDATE users SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`).run(
+      ...keys.map((k) => updates[k]),
+      req.user!.id,
+    )
+  }
+  res.json({ user: userById(req.user!.id) })
 })

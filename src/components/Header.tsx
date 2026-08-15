@@ -24,32 +24,17 @@ export default function Header() {
         <NavLink to="/orders" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Orders
         </NavLink>
-        {user ? (
-          <>
-            {user.restaurants?.length > 0 && (
-              <NavLink to="/staff/orders" className="nav-link">
-                Dashboard
-              </NavLink>
-            )}
-            <button
-              className="nav-link"
-              style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
-              onClick={async () => {
-                await logout()
-                navigate('/')
-              }}
-            >
-              Sign out
-            </button>
-          </>
-        ) : (
-          <NavLink to="/login" className="nav-link">
-            Sign in
+        {user && user.restaurants?.length > 0 && (
+          <NavLink to="/staff/orders" className="nav-link">
+            Dashboard
           </NavLink>
         )}
         <button className="nav-link" onClick={() => setJoining(true)}>
           Join
         </button>
+        <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          {user ? 'Profile' : 'Sign in'}
+        </NavLink>
         {count > 0 && (
           <Link to="/cart" className="cart-pill">
             Cart <span className="cart-count">{count}</span>

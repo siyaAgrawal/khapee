@@ -7,6 +7,8 @@ export type User = {
   id: number
   name: string
   email: string
+  phone: string
+  memberSince: string
   role: 'customer' | 'staff'
   /** Restaurants this account runs — empty means customer only. */
   restaurants: StaffedRestaurant[]

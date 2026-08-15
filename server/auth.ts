@@ -9,6 +9,8 @@ export type AuthUser = {
   id: number
   name: string
   email: string
+  phone: string
+  memberSince: string
   role: 'customer' | 'staff'
   /** Every restaurant this account runs. Empty for a pure customer. */
   restaurants: StaffedRestaurant[]
@@ -54,16 +56,28 @@ export function destroySession(token: string) {
   db.prepare('DELETE FROM sessions WHERE token = ?').run(token)
 }
 
+const USER_FIELDS = 'u.id, u.name, u.email, u.phone, u.created_at, u.role, u.active_restaurant_id'
+
 export function userFromToken(token: string | undefined): AuthUser | null {
   if (!token) return null
   const row = db
     .prepare(
-      `SELECT u.id, u.name, u.email, u.role, u.active_restaurant_id
+      `SELECT ${USER_FIELDS}
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token = ? AND s.expires_at > datetime('now')`,
     )
     .get(token) as any
   if (!row) return null
+  return shapeUser(row)
+}
+
+/** The same account, read straight rather than through a session token. */
+export function userById(id: number): AuthUser | null {
+  const row = db.prepare(`SELECT ${USER_FIELDS} FROM users u WHERE u.id = ?`).get(id) as any
+  return row ? shapeUser(row) : null
+}
+
+function shapeUser(row: any): AuthUser {
 
   const restaurants = db
     .prepare(
@@ -81,6 +95,8 @@ export function userFromToken(token: string | undefined): AuthUser | null {
     id: row.id,
     name: row.name,
     email: row.email,
+    phone: row.phone ?? '',
+    memberSince: row.created_at,
     role: row.role,
     restaurants,
     restaurantId: active?.id ?? null,

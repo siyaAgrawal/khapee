@@ -15,6 +15,7 @@ import Register from './pages/Register'
 import RegisterRestaurant from './pages/RegisterRestaurant'
 import TableEntry from './pages/TableEntry'
 import GroupJoin from './pages/GroupJoin'
+import Profile from './pages/Profile'
 import GroupSession from './pages/GroupSession'
 
 import StaffLayout from './pages/staff/StaffLayout'
@@ -50,6 +51,7 @@ export default function App() {
       <Route path="/r/:id" element={<Restaurant />} />
       <Route path="/t/:token" element={<TableEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
+      <Route path="/profile" element={<Profile />} />
       <Route path="/group" element={<GroupSession />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />

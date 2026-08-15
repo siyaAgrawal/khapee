@@ -1476,6 +1476,41 @@ async function runTests() {
     (await call('/resolve', { body: { value: aheadCode } })).status === 409,
   )
 
+  group('PROFILE — an account you can edit, but never need')
+  const me = await call('/auth/me', { token: customerToken })
+  ok('the account carries a phone field and a join date', me.body.user.phone === '' && !!me.body.user.memberSince)
+
+  const edited = await call('/auth/me', {
+    token: customerToken,
+    method: 'PATCH',
+    body: { name: 'Siya A.', phone: '+91 98765 43210' },
+  })
+  ok('a name and phone can be saved', edited.body.user.name === 'Siya A.', edited.body)
+  ok('and the phone comes back', edited.body.user.phone === '+91 98765 43210')
+  ok(
+    'the change sticks for the next request',
+    (await call('/auth/me', { token: customerToken })).body.user.name === 'Siya A.',
+  )
+  ok(
+    'an empty name is refused',
+    (await call('/auth/me', { token: customerToken, method: 'PATCH', body: { name: ' ' } })).status === 400,
+  )
+  ok(
+    'the email is not editable here',
+    (
+      await call('/auth/me', {
+        token: customerToken,
+        method: 'PATCH',
+        body: { email: 'someone@else.test' },
+      })
+    ).body.user.email !== 'someone@else.test',
+  )
+  ok('a signed-out visitor has no profile to read', (await call('/auth/me')).status === 401)
+  ok(
+    'and cannot edit one',
+    (await call('/auth/me', { method: 'PATCH', body: { name: 'Nobody' } })).status === 401,
+  )
+
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [

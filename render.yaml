@@ -4,33 +4,40 @@
 # the counter reaches the customer's phone, on any network. Vercel cannot do
 # that — each of its serverless functions has a private copy. See DEPLOY.md.
 #
-# This is set to the FREE instance type, which needs no card. The trade-off is
-# that free services have no disk and sleep after ~15 minutes idle; on wake the
-# database is rebuilt from the committed snapshot, so restaurants, menus and
-# photos all come back, but orders and codes made in between do not.
+# This is the FREE instance type, which needs no card. Free services have no
+# disk and sleep after ~15 minutes idle (waking takes up to a minute); on wake
+# the database is rebuilt from the committed snapshot, so restaurants, menus and
+# photos come back, but orders and codes made in between do not.
 #
-# For a real restaurant, add a disk and switch to starter — uncomment the two
-# blocks at the bottom and change `plan` to `starter`.
+# For a real restaurant, change `plan` to starter and uncomment the two blocks
+# at the bottom. Nothing else changes.
 services:
   - type: web
     name: ordro
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+
+    # --include=dev is not optional. The build needs vite and the TypeScript
+    # toolchain, which are devDependencies, and a host that has NODE_ENV set to
+    # production would otherwise skip them and fail with "vite: not found".
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
+
     envVars:
-      - key: NODE_ENV
-        value: production
-      # The database starts empty on every boot here, so seed it from the
-      # committed snapshot: the app comes up with its restaurants rather than
-      # blank. This is what makes the free plan usable.
+      # NODE_ENV is deliberately NOT set here. Render applies env vars to the
+      # build as well as the run, and NODE_ENV=production makes npm drop the
+      # devDependencies the build itself needs. `npm start` already sets it for
+      # the server, which is the only place it matters.
+      #
+      # The container's filesystem starts empty, so seed the catalogue and its
+      # photos from the committed snapshot on boot. Without this the app comes
+      # up with no restaurants at all.
       - key: ORDRO_SEED
         value: snapshot
 
     # --- Paid upgrade: persistent data ---------------------------------------
-    # Set plan: starter above, then uncomment both of these. Data then survives
-    # sleeps and deploys, and nothing else about the app changes.
+    # Set plan: starter above, then uncomment both of these.
     #
     #   envVars:
     #     - key: TABLO_DB

@@ -29,44 +29,46 @@ what the host is.
 
 Keep the Vercel link for showing the app off. Do not run a restaurant on it.
 
-## Koyeb — the published app
+## Live: https://ordro.onrender.com
 
-Free instance, no card, HTTPS included (which the camera needs for QR scanning),
-and it deploys straight from GitHub. One process, one database, so a code
-generated at the counter reaches any phone on any network.
+Render free instance, deployed from `render.yaml`, connected to this GitHub
+repo. **It redeploys on every push to main**, so shipping is `git push` and
+nothing else — no dashboard, no CLI, no account access needed.
 
-1. **koyeb.com** -> sign up with GitHub.
-2. **Create Web Service** -> **GitHub** -> pick `siyaAgrawal/ordro`.
-3. Instance type **Free**. Everything else is detected; the only thing to set is
-   one environment variable:
+    git push origin main          # Render builds and deploys
+    curl https://ordro.onrender.com/api/health
 
-       ORDRO_SEED = snapshot
+Verified end to end against the live site:
 
-   Without it the container boots with an empty database and no restaurants.
-4. Deploy.
+    app shell / health           200 / 200
+    catalogue                    8 restaurants, 13 cuisines
+    25 concurrent code lookups   25 ok     (Vercel: 13 ok, 12 lost)
+    same code entered twice      201, 201  (the bug that started this)
+    scanned QR payload           201
+    order placed via session     J485
+    25 concurrent order reads    25 ok     (Vercel: 12 ok, 13 lost)
+    kitchen board                sees J485
+    dish photos                  200 image/png
 
-A `Dockerfile` is in the repo if you would rather Koyeb build from that, and it
-makes the app portable to Fly, Cloud Run, Northflank or any container host —
-nothing here is vendor-specific.
+Two phones on different networks now work, which was the whole point.
 
-Free instances sleep when idle and have no disk, so every boot rebuilds the
-catalogue from the committed snapshot: restaurants, menus and photos always come
-back, orders and access codes made since the last boot do not. Fine for real
-phones and demos; add a disk before real customers.
+### What free costs
 
-Verified against the exact runtime a container host produces — production build,
-host-injected `PORT`, filesystem holding only the committed snapshot:
+No disk, and the instance sleeps after ~15 minutes idle — the first request
+after that takes up to a minute while it wakes. On every boot the database is
+rebuilt from the committed snapshot, so restaurants, menus and photos always
+come back; orders and access codes made since the last boot do not.
 
-    health check            200
-    app shell               200
-    catalogue               8 restaurants, 13 cuisines
-    25 concurrent code lookups   25 ok      (Vercel: 13 ok, 12 lost)
-    dining session opened   201
-    25 concurrent order reads    25 ok      (Vercel: 12 ok, 13 lost)
-    kitchen board            sees the customer's order
+Before real customers: change `plan` to `starter` in `render.yaml` and uncomment
+the disk blocks at the bottom. Nothing else changes.
 
-To publish menu or photo changes made locally, run `npm run snapshot`, then
-commit and push — Koyeb redeploys on push.
+### Publishing local menu or photo changes
+
+    npm run snapshot && git add -A && git commit && git push
+
+The snapshot is the seed the deployed app boots from, so changes made locally
+only reach the live site through it. Changes made *on* the live site through the
+dashboard are lost at the next sleep until the disk is added.
 
 ## Railway / Fly.io
 

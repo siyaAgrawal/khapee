@@ -11,39 +11,45 @@ npm run build && npm start
 
 That serves everything on `PORT` (default 4273). Verified working locally.
 
-## Vercel — live, but read-only
+## Why the current Vercel link cannot work for two phones
 
-The app is deployed at **https://cafe-gamma-wheat.vercel.app** (`npx vercel --prod`).
-That link stays the same across deploys.
+Vercel runs the app as serverless functions. Each one boots its own private copy
+of `data/snapshot.db` into `/tmp`, and there is no shared disk between them.
 
-Vercel runs serverless functions on a read-only filesystem whose `/tmp` does not
-survive a cold start, so there the app boots from a seed built by:
+That is not a small caveat — it breaks the product. Generate a staff code, then
+ask for it 25 times:
 
-```bash
-npm run snapshot
-```
+    13 x 200 OK
+    12 x 404 "That code isn't valid"
 
-That writes `data/snapshot.db` and `data/snapshot-uploads/` from the working
-database — checkpointing the write-ahead log, dropping login sessions and the
-unassigned photo pool, and copying only the photos a restaurant or dish points
-at. Both are committed, and `vercel.json` includes them in the function.
+Same code, same second. The counter's write landed on one instance; the
+customer's phone was routed to another that had never seen it. Orders, dining
+sessions and staff logins split the same way. No code change fixes this; it is
+what the host is.
 
-Everything works there — browsing, ordering, codes, rooms, the dashboard — but
-anything written goes to that instance's `/tmp` and is lost when it sleeps.
-Re-run `npm run snapshot` and redeploy to publish new menus or photos.
+Keep the Vercel link for showing the app off. Do not run a restaurant on it.
 
-For a real restaurant, use a host with a disk.
+## Render — the published app (recommended)
 
-## Render (recommended)
+`render.yaml` is ready. One Node process, one SQLite file on a mounted disk, so
+a code generated at the counter reaches any phone anywhere.
 
-`render.yaml` in this folder is ready. The disk keeps `ordro.db` and the photos.
+1. Push this folder to a Git repo.
+2. On Render: **New -> Blueprint**, point it at the repo. It reads `render.yaml`.
+3. Deploy.
 
-1. Push this folder to a Git repo (GitHub/GitLab).
-2. On Render: **New → Blueprint**, point it at the repo. It reads `render.yaml`.
-3. Deploy. The `starter` plan is required — the free plan has no persistent disk.
+The `starter` plan is required: the free plan has no persistent disk. (The free
+plan still fixes the two-phone problem, because it is still one process — but
+the database resets whenever the service sleeps, so order history is lost.)
 
-`TABLO_DB` is set to `/var/data/ordro.db` on the mounted disk, so data survives
-deploys. Uploads land beside it automatically.
+First boot lands on an empty disk. `ORDRO_SEED=snapshot` in the blueprint tells
+the app to lay down the committed catalogue and its photos, so it comes up with
+the restaurants rather than blank, then persists from there. Verified against a
+simulated empty disk: 8 open restaurants, 13 cuisines, and 25 of 25 concurrent
+code lookups answered.
+
+To publish menu or photo changes made locally, re-run `npm run snapshot`, commit
+and push -- or edit through the dashboard on the live site, which now sticks.
 
 ## Railway / Fly.io
 

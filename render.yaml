@@ -1,8 +1,12 @@
 # Render blueprint: one Node process serving the API and the built app, with a
 # persistent disk so SQLite and uploaded photos survive restarts and deploys.
+#
+# One process means one database, which is the whole point: a code generated at
+# the counter reaches the customer's phone, wherever either of them is. Vercel
+# cannot do that — see DEPLOY.md.
 services:
   - type: web
-    name: tablo
+    name: ordro
     runtime: node
     plan: starter          # the free plan has no persistent disk
     buildCommand: npm install && npm run build
@@ -12,8 +16,12 @@ services:
       - key: NODE_ENV
         value: production
       - key: TABLO_DB
-        value: /var/data/tablo.db
+        value: /var/data/ordro.db
+      # First boot lands on an empty disk; seed it from the committed snapshot
+      # so the app comes up with its restaurants rather than blank.
+      - key: ORDRO_SEED
+        value: snapshot
     disk:
-      name: tablo-data
+      name: ordro-data
       mountPath: /var/data
       sizeGB: 1

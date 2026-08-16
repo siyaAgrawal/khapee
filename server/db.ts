@@ -17,21 +17,28 @@ fs.mkdirSync(dataDir, { recursive: true })
 const SERVERLESS = !!process.env.VERCEL
 const SNAPSHOT = path.join(dataDir, 'snapshot.db')
 
+/**
+ * A host with a real disk starts that disk empty, so its first boot would come
+ * up with no restaurants at all. Seeding it from the committed snapshot brings
+ * the published app up with the same catalogue as the local one, after which it
+ * persists normally. Opt-in (render.yaml sets it) so tests and local dev, which
+ * want a clean database, are never seeded behind their back.
+ */
+const SEED_FROM_SNAPSHOT = SERVERLESS || process.env.ORDRO_SEED === 'snapshot'
+
 function resolveDbPath(): string {
   if (process.env.TABLO_DB) return path.resolve(process.env.TABLO_DB)
-  if (!SERVERLESS) return path.join(dataDir, 'tablo.db')
-
-  const ephemeral = '/tmp/tablo.db'
-  if (!fs.existsSync(ephemeral) && fs.existsSync(SNAPSHOT)) {
-    fs.copyFileSync(SNAPSHOT, ephemeral)
-  }
-  return ephemeral
+  return SERVERLESS ? '/tmp/tablo.db' : path.join(dataDir, 'tablo.db')
 }
 
 export const DB_PATH = resolveDbPath()
 export const IS_EPHEMERAL = SERVERLESS && !process.env.TABLO_DB
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+
+if (SEED_FROM_SNAPSHOT && !fs.existsSync(DB_PATH) && fs.existsSync(SNAPSHOT)) {
+  fs.copyFileSync(SNAPSHOT, DB_PATH)
+}
 
 export const db = new Database(DB_PATH)
 db.pragma('journal_mode = WAL')
@@ -301,8 +308,9 @@ export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(D
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 
 // The photos the snapshot's restaurants and dishes point at ship beside it, and
-// are laid down once per cold start for the same reason the database is.
-if (SERVERLESS) {
+// are laid down for the same reason the database is — once per cold start on a
+// serverless host, once on first boot on a host with a disk.
+if (SEED_FROM_SNAPSHOT) {
   const seed = path.join(dataDir, 'snapshot-uploads')
   if (fs.existsSync(seed)) {
     for (const file of fs.readdirSync(seed)) {

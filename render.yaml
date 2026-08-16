@@ -1,27 +1,42 @@
-# Render blueprint: one Node process serving the API and the built app, with a
-# persistent disk so SQLite and uploaded photos survive restarts and deploys.
+# Render blueprint: one Node process serving the API and the built app.
 #
 # One process means one database, which is the whole point: a code generated at
-# the counter reaches the customer's phone, wherever either of them is. Vercel
-# cannot do that — see DEPLOY.md.
+# the counter reaches the customer's phone, on any network. Vercel cannot do
+# that — each of its serverless functions has a private copy. See DEPLOY.md.
+#
+# This is set to the FREE instance type, which needs no card. The trade-off is
+# that free services have no disk and sleep after ~15 minutes idle; on wake the
+# database is rebuilt from the committed snapshot, so restaurants, menus and
+# photos all come back, but orders and codes made in between do not.
+#
+# For a real restaurant, add a disk and switch to starter — uncomment the two
+# blocks at the bottom and change `plan` to `starter`.
 services:
   - type: web
     name: ordro
     runtime: node
-    plan: starter          # the free plan has no persistent disk
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: TABLO_DB
-        value: /var/data/ordro.db
-      # First boot lands on an empty disk; seed it from the committed snapshot
-      # so the app comes up with its restaurants rather than blank.
+      # The database starts empty on every boot here, so seed it from the
+      # committed snapshot: the app comes up with its restaurants rather than
+      # blank. This is what makes the free plan usable.
       - key: ORDRO_SEED
         value: snapshot
-    disk:
-      name: ordro-data
-      mountPath: /var/data
-      sizeGB: 1
+
+    # --- Paid upgrade: persistent data ---------------------------------------
+    # Set plan: starter above, then uncomment both of these. Data then survives
+    # sleeps and deploys, and nothing else about the app changes.
+    #
+    #   envVars:
+    #     - key: TABLO_DB
+    #       value: /var/data/ordro.db
+    #
+    # disk:
+    #   name: ordro-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

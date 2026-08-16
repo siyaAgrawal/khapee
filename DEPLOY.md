@@ -29,27 +29,31 @@ what the host is.
 
 Keep the Vercel link for showing the app off. Do not run a restaurant on it.
 
-## Render — the published app (recommended)
+## Render free — the published app
 
-`render.yaml` is ready. One Node process, one SQLite file on a mounted disk, so
-a code generated at the counter reaches any phone anywhere.
+`render.yaml` is ready and set to the **free** instance type, which needs no
+card. One Node process, one database, so a code generated at the counter reaches
+any phone on any network.
 
-1. Push this folder to a Git repo.
+1. Push this folder to a Git repo (already done: siyaAgrawal/ordro).
 2. On Render: **New -> Blueprint**, point it at the repo. It reads `render.yaml`.
-3. Deploy.
+3. Apply.
 
-The `starter` plan is required: the free plan has no persistent disk. (The free
-plan still fixes the two-phone problem, because it is still one process — but
-the database resets whenever the service sleeps, so order history is lost.)
+What free costs you: no disk, and the service sleeps after ~15 minutes idle,
+taking about a minute to wake. On every boot the database is rebuilt from the
+committed snapshot, so restaurants, menus and photos always come back — orders
+and access codes made since the last boot do not.
 
-First boot lands on an empty disk. `ORDRO_SEED=snapshot` in the blueprint tells
-the app to lay down the committed catalogue and its photos, so it comes up with
-the restaurants rather than blank, then persists from there. Verified against a
-simulated empty disk: 8 open restaurants, 13 cuisines, and 25 of 25 concurrent
-code lookups answered.
+That is fine for testing with real phones, and fine for a demo. Before real
+customers, add the disk: set `plan: starter` and uncomment the two blocks at the
+bottom of `render.yaml`. Nothing else changes.
 
-To publish menu or photo changes made locally, re-run `npm run snapshot`, commit
-and push -- or edit through the dashboard on the live site, which now sticks.
+Verified on a clean container with only the committed snapshot present: 8 open
+restaurants, 13 cuisines, 25 of 25 concurrent lookups of a freshly generated
+code answered, a dining session opened, and dish photos served.
+
+To publish menu or photo changes made locally, run `npm run snapshot`, then
+commit and push — Render redeploys on push.
 
 ## Railway / Fly.io
 

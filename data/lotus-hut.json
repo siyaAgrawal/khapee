@@ -1,0 +1,207 @@
+[
+  {
+    "name": "Lotus Hut",
+    "address": "Indore",
+    "categories": ["Cafe", "Fast Food"],
+    "emoji": "🥟",
+    "hue": 92,
+    "staff": { "email": "lotushut@ordro.local", "title": "Owner" },
+    "menu": [
+      {
+        "category": "HotDog",
+        "items": [
+          { "name": "Veg. Cheese Hot Dog", "price": 140 },
+          { "name": "Paneer Hot Dog", "price": 150 },
+          { "name": "Paneer Cheese Hot Dog", "price": 180 }
+        ]
+      },
+      {
+        "category": "Burgers",
+        "items": [
+          { "name": "Veg Burger", "price": 140 },
+          { "name": "Veg Cheese Burger", "price": 160 },
+          { "name": "Paneer Burger", "price": 160 },
+          { "name": "Paneer Cheese Burger", "price": 170 }
+        ]
+      },
+      {
+        "category": "Maggi",
+        "items": [
+          { "name": "Masala Maggi", "price": 100 },
+          { "name": "Veg. Maggi", "price": 120 },
+          { "name": "Double Masala Maggi", "price": 120 },
+          { "name": "Butter Maggi", "price": 120 },
+          { "name": "Cheese Maggi", "price": 150 },
+          { "name": "Garlic Maggi", "price": 150 },
+          { "name": "Corn Maggi", "price": 150 },
+          { "name": "Double Masala Cheese Maggi", "price": 170 },
+          { "name": "Veg Tandoori Maggi", "price": 180 },
+          { "name": "Punjabi Tadka Maggi", "price": 180 },
+          { "name": "Punjabi Tadka Cheese Maggi", "price": 240 },
+          { "name": "Mag N Cheese", "price": 240 },
+          { "name": "Mushroom Maggi", "price": 280 }
+        ]
+      },
+      {
+        "category": "Sandwiches",
+        "items": [
+          { "name": "Butter Toast Sandwich", "price": 70 },
+          { "name": "Vegetable Sandwich", "price": 100 },
+          { "name": "Aloo Masala Sandwich", "price": 100 },
+          { "name": "Bombay Kachha Sandwich", "price": 100 },
+          { "name": "Jain Sandwich", "price": 100 },
+          { "name": "Jam Sandwich", "price": 100 },
+          { "name": "Chutney Sandwich", "price": 100 },
+          { "name": "Bombay Kaccha Cheese Sandwich", "price": 150 },
+          { "name": "Cheese Chutney Sandwich", "price": 150 },
+          { "name": "Cheese Toast Sandwich", "price": 150 },
+          { "name": "Vegetable Cheese Sandwich", "price": 150 },
+          { "name": "Cheese And Chilli Sandwich", "price": 150 },
+          { "name": "Cheesy Veg Sandwich", "price": 150 },
+          { "name": "Cheese Masala Sandwich", "price": 150 },
+          { "name": "Aloo Makhani Sandwich", "price": 150 },
+          { "name": "Creamy Cheese Sandwich", "price": 150 },
+          { "name": "Tandoori Cheese Sandwich", "price": 150 },
+          { "name": "Coleslaw Sandwich", "price": 150 },
+          { "name": "Hot Chilli Toast Sandwich", "price": 150 },
+          { "name": "Jam Cheese Sandwich", "price": 150 },
+          { "name": "Achari Paneer Sandwich", "price": 150 },
+          { "name": "Paneer Masala Sandwich", "price": 150 },
+          { "name": "Paneer Corn Sandwich", "price": 150 },
+          { "name": "Paneer Mayo Sandwich", "price": 150 },
+          { "name": "Paneer Tandoori Sandwich", "price": 150 },
+          { "name": "Chocolate Sandwich", "price": 150 },
+          { "name": "Cheese Corn Sandwich", "price": 150 },
+          { "name": "Indori Sandwich", "price": 160 },
+          { "name": "Peri Peri Cheese Sandwich", "price": 160 },
+          { "name": "Nutella Sandwich", "price": 170 },
+          { "name": "Paneer Cheese Sandwich", "price": 200 }
+        ]
+      },
+      {
+        "category": "Club Sandwiches",
+        "items": [
+          { "name": "Pizza Club Sandwich", "price": 280 },
+          { "name": "Cheese Club Sandwich", "price": 280 },
+          { "name": "Paneer Club Sandwich", "price": 310 },
+          { "name": "Mushroom Club Sandwich", "price": 310 }
+        ]
+      },
+      {
+        "category": "French Fries",
+        "items": [
+          { "name": "Regular Fries", "price": 140 },
+          { "name": "Peri Peri Fries", "price": 170 },
+          { "name": "Cheesy Fries", "price": 180 },
+          { "name": "Schezwan Fries", "price": 180 },
+          { "name": "Tandoori Fries", "price": 180 },
+          { "name": "Mayo Fries", "price": 180 },
+          { "name": "Peri Peri Cheese Fries", "price": 220 },
+          { "name": "Pizza Fries", "price": 220 }
+        ]
+      },
+      {
+        "category": "Pizza",
+        "items": [
+          { "name": "Cheese Pizza", "price": 200 },
+          { "name": "Cheese Capsicum Onion Pizza", "price": 220 }
+        ]
+      },
+      {
+        "category": "Open Toast",
+        "items": [
+          { "name": "Chilli Garlic Open Toast", "price": 210 },
+          { "name": "Veg Cheese Open Toast", "price": 210 },
+          { "name": "Baked Beans Open Toast", "price": 290 },
+          { "name": "Corn Potato Open Toast", "price": 290 },
+          { "name": "Paneer Makhani Open Toast", "price": 290 },
+          { "name": "Mushroom Open Toast", "price": 290 },
+          { "name": "Peri Peri Corn Open Toast", "price": 290 }
+        ]
+      },
+      {
+        "category": "Coffee",
+        "items": [
+          { "name": "Black Hot Coffee", "price": 60 },
+          { "name": "Hot Coffee", "price": 90 },
+          { "name": "Premium Hot Coffee", "price": 130 },
+          { "name": "Hot Hazelnut Coffee", "price": 130 },
+          { "name": "Hot Caramel Coffee", "price": 130 },
+          { "name": "Hot Coffee Brownie", "price": 160 },
+          { "name": "Black Cold Coffee", "price": 130 },
+          { "name": "Cold Coffee", "price": 150 },
+          { "name": "Irish Cold Coffee", "price": 180 },
+          { "name": "Creamy Chocolate Cold Coffee", "price": 180 },
+          { "name": "Cold Coffee With Ice-Cream", "price": 180 },
+          { "name": "Lactose Free Cold Coffee", "price": 180 },
+          { "name": "Premium Cold Coffee", "price": 210 },
+          { "name": "Cold Hazelnut Coffee", "price": 210 },
+          { "name": "Caramel Cold Coffee", "price": 220 },
+          { "name": "Brownie Cold Coffee", "price": 220 },
+          { "name": "Decaf Cold Coffee", "price": 220 }
+        ]
+      },
+      {
+        "category": "Drinks (Beverages)",
+        "items": [
+          { "name": "Green Tea", "price": 70 },
+          { "name": "Hot Chocolate", "price": 130, "description": "Warm cocoa with milk and sugar, a comforting favourite on cooler evenings." },
+          { "name": "Hot Masala Milk", "price": 130 },
+          { "name": "Lemon Iced Tea", "price": 130, "description": "Chilled brewed tea with lemon juice, served over ice." },
+          { "name": "Peach Iced Tea", "price": 130, "description": "Chilled brewed tea with peach syrup and puree." },
+          { "name": "Fresh Lime Soda", "price": 130, "description": "Fresh lime juice with soda water, sweet or salted." },
+          { "name": "Strawberry Milkshake", "price": 150, "description": "Blended strawberries with milk and a scoop of vanilla ice cream." },
+          { "name": "Kiwi Milkshake", "price": 150, "description": "Fresh kiwi blended with milk and a touch of vanilla ice cream." },
+          { "name": "Mango Milkshake", "price": 150, "description": "Thick, sweet and creamy blend of ripe mango and milk." },
+          { "name": "Banana Milkshake", "price": 150, "description": "Smooth and creamy blend of ripe banana and milk." },
+          { "name": "Hot Chocolate Brownie", "price": 180 },
+          { "name": "Vanilla Shake", "price": 180, "description": "Classic sweet and creamy blend of milk and vanilla ice cream." },
+          { "name": "Chocolate Shake", "price": 180 },
+          { "name": "Oreo Shake", "price": 210 },
+          { "name": "KitKat Shake", "price": 210, "description": "Milk and vanilla ice cream blended with crushed KitKat." },
+          { "name": "Paan Shake", "price": 220 },
+          { "name": "Anjeer Milkshake", "price": 220 },
+          { "name": "Cold Masala Milk", "price": 220 },
+          { "name": "Nutella Shake", "price": 220 },
+          { "name": "Nutell Kitkat Shake", "price": 320 }
+        ]
+      },
+      {
+        "category": "Pasta",
+        "items": [
+          { "name": "White Sauce Pasta", "price": 240 },
+          { "name": "Red Sauce Pasta", "price": 240 },
+          { "name": "Pink Sauce Pasta", "price": 240 },
+          { "name": "Mac N Cheesy Pasta", "price": 240 },
+          { "name": "Hot Garlic Sauce Pasta", "price": 240 }
+        ]
+      },
+      {
+        "category": "Rolls",
+        "items": [
+          { "name": "Lebanese Veg. Roll", "price": 150 },
+          { "name": "Veg. Fries Roll", "price": 170 },
+          { "name": "Falafel Roll", "price": 180 },
+          { "name": "Tandoori Soya Chaap Roll", "price": 190 },
+          { "name": "Falafel Cheese Roll", "price": 200 },
+          { "name": "Paneer Shawarma Roll", "price": 200 },
+          { "name": "Mexican Paneer Shawarma", "price": 200 },
+          { "name": "Cheese Roll", "price": 200 },
+          { "name": "Paneer Butter Shawarma", "price": 200 },
+          { "name": "Tawa Paneer Shawarma", "price": 200 },
+          { "name": "Cheese Paneer Shawarma", "price": 210 },
+          { "name": "Mushroom Cheese Shawarma", "price": 240 }
+        ]
+      },
+      {
+        "category": "Ice Cream Soda",
+        "items": [
+          { "name": "Rose Ice Cream Soda", "price": 150 },
+          { "name": "Khus Ice Cream Soda", "price": 150 },
+          { "name": "Lemon Ice Cream Soda", "price": 150 },
+          { "name": "Orange Ice Cream Soda", "price": 150 }
+        ]
+      }
+    ]
+  }
+]

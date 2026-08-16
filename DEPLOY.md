@@ -11,20 +11,28 @@ npm run build && npm start
 
 That serves everything on `PORT` (default 4273). Verified working locally.
 
-## Why not Vercel
+## Vercel — live, but read-only
 
-Vercel runs serverless functions on a read-only, ephemeral filesystem. On Vercel
-this app would deploy and look correct, but:
+The app is deployed at **https://cafe-gamma-wheat.vercel.app** (`npx vercel --prod`).
+That link stays the same across deploys.
 
-- every order, access code, dining session and menu edit would be lost the
-  moment the function finished, and would not be shared between requests;
-- uploaded restaurant and dish photos would disappear;
-- the live orders board (server-sent events) needs a connection held open, which
-  a serverless function will not do.
+Vercel runs serverless functions on a read-only filesystem whose `/tmp` does not
+survive a cold start, so there the app boots from a seed built by:
 
-Making it work on Vercel means replacing SQLite with a hosted Postgres, uploads
-with blob storage, and SSE with polling — a rewrite of the data layer, and it
-adds the external database service the project set out to avoid.
+```bash
+npm run snapshot
+```
+
+That writes `data/snapshot.db` and `data/snapshot-uploads/` from the working
+database — checkpointing the write-ahead log, dropping login sessions and the
+unassigned photo pool, and copying only the photos a restaurant or dish points
+at. Both are committed, and `vercel.json` includes them in the function.
+
+Everything works there — browsing, ordering, codes, rooms, the dashboard — but
+anything written goes to that instance's `/tmp` and is lost when it sleeps.
+Re-run `npm run snapshot` and redeploy to publish new menus or photos.
+
+For a real restaurant, use a host with a disk.
 
 ## Render (recommended)
 

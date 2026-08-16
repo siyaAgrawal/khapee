@@ -300,4 +300,16 @@ CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id, status);
 export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 
+// The photos the snapshot's restaurants and dishes point at ship beside it, and
+// are laid down once per cold start for the same reason the database is.
+if (SERVERLESS) {
+  const seed = path.join(dataDir, 'snapshot-uploads')
+  if (fs.existsSync(seed)) {
+    for (const file of fs.readdirSync(seed)) {
+      const target = path.join(UPLOAD_DIR, file)
+      if (!fs.existsSync(target)) fs.copyFileSync(path.join(seed, file), target)
+    }
+  }
+}
+
 export type Row = Record<string, any>

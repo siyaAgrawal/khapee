@@ -5,7 +5,7 @@
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
-      "includeFiles": "{data/snapshot.db,api/_bundle.mjs}"
+      "includeFiles": "{data/snapshot.db,data/snapshot-uploads/**,api/_bundle.mjs}"
     }
   },
   "rewrites": [

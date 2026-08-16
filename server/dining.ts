@@ -76,6 +76,12 @@ function insert(opts: {
  * Opens a session from whatever the customer scanned or typed. Accepts a staff
  * access code, a table QR token, or the full QR payload of either.
  */
+/** Restaurant names often end in a full stop ("99 Kitchen & Co."); don't add a second. */
+function named(name: unknown): string {
+  const text = String(name ?? '').trim()
+  return text ? text.replace(/\.+$/, '') : 'another restaurant'
+}
+
 export function startSession(input: { value: string; restaurantId?: number | null; userId: number | null }): SessionResult {
   const raw = String(input.value ?? '').trim()
   if (!raw) return { ok: false, status: 400, error: 'Enter a code to continue.' }
@@ -97,7 +103,7 @@ export function startSession(input: { value: string; restaurantId?: number | nul
       .get(tableToken.toLowerCase()) as any
     if (!table) return { ok: false, status: 404, error: "That table QR isn't recognised." }
     if (input.restaurantId && table.restaurant_id !== input.restaurantId) {
-      return { ok: false, status: 400, error: `That QR belongs to ${table.restaurant_name}.` }
+      return { ok: false, status: 400, error: `That QR belongs to ${named(table.restaurant_name)}.` }
     }
     return {
       ok: true,
@@ -122,15 +128,16 @@ export function startSession(input: { value: string; restaurantId?: number | nul
   if (!row) return { ok: false, status: 404, error: "That code isn't valid. Ask a staff member for a new one." }
   if (input.restaurantId && row.restaurant_id !== input.restaurantId) {
     const other = db.prepare('SELECT name FROM restaurants WHERE id = ?').get(row.restaurant_id) as any
-    return { ok: false, status: 400, error: `That code belongs to ${other?.name ?? 'another restaurant'}.` }
+    return { ok: false, status: 400, error: `That code belongs to ${named(other?.name)}.` }
   }
 
   const check = checkAccessCode(code, row.restaurant_id)
   if (!check.ok) return { ok: false, status: 400, error: check.message }
 
-  // The code is spent opening the session, not on each order within it.
-  db.prepare(`UPDATE access_codes SET used_at = datetime('now') WHERE id = ? AND used_at IS NULL`).run(row.id)
-
+  // A single-use code is spent by the order, not by opening the session — the
+  // staff screen promises exactly that. Consuming it here meant a customer who
+  // re-entered their own correct code (second device, cleared storage, or just
+  // reopening the sheet) was told it was already used.
   return {
     ok: true,
     session: insert({

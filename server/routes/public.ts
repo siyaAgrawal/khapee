@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
 import { normalizeCode } from '../ids.ts'
+import { checkAccessCode } from '../orders-service.ts'
 import { imageUrl } from '../uploads.ts'
 
 export const publicRouter = Router()
@@ -258,6 +259,11 @@ publicRouter.post('/resolve', (req, res) => {
     )
     .get(code) as any
   if (!row) return res.status(404).json({ error: "That code isn't valid. Ask a staff member for a new one." })
+
+  // Say so here rather than waving the customer through to a checkout that
+  // would reject the same code a few taps later.
+  const check = checkAccessCode(code, row.restaurant_id)
+  if (!check.ok) return res.status(400).json({ error: check.message })
 
   return res.json({
     kind: 'access',

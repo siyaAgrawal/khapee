@@ -1045,8 +1045,17 @@ async function runTests() {
   ok('a code session starts with no table', opened.body.session.tableId === null)
   ok('the session records how it opened', opened.body.session.source === 'code')
 
-  const codeSpent = await call('/orders/verify-code', { body: { restaurantId: mornington.id, code: sessCode } })
-  ok('the code is spent opening the session, not at order time', codeSpent.status === 400 && codeSpent.body.reason === 'used', codeSpent.body)
+  // The staff screen promises "invalid once an order is placed", so opening a
+  // session must not burn the code — a customer who re-enters their own correct
+  // code (second device, cleared storage, reopened sheet) has to get in.
+  const stillGood = await call('/orders/verify-code', { body: { restaurantId: mornington.id, code: sessCode } })
+  ok('opening a session does not spend the code', stillGood.status === 200, stillGood.body)
+  const reEntered = await call('/sessions', { body: { value: sessCode } })
+  ok('the same correct code opens a session again', reEntered.status === 201, reEntered.body)
+  ok(
+    'and the Join sheet still accepts it',
+    (await call('/resolve', { body: { value: sessCode } })).body.kind === 'access',
+  )
 
   const sessTables = await call(`/sessions/${sessToken}/tables`)
   ok('tables can be listed from the session alone', sessTables.body.tables.length > 0)
@@ -1453,8 +1462,12 @@ async function runTests() {
   ok('an unknown room code is refused', (await call('/resolve', { body: { value: 'ZZZZ' } })).status === 404)
 
   // A six-character code is still the restaurant's, not a room's.
-  const resolvedStaff = await call('/resolve', { body: { value: code1 } })
+  const freshStaffCode = (await call('/staff/codes', { token: reLogin.body.token, body: { minutes: 20 } })).body.code.code
+  const resolvedStaff = await call('/resolve', { body: { value: freshStaffCode } })
   ok('a six-character code is still read as the restaurant code', resolvedStaff.body.kind === 'access', resolvedStaff.body)
+  // A spent code is refused at the sheet rather than at checkout three taps later.
+  const spent = await call('/resolve', { body: { value: code1 } })
+  ok('a code already used for an order is refused up front', spent.status === 400, spent.body)
 
   const roomFriend = await call('/groups/join', { body: { code: aheadCode, displayName: 'Aarav' } })
   ok('a friend can join the room', roomFriend.status === 201, roomFriend.body)

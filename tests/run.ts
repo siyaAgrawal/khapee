@@ -1489,6 +1489,19 @@ async function runTests() {
     (await call('/resolve', { body: { value: aheadCode } })).status === 409,
   )
 
+  group('THEMES — a restaurant can carry its own look')
+  const themed = await call('/restaurants')
+  ok(
+    'every restaurant reports a theme, empty for the standard one',
+    themed.body.restaurants.every((r: any) => typeof r.theme === 'string'),
+  )
+  ok(
+    'the standard look is the default',
+    themed.body.restaurants.some((r: any) => r.theme === ''),
+  )
+  const detail = await call(`/restaurants/${mornington.id}`)
+  ok('a restaurant detail carries it too', detail.body.restaurant.theme === '')
+
   group('PROFILE — an account you can edit, but never need')
   const me = await call('/auth/me', { token: customerToken })
   ok('the account carries a phone field and a join date', me.body.user.phone === '' && !!me.body.user.memberSince)

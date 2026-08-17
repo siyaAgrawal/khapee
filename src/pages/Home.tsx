@@ -28,6 +28,8 @@ export type RestaurantCard = {
   acceptsTakeaway?: boolean
   acceptsGroups?: boolean
   acceptsUpi?: boolean
+  /** A restaurant with its own look on its page. Empty is the standard one. */
+  theme?: string
 }
 
 export type CuisineTile = { name: string; count: number }

@@ -3307,3 +3307,246 @@ button.nav-link {
   border-top: 1px solid var(--line);
   text-align: center;
 }
+
+/* ── La Tavola — Noir ─────────────────────────────────────────────────────────
+   One restaurant's own look. The room is charcoal throughout and each section
+   lends it an accent, which tints edges, rules and prices but never becomes a
+   background — the moment an accent fills a panel the whole thing stops being
+   noir and starts being a theme park. */
+
+.noir {
+  --accent: #c9a227;
+  --noir-ink: #eae6df;
+  --noir-dim: #8b867e;
+  margin-top: 6px;
+}
+
+/* The rail of kitchens. Scrolls sideways on a phone, sits still on a desktop. */
+.noir-rail {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 2px 14px;
+  scroll-padding-inline: 16px;
+}
+.noir-rail::-webkit-scrollbar { display: none; }
+
+.noir-tab {
+  --tab-accent: #c9a227;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 15px 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--noir-dim);
+  cursor: pointer;
+  transition: color 0.28s ease, border-color 0.28s ease, background 0.28s ease, transform 0.28s ease;
+}
+.noir-tab:hover { color: var(--noir-ink); border-color: rgba(255, 255, 255, 0.18); }
+
+.noir-tab.on {
+  color: var(--noir-ink);
+  border-color: color-mix(in srgb, var(--tab-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--tab-accent) 12%, transparent);
+}
+
+.noir-tab-glyph {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--tab-accent);
+  opacity: 0.85;
+}
+.noir-tab-name { font-size: 14px; letter-spacing: 0.01em; white-space: nowrap; }
+.noir-tab-count {
+  font-size: 11px;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The section's own announcement. Re-mounted per section, so it replays. */
+.noir-head { margin: 10px 0 20px; animation: noir-head-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.noir-kicker {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 6px;
+  transition: color 0.4s ease;
+}
+.noir-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(30px, 7vw, 44px);
+  line-height: 1.05;
+  margin: 0;
+  color: var(--noir-ink);
+}
+.noir-rule {
+  display: block;
+  height: 1px;
+  margin-top: 14px;
+  background: linear-gradient(90deg, var(--accent), transparent 62%);
+  transform-origin: left;
+  animation: noir-rule-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes noir-head-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes noir-rule-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.noir-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+/* Cards rise in sequence rather than all at once — the stagger is what makes
+   switching sections feel deliberate instead of like a redraw. */
+.noir-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: border-color 0.3s ease, transform 0.45s ease;
+}
+.noir-grid.in .noir-card {
+  animation: noir-card-in 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 55ms);
+}
+.noir-card:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+@keyframes noir-card-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.noir-card-art { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.noir-art { width: 100%; height: 100%; }
+.noir-art img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+.noir-card:hover .noir-art img { transform: scale(1.05); }
+
+/* Keeps the plate dark at the bottom so the title never fights the photo. */
+.noir-card-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 42%, rgba(12, 12, 11, 0.82) 100%);
+  pointer-events: none;
+}
+
+.noir-flag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #14140f;
+  background: var(--accent);
+}
+
+.noir-card-body { padding: 13px 14px 14px; }
+.noir-card-top { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
+.noir-card-top h3 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--noir-ink);
+}
+.noir-card-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--noir-dim);
+  margin: 7px 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.noir-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.noir-price {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 20px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s ease;
+}
+
+.noir-add {
+  padding: 8px 17px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--noir-ink);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: background 0.24s ease, color 0.24s ease;
+}
+.noir-add:hover:not(:disabled) { background: var(--accent); color: #14140f; }
+.noir-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.noir-step {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.noir-step button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--noir-ink);
+  background: transparent;
+}
+.noir-step button:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.noir-step span { min-width: 18px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.noir-sold { font-size: 12px; color: var(--noir-dim); }
+.noir-card.sold .noir-card-art { filter: grayscale(1) brightness(0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  .noir-head,
+  .noir-rule,
+  .noir-grid.in .noir-card { animation: none; }
+  .noir-card { opacity: 1; transform: none; }
+  .noir-art img { transition: none; }
+}
+
+/* The themed hero: taller, darker, and the photo bleeds into the page instead
+   of sitting in a rounded box like every other restaurant's. */
+.r-hero-noir .r-hero-art {
+  aspect-ratio: 21 / 9;
+  border-radius: 18px;
+  position: relative;
+}
+.r-hero-noir .r-hero-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12, 12, 11, 0.25) 0%, rgba(12, 12, 11, 0.9) 100%);
+  border-radius: inherit;
+}
+.r-hero-noir .r-hero-art img { filter: saturate(0.92) contrast(1.06); }
+.r-hero-noir h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  letter-spacing: -0.01em;
+}

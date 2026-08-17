@@ -229,6 +229,9 @@ addColumn('order_items', 'paid_at', 'TEXT')
 // dashboard needs to know which of their restaurants is currently in view.
 addColumn('users', 'active_restaurant_id', 'INTEGER')
 
+// A restaurant can carry its own look on its page — see src/lib/themes.ts.
+// Empty means the standard one, which is what almost every restaurant wants.
+addColumn('restaurants', 'theme', "TEXT NOT NULL DEFAULT ''")
 // A dish the restaurant is running this month.
 addColumn('menu_items', 'is_special', 'INTEGER NOT NULL DEFAULT 0')
 // Items a waiter added at the table rather than the customer through the app.

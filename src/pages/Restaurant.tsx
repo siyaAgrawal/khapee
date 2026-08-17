@@ -8,6 +8,7 @@ import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
 import { readGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
+import NoirMenu from '../components/NoirMenu'
 import type { RestaurantCard } from './Home'
 
 type MenuItem = {
@@ -50,6 +51,11 @@ export default function Restaurant() {
 
   useEffect(load, [restaurantId, veg])
 
+  // A restaurant with its own look gets its own menu component. Everything
+  // outside the menu — cart bar, dining bar, table context — is shared, so a
+  // theme changes how the food reads and nothing about how ordering works.
+  const noir = data?.restaurant.theme === 'noir'
+
   const onAdd = (item: MenuItem) => {
     if (!data) return
     if (!data.restaurant.isOpen) {
@@ -69,7 +75,7 @@ export default function Restaurant() {
 
         {data && (
           <>
-            <div className="r-hero">
+            <div className={`r-hero ${noir ? 'r-hero-noir' : ''}`}>
               <Art
                 emoji={data.restaurant.emoji}
                 hue={data.restaurant.hue}
@@ -115,6 +121,17 @@ export default function Restaurant() {
               </div>
             </div>
 
+            {noir ? (
+              <NoirMenu
+                menu={data.menu}
+                isOpen={data.restaurant.isOpen}
+                quantityOf={quantityOf}
+                setQuantity={setQuantity}
+                onAdd={onAdd}
+                inThisCart={cart.restaurantId === data.restaurant.id}
+              />
+            ) : (
+              <>
             <nav className="menu-nav">
               <button
                 className={`veg-toggle veg-toggle-sm ${veg ? 'on' : ''}`}
@@ -204,6 +221,8 @@ export default function Restaurant() {
                 </div>
               </section>
             ))}
+              </>
+            )}
           </>
         )}
       </main>

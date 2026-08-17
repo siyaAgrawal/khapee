@@ -1,0 +1,229 @@
+[
+  {
+    "name": "La Tavola — Noir",
+    "description": "Low-light plates across Japan, Korea, Mexico and Italy.",
+    "address": "Indore",
+    "categories": [
+      "Japanese",
+      "Italian",
+      "Korean",
+      "Mexican",
+      "Desserts"
+    ],
+    "emoji": "🖤",
+    "hue": 268,
+    "prepMinutes": 30,
+    "image": "/tmp/tavola/small/tavola-00.jpg",
+    "staff": {
+      "name": "La Tavola — Noir",
+      "email": "sagrawal292@gmail.com",
+      "password": "292929",
+      "title": "Owner"
+    },
+    "menu": [
+      {
+        "category": "Japanese",
+        "items": [
+          {
+            "name": "Signature Sushi Platter",
+            "description": "Assorted sushi on a matte-black platter with dramatic low-key lighting.",
+            "price": 999,
+            "image": "/tmp/tavola/small/tavola-00.jpg",
+            "veg": false
+          },
+          {
+            "name": "Midnight Ramen",
+            "description": "Ramen with pork, egg, scallions and noodles in a dark ceramic bowl.",
+            "price": 1299,
+            "image": "/tmp/tavola/small/tavola-01.jpg",
+            "veg": false
+          },
+          {
+            "name": "Crispy Gyoza",
+            "description": "Pan-fried Japanese dumplings with a dark soy-vinegar dipping sauce.",
+            "price": 699,
+            "image": "/tmp/tavola/small/tavola-13.jpg",
+            "veg": false
+          },
+          {
+            "name": "Black-Platter Sushi Selection",
+            "description": "Nigiri and rolls arranged on a long black platter with chopsticks.",
+            "price": 1099,
+            "image": "/tmp/tavola/small/tavola-17.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Korean",
+        "items": [
+          {
+            "name": "Korean Spicy Fried Chicken",
+            "description": "Crispy chicken glazed in a glossy sweet-spicy sauce with sesame and scallions.",
+            "price": 999,
+            "image": "/tmp/tavola/small/tavola-02.jpg",
+            "veg": false
+          },
+          {
+            "name": "Dolsot Bibimbap",
+            "description": "Sizzling stone-bowl rice with beef, vegetables, egg, kimchi and spicy sauce.",
+            "price": 1199,
+            "image": "/tmp/tavola/small/tavola-10.jpg",
+            "veg": false
+          },
+          {
+            "name": "Japchae",
+            "description": "Glossy sweet-potato glass noodles with beef, mushrooms, spinach, peppers and sesame.",
+            "price": 899,
+            "image": "/tmp/tavola/small/tavola-11.jpg",
+            "veg": false
+          },
+          {
+            "name": "Korean Feast",
+            "description": "Bibimbap, Korean fried chicken, noodles and banchan arranged for sharing.",
+            "price": 1499,
+            "image": "/tmp/tavola/small/tavola-20.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Asian",
+        "items": [
+          {
+            "name": "Dumpling & Beef Tasting",
+            "description": "Steamed dumplings and sliced beef with chilli oil, pickles and herbs.",
+            "price": 1099,
+            "image": "/tmp/tavola/small/tavola-21.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Mexican",
+        "items": [
+          {
+            "name": "Tacos al Pastor",
+            "description": "Dark-background tacos with seasoned meat, lime and dramatic highlights.",
+            "price": 999,
+            "image": "/tmp/tavola/small/tavola-03.jpg",
+            "veg": false
+          },
+          {
+            "name": "Grilled Quesadilla",
+            "description": "Golden quesadilla filled with cheese, beans, corn and peppers, served with salsa.",
+            "price": 899,
+            "image": "/tmp/tavola/small/tavola-12.jpg",
+            "veg": false
+          },
+          {
+            "name": "Chicken Enchiladas",
+            "description": "Chicken-filled tortillas covered in rich red sauce and crema.",
+            "price": 1099,
+            "image": "/tmp/tavola/small/tavola-14.jpg",
+            "veg": false
+          },
+          {
+            "name": "Guacamole Molcajete",
+            "description": "Fresh guacamole with tomato, onion, cilantro and crisp tortilla chips.",
+            "price": 699,
+            "image": "/tmp/tavola/small/tavola-19.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Italian",
+        "items": [
+          {
+            "name": "Moody Pasta",
+            "description": "Glazed pasta plated on a dark surface with dramatic shadows and warm highlights.",
+            "price": 1499,
+            "image": "/tmp/tavola/small/tavola-04.jpg",
+            "veg": false
+          },
+          {
+            "name": "Charcoal Margherita",
+            "description": "Charcoal-crust pizza with mozzarella, tomato and basil on a dark setting.",
+            "price": 1399,
+            "image": "/tmp/tavola/small/tavola-05.jpg",
+            "veg": false
+          },
+          {
+            "name": "Prosciutto e Basil Pizza",
+            "description": "Wood-fired pizza with prosciutto, mozzarella, tomato and fresh basil.",
+            "price": 1499,
+            "image": "/tmp/tavola/small/tavola-08.jpg",
+            "veg": false
+          },
+          {
+            "name": "Carbonara",
+            "description": "Creamy pasta with pancetta, black pepper and Parmesan on a matte-black plate.",
+            "price": 1499,
+            "image": "/tmp/tavola/small/tavola-15.jpg",
+            "veg": false
+          },
+          {
+            "name": "Wild Mushroom Risotto",
+            "description": "Creamy Arborio rice with sautéed mushrooms and herbs.",
+            "price": 1599,
+            "image": "/tmp/tavola/small/tavola-16.jpg",
+            "veg": false
+          },
+          {
+            "name": "Tiramisu",
+            "description": "Coffee-soaked ladyfingers layered with mascarpone and cocoa on dark slate.",
+            "price": 799,
+            "image": "/tmp/tavola/small/tavola-18.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Desserts",
+        "items": [
+          {
+            "name": "Dark Chocolate Mousse",
+            "description": "Glossy chocolate dessert on a black plate with cherry and delicate garnish.",
+            "price": 749,
+            "image": "/tmp/tavola/small/tavola-06.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Beverages",
+        "items": [
+          {
+            "name": "Midnight Berry Cooler",
+            "description": "Deep ruby non-alcoholic berry-style drink in elegant glassware.",
+            "price": 499,
+            "image": "/tmp/tavola/small/tavola-07.jpg",
+            "veg": false
+          },
+          {
+            "name": "Citrus Rosemary Cooler",
+            "description": "Elegant amber citrus cooler with dried citrus and rosemary.",
+            "price": 499,
+            "image": "/tmp/tavola/small/tavola-09.jpg",
+            "veg": false
+          },
+          {
+            "name": "Strawberry Matcha Latte",
+            "description": "Layered strawberry milk and matcha with a creamy top and fresh strawberry.",
+            "price": 549,
+            "image": "/tmp/tavola/small/tavola-22.jpg",
+            "veg": false
+          },
+          {
+            "name": "Trio of Signature Coolers",
+            "description": "Three colourful non-alcoholic coolers with citrus, mint, berries and ice.",
+            "price": 499,
+            "image": "/tmp/tavola/small/tavola-23.jpg",
+            "veg": false
+          }
+        ]
+      }
+    ]
+  }
+]

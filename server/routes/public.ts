@@ -32,6 +32,7 @@ function shapeRestaurant(row: any) {
     acceptsTakeaway: !!row.accepts_takeaway,
     acceptsGroups: !!row.accepts_groups,
     acceptsUpi: !!String(row.upi_vpa ?? '').trim(),
+    theme: row.theme ?? '',
   }
 }
 

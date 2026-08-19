@@ -1489,6 +1489,17 @@ async function runTests() {
     (await call('/resolve', { body: { value: aheadCode } })).status === 409,
   )
 
+  group('GROUPED ITEMS — a bar list inside one section')
+  const grouped = await call(`/restaurants/${mornington.id}`)
+  ok(
+    'every dish reports a group, empty when it has none',
+    grouped.body.menu.every((c: any) => c.items.every((i: any) => typeof i.groupLabel === 'string')),
+  )
+  ok(
+    'an ordinary dish has no group',
+    grouped.body.menu.flatMap((c: any) => c.items).every((i: any) => i.groupLabel === ''),
+  )
+
   group('THEMES — a restaurant can carry its own look')
   const themed = await call('/restaurants')
   ok(

@@ -131,6 +131,10 @@ export function Art({
   alt?: string
 }) {
   const [broken, setBroken] = useState(false)
+  // A tall photo in a wide frame loses its subject to the crop — a drink ends up
+  // as a slice of glass with no rim and no base. Those are shown whole instead,
+  // against a blurred copy of themselves so the frame still fills.
+  const [portrait, setPortrait] = useState(false)
   const style = {
     '--art-hue': String(hue),
     borderRadius: rounded,
@@ -138,8 +142,20 @@ export function Art({
 
   if (imageUrl && !broken) {
     return (
-      <div className={`art art-photo ${className ?? ''}`} style={style}>
-        <img src={imageUrl} alt={alt ?? ''} loading="lazy" onError={() => setBroken(true)} />
+      <div
+        className={`art art-photo ${portrait ? 'art-portrait' : ''} ${className ?? ''}`}
+        style={style}
+      >
+        <img
+          src={imageUrl}
+          alt={alt ?? ''}
+          loading="lazy"
+          onError={() => setBroken(true)}
+          onLoad={(e) => {
+            const img = e.currentTarget
+            if (img.naturalWidth && img.naturalHeight / img.naturalWidth > 1.15) setPortrait(true)
+          }}
+        />
       </div>
     )
   }

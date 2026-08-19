@@ -133,7 +133,7 @@ publicRouter.get('/restaurants/:id', (req, res) => {
     .all(id) as any[]
   const items = db
     .prepare(
-      `SELECT id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, is_special, sort_order, image_path
+      `SELECT id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, is_special, sort_order, image_path, group_label
        FROM menu_items WHERE restaurant_id = ? ORDER BY sort_order, id`,
     )
     .all(id)
@@ -160,6 +160,7 @@ const SPECIALS_SECTION_ID = -1
 
 function shapeMenuItem(i: any) {
   return {
+    groupLabel: i.group_label ?? '',
     id: i.id,
     name: i.name,
     description: i.description,

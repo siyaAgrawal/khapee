@@ -28,6 +28,7 @@ const NOIR_VOICES: Record<string, SectionVoice> = {
   Italian: { accent: '#8aa95c', kicker: 'Slow hands, old rules', glyph: 'IT' },
   Desserts: { accent: '#b07cc6', kicker: 'The reason you stayed', glyph: 'D' },
   Beverages: { accent: '#5aa6c4', kicker: 'Cold glass, low light', glyph: 'B' },
+  Bar: { accent: '#c9b291', kicker: 'Poured after dark', glyph: '✦' },
 }
 
 const FALLBACK: SectionVoice = { accent: '#c9a227', kicker: 'From the kitchen', glyph: '·' }

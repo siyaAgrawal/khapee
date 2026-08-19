@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Art, money } from './ui'
 import { sectionVoice } from '../lib/themes'
+import BarGlass from './BarGlass'
 
 type MenuItem = {
   id: number
@@ -13,6 +14,7 @@ type MenuItem = {
   isVeg: boolean
   isAvailable: boolean
   isSpecial: boolean
+  groupLabel?: string
 }
 type Category = { id: number; name: string; items: MenuItem[] }
 
@@ -111,6 +113,16 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
                   <h2 className="noir-title">{c.name}</h2>
                   <span className="noir-rule" aria-hidden />
                 </header>
+                {c.items.some((it) => it.groupLabel) ? (
+                  <BarList
+                    items={c.items}
+                    isOpen={isOpen}
+                    quantityOf={quantityOf}
+                    setQuantity={setQuantity}
+                    onAdd={onAdd}
+                    inThisCart={inThisCart}
+                  />
+                ) : (
                 <div className="noir-grid in">
                   {c.items.map((item, i) => (
                     <Dish
@@ -125,6 +137,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
                     />
                   ))}
                 </div>
+                )}
               </section>
             )
           })}
@@ -137,6 +150,16 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
             <span className="noir-rule" aria-hidden />
           </header>
 
+          {current!.items.some((it) => it.groupLabel) ? (
+            <BarList
+              items={current!.items}
+              isOpen={isOpen}
+              quantityOf={quantityOf}
+              setQuantity={setQuantity}
+              onAdd={onAdd}
+              inThisCart={inThisCart}
+            />
+          ) : (
           <div className={`noir-grid ${entered ? 'in' : ''}`} key={current!.id}>
             {current!.items.map((item, i) => (
               <Dish
@@ -151,8 +174,86 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
               />
             ))}
           </div>
+          )}
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * A section whose items carry group labels — the bar — reads as a list under
+ * one drawn glass per kind, not as thirty photographs of similar bottles.
+ */
+export function BarList({
+  items,
+  isOpen,
+  quantityOf,
+  setQuantity,
+  onAdd,
+  inThisCart,
+}: {
+  items: MenuItem[]
+  isOpen: boolean
+  quantityOf: (id: number) => number
+  setQuantity: (id: number, qty: number) => void
+  onAdd: (item: MenuItem) => void
+  inThisCart: boolean
+}) {
+  const groups: { label: string; items: MenuItem[] }[] = []
+  for (const item of items) {
+    const label = item.groupLabel || 'Other'
+    const found = groups.find((g) => g.label === label)
+    if (found) found.items.push(item)
+    else groups.push({ label, items: [item] })
+  }
+
+  return (
+    <div className="bar">
+      {groups.map((g, gi) => (
+        <section className="bar-group" key={g.label} style={{ ['--i' as string]: gi }}>
+          <header className="bar-group-head">
+            <span className="bar-group-glass" aria-hidden>
+              <BarGlass group={g.label} />
+            </span>
+            <h3>{g.label}</h3>
+            <span className="bar-group-rule" aria-hidden />
+          </header>
+
+          <ul className="bar-list">
+            {g.items.map((item) => {
+              const qty = quantityOf(item.id)
+              return (
+                <li key={item.id} className={`bar-row ${item.isAvailable ? '' : 'sold'}`}>
+                  <div className="bar-row-text">
+                    <span className="bar-row-name">{item.name}</span>
+                    <span className="bar-row-desc">{item.description}</span>
+                  </div>
+                  <span className="bar-row-dots" aria-hidden />
+                  <span className="bar-row-price">{money(item.priceCents)}</span>
+                  {!item.isAvailable ? (
+                    <span className="noir-sold">Sold out</span>
+                  ) : qty > 0 && inThisCart ? (
+                    <div className="noir-step bar-row-step">
+                      <button onClick={() => setQuantity(item.id, qty - 1)} aria-label={`Remove one ${item.name}`}>
+                        −
+                      </button>
+                      <span>{qty}</span>
+                      <button onClick={() => onAdd(item)} aria-label={`Add one ${item.name}`}>
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    <button className="noir-add bar-row-add" onClick={() => onAdd(item)} disabled={!isOpen}>
+                      Add
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
     </div>
   )
 }

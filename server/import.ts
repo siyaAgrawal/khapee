@@ -23,6 +23,8 @@ type ImportItem = {
   veg?: boolean
   available?: boolean
   image?: string
+  /** Groups this item under a heading inside its section. */
+  group?: string
 }
 
 type ImportRestaurant = {
@@ -107,8 +109,8 @@ function mergeMenu(restaurantId: number, entry: ImportRestaurant, baseDir: strin
       if (clash) return
       db.prepare(
         `INSERT INTO menu_items
-          (restaurant_id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, sort_order, image_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (restaurant_id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, sort_order, image_path, group_label)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         restaurantId,
         category.id,
@@ -121,6 +123,7 @@ function mergeMenu(restaurantId: number, entry: ImportRestaurant, baseDir: strin
         item.available === false ? 0 : 1,
         ci * 100 + ii,
         copyImage(item.image, baseDir),
+        item.group ?? '',
       )
       added++
     })
@@ -219,8 +222,8 @@ export function importFile(file: string, merge = false) {
         section.items?.forEach((item, ii) => {
           db.prepare(
             `INSERT INTO menu_items
-              (restaurant_id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, sort_order, image_path)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              (restaurant_id, category_id, name, description, price_cents, emoji, hue, is_veg, is_available, sort_order, image_path, group_label)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           ).run(
             restaurantId,
             categoryId,
@@ -233,6 +236,7 @@ export function importFile(file: string, merge = false) {
             item.available === false ? 0 : 1,
             ci * 100 + ii,
             copyImage(item.image, baseDir),
+            item.group ?? '',
           )
           items++
         })

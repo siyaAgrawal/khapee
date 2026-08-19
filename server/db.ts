@@ -232,6 +232,9 @@ addColumn('users', 'active_restaurant_id', 'INTEGER')
 // A restaurant can carry its own look on its page — see src/lib/themes.ts.
 // Empty means the standard one, which is what almost every restaurant wants.
 addColumn('restaurants', 'theme', "TEXT NOT NULL DEFAULT ''")
+// A named group inside a section — a bar list is "Whisky", "Gin", "Beer"
+// under one Bar heading, rather than eight tabs of three drinks each.
+addColumn('menu_items', 'group_label', "TEXT NOT NULL DEFAULT ''")
 // A dish the restaurant is running this month.
 addColumn('menu_items', 'is_special', 'INTEGER NOT NULL DEFAULT 0')
 // Items a waiter added at the table rather than the customer through the app.

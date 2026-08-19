@@ -3432,7 +3432,7 @@ button.nav-link {
   to { opacity: 1; transform: none; }
 }
 
-.noir-card-art { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.noir-card-art { position: relative; aspect-ratio: 1 / 1; overflow: hidden; }
 .noir-art { width: 100%; height: 100%; }
 .noir-art img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
 .noir-card:hover .noir-art img { transform: scale(1.05); }
@@ -3699,3 +3699,83 @@ button.nav-link {
   .noir-hero-img img,
   .noir-hero-sheen { animation: none; }
 }
+
+/* A tall photo in a wide frame gets cropped to the middle of the glass — no rim,
+   no base. The squarer frame above recovers most of it; these photographs centre
+   their subject, so the crop stays centred rather than biased up or down. */
+.art-photo.art-portrait img {
+  object-position: center center;
+}
+
+/* The bar list: one drawn glass per kind, then the pours as a list. Thirty
+   photographs of similar bottles would be a worse menu than eight clean marks. */
+.bar { margin-top: 4px; }
+
+.bar-group {
+  margin-bottom: 34px;
+  animation: noir-card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+.bar-group:last-child { margin-bottom: 6px; }
+
+.bar-group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bar-group-glass { color: var(--accent); display: inline-flex; opacity: 0.95; }
+.bar-glass { display: block; }
+.bar-group-head h3 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 25px;
+  margin: 0;
+  color: var(--noir-ink);
+  letter-spacing: 0.01em;
+}
+.bar-group-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+}
+
+.bar-list { list-style: none; margin: 0; padding: 0; }
+
+.bar-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+.bar-row:last-child { border-bottom: 0; }
+
+.bar-row-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bar-row-name { font-size: 15px; color: var(--noir-ink); }
+.bar-row-desc { font-size: 12.5px; line-height: 1.45; color: var(--noir-dim); }
+
+/* The leader dots of a printed menu, which is what a bar list wants to be. */
+.bar-row-dots {
+  flex: 1;
+  min-width: 18px;
+  align-self: center;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+}
+
+.bar-row-price {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 18px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.bar-row-add { padding: 6px 14px; font-size: 12px; align-self: center; }
+.bar-row-step { align-self: center; }
+.bar-row.sold .bar-row-text { opacity: 0.45; }
+
+@media (max-width: 560px) {
+  .bar-row { flex-wrap: wrap; gap: 6px 10px; }
+  .bar-row-text { flex: 1 1 100%; order: 1; }
+  .bar-row-dots { order: 2; }
+  .bar-row-price { order: 3; }
+  .bar-row-add,
+  .bar-row-step { order: 4; }
+}
+
+@media (prefers-reduced-motion: reduce) { .bar-group { animation: none; } }

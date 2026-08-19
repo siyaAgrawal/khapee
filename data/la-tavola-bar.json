@@ -1,0 +1,192 @@
+[
+  {
+    "name": "La Tavola — Noir",
+    "menu": [
+      {
+        "category": "Bar",
+        "items": [
+          {
+            "name": "Glenfiddich 12",
+            "price": 950,
+            "description": "Speyside single malt, pear and oak. 30 ml.",
+            "group": "Whisky"
+          },
+          {
+            "name": "Talisker 10",
+            "price": 1150,
+            "description": "Skye single malt, smoke and sea salt. 30 ml.",
+            "group": "Whisky"
+          },
+          {
+            "name": "Monkey Shoulder",
+            "price": 750,
+            "description": "Blended malt, soft and rounded. 30 ml.",
+            "group": "Whisky"
+          },
+          {
+            "name": "Amrut Fusion",
+            "price": 850,
+            "description": "Indian single malt, peated barley. 30 ml.",
+            "group": "Whisky"
+          },
+          {
+            "name": "Rare Old Indri",
+            "price": 700,
+            "description": "Indian single malt, dried fruit. 30 ml.",
+            "group": "Whisky"
+          },
+          {
+            "name": "Hendrick's",
+            "price": 850,
+            "description": "Cucumber and rose. 30 ml.",
+            "group": "Gin"
+          },
+          {
+            "name": "Tanqueray No. Ten",
+            "price": 800,
+            "description": "Citrus-forward, made for a martini. 30 ml.",
+            "group": "Gin"
+          },
+          {
+            "name": "Greater Than",
+            "price": 550,
+            "description": "Indian dry gin, juniper and lemongrass. 30 ml.",
+            "group": "Gin"
+          },
+          {
+            "name": "Stranger & Sons",
+            "price": 650,
+            "description": "Goan gin, black pepper and citrus peel. 30 ml.",
+            "group": "Gin"
+          },
+          {
+            "name": "Grey Goose",
+            "price": 850,
+            "description": "French wheat vodka, clean and cold. 30 ml.",
+            "group": "Vodka"
+          },
+          {
+            "name": "Belvedere",
+            "price": 800,
+            "description": "Rye vodka, faintly sweet. 30 ml.",
+            "group": "Vodka"
+          },
+          {
+            "name": "Smirnoff",
+            "price": 450,
+            "description": "Triple distilled. 30 ml.",
+            "group": "Vodka"
+          },
+          {
+            "name": "Old Monk",
+            "price": 400,
+            "description": "Indian dark rum, vanilla and molasses. 30 ml.",
+            "group": "Rum"
+          },
+          {
+            "name": "Bacardi Carta Blanca",
+            "price": 500,
+            "description": "Light rum, for a daiquiri. 30 ml.",
+            "group": "Rum"
+          },
+          {
+            "name": "Kraken Black Spiced",
+            "price": 650,
+            "description": "Spiced rum, heavy on the clove. 30 ml.",
+            "group": "Rum"
+          },
+          {
+            "name": "Patrón Silver",
+            "price": 950,
+            "description": "Unaged agave, bright and peppery. 30 ml.",
+            "group": "Tequila"
+          },
+          {
+            "name": "Jose Cuervo Reposado",
+            "price": 650,
+            "description": "Rested in oak, softer edge. 30 ml.",
+            "group": "Tequila"
+          },
+          {
+            "name": "Bira 91 White",
+            "price": 350,
+            "description": "Wheat beer, coriander and orange peel. 330 ml.",
+            "group": "Beer"
+          },
+          {
+            "name": "Simba Wit",
+            "price": 350,
+            "description": "Indian witbier, light and hazy. 330 ml.",
+            "group": "Beer"
+          },
+          {
+            "name": "Corona Extra",
+            "price": 450,
+            "description": "Served with lime. 355 ml.",
+            "group": "Beer"
+          },
+          {
+            "name": "Guinness Draught",
+            "price": 550,
+            "description": "Dry stout, roasted barley. 440 ml.",
+            "group": "Beer"
+          },
+          {
+            "name": "Sula Rasa Cabernet",
+            "price": 750,
+            "description": "Nashik red, blackcurrant and cedar. 150 ml.",
+            "group": "Wine"
+          },
+          {
+            "name": "Fratelli Sette",
+            "price": 950,
+            "description": "Indian red blend, structured. 150 ml.",
+            "group": "Wine"
+          },
+          {
+            "name": "Chandon Brut",
+            "price": 900,
+            "description": "Sparkling, crisp apple. 150 ml.",
+            "group": "Wine"
+          },
+          {
+            "name": "Sula Sauvignon Blanc",
+            "price": 700,
+            "description": "White, gooseberry and lime. 150 ml.",
+            "group": "Wine"
+          },
+          {
+            "name": "Noir Negroni",
+            "price": 850,
+            "description": "Gin, Campari, sweet vermouth, burnt orange.",
+            "group": "Cocktails"
+          },
+          {
+            "name": "Smoked Old Fashioned",
+            "price": 950,
+            "description": "Whisky, bitters, demerara, smoked under glass.",
+            "group": "Cocktails"
+          },
+          {
+            "name": "Espresso Martini",
+            "price": 800,
+            "description": "Vodka, espresso, coffee liqueur.",
+            "group": "Cocktails"
+          },
+          {
+            "name": "Midnight Margarita",
+            "price": 850,
+            "description": "Tequila, lime, charcoal salt rim.",
+            "group": "Cocktails"
+          },
+          {
+            "name": "Tavola Spritz",
+            "price": 750,
+            "description": "Aperol, prosecco, soda, olive.",
+            "group": "Cocktails"
+          }
+        ]
+      }
+    ]
+  }
+]

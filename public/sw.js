@@ -8,7 +8,7 @@
  * they always go to the network, because a cached menu price or order status
  * would be worse than a slow one.
  */
-const SHELL = 'ordro-shell-v1'
+const SHELL = 'ordro-shell-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -36,19 +36,29 @@ self.addEventListener('fetch', (event) => {
   // Anything live goes straight to the network, always.
   if (url.pathname.startsWith('/api/')) return
 
-  // Navigations: show the cached shell at once if we have it, and refresh it in
-  // the background. This is what replaces the host's wake screen.
+  // Navigations race the network against a short timeout. A server that answers
+  // wins, so a new deploy is seen immediately — serving the cache first was
+  // wrong, and left phones on an old build until their second visit. A server
+  // that is still waking loses, and the cached shell stands in for it, which is
+  // what keeps the host's own "waking up" page off the screen.
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/').then((cached) => {
-        const fresh = fetch(request)
-          .then((response) => {
-            if (response.ok) caches.open(SHELL).then((c) => c.put('/', response.clone()))
-            return response
-          })
-          .catch(() => cached)
-        return cached || fresh
-      }),
+      (async () => {
+        const cache = await caches.open(SHELL)
+        try {
+          const fresh = await Promise.race([
+            fetch(request),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('slow')), 3000)),
+          ])
+          if (fresh && fresh.ok) {
+            cache.put('/', fresh.clone())
+            return fresh
+          }
+          throw new Error('bad response')
+        } catch {
+          return (await cache.match('/')) || fetch(request)
+        }
+      })(),
     )
     return
   }

@@ -3779,3 +3779,17 @@ button.nav-link {
 }
 
 @media (prefers-reduced-motion: reduce) { .bar-group { animation: none; } }
+
+/* On a phone the header ran out of room and broke "Sign in" across two lines,
+   which pushed the bar taller than its own height variable. Nothing in it
+   should ever wrap; below 420px the padding tightens instead. */
+.nav-link,
+.cart-pill {
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .header { gap: 8px; padding: 0 12px; }
+  .header-nav { gap: 2px; }
+  .nav-link { padding: 8px 8px; font-size: 13px; }
+}

@@ -58,6 +58,23 @@ export default function Restaurant() {
   const noir = data?.restaurant.theme === 'noir'
   const noirPage = noir
 
+  /**
+   * A themed restaurant takes the page's palette with it. The app otherwise
+   * follows the device, and on a phone set to light this page rendered cream on
+   * cream — the theme's own colours assume a dark ground. Cleared on the way
+   * out so the rest of the app goes back to whatever the device asked for.
+   */
+  useEffect(() => {
+    if (!noir) return
+    const root = document.documentElement
+    const previous = root.dataset.theme
+    root.dataset.theme = 'noir'
+    return () => {
+      if (previous) root.dataset.theme = previous
+      else delete root.dataset.theme
+    }
+  }, [noir])
+
   const onAdd = (item: MenuItem) => {
     if (!data) return
     if (!data.restaurant.isOpen) {

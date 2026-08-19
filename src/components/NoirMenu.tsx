@@ -22,9 +22,9 @@ type Category = { id: number; name: string; items: MenuItem[] }
 function tabVars(hex: string): React.CSSProperties {
   const v = accentVars(hex)
   return {
-    ['--tab-accent' as string]: v['--accent'],
-    ['--tab-soft' as string]: v['--accent-soft'],
-    ['--tab-faint' as string]: v['--accent-faint'],
+    ['--tab-accent' as string]: v['--na'],
+    ['--tab-soft' as string]: v['--na-soft'],
+    ['--tab-faint' as string]: v['--na-faint'],
   } as React.CSSProperties
 }
 

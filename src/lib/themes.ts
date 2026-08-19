@@ -45,9 +45,9 @@ export function accentVars(hex: string): Record<string, string> {
   const n = parseInt(hex.slice(1), 16)
   const rgb = `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
   return {
-    '--accent': hex,
-    '--accent-soft': `rgba(${rgb}, 0.5)`,
-    '--accent-faint': `rgba(${rgb}, 0.13)`,
+    '--na': hex,
+    '--na-soft': `rgba(${rgb}, 0.5)`,
+    '--na-faint': `rgba(${rgb}, 0.13)`,
   }
 }
 

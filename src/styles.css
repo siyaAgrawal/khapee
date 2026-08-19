@@ -3322,7 +3322,7 @@ button.nav-link {
    noir and starts being a theme park. */
 
 .noir {
-  --accent: #c9a227;
+  --na: #c9a227;
   --noir-ink: #eae6df;
   --noir-dim: #8b867e;
   margin-top: 6px;
@@ -3381,7 +3381,7 @@ button.nav-link {
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--na);
   margin: 0 0 6px;
   transition: color 0.4s ease;
 }
@@ -3396,7 +3396,7 @@ button.nav-link {
   display: block;
   height: 1px;
   margin-top: 14px;
-  background: linear-gradient(90deg, var(--accent), transparent 62%);
+  background: linear-gradient(90deg, var(--na), transparent 62%);
   transform-origin: left;
   animation: noir-rule-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -3432,7 +3432,7 @@ button.nav-link {
   animation: noir-card-in 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i) * 55ms);
 }
-.noir-card:hover { border-color: var(--accent-soft); }
+.noir-card:hover { border-color: var(--na-soft); }
 
 @keyframes noir-card-in {
   from { opacity: 0; transform: translateY(16px) scale(0.985); }
@@ -3462,7 +3462,7 @@ button.nav-link {
   padding: 5px 9px;
   border-radius: 999px;
   color: #14140f;
-  background: var(--accent);
+  background: var(--na);
 }
 
 .noir-card-body { padding: 13px 14px 14px; }
@@ -3488,7 +3488,7 @@ button.nav-link {
 .noir-price {
   font-family: var(--serif);
   font-size: 20px;
-  color: var(--accent);
+  color: var(--na);
   font-variant-numeric: tabular-nums;
   transition: color 0.4s ease;
 }
@@ -3500,10 +3500,10 @@ button.nav-link {
   cursor: pointer;
   color: var(--noir-ink);
   background: transparent;
-  border: 1px solid var(--accent-soft);
+  border: 1px solid var(--na-soft);
   transition: background 0.24s ease, color 0.24s ease;
 }
-.noir-add:hover:not(:disabled) { background: var(--accent); color: #14140f; }
+.noir-add:hover:not(:disabled) { background: var(--na); color: #14140f; }
 .noir-add:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .noir-step {
@@ -3512,7 +3512,7 @@ button.nav-link {
   gap: 3px;
   border-radius: 999px;
   padding: 3px;
-  border: 1px solid var(--accent-soft);
+  border: 1px solid var(--na-soft);
 }
 .noir-step button {
   width: 28px;
@@ -3524,7 +3524,7 @@ button.nav-link {
   color: var(--noir-ink);
   background: transparent;
 }
-.noir-step button:hover { background: var(--accent-faint); }
+.noir-step button:hover { background: var(--na-faint); }
 .noir-step span { min-width: 18px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
 
 .noir-sold { font-size: 12px; color: var(--noir-dim); }
@@ -3726,7 +3726,7 @@ button.nav-link {
 .bar-group:last-child { margin-bottom: 6px; }
 
 .bar-group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.bar-group-glass { color: var(--accent); display: inline-flex; opacity: 0.95; }
+.bar-group-glass { color: var(--na); display: inline-flex; opacity: 0.95; }
 .bar-glass { display: block; }
 .bar-group-head h3 {
   font-family: var(--serif);
@@ -3738,7 +3738,7 @@ button.nav-link {
 .bar-group-rule {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, var(--accent-soft), transparent);
+  background: linear-gradient(90deg, var(--na-soft), transparent);
 }
 
 .bar-list { list-style: none; margin: 0; padding: 0; }
@@ -3768,7 +3768,7 @@ button.nav-link {
 .bar-row-price {
   font-family: var(--serif);
   font-size: 18px;
-  color: var(--accent);
+  color: var(--na);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -3799,4 +3799,40 @@ button.nav-link {
   .header { gap: 8px; padding: 0 12px; }
   .header-nav { gap: 2px; }
   .nav-link { padding: 8px 8px; font-size: 13px; }
+}
+
+
+/* ── Noir forces its own ground ───────────────────────────────────────────────
+   The app follows the device, and on a phone set to light this page came up
+   cream — cream type on a cream background, which is how it was reported. This
+   restaurant's identity is dark, so its page carries the dark palette itself
+   rather than inheriting whichever one the device asked for. */
+:root[data-theme='noir'] {
+  --bg: #0e0e0d;
+  --bg-tint: #161615;
+  --surface: #171716;
+  --surface-2: #1d1d1b;
+  --ink: #f4f2ee;
+  --ink-2: #d5d2cb;
+  --muted: #918e86;
+  --line: rgba(244, 242, 238, 0.09);
+  --line-strong: rgba(244, 242, 238, 0.2);
+
+  --accent: #f4f2ee;
+  --accent-ink: #0e0e0d;
+  --accent-soft: #232321;
+
+  --good: #6ecb9b;
+  --good-soft: #12281d;
+  --warn: #dfb469;
+  --warn-soft: #2a2312;
+  --bad: #ef8b80;
+  --bad-soft: #2e1815;
+  --info: #8fb0ce;
+  --info-soft: #14202b;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 28px 60px rgba(0, 0, 0, 0.68);
+  --shadow-accent: 0 10px 28px rgba(0, 0, 0, 0.5);
 }

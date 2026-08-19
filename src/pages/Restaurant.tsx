@@ -9,6 +9,7 @@ import { readTableContext } from '../lib/table-context'
 import { readGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
+import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import type { RestaurantCard } from './Home'
 
 type MenuItem = {
@@ -55,6 +56,7 @@ export default function Restaurant() {
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
   const noir = data?.restaurant.theme === 'noir'
+  const noirPage = noir
 
   const onAdd = (item: MenuItem) => {
     if (!data) return
@@ -69,13 +71,54 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className="page">
+      <main className={`page ${noirPage ? 'noir-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
         {data && (
           <>
-            <div className={`r-hero ${noir ? 'r-hero-noir' : ''}`}>
+            {noir ? (
+              <header className="noir-hero">
+                <div className="noir-hero-art">
+                  <Art
+                    emoji={data.restaurant.emoji}
+                    hue={data.restaurant.hue}
+                    imageUrl={data.restaurant.imageUrl}
+                    alt={data.restaurant.name}
+                    className="noir-hero-img"
+                  />
+                  <span className="noir-hero-veil" aria-hidden />
+                  <span className="noir-hero-sheen" aria-hidden />
+                </div>
+
+                <div className="noir-hero-lockup">
+                  <span className="noir-hero-mark">
+                    <NoirMark size={46} />
+                  </span>
+                  <NoirWordmark />
+                  <p className="noir-hero-line">{data.restaurant.description}</p>
+                  <div className="noir-hero-meta">
+                    <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>
+                      {data.restaurant.isOpen ? 'Open now' : 'Closed'}
+                    </span>
+                    <span>{data.restaurant.hours}</span>
+                    <span>~{data.restaurant.prepMinutes} min</span>
+                  </div>
+                </div>
+
+                {data.restaurant.isOpen && (
+                  <div className="noir-hero-dining">
+                    <DiningBar restaurantId={restaurantId} />
+                  </div>
+                )}
+                {inThisGroup && (
+                  <Link className="noir-hero-group" to="/group">
+                    You&rsquo;re at table {activeGroup!.code} — add to it
+                  </Link>
+                )}
+              </header>
+            ) : (
+            <div className="r-hero">
               <Art
                 emoji={data.restaurant.emoji}
                 hue={data.restaurant.hue}
@@ -120,6 +163,7 @@ export default function Restaurant() {
                 )}
               </div>
             </div>
+            )}
 
             {noir ? (
               <NoirMenu

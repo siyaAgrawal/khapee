@@ -1,0 +1,177 @@
+[
+  {
+    "name": "La Tavola — Noir",
+    "menu": [
+      {
+        "category": "Japanese",
+        "items": [
+          {
+            "name": "Chef's Black-Platter Sushi",
+            "description": "A curated selection of salmon, tuna, shrimp and vegetable rolls arranged over a dark ceramic platter. Each piece combines seasoned sushi rice with fresh fillings, delicate garnish and a clean soy-wasabi accompaniment.",
+            "price": 1199,
+            "image": "/tmp/tavola2/small/new-03.jpg",
+            "veg": false
+          },
+          {
+            "name": "Crispy Gyoza",
+            "description": "Pan-seared Japanese dumplings with a crisp, caramelized base and a tender savoury filling. Served with a soy-vinegar dipping sauce, scallions and a small touch of chilli for contrast.",
+            "price": 699,
+            "image": "/tmp/tavola2/small/new-04.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Korean",
+        "items": [
+          {
+            "name": "Korean Fried Chicken",
+            "description": "Crisp chicken pieces coated in a glossy Korean-style sweet-and-spicy glaze, finished with sesame and sliced scallions. The contrast between the crunchy exterior and sticky sauce makes it ideal as a dramatic sharing plate.",
+            "price": 999,
+            "image": "/tmp/tavola2/small/new-05.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Mexican",
+        "items": [
+          {
+            "name": "Smoky Carne Asada Tacos",
+            "description": "Soft tortillas filled with smoky grilled beef, charred peppers, fresh onion and coriander, finished with lime. The dish combines seared, savoury flavours with bright acidity and a little heat.",
+            "price": 999,
+            "image": "/tmp/tavola2/small/new-06.jpg",
+            "veg": false
+          },
+          {
+            "name": "Chicken Enchiladas",
+            "description": "Tender seasoned chicken wrapped in soft tortillas and covered with a deep roasted chilli-tomato sauce. Melted cheese, crema and fresh herbs add richness while keeping the dish balanced with acidity and spice.",
+            "price": 1099,
+            "image": "/tmp/tavola2/small/new-07.jpg",
+            "veg": false
+          },
+          {
+            "name": "Guacamole & Charred Tortilla Chips",
+            "description": "Fresh avocado mashed with lime, tomato, onion, coriander and a touch of chilli, paired with crisp tortilla chips. The guacamole stays bright and creamy while the charred chips bring a smoky, savoury edge.",
+            "price": 699,
+            "image": "/tmp/tavola2/small/new-08.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Italian",
+        "items": [
+          {
+            "name": "Truffle Mushroom Pizza",
+            "description": "A thin, blistered crust layered with roasted mushrooms, mozzarella and a restrained truffle finish. Earthy mushroom notes are balanced by fresh herbs and a touch of Parmesan, creating a rich, aromatic pizza designed for a darker, late-evening dining setting.",
+            "price": 1599,
+            "image": "/tmp/tavola2/small/new-00.jpg",
+            "veg": false
+          },
+          {
+            "name": "Truffle Tagliatelle",
+            "description": "Silky ribbons of fresh tagliatelle tossed through a glossy cream-and-Parmesan sauce, finished with delicate truffle shavings. The dish is rich without being heavy, with the earthy truffle aroma carrying most of the character.",
+            "price": 1799,
+            "image": "/tmp/tavola2/small/new-01.jpg",
+            "veg": false
+          },
+          {
+            "name": "Wild Mushroom Risotto",
+            "description": "Slow-mantecated Arborio rice cooked until creamy while retaining a subtle bite, folded with roasted wild mushrooms, Parmesan and herbs. A final drizzle of olive oil gives the dish a polished finish and extra depth.",
+            "price": 1599,
+            "image": "/tmp/tavola2/small/new-02.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Desserts",
+        "items": [
+          {
+            "name": "Dark Chocolate Dessert",
+            "description": "An intensely chocolate-forward dessert with a soft, dense centre, dark cocoa notes and a restrained garnish. Served against a charcoal-toned plate to emphasize the contrast between glossy chocolate and deep shadows.",
+            "price": 749,
+            "image": "/tmp/tavola2/small/new-09.jpg",
+            "veg": false
+          }
+        ]
+      },
+      {
+        "category": "Beverages",
+        "items": [
+          {
+            "name": "Iced Coffee",
+            "description": "Cold-brew-style coffee served over large ice with a smooth, rounded roast profile and a subtle caramel finish. The drink is deliberately presented with minimal garnish so the dark coffee and condensation become the visual focus.",
+            "price": 449,
+            "image": "/tmp/tavola2/small/new-10.jpg",
+            "veg": false
+          },
+          {
+            "name": "Café Latte",
+            "description": "A double espresso softened with steamed milk and finished with a thin layer of microfoam. The result is creamy and balanced, with roasted coffee notes underneath a naturally sweet milk finish.",
+            "price": 449,
+            "image": "/tmp/tavola2/small/new-11.jpg",
+            "veg": false
+          },
+          {
+            "name": "Dark Iced Tea",
+            "description": "Chilled black tea poured over clear ice with citrus and fresh herbs. Its lightly tannic tea base is brightened by lemon and a clean aromatic finish, making it a sophisticated alternative to sweeter coolers.",
+            "price": 399,
+            "image": "/tmp/tavola2/small/new-12.jpg",
+            "veg": false
+          },
+          {
+            "name": "Strawberry Matcha Latte",
+            "description": "A layered drink combining tart strawberry compote, chilled milk and vivid ceremonial-style matcha. The fruit brings acidity and sweetness while the matcha contributes a grassy, slightly bitter finish.",
+            "price": 549,
+            "image": "/tmp/tavola2/small/new-13.jpg",
+            "veg": false
+          },
+          {
+            "name": "Midnight Berry Cooler",
+            "description": "A deep berry cooler built around blackberry and raspberry flavours, chilled over ice and finished with citrus and fresh herbs. It is bright enough to remain refreshing while retaining the darker ruby colour of the charcoal menu aesthetic.",
+            "price": 499,
+            "image": "/tmp/tavola2/small/new-14.jpg",
+            "veg": false
+          },
+          {
+            "name": "Citrus Rosemary Fizz",
+            "description": "Fresh citrus juice, sparkling water and rosemary served over ice, with a restrained sweetness and a fragrant herbal finish. The carbonation keeps the drink crisp while the citrus provides a clean, bright lift.",
+            "price": 499,
+            "image": "/tmp/tavola2/small/new-15.jpg",
+            "veg": false
+          },
+          {
+            "name": "Blackberry Lime Cooler",
+            "description": "Muddled blackberry and fresh lime balanced with chilled sparkling water, ice and a small amount of sweetness. The drink finishes tart and aromatic, with the berries providing its deep colour.",
+            "price": 499,
+            "image": "/tmp/tavola2/small/new-16.jpg",
+            "veg": false
+          },
+          {
+            "name": "Italian Citrus Soda",
+            "description": "A sparkling citrus drink combining orange and lemon flavours with chilled soda water and a subtle herb garnish. It is lightly sweet, highly refreshing and designed to pair easily with rich food.",
+            "price": 399,
+            "image": "/tmp/tavola2/small/new-17.jpg",
+            "veg": false
+          },
+          {
+            "name": "Iced Matcha Latte",
+            "description": "Premium matcha whisked smooth and combined with chilled milk over ice. It has a clean vegetal aroma, gentle bitterness and creamy finish, with a minimalist presentation that suits the charcoal aesthetic.",
+            "price": 499,
+            "image": "/tmp/tavola2/small/new-18.jpg",
+            "veg": false
+          },
+          {
+            "name": "Charcoal-Lit Lemonade",
+            "description": "Fresh lemon juice, chilled water and a measured touch of sweetness served over ice with mint. The sharp citrus profile cuts through rich dishes and keeps the drink refreshing from the first sip to the last.",
+            "price": 399,
+            "image": "/tmp/tavola2/small/new-19.jpg",
+            "veg": false
+          }
+        ]
+      }
+    ]
+  }
+]

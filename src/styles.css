@@ -213,6 +213,7 @@ textarea {
   align-items: center;
   gap: 10px;
   padding: 14px clamp(16px, 5vw, 48px);
+  background: var(--bg);
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid transparent;
@@ -445,6 +446,7 @@ textarea {
   align-items: center;
   gap: 14px;
   padding: 0 18px;
+  background: var(--bg);
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--line);
@@ -813,6 +815,7 @@ textarea {
   border-radius: var(--r-lg);
   background: var(--warn-soft);
   color: var(--warn);
+  border: 1px solid rgba(128, 128, 128, 0.28);
   border: 1px solid color-mix(in srgb, var(--warn) 22%, transparent);
 }
 .notice strong {
@@ -1098,6 +1101,7 @@ textarea {
   overflow-x: auto;
   padding: 12px 2px;
   margin: 0 -2px 6px;
+  background: var(--bg);
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(10px);
   scrollbar-width: none;
@@ -2456,6 +2460,7 @@ textarea {
 }
 .dining-bar.is-on {
   border-style: solid;
+  border-color: rgba(128, 128, 128, 0.32);
   border-color: color-mix(in srgb, var(--good) 35%, transparent);
   background: var(--good-soft);
   cursor: default;
@@ -3014,6 +3019,7 @@ textarea {
   flex-direction: column;
 }
 .photo-cell.is-placed {
+  border-color: rgba(128, 128, 128, 0.32);
   border-color: color-mix(in srgb, var(--good) 45%, transparent);
 }
 .photo-cell img {
@@ -3035,6 +3041,7 @@ textarea {
 }
 
 .room-card {
+  border: 1px solid rgba(128, 128, 128, 0.28);
   border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
@@ -3350,12 +3357,12 @@ button.nav-link {
 
 .noir-tab.on {
   color: var(--noir-ink);
-  border-color: color-mix(in srgb, var(--tab-accent) 55%, transparent);
-  background: color-mix(in srgb, var(--tab-accent) 12%, transparent);
+  border-color: var(--tab-soft);
+  background: var(--tab-faint);
 }
 
 .noir-tab-glyph {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: 17px;
   line-height: 1;
   color: var(--tab-accent);
@@ -3379,7 +3386,7 @@ button.nav-link {
   transition: color 0.4s ease;
 }
 .noir-title {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: clamp(30px, 7vw, 44px);
   line-height: 1.05;
   margin: 0;
@@ -3425,7 +3432,7 @@ button.nav-link {
   animation: noir-card-in 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i) * 55ms);
 }
-.noir-card:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.noir-card:hover { border-color: var(--accent-soft); }
 
 @keyframes noir-card-in {
   from { opacity: 0; transform: translateY(16px) scale(0.985); }
@@ -3461,7 +3468,7 @@ button.nav-link {
 .noir-card-body { padding: 13px 14px 14px; }
 .noir-card-top { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
 .noir-card-top h3 {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: 19px;
   line-height: 1.2;
   margin: 0;
@@ -3479,7 +3486,7 @@ button.nav-link {
 }
 .noir-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .noir-price {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: 20px;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
@@ -3493,7 +3500,7 @@ button.nav-link {
   cursor: pointer;
   color: var(--noir-ink);
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border: 1px solid var(--accent-soft);
   transition: background 0.24s ease, color 0.24s ease;
 }
 .noir-add:hover:not(:disabled) { background: var(--accent); color: #14140f; }
@@ -3505,7 +3512,7 @@ button.nav-link {
   gap: 3px;
   border-radius: 999px;
   padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 1px solid var(--accent-soft);
 }
 .noir-step button {
   width: 28px;
@@ -3517,7 +3524,7 @@ button.nav-link {
   color: var(--noir-ink);
   background: transparent;
 }
-.noir-step button:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.noir-step button:hover { background: var(--accent-faint); }
 .noir-step span { min-width: 18px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
 
 .noir-sold { font-size: 12px; color: var(--noir-dim); }
@@ -3547,7 +3554,7 @@ button.nav-link {
 }
 .r-hero-noir .r-hero-art img { filter: saturate(0.92) contrast(1.06); }
 .r-hero-noir h1 {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   letter-spacing: -0.01em;
 }
 
@@ -3621,7 +3628,7 @@ button.nav-link {
 
 .noir-wordmark { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; }
 .noir-wordmark-la {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: clamp(34px, 8vw, 54px);
   line-height: 1;
   color: var(--noir-ink);
@@ -3682,7 +3689,7 @@ button.nav-link {
   border-radius: 14px;
 }
 .noir-page .dining-bar strong,
-.noir-page .dining-cta strong { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
+.noir-page .dining-cta strong { font-family: var(--serif); font-weight: 400; }
 
 /* Whole-menu view ----------------------------------------------------------- */
 .noir-all-section { margin-bottom: 40px; }
@@ -3722,7 +3729,7 @@ button.nav-link {
 .bar-group-glass { color: var(--accent); display: inline-flex; opacity: 0.95; }
 .bar-glass { display: block; }
 .bar-group-head h3 {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: 25px;
   margin: 0;
   color: var(--noir-ink);
@@ -3731,7 +3738,7 @@ button.nav-link {
 .bar-group-rule {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), transparent);
+  background: linear-gradient(90deg, var(--accent-soft), transparent);
 }
 
 .bar-list { list-style: none; margin: 0; padding: 0; }
@@ -3759,7 +3766,7 @@ button.nav-link {
 }
 
 .bar-row-price {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--serif);
   font-size: 18px;
   color: var(--accent);
   font-variant-numeric: tabular-nums;

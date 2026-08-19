@@ -8,11 +8,11 @@
  * they always go to the network, because a cached menu price or order status
  * would be worse than a slow one.
  */
-const SHELL = 'ordro-shell-v2'
+const SHELL = 'ordro-assets-v3'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(SHELL).then((cache) => cache.addAll(['/', '/manifest.webmanifest', '/apple-touch-icon.png'])),
+    caches.open(SHELL).then((cache) => cache.addAll(['/manifest.webmanifest', '/apple-touch-icon.png'])),
   )
   self.skipWaiting()
 })
@@ -36,32 +36,18 @@ self.addEventListener('fetch', (event) => {
   // Anything live goes straight to the network, always.
   if (url.pathname.startsWith('/api/')) return
 
-  // Navigations race the network against a short timeout. A server that answers
-  // wins, so a new deploy is seen immediately — serving the cache first was
-  // wrong, and left phones on an old build until their second visit. A server
-  // that is still waking loses, and the cached shell stands in for it, which is
-  // what keeps the host's own "waking up" page off the screen.
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(SHELL)
-        try {
-          const fresh = await Promise.race([
-            fetch(request),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('slow')), 3000)),
-          ])
-          if (fresh && fresh.ok) {
-            cache.put('/', fresh.clone())
-            return fresh
-          }
-          throw new Error('bad response')
-        } catch {
-          return (await cache.match('/')) || fetch(request)
-        }
-      })(),
-    )
-    return
-  }
+  // Pages are never served from the cache.
+  //
+  // Caching the shell was meant to hide the host's "waking up" screen, and it
+  // did the opposite. Render answers a cold request with its own interstitial
+  // at 200 text/html, so that page got stored as the app and handed back on
+  // every later visit; and a stored shell keeps pointing at the asset hashes of
+  // the build that made it, which the next deploy replaces. Both failures look
+  // the same from a phone: an app that will not update, or will not render.
+  //
+  // A slow first load is the cost of not having either. Assets below still come
+  // from the cache, so only the first request after a sleep is slow.
+  if (request.mode === 'navigate') return
 
   // Build assets are content-hashed, so a hit is always correct.
   event.respondWith(

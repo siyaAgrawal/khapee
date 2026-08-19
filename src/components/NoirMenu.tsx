@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Art, money } from './ui'
-import { sectionVoice } from '../lib/themes'
+import { accentVars, sectionVoice } from '../lib/themes'
 import BarGlass from './BarGlass'
 
 type MenuItem = {
@@ -17,6 +17,16 @@ type MenuItem = {
   groupLabel?: string
 }
 type Category = { id: number; name: string; items: MenuItem[] }
+
+/** A tab carries its own accent, tinted the same way the section is. */
+function tabVars(hex: string): React.CSSProperties {
+  const v = accentVars(hex)
+  return {
+    ['--tab-accent' as string]: v['--accent'],
+    ['--tab-soft' as string]: v['--accent-soft'],
+    ['--tab-faint' as string]: v['--accent-faint'],
+  } as React.CSSProperties
+}
 
 type Props = {
   menu: Category[]
@@ -65,12 +75,12 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
   const voice = sectionVoice('noir', current?.name ?? '')
 
   return (
-    <div className="noir" style={{ ['--accent' as string]: voice.accent }}>
+    <div className="noir" style={accentVars(voice.accent) as React.CSSProperties}>
       <div className="noir-rail" ref={railRef}>
         <button
           data-active={showingAll}
           className={`noir-tab ${showingAll ? 'on' : ''}`}
-          style={{ ['--tab-accent' as string]: '#c9b291' }}
+          style={tabVars('#c9b291')}
           onClick={() => setActive(-1)}
           aria-pressed={showingAll}
         >
@@ -88,7 +98,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
               key={c.id}
               data-active={on}
               className={`noir-tab ${on ? 'on' : ''}`}
-              style={{ ['--tab-accent' as string]: v.accent }}
+              style={tabVars(v.accent)}
               onClick={() => setActive(i)}
               aria-pressed={on}
             >
@@ -107,7 +117,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
           {sections.map((c, si) => {
             const v = sectionVoice('noir', c.name)
             return (
-              <section key={c.id} className="noir-all-section" style={{ ['--accent' as string]: v.accent }}>
+              <section key={c.id} className="noir-all-section" style={accentVars(v.accent) as React.CSSProperties}>
                 <header className="noir-head">
                   <p className="noir-kicker">{v.kicker}</p>
                   <h2 className="noir-title">{c.name}</h2>

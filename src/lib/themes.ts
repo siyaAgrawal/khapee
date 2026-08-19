@@ -33,6 +33,24 @@ const NOIR_VOICES: Record<string, SectionVoice> = {
 
 const FALLBACK: SectionVoice = { accent: '#c9a227', kicker: 'From the kitchen', glyph: '·' }
 
+/**
+ * Tinted variants of an accent, precomputed.
+ *
+ * These were `color-mix()` in the stylesheet, which Safari only learned in
+ * 16.2 — and an unsupported colour takes the whole declaration with it, so a
+ * `border: 1px solid color-mix(…)` left buttons with no border at all on an
+ * older iPhone. Plain rgba works everywhere.
+ */
+export function accentVars(hex: string): Record<string, string> {
+  const n = parseInt(hex.slice(1), 16)
+  const rgb = `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
+  return {
+    '--accent': hex,
+    '--accent-soft': `rgba(${rgb}, 0.5)`,
+    '--accent-faint': `rgba(${rgb}, 0.13)`,
+  }
+}
+
 export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
   if (theme !== 'noir') return FALLBACK
   return NOIR_VOICES[section] ?? FALLBACK

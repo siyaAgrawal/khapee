@@ -3,12 +3,23 @@ import { db } from '../db.ts'
 import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
 import { publish } from '../events.ts'
-import { getOrder, shapeOrder } from '../orders-service.ts'
+import { createOrder, getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
+import {
+  audit,
+  finaliseInvoice,
+  invoicePaymentStatus,
+  paidOnInvoice,
+  quoteOrder,
+  refund,
+  shapeInvoice,
+  takePayment,
+  voidInvoice,
+} from '../billing.ts'
 import { shapeDiningSession, startCarSession } from '../dining.ts'
 import { randomToken } from '../ids.ts'
 
@@ -1073,4 +1084,283 @@ staffRouter.delete('/zones/:id', (req: any, res) => {
   db.prepare('UPDATE dining_sessions SET zone_id = NULL WHERE zone_id = ?').run(z.id)
   db.prepare('DELETE FROM service_zones WHERE id = ?').run(z.id)
   res.json({ ok: true })
+})
+
+
+// --- POS: bills, payment, invoices ------------------------------------------
+//
+// There is no separate order model here. Every bill on this screen is an order
+// that already exists — placed by a customer through the app, or by a cashier a
+// moment ago — so a bill can never disagree with the kitchen about what was
+// ordered.
+
+const actorOf = (req: any) => ({ id: req.user.id as number, name: (req.user.name as string) ?? 'Staff' })
+
+/** Everything owed but not yet billed, plus bills raised and not yet settled. */
+staffRouter.get('/pos/open', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+
+  const orders = db
+    .prepare(
+      `SELECT o.*, s.seq_no, s.vehicle, s.service_mode AS session_mode, z.name AS zone_name
+         FROM orders o
+         LEFT JOIN dining_sessions s ON s.id = o.dining_session_id
+         LEFT JOIN service_zones z ON z.id = COALESCE(o.zone_id, s.zone_id)
+        WHERE o.restaurant_id = ?
+          AND o.status <> 'CANCELLED'
+          AND o.invoice_id IS NULL
+          AND o.created_at > datetime('now', '-2 days')
+        ORDER BY o.created_at ASC`,
+    )
+    .all(restaurantId) as any[]
+
+  const unpaidInvoices = db
+    .prepare(
+      `SELECT * FROM invoices WHERE restaurant_id = ? AND status = 'FINAL'
+         AND created_at > datetime('now', '-2 days') ORDER BY id DESC`,
+    )
+    .all(restaurantId) as any[]
+
+  const place = (o: any) =>
+    o.session_mode === 'car'
+      ? `Car ${o.seq_no ?? ''}${o.zone_name ? ` · ${o.zone_name}` : ''}`.trim()
+      : o.table_label
+        ? `Table ${o.table_label}`
+        : o.service_mode === 'takeaway'
+          ? 'Takeaway'
+          : 'Counter'
+
+  res.json({
+    unbilled: orders.map((o) => ({
+      orderId: o.id,
+      orderNumber: o.order_number,
+      serviceMode: o.service_mode ?? 'dine_in',
+      place: place(o),
+      status: o.status,
+      customerName: o.customer_name,
+      totalCents: o.total_cents,
+      createdAt: o.created_at,
+    })),
+    awaitingPayment: unpaidInvoices
+      .map((inv) => ({ inv, status: invoicePaymentStatus(inv) }))
+      .filter((x) => x.status !== 'PAID' && x.status !== 'REFUNDED')
+      .map(({ inv, status }) => ({
+        invoiceId: inv.id,
+        number: inv.number,
+        place: inv.place_label,
+        serviceMode: inv.service_mode,
+        totalCents: inv.total_cents,
+        paidCents: paidOnInvoice(inv.id),
+        dueCents: Math.max(0, inv.total_cents - paidOnInvoice(inv.id)),
+        paymentStatus: status,
+        createdAt: inv.created_at,
+      })),
+  })
+})
+
+/** What this order comes to, priced now. Writes nothing — safe to call on typing. */
+staffRouter.post('/pos/quote', (req: any, res) => {
+  const orderId = Number(req.body?.orderId)
+  const order = db
+    .prepare('SELECT id FROM orders WHERE id = ? AND restaurant_id = ?')
+    .get(orderId, myRestaurant(req))
+  if (!order) return res.status(404).json({ error: 'That order is not on your board.' })
+  const bill = quoteOrder(orderId, {
+    billDiscountCents: Number(req.body?.discountCents) || 0,
+    charges: Array.isArray(req.body?.charges) ? req.body.charges : [],
+    interState: !!req.body?.interState,
+  })
+  res.json({ bill })
+})
+
+/** Turns the order into a numbered invoice. Calling twice returns the first. */
+staffRouter.post('/pos/finalise', (req: any, res) => {
+  const orderId = Number(req.body?.orderId)
+  const owned = db
+    .prepare('SELECT id FROM orders WHERE id = ? AND restaurant_id = ?')
+    .get(orderId, myRestaurant(req))
+  if (!owned) return res.status(404).json({ error: 'That order is not on your board.' })
+
+  const result = finaliseInvoice({
+    orderId,
+    actor: actorOf(req),
+    billDiscountCents: Number(req.body?.discountCents) || 0,
+    discountReason: String(req.body?.discountReason ?? ''),
+    charges: Array.isArray(req.body?.charges) ? req.body.charges : [],
+    interState: !!req.body?.interState,
+    customerName: req.body?.customerName ? String(req.body.customerName) : undefined,
+    customerPhone: req.body?.customerPhone ? String(req.body.customerPhone) : undefined,
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  publish('ops', { restaurantId: myRestaurant(req) })
+  res.status(result.created ? 201 : 200).json({ invoice: shapeInvoice(result.invoice.id) })
+})
+
+staffRouter.post('/pos/pay', (req: any, res) => {
+  const invoiceId = Number(req.body?.invoiceId)
+  const owned = db
+    .prepare('SELECT id FROM invoices WHERE id = ? AND restaurant_id = ?')
+    .get(invoiceId, myRestaurant(req))
+  if (!owned) return res.status(404).json({ error: 'That bill is not on your board.' })
+
+  const result = takePayment({
+    invoiceId,
+    amountCents: Number(req.body?.amountCents),
+    method: String(req.body?.method ?? 'cash'),
+    tenderedCents: req.body?.tenderedCents != null ? Number(req.body.tenderedCents) : undefined,
+    payerName: String(req.body?.payerName ?? ''),
+    reference: String(req.body?.reference ?? ''),
+    actor: actorOf(req),
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  publish('ops', { restaurantId: myRestaurant(req) })
+  res.json({ ok: true, changeCents: result.changeCents, invoice: shapeInvoice(invoiceId) })
+})
+
+staffRouter.get('/pos/invoice/:id', (req: any, res) => {
+  const inv = db
+    .prepare('SELECT id FROM invoices WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), myRestaurant(req))
+  if (!inv) return res.status(404).json({ error: 'No such bill.' })
+  res.json({ invoice: shapeInvoice(Number(req.params.id)) })
+})
+
+staffRouter.post('/pos/invoice/:id/void', (req: any, res) => {
+  const owned = db
+    .prepare('SELECT id FROM invoices WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), myRestaurant(req))
+  if (!owned) return res.status(404).json({ error: 'No such bill.' })
+  const result = voidInvoice(Number(req.params.id), String(req.body?.reason ?? ''), actorOf(req))
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  publish('ops', { restaurantId: myRestaurant(req) })
+  res.json({ ok: true })
+})
+
+staffRouter.post('/pos/invoice/:id/refund', (req: any, res) => {
+  const owned = db
+    .prepare('SELECT id FROM invoices WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), myRestaurant(req))
+  if (!owned) return res.status(404).json({ error: 'No such bill.' })
+  const result = refund({
+    invoiceId: Number(req.params.id),
+    amountCents: Number(req.body?.amountCents),
+    method: String(req.body?.method ?? 'cash'),
+    reason: String(req.body?.reason ?? ''),
+    actor: actorOf(req),
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  res.json({ ok: true, invoice: shapeInvoice(Number(req.params.id)) })
+})
+
+/** Search a bill by number, order, table or car. */
+staffRouter.get('/pos/search', (req: any, res) => {
+  const q = String(req.query.q ?? '').trim()
+  if (!q) return res.json({ invoices: [] })
+  const like = `%${q}%`
+  const rows = db
+    .prepare(
+      `SELECT i.* FROM invoices i
+         LEFT JOIN orders o ON o.id = i.order_id
+        WHERE i.restaurant_id = ?
+          AND (i.number LIKE ? OR i.place_label LIKE ? OR i.customer_name LIKE ?
+               OR i.customer_phone LIKE ? OR o.order_number LIKE ?)
+        ORDER BY i.id DESC LIMIT 25`,
+    )
+    .all(myRestaurant(req), like, like, like, like, like) as any[]
+  res.json({ invoices: rows.map((r) => shapeInvoice(r.id)) })
+})
+
+// --- Tax configuration ------------------------------------------------------
+
+staffRouter.get('/tax', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const r = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(restaurantId) as any
+  res.json({
+    profile: {
+      legalName: r.legal_name ?? '',
+      gstin: r.gstin ?? '',
+      stateCode: r.state_code ?? '',
+      invoicePrefix: r.invoice_prefix ?? 'ORD',
+      taxEnabled: !!r.tax_enabled,
+      address: r.address ?? '',
+    },
+    rates: db.prepare('SELECT * FROM tax_rates WHERE restaurant_id = ? ORDER BY id').all(restaurantId),
+  })
+})
+
+staffRouter.patch('/tax', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const r = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(restaurantId) as any
+  const next = {
+    legal_name: req.body?.legalName === undefined ? r.legal_name : String(req.body.legalName).slice(0, 120),
+    gstin: req.body?.gstin === undefined ? r.gstin : String(req.body.gstin).toUpperCase().slice(0, 15),
+    state_code: req.body?.stateCode === undefined ? r.state_code : String(req.body.stateCode).slice(0, 2),
+    invoice_prefix:
+      req.body?.invoicePrefix === undefined
+        ? r.invoice_prefix
+        : String(req.body.invoicePrefix).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'ORD',
+    tax_enabled: req.body?.taxEnabled === undefined ? r.tax_enabled : req.body.taxEnabled ? 1 : 0,
+  }
+  db.prepare(
+    'UPDATE restaurants SET legal_name = ?, gstin = ?, state_code = ?, invoice_prefix = ?, tax_enabled = ? WHERE id = ?',
+  ).run(next.legal_name, next.gstin, next.state_code, next.invoice_prefix, next.tax_enabled, restaurantId)
+  // Changing how tax is charged is a financial act, so it is on the record.
+  audit(restaurantId, actorOf(req), 'tax.configure', 'restaurant', restaurantId, next)
+  res.json({ ok: true })
+})
+
+staffRouter.post('/tax/rates', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const name = String(req.body?.name ?? '').trim().slice(0, 40)
+  const rateBp = Math.max(0, Math.min(10000, Math.round(Number(req.body?.ratePercent) * 100)))
+  if (!name || !Number.isFinite(rateBp)) return res.status(400).json({ error: 'Give the rate a name and a percentage.' })
+  const info = db
+    .prepare('INSERT INTO tax_rates (restaurant_id, name, rate_bp, hsn_sac, inclusive, is_default) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(
+      restaurantId,
+      name,
+      rateBp,
+      String(req.body?.hsnSac ?? '').slice(0, 12),
+      req.body?.inclusive === false ? 0 : 1,
+      req.body?.isDefault ? 1 : 0,
+    )
+  if (req.body?.isDefault) {
+    db.prepare('UPDATE tax_rates SET is_default = 0 WHERE restaurant_id = ? AND id <> ?').run(
+      restaurantId,
+      Number(info.lastInsertRowid),
+    )
+  }
+  audit(restaurantId, actorOf(req), 'tax.rate.create', 'tax_rate', Number(info.lastInsertRowid), { name, rateBp })
+  res.status(201).json({ rate: db.prepare('SELECT * FROM tax_rates WHERE id = ?').get(Number(info.lastInsertRowid)) })
+})
+
+/** A counter sale: the cashier builds the order, and it bills like any other. */
+staffRouter.post('/pos/sale', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const lines = (Array.isArray(req.body?.items) ? req.body.items : []).filter((l: any) => Number(l?.quantity) > 0)
+  if (!lines.length) return res.status(400).json({ error: 'Add something to the sale first.' })
+
+  const mode = ['counter', 'takeaway', 'dine_in', 'car', 'delivery'].includes(String(req.body?.serviceMode))
+    ? String(req.body.serviceMode)
+    : 'counter'
+
+  const result = createOrder({
+    restaurantId,
+    type: mode === 'dine_in' ? 'dine_in' : 'pickup',
+    items: lines.map((l: any) => ({ menuItemId: Number(l.menuItemId), quantity: Number(l.quantity) })),
+    customerName: String(req.body?.customerName ?? '').trim() || 'Counter',
+    userId: null,
+    note: String(req.body?.note ?? ''),
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+
+  // Staff raised it at the counter, so it is not waiting on a code or a table.
+  db.prepare("UPDATE orders SET service_mode = ?, status = 'ACCEPTED' WHERE id = ?").run(mode, result.order.id)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'ACCEPTED', 'counter')").run(result.order.id)
+  audit(restaurantId, actorOf(req), 'order.counter', 'order', result.order.id, { mode })
+  publish('orders', { restaurantId })
+  publish('ops', { restaurantId })
+  // Re-read: the order was shaped before the update above, so returning it
+  // as-is would tell the caller NEW while the database says ACCEPTED.
+  res.status(201).json({ order: shapeOrder(getOrder(result.order.id)) })
 })

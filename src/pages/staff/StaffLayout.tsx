@@ -5,6 +5,7 @@ import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 
 const LINKS = [
+  { to: '/staff/till', label: 'Till', icon: '🧾' },
   { to: '/staff/floor', label: 'Floor', icon: '🗺️' },
   { to: '/staff/runs', label: 'Deliveries', icon: '🏃' },
   { to: '/staff/orders', label: 'Orders', icon: '🧾' },

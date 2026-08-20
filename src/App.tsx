@@ -17,6 +17,7 @@ import TableEntry from './pages/TableEntry'
 import CarEntry from './pages/CarEntry'
 import ZoneEntry from './pages/ZoneEntry'
 import StaffOps from './pages/staff/StaffOps'
+import StaffPos from './pages/staff/StaffPos'
 import StaffRuns from './pages/staff/StaffRuns'
 import StaffZones from './pages/staff/StaffZones'
 import GroupJoin from './pages/GroupJoin'
@@ -77,6 +78,7 @@ export default function App() {
         }
       >
         <Route index element={<Navigate to="/staff/orders" replace />} />
+        <Route path="till" element={<StaffPos />} />
         <Route path="floor" element={<StaffOps />} />
         <Route path="runs" element={<StaffRuns />} />
         <Route path="zones" element={<StaffZones />} />

@@ -245,6 +245,22 @@ addColumn('orders', 'dining_session_id', 'INTEGER')
 addColumn('orders', 'runner_id', 'INTEGER')
 addColumn('orders', 'delivered_at', 'TEXT')
 
+// --- Billing identity, which not every restaurant has ------------------------
+addColumn('restaurants', 'legal_name', "TEXT NOT NULL DEFAULT ''")
+addColumn('restaurants', 'gstin', "TEXT NOT NULL DEFAULT ''")
+addColumn('restaurants', 'state_code', "TEXT NOT NULL DEFAULT ''")
+addColumn('restaurants', 'invoice_prefix', "TEXT NOT NULL DEFAULT 'ORD'")
+// Off by default: a small place with no GST registration must still be able to
+// bill, and showing a tax line it cannot legally charge would be worse.
+addColumn('restaurants', 'tax_enabled', 'INTEGER NOT NULL DEFAULT 0')
+
+// A dish can name its tax treatment; without one it takes the restaurant default.
+addColumn('menu_items', 'tax_rate_id', 'INTEGER')
+
+// The financial state of an order, which is not the same as its kitchen state.
+addColumn('orders', 'bill_status', "TEXT NOT NULL DEFAULT 'OPEN'")
+addColumn('orders', 'invoice_id', 'INTEGER')
+
 // A named group inside a section — a bar list is "Whisky", "Gin", "Beer"
 // under one Bar heading, rather than eight tabs of three drinks each.
 addColumn('menu_items', 'group_label', "TEXT NOT NULL DEFAULT ''")
@@ -254,6 +270,104 @@ addColumn('menu_items', 'is_special', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('order_items', 'added_by_staff', 'INTEGER NOT NULL DEFAULT 0')
 // Bill printed / settled at the counter.
 addColumn('orders', 'bill_closed_at', 'TEXT')
+
+// --- Billing, tax and invoicing ---------------------------------------------
+//
+// The financial side is deliberately separate from the operational one. An
+// order is what the customer asked for and orders already track their own
+// fulfilment; an invoice is a finalised legal document that must never change
+// afterwards, even when the menu or the tax configuration does.
+db.exec(`
+CREATE TABLE IF NOT EXISTS tax_rates (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  name          TEXT    NOT NULL,
+  -- Basis points, so 5% is 500 and the rate is never a float.
+  rate_bp       INTEGER NOT NULL,
+  hsn_sac       TEXT    NOT NULL DEFAULT '',
+  -- Whether menu prices under this rate already contain the tax.
+  inclusive     INTEGER NOT NULL DEFAULT 1,
+  is_default    INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_tax_rates_restaurant ON tax_rates(restaurant_id);
+
+-- One row per restaurant per financial year. Incremented inside the same
+-- transaction that writes the invoice, so two terminals cannot take one number.
+CREATE TABLE IF NOT EXISTS invoice_sequences (
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  fy            TEXT    NOT NULL,
+  last_seq      INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (restaurant_id, fy)
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id  INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  order_id       INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  session_id     INTEGER REFERENCES dining_sessions(id) ON DELETE SET NULL,
+  number         TEXT    NOT NULL,
+  fy             TEXT    NOT NULL,
+  seq            INTEGER NOT NULL,
+  status         TEXT    NOT NULL DEFAULT 'FINAL' CHECK (status IN ('FINAL','VOID')),
+  service_mode   TEXT    NOT NULL DEFAULT 'dine_in',
+  place_label    TEXT    NOT NULL DEFAULT '',
+  customer_name  TEXT    NOT NULL DEFAULT '',
+  customer_phone TEXT    NOT NULL DEFAULT '',
+  -- Every figure below is paise, and every one is a snapshot.
+  subtotal_cents INTEGER NOT NULL DEFAULT 0,
+  discount_cents INTEGER NOT NULL DEFAULT 0,
+  charge_cents   INTEGER NOT NULL DEFAULT 0,
+  taxable_cents  INTEGER NOT NULL DEFAULT 0,
+  cgst_cents     INTEGER NOT NULL DEFAULT 0,
+  sgst_cents     INTEGER NOT NULL DEFAULT 0,
+  igst_cents     INTEGER NOT NULL DEFAULT 0,
+  rounding_cents INTEGER NOT NULL DEFAULT 0,
+  total_cents    INTEGER NOT NULL DEFAULT 0,
+  -- Who the restaurant was, legally, at the moment this was issued.
+  seller_snapshot TEXT   NOT NULL DEFAULT '{}',
+  discount_reason TEXT   NOT NULL DEFAULT '',
+  created_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+  voided_at      TEXT,
+  voided_by      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  void_reason    TEXT    NOT NULL DEFAULT ''
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_number ON invoices(restaurant_id, number);
+CREATE INDEX IF NOT EXISTS idx_invoices_order ON invoices(order_id);
+
+CREATE TABLE IF NOT EXISTS invoice_lines (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id     INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  name           TEXT    NOT NULL,
+  hsn_sac        TEXT    NOT NULL DEFAULT '',
+  quantity       INTEGER NOT NULL,
+  unit_price_cents INTEGER NOT NULL,
+  gross_cents    INTEGER NOT NULL,
+  discount_cents INTEGER NOT NULL DEFAULT 0,
+  taxable_cents  INTEGER NOT NULL,
+  tax_rate_bp    INTEGER NOT NULL DEFAULT 0,
+  cgst_cents     INTEGER NOT NULL DEFAULT 0,
+  sgst_cents     INTEGER NOT NULL DEFAULT 0,
+  igst_cents     INTEGER NOT NULL DEFAULT 0,
+  total_cents    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_invoice_lines_invoice ON invoice_lines(invoice_id);
+
+-- Financial actions are never overwritten; they are appended to.
+CREATE TABLE IF NOT EXISTS audit_log (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER REFERENCES restaurants(id) ON DELETE CASCADE,
+  actor_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  actor_name    TEXT    NOT NULL DEFAULT '',
+  action        TEXT    NOT NULL,
+  entity        TEXT    NOT NULL,
+  entity_id     INTEGER,
+  detail        TEXT    NOT NULL DEFAULT '',
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_audit_restaurant ON audit_log(restaurant_id, created_at);
+`)
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS service_zones (
@@ -336,6 +450,15 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id, status);
 `)
+
+// Money actually taken, and how much of it was cash handed over.
+addColumn('payments', 'tendered_cents', 'INTEGER')
+addColumn('payments', 'change_cents', 'INTEGER')
+addColumn('payments', 'taken_by', 'INTEGER')
+addColumn('payments', 'invoice_id', 'INTEGER')
+addColumn('payments', 'refund_of', 'INTEGER')
+addColumn('payments', 'reason', "TEXT NOT NULL DEFAULT ''")
+
 
 // A dining session already stood for "these people, here, now". It now also
 // stands for a car at the roadside: same session, different place.

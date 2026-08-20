@@ -1489,9 +1489,125 @@ async function runTests() {
     (await call('/resolve', { body: { value: aheadCode } })).status === 409,
   )
 
-  group('ROADSIDE — a car outside is a session like a table is')
-  // staffToken was signed out earlier on purpose; this block uses the live one.
+  group('TAX ENGINE — the money maths, in isolation')
+  {
+    const { computeBill, taxableFromInclusive, financialYear } = await import('../server/tax.ts')
+    const b1 = computeBill({
+      lines: [{ name: 'Food', quantity: 1, unitPriceCents: 80000, rateBp: 500, inclusive: false }],
+      billDiscountCents: 5000,
+    })
+    ok('discount comes off before tax, not after', b1.taxableCents === 75000, b1)
+    ok('and the halves of GST are exact', b1.cgstCents === 1875 && b1.sgstCents === 1875 && b1.totalCents === 78750)
+
+    const b2 = computeBill({
+      lines: [{ name: 'Sandwich', quantity: 1, unitPriceCents: 10500, rateBp: 500, inclusive: true }],
+    })
+    ok('an inclusive price is not taxed twice', b2.totalCents === 10500 && b2.taxableCents === 10000, b2)
+
+    const b3 = computeBill({
+      lines: [{ name: 'x', quantity: 1, unitPriceCents: 100000, rateBp: 500, inclusive: false }],
+      interState: true,
+    })
+    ok('another state is IGST, not CGST plus SGST', b3.igstCents === 5000 && b3.cgstCents === 0)
+
+    const b4 = computeBill({ lines: [{ name: 'x', quantity: 2, unitPriceCents: 12000, rateBp: 0, inclusive: true }] })
+    ok('a restaurant with no tax registration gets no tax line', b4.taxCents === 0 && b4.totalCents === 24000)
+
+    const b5 = computeBill({ lines: [{ name: 'x', quantity: 3, unitPriceCents: 3333, rateBp: 500, inclusive: false }] })
+    ok('CGST and SGST always add back to the tax exactly', b5.cgstCents + b5.sgstCents === b5.taxCents)
+    ok('reverse-calculating an inclusive price is exact', taxableFromInclusive(10500, 500) === 10000)
+    ok('the financial year runs April to March', financialYear(new Date('2026-08-20')) === '2026-27')
+    ok('and January falls in the year before', financialYear(new Date('2026-02-10')) === '2025-26')
+  }
+
+  group('POS — one bill per order, and it never changes afterwards')
+  // staffToken was signed out earlier on purpose; this is the live staff token.
   const roadToken = reLogin.body.token
+  await call('/staff/tax', {
+    token: roadToken,
+    method: 'PATCH',
+    body: { taxEnabled: true, gstin: '23TESTGST1234Z', stateCode: '23', invoicePrefix: 'TST', legalName: 'Test Foods' },
+  })
+  const rate = await call('/staff/tax/rates', {
+    token: roadToken,
+    body: { name: 'GST 5%', ratePercent: 5, hsnSac: '996331', inclusive: true, isDefault: true },
+  })
+  ok('a restaurant configures its own rate rather than inheriting one', rate.status === 201, rate.body)
+
+  const sale = await call('/staff/pos/sale', {
+    token: roadToken,
+    body: { serviceMode: 'counter', items: [{ menuItemId: coldCoffee.id, quantity: 2 }], customerName: 'Walk-in' },
+  })
+  ok('a cashier can ring up a counter sale', sale.status === 201, sale.body)
+  ok('and it is accepted, not waiting on a code', sale.body.order.status === 'ACCEPTED')
+
+  const posOrderId = sale.body.order.id
+  const quoted = await call('/staff/pos/quote', { token: roadToken, body: { orderId: posOrderId } })
+  ok('the server prices the bill, not the browser', quoted.body.bill.totalCents > 0, quoted.body)
+  ok(
+    'an inclusive rate leaves the customer paying the menu price',
+    quoted.body.bill.totalCents === quoted.body.bill.subtotalCents,
+    quoted.body.bill,
+  )
+  ok(
+    'and the tax is carved out of it, not added to it',
+    quoted.body.bill.taxableCents + quoted.body.bill.taxCents === quoted.body.bill.totalCents,
+    quoted.body.bill,
+  )
+
+  const fin = await call('/staff/pos/finalise', { token: roadToken, body: { orderId: posOrderId } })
+  ok('finalising numbers the invoice', /^TST\/\d{4}-\d{2}\/\d{6}$/.test(fin.body.invoice.number), fin.body)
+  const invoiceId = fin.body.invoice.id
+  const again = await call('/staff/pos/finalise', { token: roadToken, body: { orderId: posOrderId } })
+  ok('billing the same order twice returns the first bill', again.body.invoice.id === invoiceId)
+  ok('and does not take a second number', again.body.invoice.number === fin.body.invoice.number)
+
+  const total = fin.body.invoice.totalCents
+  const part = await call('/staff/pos/pay', {
+    token: roadToken,
+    body: { invoiceId, amountCents: Math.floor(total / 2), method: 'cash', tenderedCents: 100000 },
+  })
+  ok('part payment leaves the bill partly paid', part.body.invoice.paymentStatus === 'PARTIALLY_PAID', part.body)
+  ok('and cash change is worked out for the cashier', part.body.changeCents > 0)
+  const rest = await call('/staff/pos/pay', {
+    token: roadToken,
+    body: { invoiceId, amountCents: total - Math.floor(total / 2), method: 'upi' },
+  })
+  ok('splitting across methods settles the same bill', rest.body.invoice.paymentStatus === 'PAID', rest.body)
+  ok('with both payments recorded against it', rest.body.invoice.payments.length === 2)
+  ok(
+    'taking more than is owed is refused',
+    (await call('/staff/pos/pay', { token: roadToken, body: { invoiceId, amountCents: 5000, method: 'cash' } })).status === 400,
+  )
+
+  ok(
+    'a paid bill cannot be voided away',
+    (await call(`/staff/pos/invoice/${invoiceId}/void`, { token: roadToken, body: { reason: 'x' } })).status === 409,
+  )
+  const refunded = await call(`/staff/pos/invoice/${invoiceId}/refund`, {
+    token: roadToken,
+    body: { amountCents: 1000, method: 'cash', reason: 'Item returned' },
+  })
+  ok('a refund is recorded without deleting the payment', refunded.status === 200, refunded.body)
+  ok('the original payments are still there', refunded.body.invoice.payments.filter((p: any) => !p.isRefund).length === 2)
+  ok('and the bill reads as partly refunded', refunded.body.invoice.paymentStatus === 'PARTIALLY_REFUNDED')
+
+  group('POS — a finalised bill outlives the menu it came from')
+  const invBefore = await call(`/staff/pos/invoice/${invoiceId}`, { token: roadToken })
+  const lineBefore = invBefore.body.invoice.lines[0]
+  await call('/staff/menu/' + coldCoffee.id, { token: roadToken, method: 'PATCH', body: { price: '999' } })
+  await call('/staff/tax/rates', {
+    token: roadToken,
+    body: { name: 'GST 18%', ratePercent: 18, inclusive: true, isDefault: true },
+  })
+  const invAfter = await call(`/staff/pos/invoice/${invoiceId}`, { token: roadToken })
+  const lineAfter = invAfter.body.invoice.lines[0]
+  ok('the price on the old bill does not move', lineAfter.unitPriceCents === lineBefore.unitPriceCents, lineAfter)
+  ok('nor does the rate it was taxed at', lineAfter.rateBp === lineBefore.rateBp)
+  ok('nor the total the customer paid', invAfter.body.invoice.totalCents === invBefore.body.invoice.totalCents)
+  ok('and the seller on it is who they were that day', invAfter.body.invoice.seller.gstin === '23TESTGST1234Z')
+
+  group('ROADSIDE — a car outside is a session like a table is')
   const zoneRes = await call('/staff/zones', {
     token: roadToken,
     body: { name: 'Zone A', note: 'Directly outside' },

@@ -4125,3 +4125,82 @@ button.nav-link {
   text-transform: uppercase;
   color: var(--na, var(--brass));
 }
+
+/* ── The till ─────────────────────────────────────────────────────────────────
+   Two columns: what is owed, and the one panel that settles it. A cashier at a
+   counter is counting taps, so nothing here is more than two away. */
+
+.pos { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .pos { grid-template-columns: 1fr; } }
+
+.pos-group { margin-bottom: 18px; }
+.pos-group-head {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.pos-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.pos-row:hover { border-color: var(--line-strong); }
+.pos-row.on { border-color: var(--ink); background: var(--bg-tint); }
+.pos-row.due { border-color: rgba(223, 180, 105, 0.5); }
+.pos-row-icon { font-size: 20px; }
+.pos-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.pos-row-title { font-weight: 600; font-size: 15px; }
+.pos-row-money { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.pos-due { color: var(--warn); font-weight: 600; }
+
+.pos-panel {
+  position: sticky;
+  top: calc(var(--header-h) + 14px);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.pos-hint { margin: 0; font-size: 14px; }
+.pos-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.pos-panel-place { font-weight: 600; font-size: 16px; }
+
+.pos-items { list-style: none; margin: 0 0 14px; padding: 0; font-size: 13px; }
+.pos-items li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; color: var(--ink-2); }
+
+.pos-totals { margin: 12px 0 16px; }
+.pos-totals div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 14px; }
+.pos-totals dt { color: var(--muted); margin: 0; }
+.pos-totals dd { margin: 0; font-variant-numeric: tabular-nums; }
+.pos-totals .off dd { color: var(--warn); }
+.pos-totals .grand { margin-top: 8px; padding-top: 9px; border-top: 1px solid var(--line); }
+.pos-totals .grand dt { color: var(--ink); font-weight: 600; }
+.pos-totals .grand dd { font-family: var(--serif); font-size: 22px; }
+
+.pos-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 12px; }
+.pos-method {
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.pos-method.on { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+
+.pos-change { margin: 6px 0 0; font-size: 15px; font-weight: 600; color: var(--good); }
+.pos-taken { list-style: none; margin: 0 0 14px; padding: 0; font-size: 13px; color: var(--muted); }
+.pos-taken li { padding: 2px 0; }

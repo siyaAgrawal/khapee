@@ -135,20 +135,33 @@ export default function NoirMenu({ theme, menu, isOpen, quantityOf, setQuantity,
                     inThisCart={inThisCart}
                   />
                 ) : (
-                <div className="noir-grid in">
-                  {c.items.map((item, i) => (
-                    <Dish
-                      key={item.id}
-                      item={item}
-                      index={si === 0 ? i : Math.min(i, 3)}
-                      isOpen={isOpen}
-                      qty={quantityOf(item.id)}
-                      inThisCart={inThisCart}
-                      setQuantity={setQuantity}
-                      onAdd={onAdd}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="noir-grid in">
+                    {c.items
+                      .filter((it) => it.imageUrl)
+                      .map((item, i) => (
+                        <Dish
+                          key={item.id}
+                          item={item}
+                          index={si === 0 ? i : Math.min(i, 3)}
+                          isOpen={isOpen}
+                          qty={quantityOf(item.id)}
+                          inThisCart={inThisCart}
+                          setQuantity={setQuantity}
+                          onAdd={onAdd}
+                        />
+                      ))}
+                  </div>
+                  <WrittenList
+                    items={c.items.filter((it) => !it.imageUrl)}
+                    isOpen={isOpen}
+                    quantityOf={quantityOf}
+                    setQuantity={setQuantity}
+                    onAdd={onAdd}
+                    inThisCart={inThisCart}
+                    heading={c.items.some((it) => it.imageUrl)}
+                  />
+                </>
                 )}
               </section>
             )
@@ -172,19 +185,32 @@ export default function NoirMenu({ theme, menu, isOpen, quantityOf, setQuantity,
               inThisCart={inThisCart}
             />
           ) : (
-          <div className={`noir-grid ${entered ? 'in' : ''}`} key={current!.id}>
-            {current!.items.map((item, i) => (
-              <Dish
-                key={item.id}
-                item={item}
-                index={i}
-                isOpen={isOpen}
-                qty={quantityOf(item.id)}
-                inThisCart={inThisCart}
-                setQuantity={setQuantity}
-                onAdd={onAdd}
-              />
-            ))}
+          <div key={current!.id}>
+            <div className={`noir-grid ${entered ? 'in' : ''}`}>
+              {current!.items
+                .filter((it) => it.imageUrl)
+                .map((item, i) => (
+                  <Dish
+                    key={item.id}
+                    item={item}
+                    index={i}
+                    isOpen={isOpen}
+                    qty={quantityOf(item.id)}
+                    inThisCart={inThisCart}
+                    setQuantity={setQuantity}
+                    onAdd={onAdd}
+                  />
+                ))}
+            </div>
+            <WrittenList
+              items={current!.items.filter((it) => !it.imageUrl)}
+              isOpen={isOpen}
+              quantityOf={quantityOf}
+              setQuantity={setQuantity}
+              onAdd={onAdd}
+              inThisCart={inThisCart}
+              heading={current!.items.some((it) => it.imageUrl)}
+            />
           </div>
           )}
         </>
@@ -233,36 +259,17 @@ export function BarList({
           </header>
 
           <ul className="bar-list">
-            {g.items.map((item) => {
-              const qty = quantityOf(item.id)
-              return (
-                <li key={item.id} className={`bar-row ${item.isAvailable ? '' : 'sold'}`}>
-                  <div className="bar-row-text">
-                    <span className="bar-row-name">{item.name}</span>
-                    <span className="bar-row-desc">{item.description}</span>
-                  </div>
-                  <span className="bar-row-dots" aria-hidden />
-                  <span className="bar-row-price">{money(item.priceCents)}</span>
-                  {!item.isAvailable ? (
-                    <span className="noir-sold">Sold out</span>
-                  ) : qty > 0 && inThisCart ? (
-                    <div className="noir-step bar-row-step">
-                      <button onClick={() => setQuantity(item.id, qty - 1)} aria-label={`Remove one ${item.name}`}>
-                        −
-                      </button>
-                      <span>{qty}</span>
-                      <button onClick={() => onAdd(item)} aria-label={`Add one ${item.name}`}>
-                        +
-                      </button>
-                    </div>
-                  ) : (
-                    <button className="noir-add bar-row-add" onClick={() => onAdd(item)} disabled={!isOpen}>
-                      Add
-                    </button>
-                  )}
-                </li>
-              )
-            })}
+            {g.items.map((item) => (
+              <Row
+                key={item.id}
+                item={item}
+                isOpen={isOpen}
+                qty={quantityOf(item.id)}
+                inThisCart={inThisCart}
+                setQuantity={setQuantity}
+                onAdd={onAdd}
+              />
+            ))}
           </ul>
         </section>
       ))}
@@ -324,5 +331,102 @@ function Dish({
         </div>
       </div>
     </article>
+  )
+}
+
+
+/**
+ * One dish as a line of type.
+ *
+ * Used for the bar, and for anything the restaurant has no photograph of. A
+ * dish with no picture is written down, not given a stand-in: a generated tile
+ * in a menu whose other cards are real food reads as a missing image, and
+ * saying "we have this, here is what it costs" is both honest and how a printed
+ * menu has always done it.
+ */
+function Row({
+  item,
+  isOpen,
+  qty,
+  inThisCart,
+  setQuantity,
+  onAdd,
+}: {
+  item: MenuItem
+  isOpen: boolean
+  qty: number
+  inThisCart: boolean
+  setQuantity: (id: number, qty: number) => void
+  onAdd: (item: MenuItem) => void
+}) {
+  return (
+    <li className={`bar-row ${item.isAvailable ? '' : 'sold'}`}>
+      <div className="bar-row-text">
+        <span className="bar-row-name">
+          <span className={`veg-dot ${item.isVeg ? '' : 'nonveg'}`} aria-hidden />
+          {item.name}
+          {item.isSpecial && <span className="row-flag">This month</span>}
+        </span>
+        {item.description && <span className="bar-row-desc">{item.description}</span>}
+      </div>
+      <span className="bar-row-dots" aria-hidden />
+      <span className="bar-row-price">{money(item.priceCents)}</span>
+      {!item.isAvailable ? (
+        <span className="noir-sold">Sold out</span>
+      ) : qty > 0 && inThisCart ? (
+        <div className="noir-step bar-row-step">
+          <button onClick={() => setQuantity(item.id, qty - 1)} aria-label={`Remove one ${item.name}`}>
+            −
+          </button>
+          <span>{qty}</span>
+          <button onClick={() => onAdd(item)} aria-label={`Add one ${item.name}`}>
+            +
+          </button>
+        </div>
+      ) : (
+        <button className="noir-add bar-row-add" onClick={() => onAdd(item)} disabled={!isOpen}>
+          Add
+        </button>
+      )}
+    </li>
+  )
+}
+
+/** The dishes a restaurant has no photograph of: listed, not padded out. */
+function WrittenList({
+  items,
+  isOpen,
+  quantityOf,
+  setQuantity,
+  onAdd,
+  inThisCart,
+  heading,
+}: {
+  items: MenuItem[]
+  isOpen: boolean
+  quantityOf: (id: number) => number
+  setQuantity: (id: number, qty: number) => void
+  onAdd: (item: MenuItem) => void
+  inThisCart: boolean
+  heading: boolean
+}) {
+  if (!items.length) return null
+  return (
+    <div className="written">
+      {heading && <p className="written-head">Also on the menu</p>}
+      <ul className="bar-list">
+        {items.map((item) => (
+          <Row
+            key={item.id}
+            item={item}
+            isOpen={isOpen}
+            qty={quantityOf(item.id)}
+            inThisCart={inThisCart}
+            setQuantity={setQuantity}
+            onAdd={onAdd}
+          />
+        ))}
+      </ul>
+    </div>
   )
 }

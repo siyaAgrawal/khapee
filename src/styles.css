@@ -4105,3 +4105,23 @@ button.nav-link {
 .hut-page .noir-card-top h3 { font-size: 18px; }
 .hut-page .noir-flag { color: #17120c; }
 .hut-page .noir-title { letter-spacing: -0.005em; }
+
+/* Dishes with no photograph are written down rather than given a stand-in — a
+   generated tile among real food reads as a missing image. */
+.written { margin-top: 4px; }
+.noir-grid + .written { margin-top: 18px; }
+.written-head {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--noir-dim);
+  margin: 0 0 6px;
+}
+.bar-row-name .veg-dot { margin-right: 7px; vertical-align: middle; }
+.row-flag {
+  margin-left: 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--na, var(--brass));
+}

@@ -11,6 +11,7 @@ import { readGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
 import { NoirMark, NoirWordmark } from '../components/NoirBrand'
+import { HutMark, HutWordmark } from '../components/HutBrand'
 import type { RestaurantCard } from './Home'
 
 type MenuItem = {
@@ -57,8 +58,12 @@ export default function Restaurant() {
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
-  const noir = data?.restaurant.theme === 'noir'
-  const noirPage = noir
+  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | ''
+  const noir = theme === 'noir'
+  const hut = theme === 'hut'
+  /** Both themed restaurants use the same menu and page shell, dressed differently. */
+  const themed = noir || hut
+  const noirPage = themed
 
   /**
    * A themed restaurant takes the page's palette with it. The app otherwise
@@ -67,15 +72,15 @@ export default function Restaurant() {
    * out so the rest of the app goes back to whatever the device asked for.
    */
   useEffect(() => {
-    if (!noir) return
+    if (!themed) return
     const root = document.documentElement
     const previous = root.dataset.theme
-    root.dataset.theme = 'noir'
+    root.dataset.theme = theme === 'hut' ? 'hut' : 'noir'
     return () => {
       if (previous) root.dataset.theme = previous
       else delete root.dataset.theme
     }
-  }, [noir])
+  }, [themed, theme])
 
   const onAdd = (item: MenuItem) => {
     if (!data) return
@@ -90,13 +95,13 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className={`page ${noirPage ? 'noir-page' : ''}`}>
+      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
         {data && (
           <>
-            {noir ? (
+            {themed ? (
               <header className="noir-hero">
                 <div className="noir-hero-art">
                   <Art
@@ -111,10 +116,8 @@ export default function Restaurant() {
                 </div>
 
                 <div className="noir-hero-lockup">
-                  <span className="noir-hero-mark">
-                    <NoirMark size={46} />
-                  </span>
-                  <NoirWordmark />
+                  <span className="noir-hero-mark">{hut ? <HutMark size={48} /> : <NoirMark size={46} />}</span>
+                  {hut ? <HutWordmark /> : <NoirWordmark />}
                   <p className="noir-hero-line">{data.restaurant.description}</p>
                   <div className="noir-hero-meta">
                     <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>
@@ -125,6 +128,20 @@ export default function Restaurant() {
                   </div>
                 </div>
 
+                {data.restaurant.isOpen && data.restaurant.acceptsCar && !dining && (
+                  <Link className="road-cta" to={`/r/${restaurantId}/car`}>
+                    <span className="road-cta-mark" aria-hidden>
+                      🚗
+                    </span>
+                    <span>
+                      <strong>Sitting in your car?</strong>
+                      <span className="tiny muted">Order from the road — we&rsquo;ll bring it out.</span>
+                    </span>
+                    <span className="road-cta-go" aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                )}
                 {data.restaurant.isOpen && (
                   <div className="noir-hero-dining">
                     <DiningBar restaurantId={restaurantId} />
@@ -198,8 +215,9 @@ export default function Restaurant() {
             </div>
             )}
 
-            {noir ? (
+            {themed ? (
               <NoirMenu
+                theme={theme}
                 menu={data.menu}
                 isOpen={data.restaurant.isOpen}
                 quantityOf={quantityOf}

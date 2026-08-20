@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | ''
+export type ThemeName = 'noir' | 'hut' | ''
 
 /** How one section of a themed menu presents itself. */
 export type SectionVoice = {
@@ -31,6 +31,26 @@ const NOIR_VOICES: Record<string, SectionVoice> = {
   Bar: { accent: '#c9b291', kicker: 'Poured after dark', glyph: '✦' },
 }
 
+/**
+ * Lotus Hut's sections. A roadside place that runs late — the voice is warm and
+ * plain-spoken, the opposite of La Tavola's, because the restaurant is.
+ */
+const HUT_VOICES: Record<string, SectionVoice> = {
+  Maggi: { accent: '#e8a33d', kicker: 'Two minutes, allegedly', glyph: '🍜' },
+  Sandwiches: { accent: '#7fae5a', kicker: 'Pressed to order', glyph: '🥪' },
+  'Club Sandwiches': { accent: '#6fa04f', kicker: 'The bigger ones', glyph: '🥪' },
+  Burgers: { accent: '#d97a3c', kicker: 'Held in both hands', glyph: '🍔' },
+  HotDog: { accent: '#d4693f', kicker: 'Long and loaded', glyph: '🌭' },
+  'French Fries': { accent: '#eab040', kicker: 'Salt, always', glyph: '🍟' },
+  Pizza: { accent: '#d1553f', kicker: 'Straight from the counter', glyph: '🍕' },
+  'Open Toast': { accent: '#c98f43', kicker: 'Grilled, open-faced', glyph: '🍞' },
+  Coffee: { accent: '#a9754a', kicker: 'Hot, cold, and very cold', glyph: '☕' },
+  'Drinks (Beverages)': { accent: '#5aa6c4', kicker: 'For the heat', glyph: '🥤' },
+  Pasta: { accent: '#cf8a4a', kicker: 'Creamy or red', glyph: '🍝' },
+  Rolls: { accent: '#c07a45', kicker: 'Wrapped to go', glyph: '🌯' },
+  'Ice Cream Soda': { accent: '#c47fb0', kicker: 'Fizz and a scoop', glyph: '🥤' },
+}
+
 const FALLBACK: SectionVoice = { accent: '#c9a227', kicker: 'From the kitchen', glyph: '·' }
 
 /**
@@ -52,6 +72,7 @@ export function accentVars(hex: string): Record<string, string> {
 }
 
 export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
-  if (theme !== 'noir') return FALLBACK
-  return NOIR_VOICES[section] ?? FALLBACK
+  if (theme === 'hut') return HUT_VOICES[section] ?? { ...FALLBACK, accent: '#e8a33d' }
+  if (theme === 'noir') return NOIR_VOICES[section] ?? FALLBACK
+  return FALLBACK
 }

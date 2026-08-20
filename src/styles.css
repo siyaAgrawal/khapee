@@ -4002,3 +4002,106 @@ button.nav-link {
   .run-drop { flex-direction: column; align-items: stretch; }
   .run-drop-actions { flex-direction: row; justify-content: flex-end; }
 }
+
+/* ── Lotus Hut ────────────────────────────────────────────────────────────────
+   A roadside place that runs late. Where La Tavola is cool charcoal and brass,
+   this is warm — night air, marigold light over a counter, a green enamel edge
+   from the tables. Same components, opposite temperature. */
+
+:root[data-theme='hut'] {
+  --bg: #17120c;
+  --bg-tint: #1f1810;
+  --surface: #211a12;
+  --surface-2: #291f15;
+  --ink: #f6efe3;
+  --ink-2: #ded3c1;
+  --muted: #a2937c;
+  --line: rgba(246, 239, 227, 0.1);
+  --line-strong: rgba(246, 239, 227, 0.22);
+
+  --accent: #f6efe3;
+  --accent-ink: #17120c;
+  --accent-soft: #2e2416;
+
+  --good: #8fc98a;
+  --good-soft: #17240f;
+  --warn: #e8a33d;
+  --warn-soft: #2b1f0d;
+  --bad: #ef9080;
+  --bad-soft: #2c1712;
+  --info: #8fb6ce;
+  --info-soft: #12202b;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 28px 60px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.hut-page {
+  --brass: #e8a33d;
+  --noir-ink: #f6efe3;
+  --noir-dim: #a2937c;
+}
+
+/* A strip of marigold light across the top of the photo, like a bulb over a
+   counter. Sits above the veil so it reads as light, not as a filter. */
+.hut-page .noir-hero-art::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 42%;
+  background: radial-gradient(90% 100% at 50% 0%, rgba(232, 163, 61, 0.26), transparent 72%);
+  pointer-events: none;
+}
+.hut-page .noir-hero-img img { filter: saturate(1.02) contrast(1.03) brightness(1.02); }
+.hut-page .noir-hero-veil {
+  background:
+    radial-gradient(120% 85% at 50% 6%, transparent 44%, rgba(23, 18, 12, 0.52) 100%),
+    linear-gradient(180deg, transparent 32%, rgba(23, 18, 12, 0.74) 74%, rgba(23, 18, 12, 0.97) 97%);
+}
+.hut-page .noir-hero-sheen {
+  background: linear-gradient(104deg, transparent 38%, rgba(232, 163, 61, 0.13) 50%, transparent 62%);
+}
+
+.hut-mark { display: inline-block; }
+
+.hut-wordmark { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.hut-wordmark-lotus {
+  font-size: 12px;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.hut-wordmark-hut {
+  font-family: var(--serif);
+  font-size: clamp(36px, 8.5vw, 56px);
+  line-height: 1;
+  color: var(--noir-ink);
+  letter-spacing: -0.01em;
+}
+.hut-wordmark-line {
+  width: 74px;
+  height: 1px;
+  margin-top: 7px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+}
+.hut-wordmark-since {
+  margin-top: 7px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--noir-dim);
+}
+
+/* The section tabs carry the enamel-green edge of the tables in the photos. */
+.hut-page .noir-tab { border-radius: 12px; }
+.hut-page .noir-tab.on { box-shadow: inset 0 -2px 0 var(--tab-accent); }
+.hut-page .noir-tab-glyph { font-family: inherit; font-size: 15px; }
+
+/* Warmer cards, and a squarer corner — plastic chairs, not linen. */
+.hut-page .noir-card { border-radius: 12px; background: rgba(246, 239, 227, 0.028); }
+.hut-page .noir-card-top h3 { font-size: 18px; }
+.hut-page .noir-flag { color: #17120c; }
+.hut-page .noir-title { letter-spacing: -0.005em; }

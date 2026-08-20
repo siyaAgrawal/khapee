@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Art, money } from './ui'
-import { accentVars, sectionVoice } from '../lib/themes'
+import { accentVars, sectionVoice, type ThemeName } from '../lib/themes'
 import BarGlass from './BarGlass'
 
 type MenuItem = {
@@ -29,6 +29,8 @@ function tabVars(hex: string): React.CSSProperties {
 }
 
 type Props = {
+  /** Which restaurant's voice the sections speak in. */
+  theme: ThemeName
   menu: Category[]
   isOpen: boolean
   quantityOf: (id: number) => number
@@ -46,7 +48,7 @@ type Props = {
  * Everything stays on charcoal throughout — the accent tints edges, rules and
  * prices, and never becomes a background. That is the whole point of the look.
  */
-export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd, inThisCart }: Props) {
+export default function NoirMenu({ theme, menu, isOpen, quantityOf, setQuantity, onAdd, inThisCart }: Props) {
   const sections = menu.filter((c) => c.items.length > 0)
   // -1 is the whole menu at once, for people who would rather read than click.
   const [active, setActive] = useState(-1)
@@ -72,7 +74,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
   }, [active])
 
   if (!sections.length) return null
-  const voice = sectionVoice('noir', current?.name ?? '')
+  const voice = sectionVoice(theme, current?.name ?? '')
 
   return (
     <div className="noir" style={accentVars(voice.accent) as React.CSSProperties}>
@@ -80,7 +82,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
         <button
           data-active={showingAll}
           className={`noir-tab ${showingAll ? 'on' : ''}`}
-          style={tabVars('#c9b291')}
+          style={tabVars(theme === 'hut' ? '#e8a33d' : '#c9b291')}
           onClick={() => setActive(-1)}
           aria-pressed={showingAll}
         >
@@ -91,7 +93,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
           <span className="noir-tab-count">{total}</span>
         </button>
         {sections.map((c, i) => {
-          const v = sectionVoice('noir', c.name)
+          const v = sectionVoice(theme, c.name)
           const on = !showingAll && c.id === current!.id
           return (
             <button
@@ -115,7 +117,7 @@ export default function NoirMenu({ menu, isOpen, quantityOf, setQuantity, onAdd,
       {showingAll ? (
         <div className={`noir-all ${entered ? 'in' : ''}`}>
           {sections.map((c, si) => {
-            const v = sectionVoice('noir', c.name)
+            const v = sectionVoice(theme, c.name)
             return (
               <section key={c.id} className="noir-all-section" style={accentVars(v.accent) as React.CSSProperties}>
                 <header className="noir-head">

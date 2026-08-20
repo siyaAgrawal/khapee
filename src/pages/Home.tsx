@@ -28,6 +28,8 @@ export type RestaurantCard = {
   acceptsTakeaway?: boolean
   acceptsGroups?: boolean
   acceptsUpi?: boolean
+  /** Whether this restaurant serves customers parked outside. */
+  acceptsCar?: boolean
   /** A restaurant with its own look on its page. Empty is the standard one. */
   theme?: string
 }

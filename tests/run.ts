@@ -1489,6 +1489,100 @@ async function runTests() {
     (await call('/resolve', { body: { value: aheadCode } })).status === 409,
   )
 
+  group('ROADSIDE — a car outside is a session like a table is')
+  // staffToken was signed out earlier on purpose; this block uses the live one.
+  const roadToken = reLogin.body.token
+  const zoneRes = await call('/staff/zones', {
+    token: roadToken,
+    body: { name: 'Zone A', note: 'Directly outside' },
+  })
+  ok('staff can define a roadside zone', zoneRes.status === 201, zoneRes.body)
+  const zoneId = zoneRes.body.zone.id
+  ok('the zone carries a token for its own sign', !!zoneRes.body.zone.token)
+  ok(
+    'defining a zone turns roadside service on',
+    (await call(`/restaurants/${mornington.id}`)).body.restaurant.acceptsCar === true,
+  )
+  ok(
+    'customers can see the zones to pick from',
+    (await call(`/restaurants/${mornington.id}/zones`)).body.zones.some((z: any) => z.id === zoneId),
+  )
+
+  const car = await call('/sessions/car', {
+    body: { restaurantId: mornington.id, zoneId, vehicle: 'White Honda City', partySize: 3 },
+  })
+  ok('a car session opens with no code and no staff', car.status === 201, car.body)
+  ok('and is numbered the way staff say it out loud', /^Car \d+$/.test(car.body.session.label), car.body.session)
+  ok('it knows which zone it is in', car.body.session.zoneName === 'Zone A')
+  ok('a car with no description is refused', (await call('/sessions/car', {
+    body: { restaurantId: mornington.id, zoneId, vehicle: '  ' },
+  })).status === 400)
+
+  const carOrder = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 2 }],
+      customerName: 'Roadside',
+      sessionToken: car.body.session.token,
+    },
+  })
+  ok('a car orders without ever choosing a table', carOrder.status === 201, carOrder.body)
+  ok('and the order follows the roadside flow', carOrder.body.order.serviceType === 'car', carOrder.body.order)
+
+  const rsBoard = await call('/staff/ops', { token: roadToken })
+  const rsMine = rsBoard.body.sessions.find((x: any) => x.token === car.body.session.token)
+  ok('the car is on the floor board', !!rsMine, rsBoard.body.summary)
+  ok('with its vehicle and zone', rsMine?.vehicle === 'White Honda City' && rsMine?.zoneName === 'Zone A')
+  ok('and what it owes', rsMine?.dueCents === carOrder.body.order.totalCents)
+
+  const empty = await call('/sessions/car', {
+    body: { restaurantId: mornington.id, zoneId, vehicle: 'Black Creta' },
+  })
+  const board2 = await call('/staff/ops', { token: roadToken })
+  const unasked = board2.body.sessions.find((x: any) => x.token === empty.body.session.token)
+  ok('a car nobody has been to shows as waiting to order', unasked?.waitingToOrder === true)
+  ok('and the summary counts it', board2.body.summary.waitingToOrder >= 1, board2.body.summary)
+
+  for (const st of ['ACCEPTED', 'PREPARING', 'READY']) {
+    await call(`/staff/orders/${carOrder.body.order.id}/status`, { token: roadToken, body: { status: st } })
+  }
+  const runs = await call('/staff/runs', { token: roadToken })
+  const drop = runs.body.groups.flatMap((g: any) => g.drops).find((d: any) => d.id === carOrder.body.order.id)
+  ok('a ready car order reaches the runner queue', !!drop, runs.body)
+  ok('grouped under its zone, so one walk covers it', runs.body.groups.some((g: any) => g.zone === 'Zone A'))
+  ok('the runner sees what is in the bag', (drop?.items ?? []).length > 0)
+
+  const delivered = await call(`/staff/orders/${carOrder.body.order.id}/delivered`, {
+    token: roadToken,
+    method: 'POST',
+  })
+  ok('the runner can mark it delivered', delivered.status === 200)
+  const board3 = await call('/staff/ops', { token: roadToken })
+  const after = board3.body.sessions
+    .find((x: any) => x.token === car.body.session.token)
+    ?.orders.find((o: any) => o.id === carOrder.body.order.id)
+  ok('which is recorded against the order', after?.status === 'DELIVERED', after)
+  ok('and it still shows as unpaid until money changes hands', after?.paymentStatus === 'UNPAID')
+
+  const moved = await call(`/sessions/${car.body.session.token}/zone`, { body: { zoneId: null } })
+  ok('a car that moves keeps its session', moved.status === 200 && moved.body.session.zoneName === null)
+  ok(
+    'and keeps the number staff have been calling it',
+    moved.body.session.label === car.body.session.label,
+  )
+
+  const guest = await call('/staff/sessions/car', {
+    token: roadToken,
+    body: { zoneId, vehicle: 'Red Swift' },
+  })
+  ok('staff can open a car for someone with no phone', guest.status === 201, guest.body)
+  const board4 = await call('/staff/ops', { token: roadToken })
+  ok(
+    'and the board says it was opened by staff',
+    board4.body.sessions.find((x: any) => x.token === guest.body.session.token)?.openedByStaff === true,
+  )
+
   group('GROUPED ITEMS — a bar list inside one section')
   const grouped = await call(`/restaurants/${mornington.id}`)
   ok(

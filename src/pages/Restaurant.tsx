@@ -6,6 +6,7 @@ import { useVegMode } from '../lib/veg'
 import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../components/ui'
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
+import { readDining } from '../lib/dining'
 import { readGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
@@ -37,6 +38,7 @@ export default function Restaurant() {
   const [data, setData] = useState<{ restaurant: RestaurantCard; menu: Category[] } | null>(null)
   const [error, setError] = useState('')
   const tableCtx = readTableContext(restaurantId)
+  const dining = readDining(restaurantId)
   const activeGroup = readGroup()
   const inThisGroup = activeGroup?.restaurantId === restaurantId
 
@@ -161,6 +163,20 @@ export default function Restaurant() {
                   <span className="dot-sep">{data.restaurant.hours}</span>
                   <span className="dot-sep">~{data.restaurant.prepMinutes} min</span>
                 </div>
+                {data.restaurant.isOpen && data.restaurant.acceptsCar && !dining && (
+                  <Link className="road-cta" to={`/r/${restaurantId}/car`}>
+                    <span className="road-cta-mark" aria-hidden>
+                      🚗
+                    </span>
+                    <span>
+                      <strong>Sitting in your car?</strong>
+                      <span className="tiny muted">Order from the road — we&rsquo;ll bring it out.</span>
+                    </span>
+                    <span className="road-cta-go" aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                )}
                 {data.restaurant.isOpen && (
                   <div style={{ marginTop: 14 }}>
                     <DiningBar restaurantId={restaurantId} />

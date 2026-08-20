@@ -232,6 +232,19 @@ addColumn('users', 'active_restaurant_id', 'INTEGER')
 // A restaurant can carry its own look on its page — see src/lib/themes.ts.
 // Empty means the standard one, which is what almost every restaurant wants.
 addColumn('restaurants', 'theme', "TEXT NOT NULL DEFAULT ''")
+// --- Service modes: inside, roadside/car, takeaway ---------------------------
+// A restaurant that serves cars parked outside is a common shape in Indore, and
+// it is the same restaurant — one menu, one kitchen, one board — so this is a
+// mode on a session rather than a second product.
+addColumn('restaurants', 'accepts_car', 'INTEGER NOT NULL DEFAULT 0')
+
+// An order carries where it is going, so the board never has to join to find out.
+addColumn('orders', 'service_mode', "TEXT NOT NULL DEFAULT 'dine_in'")
+addColumn('orders', 'zone_id', 'INTEGER')
+addColumn('orders', 'dining_session_id', 'INTEGER')
+addColumn('orders', 'runner_id', 'INTEGER')
+addColumn('orders', 'delivered_at', 'TEXT')
+
 // A named group inside a section — a bar list is "Whisky", "Gin", "Beer"
 // under one Bar heading, rather than eight tabs of three drinks each.
 addColumn('menu_items', 'group_label', "TEXT NOT NULL DEFAULT ''")
@@ -241,6 +254,20 @@ addColumn('menu_items', 'is_special', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('order_items', 'added_by_staff', 'INTEGER NOT NULL DEFAULT 0')
 // Bill printed / settled at the counter.
 addColumn('orders', 'bill_closed_at', 'TEXT')
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS service_zones (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  name          TEXT    NOT NULL,
+  note          TEXT    NOT NULL DEFAULT '',
+  token         TEXT    NOT NULL UNIQUE,
+  sort_order    INTEGER NOT NULL DEFAULT 0,
+  is_active     INTEGER NOT NULL DEFAULT 1,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_service_zones_restaurant ON service_zones(restaurant_id);
+`)
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS photo_library (
@@ -309,6 +336,22 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id, status);
 `)
+
+// A dining session already stood for "these people, here, now". It now also
+// stands for a car at the roadside: same session, different place.
+addColumn('dining_sessions', 'service_mode', "TEXT NOT NULL DEFAULT 'dine_in'")
+addColumn('dining_sessions', 'zone_id', 'INTEGER')
+addColumn('dining_sessions', 'vehicle', "TEXT NOT NULL DEFAULT ''")
+addColumn('dining_sessions', 'vehicle_number', "TEXT NOT NULL DEFAULT ''")
+// What staff and customer say to each other out loud: "Car 27".
+addColumn('dining_sessions', 'seq_no', 'INTEGER')
+addColumn('dining_sessions', 'code', "TEXT NOT NULL DEFAULT ''")
+// Set when a staff member opened this for someone with no phone.
+addColumn('dining_sessions', 'opened_by', 'INTEGER')
+addColumn('dining_sessions', 'party_size', 'INTEGER NOT NULL DEFAULT 1')
+// A car that moves keeps its session; the zone is corrected, not recreated.
+addColumn('dining_sessions', 'moved_at', 'TEXT')
+
 
 export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })

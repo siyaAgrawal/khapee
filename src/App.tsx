@@ -14,6 +14,11 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import RegisterRestaurant from './pages/RegisterRestaurant'
 import TableEntry from './pages/TableEntry'
+import CarEntry from './pages/CarEntry'
+import ZoneEntry from './pages/ZoneEntry'
+import StaffOps from './pages/staff/StaffOps'
+import StaffRuns from './pages/staff/StaffRuns'
+import StaffZones from './pages/staff/StaffZones'
 import GroupJoin from './pages/GroupJoin'
 import Profile from './pages/Profile'
 import GroupSession from './pages/GroupSession'
@@ -50,6 +55,8 @@ export default function App() {
       <Route path="/restaurants" element={<Navigate to="/" replace />} />
       <Route path="/r/:id" element={<Restaurant />} />
       <Route path="/t/:token" element={<TableEntry />} />
+      <Route path="/r/:id/car" element={<CarEntry />} />
+      <Route path="/z/:token" element={<ZoneEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/group" element={<GroupSession />} />
@@ -70,6 +77,9 @@ export default function App() {
         }
       >
         <Route index element={<Navigate to="/staff/orders" replace />} />
+        <Route path="floor" element={<StaffOps />} />
+        <Route path="runs" element={<StaffRuns />} />
+        <Route path="zones" element={<StaffZones />} />
         <Route path="orders" element={<StaffOrders />} />
         <Route path="profile" element={<StaffProfile />} />
         <Route path="payments" element={<StaffPayments />} />

@@ -8,6 +8,9 @@ import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
+import { opsBoard, runQueue } from '../ops.ts'
+import { shapeDiningSession, startCarSession } from '../dining.ts'
+import { randomToken } from '../ids.ts'
 
 export const staffRouter = Router()
 staffRouter.use(requireStaff)
@@ -49,7 +52,16 @@ staffRouter.post('/orders/:id/status', (req, res) => {
   }
 
   const to = String(req.body?.status ?? '').toUpperCase() as OrderStatus
-  const service = row.order_type === 'pickup' ? 'pickup' : row.takeaway ? 'takeaway' : 'dine_in'
+  // A car order has a delivery leg, so the flow comes from where the customer
+  // is rather than from the order_type column, which only knows table/counter.
+  const service =
+    row.service_mode === 'car'
+      ? 'car'
+      : row.order_type === 'pickup'
+        ? 'pickup'
+        : row.takeaway
+          ? 'takeaway'
+          : 'dine_in'
   if (!canTransition(service, row.status, to)) {
     return res.status(400).json({ error: `Cannot move ${row.status} to ${to}.` })
   }
@@ -915,4 +927,150 @@ staffRouter.post('/bill/:id/settle', (req: any, res) => {
   const updated = getOrder(order.id)
   publish('order:update', { restaurantId, userId: order.user_id, orderId: order.id, order: updated })
   res.json({ order: updated })
+})
+
+
+// --- Live operations --------------------------------------------------------
+
+/**
+ * One screen that answers: who is here, where, what did they order, when, what
+ * state is it in, who is carrying it, and have they paid. This is the feature —
+ * everything else on this page is in service of it.
+ */
+staffRouter.get('/ops', (req: any, res) => {
+  res.json(opsBoard(myRestaurant(req)))
+})
+
+/** What the runner carries out next, grouped so one walk covers a whole zone. */
+staffRouter.get('/runs', (req: any, res) => {
+  res.json({ groups: runQueue(myRestaurant(req)) })
+})
+
+/**
+ * A car session opened by staff, for a customer who has no phone, no app, or no
+ * wish to use one. The restaurant has to work for them too, so this is the same
+ * session the customer would have made — it can be handed to them later.
+ */
+staffRouter.post('/sessions/car', (req: any, res) => {
+  const result = startCarSession({
+    restaurantId: myRestaurant(req),
+    zoneId: req.body?.zoneId ? Number(req.body.zoneId) : null,
+    vehicle: String(req.body?.vehicle ?? ''),
+    vehicleNumber: String(req.body?.vehicleNumber ?? ''),
+    partySize: Number(req.body?.partySize) || 1,
+    userId: null,
+    openedBy: req.user.id,
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  publish('ops', { restaurantId: myRestaurant(req) })
+  res.status(201).json({ session: shapeDiningSession(result.session) })
+})
+
+/** Closes a session — the car left, the table got up. */
+staffRouter.delete('/sessions/:id', (req: any, res) => {
+  const row = db
+    .prepare('SELECT * FROM dining_sessions WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), myRestaurant(req)) as any
+  if (!row) return res.status(404).json({ error: 'That session is not on your board.' })
+  db.prepare("UPDATE dining_sessions SET closed_at = datetime('now') WHERE id = ?").run(row.id)
+  publish('ops', { restaurantId: myRestaurant(req) })
+  res.json({ ok: true })
+})
+
+/** Hands a delivery to a runner, so it is somebody's job rather than everyone's. */
+staffRouter.post('/orders/:id/runner', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db
+    .prepare('SELECT * FROM orders WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!order) return res.status(404).json({ error: 'That order is not on your board.' })
+
+  const runnerId = req.body?.runnerId === null ? null : Number(req.body?.runnerId ?? req.user.id)
+  if (runnerId !== null) {
+    const onStaff = db
+      .prepare('SELECT 1 FROM restaurant_staff WHERE user_id = ? AND restaurant_id = ?')
+      .get(runnerId, restaurantId)
+    if (!onStaff) return res.status(400).json({ error: 'That person does not work here.' })
+  }
+  db.prepare("UPDATE orders SET runner_id = ?, updated_at = datetime('now') WHERE id = ?").run(runnerId, order.id)
+  publish('ops', { restaurantId })
+  res.json({ ok: true })
+})
+
+/** The runner reached the car. Recorded with a time, so delays can be found. */
+staffRouter.post('/orders/:id/delivered', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db
+    .prepare('SELECT * FROM orders WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!order) return res.status(404).json({ error: 'That order is not on your board.' })
+  if (order.status === 'DELIVERED') return res.json({ ok: true, alreadyDelivered: true })
+
+  db.prepare(
+    `UPDATE orders SET status = 'DELIVERED', delivered_at = datetime('now'),
+            runner_id = COALESCE(runner_id, ?), updated_at = datetime('now')
+      WHERE id = ?`,
+  ).run(req.user.id, order.id)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'DELIVERED', 'runner')").run(order.id)
+  publish('ops', { restaurantId })
+  publish('orders', { restaurantId })
+  res.json({ ok: true })
+})
+
+// --- Roadside zones ---------------------------------------------------------
+
+staffRouter.get('/zones', (req: any, res) => {
+  const zones = db
+    .prepare('SELECT * FROM service_zones WHERE restaurant_id = ? ORDER BY sort_order, id')
+    .all(myRestaurant(req)) as any[]
+  res.json({
+    zones: zones.map((z) => ({
+      id: z.id,
+      name: z.name,
+      note: z.note,
+      token: z.token,
+      isActive: !!z.is_active,
+      qrPayload: `${req.protocol}://${req.get('host')}/z/${z.token}`,
+    })),
+  })
+})
+
+staffRouter.post('/zones', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const name = String(req.body?.name ?? '').trim().slice(0, 40)
+  if (!name) return res.status(400).json({ error: 'Give the zone a name, like "Zone A".' })
+  const next = db
+    .prepare('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM service_zones WHERE restaurant_id = ?')
+    .get(restaurantId) as any
+  const info = db
+    .prepare('INSERT INTO service_zones (restaurant_id, name, note, token, sort_order) VALUES (?, ?, ?, ?, ?)')
+    .run(restaurantId, name, String(req.body?.note ?? '').trim().slice(0, 80), randomToken(8), next.n)
+  // A restaurant with a zone is a restaurant that serves cars.
+  db.prepare('UPDATE restaurants SET accepts_car = 1 WHERE id = ?').run(restaurantId)
+  const z = db.prepare('SELECT * FROM service_zones WHERE id = ?').get(Number(info.lastInsertRowid)) as any
+  res.status(201).json({ zone: { id: z.id, name: z.name, note: z.note, token: z.token, isActive: true } })
+})
+
+staffRouter.patch('/zones/:id', (req: any, res) => {
+  const z = db
+    .prepare('SELECT * FROM service_zones WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), myRestaurant(req)) as any
+  if (!z) return res.status(404).json({ error: 'That zone is not on this restaurant.' })
+  const name = req.body?.name === undefined ? z.name : String(req.body.name).trim().slice(0, 40) || z.name
+  const note = req.body?.note === undefined ? z.note : String(req.body.note).trim().slice(0, 80)
+  const active = req.body?.isActive === undefined ? z.is_active : req.body.isActive ? 1 : 0
+  db.prepare('UPDATE service_zones SET name = ?, note = ?, is_active = ? WHERE id = ?').run(name, note, active, z.id)
+  res.json({ ok: true })
+})
+
+staffRouter.delete('/zones/:id', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const z = db
+    .prepare('SELECT * FROM service_zones WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!z) return res.status(404).json({ error: 'That zone is not on this restaurant.' })
+  // Sessions keep their history; they simply lose the zone they pointed at.
+  db.prepare('UPDATE dining_sessions SET zone_id = NULL WHERE zone_id = ?').run(z.id)
+  db.prepare('DELETE FROM service_zones WHERE id = ?').run(z.id)
+  res.json({ ok: true })
 })

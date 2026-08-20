@@ -1,20 +1,31 @@
 export type OrderType = 'dine_in' | 'pickup'
 
-/** What the customer actually gets: at a table, carried out, or collected later. */
-export type ServiceType = 'dine_in' | 'takeaway' | 'pickup'
+/**
+ * Where the customer is, which is the thing that decides how the order ends.
+ * `car` is someone parked on the road outside — the food has to be carried to
+ * them, so that flow has a delivery leg the others do not.
+ */
+export type ServiceType = 'dine_in' | 'car' | 'takeaway' | 'pickup'
 
 export const DINE_IN_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED'] as const
 export const PICKUP_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP'] as const
+export const CAR_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERING', 'DELIVERED'] as const
 
-export type OrderStatus = (typeof DINE_IN_FLOW)[number] | (typeof PICKUP_FLOW)[number] | 'CANCELLED'
+export type OrderStatus =
+  | (typeof DINE_IN_FLOW)[number]
+  | (typeof PICKUP_FLOW)[number]
+  | (typeof CAR_FLOW)[number]
+  | 'CANCELLED'
 
 /** Anything handed over at the counter shares the pickup flow. */
 export function flowFor(type: OrderType | ServiceType): readonly OrderStatus[] {
+  if (type === 'car') return CAR_FLOW
   return type === 'dine_in' ? DINE_IN_FLOW : PICKUP_FLOW
 }
 
 export const SERVICE_LABEL: Record<ServiceType, string> = {
   dine_in: 'Dine in',
+  car: 'Roadside',
   takeaway: 'Takeaway',
   pickup: 'Pickup',
 }
@@ -47,6 +58,36 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   PREPARING: 'Preparing',
   READY: 'Ready',
   READY_FOR_PICKUP: 'Ready for pickup',
+  COMPLETED: 'Completed',
+  PICKED_UP: 'Picked up',
+  DELIVERING: 'On its way',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+}
+
+export const SERVICE_MODES = ['dine_in', 'car', 'takeaway', 'pickup'] as const
+export type ServiceMode = (typeof SERVICE_MODES)[number]
+
+/** What a customer sees for where they are, in their own words. */
+export const MODE_LABEL: Record<ServiceMode, string> = {
+  dine_in: 'At a table',
+  car: 'In my car',
+  takeaway: 'Takeaway',
+  pickup: 'Pickup',
+}
+
+/**
+ * The line a customer reads while they wait. Written for someone sitting in a
+ * car who wants to know whether to keep waiting, not for a kitchen display.
+ */
+export const CUSTOMER_STATUS_LINE: Partial<Record<OrderStatus, string>> = {
+  NEW: 'Order received',
+  ACCEPTED: 'Confirmed by the kitchen',
+  PREPARING: 'Being made now',
+  READY: 'Ready — someone is bringing it out',
+  READY_FOR_PICKUP: 'Ready at the counter',
+  DELIVERING: 'On its way to you',
+  DELIVERED: 'Delivered',
   COMPLETED: 'Completed',
   PICKED_UP: 'Picked up',
   CANCELLED: 'Cancelled',

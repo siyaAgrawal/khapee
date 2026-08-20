@@ -1,6 +1,14 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
-import { closeSession, sessionByToken, setSessionTable, shapeDiningSession, startSession } from '../dining.ts'
+import {
+  closeSession,
+  moveSession,
+  sessionByToken,
+  setSessionTable,
+  shapeDiningSession,
+  startCarSession,
+  startSession,
+} from '../dining.ts'
 
 export const sessionsRouter = Router()
 
@@ -13,6 +21,31 @@ sessionsRouter.post('/', (req, res) => {
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({ session: shapeDiningSession(result.session) })
+})
+
+/**
+ * Opens a session for a car outside. Needs no code and no staff member: a
+ * roadside customer should be able to order without anyone walking out to them,
+ * which is the whole point of the feature.
+ */
+sessionsRouter.post('/car', (req, res) => {
+  const result = startCarSession({
+    restaurantId: Number(req.body?.restaurantId),
+    zoneId: req.body?.zoneId ? Number(req.body.zoneId) : null,
+    vehicle: String(req.body?.vehicle ?? ''),
+    vehicleNumber: String(req.body?.vehicleNumber ?? ''),
+    partySize: Number(req.body?.partySize) || 1,
+    userId: req.user?.id ?? null,
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  res.status(201).json({ session: shapeDiningSession(result.session) })
+})
+
+/** The car moved. Same session, same number, new zone. */
+sessionsRouter.post('/:token/zone', (req, res) => {
+  const result = moveSession(req.params.token, req.body?.zoneId ? Number(req.body.zoneId) : null)
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  res.json({ session: shapeDiningSession(result.session) })
 })
 
 sessionsRouter.get('/:token', (req, res) => {

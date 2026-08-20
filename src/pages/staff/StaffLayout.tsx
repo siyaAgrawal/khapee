@@ -5,12 +5,15 @@ import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 
 const LINKS = [
+  { to: '/staff/floor', label: 'Floor', icon: '🗺️' },
+  { to: '/staff/runs', label: 'Deliveries', icon: '🏃' },
   { to: '/staff/orders', label: 'Orders', icon: '🧾' },
   { to: '/staff/menu', label: 'Menu', icon: '📋' },
   { to: '/staff/photos', label: 'Photos', icon: '📷' },
   { to: '/staff/payments', label: 'Payments', icon: '💸' },
   { to: '/staff/codes', label: 'Access codes', icon: '🔑' },
   { to: '/staff/tables', label: 'Tables', icon: '🪑' },
+  { to: '/staff/zones', label: 'Roadside zones', icon: '🚗' },
   { to: '/staff/verify', label: 'Verify order', icon: '📷' },
   { to: '/staff/profile', label: 'Restaurant', icon: '🏪' },
 ]

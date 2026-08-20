@@ -3836,3 +3836,169 @@ button.nav-link {
   --shadow-lg: 0 28px 60px rgba(0, 0, 0, 0.68);
   --shadow-accent: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
+
+/* ── Roadside ordering ────────────────────────────────────────────────────────
+   The customer half: where are you parked, what are you driving, order. Kept
+   large and few-tapped because it is used one-handed, in a car, at night. */
+
+.road-entry { max-width: 640px; }
+.road-kicker {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+.road-title { font-family: var(--serif); font-size: clamp(28px, 7vw, 38px); margin: 0 0 18px; }
+.road-sub { font-size: 17px; margin: 26px 0 4px; }
+.road-more { margin: 16px 0 22px; }
+.road-more summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.road-foot { text-align: center; margin-top: 12px; }
+
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.zone-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 16px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.zone-card:hover { border-color: var(--line-strong); }
+.zone-card.on { border-color: var(--ink); background: var(--bg-tint); }
+.zone-mark {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+}
+.zone-card.on .zone-mark { color: var(--ink); }
+.zone-name { font-weight: 600; font-size: 15px; }
+.zone-note { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.chip-row .chip { cursor: pointer; }
+.chip-row .chip.on { background: var(--ink); color: var(--bg); }
+
+/* The prompt on a restaurant page for someone who never got out of the car. */
+.road-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+.road-cta strong { display: block; font-size: 15px; }
+.road-cta .tiny { display: block; }
+.road-cta-mark { font-size: 24px; }
+.road-cta-go { margin-left: auto; color: var(--muted); font-size: 18px; }
+
+/* ── The floor board ──────────────────────────────────────────────────────────
+   One screen answering who is here, where, what state, and who owes. */
+
+.ops-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.ops-stat {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.ops-stat-value { display: block; font-family: var(--serif); font-size: 26px; line-height: 1.1; }
+.ops-stat-label { display: block; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+.ops-stat.warn { border-color: rgba(223, 180, 105, 0.5); }
+.ops-stat.warn .ops-stat-value { color: var(--warn); }
+.ops-stat.good { border-color: rgba(110, 203, 155, 0.45); }
+.ops-stat.good .ops-stat-value { color: var(--good); }
+
+.ops-zone { margin-bottom: 26px; }
+.ops-zone-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.ops-zone-head h2 { font-size: 17px; margin: 0; }
+
+.ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+.ops-card {
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 13px 14px;
+}
+/* Nobody has been to this one yet. It is the thing the board exists to stop. */
+.ops-card.unasked { border-color: var(--warn); box-shadow: 0 0 0 1px rgba(223, 180, 105, 0.22); }
+
+.ops-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ops-label { font-weight: 600; font-size: 15px; }
+.ops-age { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ops-vehicle { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+.ops-plate {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+}
+.ops-unasked { margin: 10px 0 4px; font-size: 13px; color: var(--warn); font-weight: 600; }
+
+.ops-order { margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--line); }
+.ops-order-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ops-items { list-style: none; margin: 7px 0; padding: 0; font-size: 13px; color: var(--ink-2); }
+.ops-items li { padding: 1px 0; }
+.ops-later {
+  margin-left: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--info);
+}
+.ops-order-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ops-card-foot { display: flex; align-items: center; gap: 8px; margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--line); }
+.ops-due { font-size: 13px; color: var(--warn); font-weight: 600; }
+.ops-paid { font-size: 13px; color: var(--good); }
+
+/* ── The runner's screen ──────────────────────────────────────────────────── */
+.run-zone { margin-bottom: 22px; }
+.run-zone-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.run-zone-head h2 { font-size: 18px; margin: 0; }
+.run-count { font-size: 12px; color: var(--muted); }
+
+.run-drop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  margin-bottom: 9px;
+}
+.run-drop.taken { border-color: var(--info); }
+.run-drop-main { min-width: 0; flex: 1; }
+.run-drop-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.run-label { font-weight: 600; font-size: 16px; }
+.run-vehicle { margin: 3px 0 0; font-size: 13px; color: var(--ink-2); }
+.run-items { margin: 5px 0 4px; font-size: 13px; color: var(--muted); }
+.run-drop-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+
+@media (max-width: 560px) {
+  .run-drop { flex-direction: column; align-items: stretch; }
+  .run-drop-actions { flex-direction: row; justify-content: flex-end; }
+}

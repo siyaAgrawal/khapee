@@ -84,6 +84,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   let tableId: number | null = null
   let tableLabel: string | null = null
   let accessCodeId: number | null = null
+  /** The open session this order belongs to, once one has been proven valid. */
+  let liveSession: any = null
 
   if (input.type === 'dine_in') {
     const code = (input.accessCode ?? '').trim().toUpperCase()
@@ -103,6 +105,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       tableLabel = session.table_label
     }
     if (session?.access_code_id) accessCodeId = session.access_code_id
+    if (hasSession) liveSession = session
 
     if (!code && !tableToken && !hasSession && !paidUpFront) {
       return {
@@ -141,7 +144,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       tableLabel = table.label
     }
 
-    if (takeaway) {
+    if (takeaway || liveSession?.service_mode === 'car') {
+      // A car has no table number, and asking for one is exactly the friction
+      // this mode exists to remove — the zone and the car describe the place.
       tableId = null
       tableLabel = null
     } else if (!tableId) {
@@ -173,8 +178,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       .prepare(
         `INSERT INTO orders
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
-           status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'NEW', 'UNPAID', ?, ?, ?, ?, ?, ?)`,
+           status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
+           service_mode, zone_id, dining_session_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'NEW', 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -190,6 +196,18 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         verifyToken,
         accessCodeId,
         takeaway ? 1 : 0,
+        // Where the customer is decides how the order ends: a car has to be
+        // walked out to, a table does not. Recorded on the order so the board
+        // never has to work it out from a join.
+        liveSession?.service_mode === 'car'
+          ? 'car'
+          : takeaway
+            ? 'takeaway'
+            : input.type === 'dine_in'
+              ? 'dine_in'
+              : 'pickup',
+        liveSession?.zone_id ?? null,
+        liveSession?.id ?? null,
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -308,7 +326,17 @@ export function shapeOrder(row: any) {
     prepMinutes: row.prep_minutes,
     customerName: row.customer_name,
     type: row.order_type as OrderType,
-    serviceType: (row.order_type === 'pickup' ? 'pickup' : row.takeaway ? 'takeaway' : 'dine_in') as ServiceType,
+    serviceType: (row.service_mode === 'car'
+      ? 'car'
+      : row.order_type === 'pickup'
+        ? 'pickup'
+        : row.takeaway
+          ? 'takeaway'
+          : 'dine_in') as ServiceType,
+    serviceMode: (row.service_mode ?? 'dine_in') as ServiceType,
+    zoneName: row.zone_id
+      ? ((db.prepare('SELECT name FROM service_zones WHERE id = ?').get(row.zone_id) as any)?.name ?? null)
+      : null,
     takeaway: !!row.takeaway,
     isGroup: !!row.group_session_id,
     groupSessionId: row.group_session_id ?? null,

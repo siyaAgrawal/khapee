@@ -32,6 +32,7 @@ function shapeRestaurant(row: any) {
     acceptsTakeaway: !!row.accepts_takeaway,
     acceptsGroups: !!row.accepts_groups,
     acceptsUpi: !!String(row.upi_vpa ?? '').trim(),
+    acceptsCar: !!row.accepts_car,
     theme: row.theme ?? '',
   }
 }
@@ -173,6 +174,34 @@ function shapeMenuItem(i: any) {
     isSpecial: !!i.is_special,
   }
 }
+
+/** The roadside zones a restaurant has set up, for the "where are you?" step. */
+publicRouter.get('/restaurants/:id/zones', (req, res) => {
+  const zones = db
+    .prepare(
+      'SELECT id, name, note FROM service_zones WHERE restaurant_id = ? AND is_active = 1 ORDER BY sort_order, id',
+    )
+    .all(Number(req.params.id))
+  res.json({ zones })
+})
+
+/** A zone's own QR sign: "parked in Zone A? scan to order". */
+publicRouter.get('/zones/:token', (req, res) => {
+  const zone = db
+    .prepare(
+      `SELECT z.id, z.name, z.note, z.restaurant_id, r.name AS restaurant_name, r.is_open
+         FROM service_zones z JOIN restaurants r ON r.id = z.restaurant_id
+        WHERE z.token = ? AND z.is_active = 1`,
+    )
+    .get(String(req.params.token)) as any
+  if (!zone) return res.status(404).json({ error: "That sign isn't recognised." })
+  res.json({
+    zone: { id: zone.id, name: zone.name, note: zone.note },
+    restaurantId: zone.restaurant_id,
+    restaurantName: zone.restaurant_name,
+    isOpen: !!zone.is_open,
+  })
+})
 
 /**
  * Resolves whatever a customer scanned or typed.

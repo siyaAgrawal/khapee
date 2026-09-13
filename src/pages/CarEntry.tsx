@@ -72,6 +72,13 @@ export default function CarEntry() {
     }
   }
 
+  /**
+   * A restaurant with several stretches of road needs to know which one you are
+   * on; one that serves the few cars outside its own door does not, and asking
+   * would be a question with no useful answer. The zones decide the question.
+   */
+  const zoned = (zones?.length ?? 0) > 0
+
   const SUGGESTIONS = ['White hatchback', 'Black SUV', 'Silver sedan', 'Red hatchback', 'White sedan']
 
   return (
@@ -79,15 +86,18 @@ export default function CarEntry() {
       <Header />
       <main className="page road-entry">
         <p className="road-kicker">{restaurant?.name ?? 'Ordering'}</p>
-        <h1 className="road-title">Where are you parked?</h1>
+        <h1 className="road-title">{zoned ? 'Where are you parked?' : 'Order from your car'}</h1>
+        {!zoned && zones !== null && (
+          <p className="muted" style={{ marginTop: -6, marginBottom: 18 }}>
+            Tell us what you&rsquo;re in and someone will bring it out to you.
+          </p>
+        )}
 
         {error && <div className="form-error">{error}</div>}
 
         {zones === null ? (
           <LoadingBlock />
-        ) : zones.length === 0 ? (
-          <p className="muted">This restaurant hasn&rsquo;t set up roadside zones yet.</p>
-        ) : (
+        ) : !zoned ? null : (
           <div className="zone-grid">
             {zones.map((z) => (
               <button
@@ -106,7 +116,9 @@ export default function CarEntry() {
           </div>
         )}
 
-        <h2 className="road-sub">What are you driving?</h2>
+        <h2 className="road-sub" style={zoned ? undefined : { marginTop: 0 }}>
+          What are you driving?
+        </h2>
         <p className="tiny muted">So whoever brings the food can spot you.</p>
         <input
           className="input"

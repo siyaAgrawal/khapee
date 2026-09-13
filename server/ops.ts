@@ -212,7 +212,7 @@ export function runQueue(restaurantId: number) {
 
   const groups = new Map<string, any>()
   for (const o of rows) {
-    const key = o.zone_name ?? (o.session_mode === 'car' ? 'Unzoned' : 'Inside')
+    const key = o.zone_name ?? (o.session_mode === 'car' ? 'Outside' : 'Inside')
     const g = groups.get(key) ?? { zone: key, zoneId: o.zone_id ?? null, drops: [] }
     g.drops.push({
       id: o.id,

@@ -159,7 +159,8 @@ export default function StaffOps() {
   const byUrgency = (a: OpsSession, b: OpsSession) =>
     Number(b.waitingToOrder) - Number(a.waitingToOrder) || b.waitingMinutes - a.waitingMinutes
 
-  const zoneName = (s: OpsSession) => s.zoneName ?? 'No zone'
+  // A restaurant with no zones has one stretch of kerb, not a missing zone.
+  const zoneName = (s: OpsSession) => s.zoneName ?? (board.zones.length ? 'No zone' : 'Outside')
   const zones = [...new Set(cars.map(zoneName))]
 
   return (

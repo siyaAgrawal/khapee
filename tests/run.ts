@@ -1805,6 +1805,48 @@ async function runTests() {
     board4.body.sessions.find((x: any) => x.token === guest.body.session.token)?.openedByStaff === true,
   )
 
+  group('ROADSIDE WITHOUT ZONES — a place with one stretch of kerb')
+  // Some places have several stretches of road and need to know which one you
+  // are on. A cafe serving the few cars outside its own door does not, and
+  // should never be made to invent zones to use the feature.
+  const zoneList = await call('/staff/zones', { token: roadToken })
+  for (const z of zoneList.body.zones) {
+    await call(`/staff/zones/${z.id}`, { token: roadToken, method: 'DELETE' })
+  }
+  ok(
+    'a restaurant can drop its zones and still take cars',
+    (await call(`/restaurants/${mornington.id}/zones`)).body.zones.length === 0,
+  )
+
+  const bare = await call('/sessions/car', {
+    body: { restaurantId: mornington.id, vehicle: 'White Baleno', vehicleNumber: 'MP09 CD 4455' },
+  })
+  ok('a car session opens with no zone at all', bare.status === 201, bare.body)
+  ok('it still gets the number staff will call it', /^Car \d+$/.test(bare.body.session.label))
+  ok('and simply has no zone rather than a broken one', bare.body.session.zoneName === null)
+
+  const bareOrder = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'In the car',
+      sessionToken: bare.body.session.token,
+    },
+  })
+  ok('the car orders without a zone, a table or a code', bareOrder.status === 201, bareOrder.body)
+  ok('and follows the roadside flow all the same', bareOrder.body.order.serviceType === 'car')
+
+  for (const st of ['ACCEPTED', 'PREPARING', 'READY']) {
+    await call(`/staff/orders/${bareOrder.body.order.id}/status`, { token: roadToken, body: { status: st } })
+  }
+  const bareRuns = await call('/staff/runs', { token: roadToken })
+  ok(
+    'the runner sees it under Outside rather than a missing zone',
+    bareRuns.body.groups.some((g: any) => g.zone === 'Outside'),
+    bareRuns.body.groups.map((g: any) => g.zone),
+  )
+
   group('GROUPED ITEMS — a bar list inside one section')
   const grouped = await call(`/restaurants/${mornington.id}`)
   ok(

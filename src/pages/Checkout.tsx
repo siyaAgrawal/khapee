@@ -8,7 +8,7 @@ import { useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { saveGroup } from '../lib/group'
-import { clearTableContext, rememberReceipt } from '../lib/table-context'
+import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../components/ui'
 
 type Where = 'here' | 'takeaway' | 'later'
@@ -30,7 +30,21 @@ export default function Checkout() {
     restaurantId ? readDining(restaurantId) : null,
   )
 
-  const [where, setWhere] = useState<Where>(() => (readDining(restaurantId ?? 0) ? 'here' : 'here'))
+  /**
+   * Opens on something the customer can actually finish.
+   *
+   * Eating in and takeaway both need proof you are at the restaurant — a table
+   * QR, a staff code, or paying up front — because the kitchen starts on them
+   * straight away. Collecting later needs none of that. Defaulting everyone to
+   * "at a table" sent anyone ordering from home into the one path that cannot
+   * complete, and answered them with an instruction to scan a QR they are
+   * nowhere near.
+   */
+  const [where, setWhere] = useState<Where>(() => {
+    const session = restaurantId ? readDining(restaurantId) : null
+    const atTheRestaurant = !!session || !!(restaurantId && readTableContext(restaurantId))
+    return atTheRestaurant ? 'here' : 'later'
+  })
   const [tables, setTables] = useState<Table[] | null>(null)
   const [tableId, setTableId] = useState<number | null>(dining?.tableId ?? null)
   const [tableLabel, setTableLabel] = useState<string | null>(dining?.tableLabel ?? null)
@@ -38,6 +52,10 @@ export default function Checkout() {
   const [note, setNote] = useState('')
   const [payNow, setPayNow] = useState(false)
   const [options, setOptions] = useState<any>(null)
+
+  /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
+  const needsPresence = where === 'here' || where === 'takeaway'
+  const hasPresence = !!dining || !!(restaurantId && readTableContext(restaurantId))
 
   const [verifyOpen, setVerifyOpen] = useState(false)
   // Set when the customer tapped the main button and only the code was missing:
@@ -187,6 +205,13 @@ export default function Checkout() {
             </button>
           )}
         </div>
+
+        {needsPresence && !hasPresence && (
+          <p className="tiny muted" style={{ marginTop: 8 }}>
+            {where === 'here' ? 'Eating in' : 'Takeaway'} needs the table QR or a staff code — you order it at the
+            restaurant. To order from here, choose <strong>Collect later</strong>.
+          </p>
+        )}
 
         <section className="card card-pad">
           {/* Table — only when eating in */}

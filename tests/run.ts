@@ -1805,6 +1805,41 @@ async function runTests() {
     board4.body.sessions.find((x: any) => x.token === guest.body.session.token)?.openedByStaff === true,
   )
 
+  group('ORDERING FROM AWAY — the path that needs no code')
+  ok(
+    'eating in still needs proof you are at the restaurant',
+    (await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'From home',
+      },
+    })).status === 400,
+  )
+  ok(
+    'and so does takeaway, which is also ordered at the counter',
+    (await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        takeaway: true,
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'From home',
+      },
+    })).status === 400,
+  )
+  const fromAway = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'pickup',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'From home',
+    },
+  })
+  ok('but collecting later needs nothing at all', fromAway.status === 201, fromAway.body)
+  ok('and it is a real order the restaurant can see', fromAway.body.order.status === 'NEW')
+
   group('ROADSIDE WITHOUT ZONES — a place with one stretch of kerb')
   // Some places have several stretches of road and need to know which one you
   // are on. A cafe serving the few cars outside its own door does not, and

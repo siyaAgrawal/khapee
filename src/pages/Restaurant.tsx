@@ -12,6 +12,7 @@ import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
 import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
+import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
 import type { RestaurantCard } from './Home'
 
 type MenuItem = {
@@ -58,11 +59,12 @@ export default function Restaurant() {
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
-  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | ''
+  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | ''
   const noir = theme === 'noir'
   const hut = theme === 'hut'
-  /** Both themed restaurants use the same menu and page shell, dressed differently. */
-  const themed = noir || hut
+  const revery = theme === 'revery'
+  /** Themed restaurants share the menu and page shell, dressed differently. */
+  const themed = noir || hut || revery
   const noirPage = themed
 
   /**
@@ -75,7 +77,7 @@ export default function Restaurant() {
     if (!themed) return
     const root = document.documentElement
     const previous = root.dataset.theme
-    root.dataset.theme = theme === 'hut' ? 'hut' : 'noir'
+    root.dataset.theme = theme
     return () => {
       if (previous) root.dataset.theme = previous
       else delete root.dataset.theme
@@ -95,7 +97,7 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''}`}>
+      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
@@ -116,8 +118,10 @@ export default function Restaurant() {
                 </div>
 
                 <div className="noir-hero-lockup">
-                  <span className="noir-hero-mark">{hut ? <HutMark size={48} /> : <NoirMark size={46} />}</span>
-                  {hut ? <HutWordmark /> : <NoirWordmark />}
+                  <span className="noir-hero-mark">
+                    {revery ? <ReveryMark size={50} /> : hut ? <HutMark size={48} /> : <NoirMark size={46} />}
+                  </span>
+                  {revery ? <ReveryWordmark /> : hut ? <HutWordmark /> : <NoirWordmark />}
                   <p className="noir-hero-line">{data.restaurant.description}</p>
                   <div className="noir-hero-meta">
                     <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>

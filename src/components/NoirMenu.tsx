@@ -82,7 +82,7 @@ export default function NoirMenu({ theme, menu, isOpen, quantityOf, setQuantity,
         <button
           data-active={showingAll}
           className={`noir-tab ${showingAll ? 'on' : ''}`}
-          style={tabVars(theme === 'hut' ? '#e8a33d' : '#c9b291')}
+          style={tabVars(theme === 'hut' ? '#e8a33d' : theme === 'revery' ? '#8fc46b' : '#c9b291')}
           onClick={() => setActive(-1)}
           aria-pressed={showingAll}
         >

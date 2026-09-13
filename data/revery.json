@@ -1,0 +1,518 @@
+[
+  {
+    "name": "Revery",
+    "description": "A garden café that comes alive under string lights.",
+    "address": "Indore",
+    "categories": [
+      "Cafe",
+      "Pizza",
+      "Coffee",
+      "Continental"
+    ],
+    "emoji": "🌿",
+    "hue": 150,
+    "prepMinutes": 20,
+    "menu": [
+      {
+        "category": "Wraps",
+        "items": [
+          {
+            "name": "Veggie Wrap",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Paneer Shawarma Wrap",
+            "price": 270,
+            "veg": true
+          },
+          {
+            "name": "Chessy Fries Wrap",
+            "price": 270,
+            "veg": true
+          },
+          {
+            "name": "All In One Wrap",
+            "price": 270,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Rice Bowls",
+        "items": [
+          {
+            "name": "Masala Lemon Rice",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Chilli Cheese Rice Bowl",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Paneer Shawarma Rice",
+            "price": 270,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Burgers",
+        "items": [
+          {
+            "name": "Aloo Tikki",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Mexican",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Double Cheese",
+            "price": 170,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Pizza",
+        "items": [
+          {
+            "name": "Cheese Margherita",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Veggie Pizza",
+            "price": 230,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Paneer",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Cheese Corn Pizza",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Paneer Tikka Cheeseburst",
+            "price": 360,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Garlic Bread",
+        "items": [
+          {
+            "name": "Classic Garlic Bread",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Stuffed Garlic Bread",
+            "price": 220,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Open Toast",
+        "items": [
+          {
+            "name": "Chili Cheese Toast",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Corn Toast",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Paneer Toast",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Cheese Garlic Toast",
+            "price": 160,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Sandwiches",
+        "items": [
+          {
+            "name": "Chessy Corn",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Spicy Paneer",
+            "price": 170,
+            "veg": true
+          },
+          {
+            "name": "Veggie Loaded",
+            "price": 170,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Special Buns",
+        "items": [
+          {
+            "name": "Korean Cheese Bun",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Paneer Shawarma Bun",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Mushroom Bun",
+            "price": 280,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Quick Bites",
+        "items": [
+          {
+            "name": "Cheesling Chips",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "BYOB",
+            "price": 250,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Nachos",
+        "items": [
+          {
+            "name": "Classic Baked",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Veggie Nachos",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Chessy Nachos",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "All In One",
+            "price": 250,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Pasta",
+        "items": [
+          {
+            "name": "Red Sauce",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Penne Alfredo",
+            "price": 250,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Hot Coffee",
+        "items": [
+          {
+            "name": "Classic Coffee",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Espresso Shot",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Vanilla Lattee",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Brownie Coffee",
+            "price": 160,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Cold Coffee",
+        "items": [
+          {
+            "name": "Classic Cold Coffee",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Iced Latte",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Vanilla Latte",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Salted Caramel Latte",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Brownie Coffee",
+            "price": 200,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Shakes",
+        "items": [
+          {
+            "name": "Vanilla",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Classic Chocolate",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Oreo",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Strawberry",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "KitKat",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Brownie Shake",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Biscoff Shake",
+            "price": 300,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Iced Tea",
+        "items": [
+          {
+            "name": "Classic Lemon Iced Tea",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Blueberry Iced Tea",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Strawberry Iced Tea",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Green Apple Iced Tea",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Red Bull Iced Tea",
+            "price": 220,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Mocktails",
+        "items": [
+          {
+            "name": "Mint Mojito",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Green Apple",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Watermelon",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Blueberry",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Strawberry",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Blue Curacao",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Peach",
+            "price": 180,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Red Bull",
+        "items": [
+          {
+            "name": "Redbull",
+            "price": 170,
+            "veg": true
+          },
+          {
+            "name": "The Razzle",
+            "price": 260,
+            "veg": true
+          },
+          {
+            "name": "Summer Crush",
+            "price": 270,
+            "veg": true
+          },
+          {
+            "name": "Peach Sunset",
+            "price": 270,
+            "veg": true
+          },
+          {
+            "name": "Red Storm",
+            "price": 270,
+            "veg": true
+          },
+          {
+            "name": "Tropical Rush",
+            "price": 300,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Fries",
+        "items": [
+          {
+            "name": "Salted Fries",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Fries",
+            "price": 170,
+            "veg": true
+          },
+          {
+            "name": "Chessy Fries",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Garlic Butter",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Peri-Peri Chessy Fries",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Bhatia's Bowl (Fully Loaded)",
+            "price": 360,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Maggi",
+        "items": [
+          {
+            "name": "Double Masala",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Chessy Maggie",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Veg Peri-Peri",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Butter Maggie",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Peri-Peri Chesse",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Cheese Corn",
+            "price": 170,
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

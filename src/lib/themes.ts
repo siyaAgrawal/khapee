@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | ''
 
 /** How one section of a themed menu presents itself. */
 export type SectionVoice = {
@@ -51,6 +51,32 @@ const HUT_VOICES: Record<string, SectionVoice> = {
   'Ice Cream Soda': { accent: '#c47fb0', kicker: 'Fizz and a scoop', glyph: '🥤' },
 }
 
+/**
+ * Revery's sections. A garden café under string lights, so the voice is easy
+ * and unhurried — the opposite of a counter shouting its prices.
+ */
+const REVERY_VOICES: Record<string, SectionVoice> = {
+  Wraps: { accent: '#8fc46b', kicker: 'Rolled and handed over', glyph: '🌯' },
+  'Rice Bowls': { accent: '#d9a441', kicker: 'A bowl, warm', glyph: '🍚' },
+  Burgers: { accent: '#e08a52', kicker: 'Both hands', glyph: '🍔' },
+  Pizza: { accent: '#e0705c', kicker: 'Straight off the stone', glyph: '🍕' },
+  'Garlic Bread': { accent: '#d7b25c', kicker: 'Butter, garlic, gone', glyph: '🥖' },
+  'Open Toast': { accent: '#cf9a55', kicker: 'Open-faced, under the grill', glyph: '🍞' },
+  Sandwiches: { accent: '#93bf6a', kicker: 'Pressed to order', glyph: '🥪' },
+  'Special Buns': { accent: '#c98f5e', kicker: 'The ones worth the wait', glyph: '🥐' },
+  'Quick Bites': { accent: '#dcae4e', kicker: 'While you decide', glyph: '🍿' },
+  Nachos: { accent: '#e0a24c', kicker: 'For the middle of the table', glyph: '🧀' },
+  Pasta: { accent: '#e07d62', kicker: 'Red or white', glyph: '🍝' },
+  'Hot Coffee': { accent: '#b5814f', kicker: 'Something to sit with', glyph: '☕' },
+  'Cold Coffee': { accent: '#a6835f', kicker: 'Over plenty of ice', glyph: '🧊' },
+  Shakes: { accent: '#cf8bb4', kicker: 'Thick, and a spoon', glyph: '🥤' },
+  'Iced Tea': { accent: '#7fc0a8', kicker: 'Long and cold', glyph: '🫖' },
+  Mocktails: { accent: '#6fc08e', kicker: 'Nothing in them but the evening', glyph: '🍹' },
+  'Red Bull': { accent: '#5aa6d6', kicker: 'For the late ones', glyph: '⚡' },
+  Fries: { accent: '#e2b24a', kicker: 'Salted, always', glyph: '🍟' },
+  Maggi: { accent: '#e8b545', kicker: 'Two minutes, allegedly', glyph: '🍜' },
+}
+
 const FALLBACK: SectionVoice = { accent: '#c9a227', kicker: 'From the kitchen', glyph: '·' }
 
 /**
@@ -72,6 +98,7 @@ export function accentVars(hex: string): Record<string, string> {
 }
 
 export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
+  if (theme === 'revery') return REVERY_VOICES[section] ?? { ...FALLBACK, accent: '#8fc46b' }
   if (theme === 'hut') return HUT_VOICES[section] ?? { ...FALLBACK, accent: '#e8a33d' }
   if (theme === 'noir') return NOIR_VOICES[section] ?? FALLBACK
   return FALLBACK

@@ -42,8 +42,19 @@ export function shapeDiningSession(row: any) {
     vehicle: row.vehicle ?? '',
     vehicleNumber: row.vehicle_number ?? '',
     seqNo: row.seq_no ?? null,
+    areaId: row.area_id ?? null,
+    areaName: row.area_id
+      ? ((db.prepare('SELECT name FROM delivery_areas WHERE id = ?').get(row.area_id) as any)?.name ?? null)
+      : null,
+    address: row.address ?? '',
+    phone: row.phone ?? '',
     code: row.code ?? '',
-    label: (row.service_mode ?? 'dine_in') === 'car' ? `Car ${row.seq_no ?? ''}`.trim() : row.table_label ?? null,
+    label:
+      (row.service_mode ?? 'dine_in') === 'car'
+        ? `Car ${row.seq_no ?? ''}`.trim()
+        : (row.service_mode ?? '') === 'delivery'
+          ? 'Delivery'
+          : (row.table_label ?? null),
     openedByStaff: !!row.opened_by,
     partySize: row.party_size ?? 1,
     active: !!live?.active,
@@ -274,4 +285,67 @@ export function moveSession(token: string, zoneId: number | null) {
   }
   db.prepare("UPDATE dining_sessions SET zone_id = ?, moved_at = datetime('now') WHERE id = ?").run(zoneId, row.id)
   return { ok: true as const, session: sessionByToken(token) }
+}
+
+
+/**
+ * Opens a session for someone ordering to their own address.
+ *
+ * The area is chosen from the short list the restaurant actually delivers to,
+ * rather than typed or worked out from coordinates: a small kitchen knows the
+ * names of the two or three localities it will walk an order to, and an address
+ * we cannot check is worse than a locality we can.
+ */
+export function startDeliverySession(opts: {
+  restaurantId: number
+  areaId: number
+  address: string
+  phone: string
+  userId: number | null
+}): { ok: true; session: any } | { ok: false; status: number; error: string } {
+  const restaurant = db
+    .prepare('SELECT id, name, is_open, accepts_delivery FROM restaurants WHERE id = ?')
+    .get(opts.restaurantId) as any
+  if (!restaurant) return { ok: false, status: 404, error: 'That restaurant no longer exists.' }
+  if (!restaurant.accepts_delivery) {
+    return { ok: false, status: 409, error: `${named(restaurant.name)} isn't delivering.` }
+  }
+  if (!restaurant.is_open) {
+    return { ok: false, status: 409, error: `${named(restaurant.name)} is closed right now.` }
+  }
+
+  const area = db
+    .prepare('SELECT * FROM delivery_areas WHERE id = ? AND restaurant_id = ? AND is_active = 1')
+    .get(opts.areaId, opts.restaurantId) as any
+  if (!area) {
+    const open = db
+      .prepare('SELECT name FROM delivery_areas WHERE restaurant_id = ? AND is_active = 1 ORDER BY sort_order')
+      .all(opts.restaurantId) as any[]
+    return {
+      ok: false,
+      status: 400,
+      error: open.length
+        ? `${named(restaurant.name)} only delivers to ${open.map((a) => a.name).join(', ')}.`
+        : `${named(restaurant.name)} isn't delivering right now.`,
+    }
+  }
+
+  const address = String(opts.address ?? '').trim().slice(0, 200)
+  if (address.length < 8) {
+    return { ok: false, status: 400, error: 'Add the flat or house and the building, so we can find you.' }
+  }
+  const phone = String(opts.phone ?? '').replace(/[^0-9+ ]/g, '').trim().slice(0, 20)
+  if (phone.replace(/\D/g, '').length < 10) {
+    return { ok: false, status: 400, error: 'Add a phone number in case the rider cannot find the place.' }
+  }
+
+  const token = randomToken(14)
+  db.prepare(
+    `INSERT INTO dining_sessions
+       (token, restaurant_id, table_id, table_label, access_code_id, source, user_id, expires_at,
+        service_mode, area_id, address, phone)
+     VALUES (?, ?, NULL, NULL, NULL, 'code', ?, datetime('now', '+${SESSION_HOURS} hours'),
+        'delivery', ?, ?, ?)`,
+  ).run(token, opts.restaurantId, opts.userId, area.id, address, phone)
+  return { ok: true, session: db.prepare('SELECT * FROM dining_sessions WHERE token = ?').get(token) as any }
 }

@@ -1607,6 +1607,112 @@ async function runTests() {
   ok('nor the total the customer paid', invAfter.body.invoice.totalCents === invBefore.body.invoice.totalCents)
   ok('and the seller on it is who they were that day', invAfter.body.invoice.seller.gstin === '23TESTGST1234Z')
 
+  group('DELIVERY — the kitchen gets to say no')
+  const area = await call('/staff/delivery-areas', {
+    token: roadToken,
+    body: { name: 'Saket', note: 'Saket Nagar', feeRupees: 30, minOrderRupees: 250 },
+  })
+  ok('a restaurant names the areas it will deliver to', area.status === 201, area.body)
+  const areaId = area.body.area.id
+  ok(
+    'naming one turns delivery on',
+    (await call(`/restaurants/${mornington.id}`)).body.restaurant.acceptsDelivery === true,
+  )
+  ok(
+    'and customers can see where it delivers, with the fee',
+    (await call(`/restaurants/${mornington.id}/delivery-areas`)).body.areas[0].feeCents === 3000,
+  )
+
+  ok(
+    'an address outside those areas is refused before anything is ordered',
+    (await call('/sessions/delivery', {
+      body: { restaurantId: mornington.id, areaId: 999999, address: '12 Somewhere Else Road', phone: '9876543210' },
+    })).status === 400,
+  )
+  ok(
+    'a locality on its own is not an address',
+    (await call('/sessions/delivery', {
+      body: { restaurantId: mornington.id, areaId, address: 'Saket', phone: '9876543210' },
+    })).status === 400,
+  )
+  ok(
+    'and a delivery without a phone number is refused',
+    (await call('/sessions/delivery', {
+      body: { restaurantId: mornington.id, areaId, address: '301 Silver Heights, Saket Nagar', phone: '12' },
+    })).status === 400,
+  )
+
+  const del = await call('/sessions/delivery', {
+    body: { restaurantId: mornington.id, areaId, address: '301 Silver Heights, Saket Nagar', phone: '9876543210' },
+  })
+  ok('a proper address in the area opens a session', del.status === 201, del.body)
+  ok('which knows the area it is in', del.body.session.areaName === 'Saket')
+
+  const delOrder = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 2 }],
+      customerName: 'Home',
+      sessionToken: del.body.session.token,
+    },
+  })
+  ok('the order is placed without a table or a code', delOrder.status === 201, delOrder.body)
+  ok(
+    'and waits to be accepted rather than going straight to the kitchen',
+    delOrder.body.order.status === 'REQUESTED',
+    delOrder.body.order,
+  )
+  ok('it carries the address with it', delOrder.body.order.deliveryAddress.includes('Silver Heights'))
+
+  const delBoard = await call('/staff/ops', { token: roadToken })
+  ok('it shows on the board as waiting on the kitchen', delBoard.body.summary.deliveryRequests >= 1, delBoard.body.summary)
+  ok(
+    'with the address and phone the rider will need',
+    delBoard.body.deliveries.some((d: any) => d.address.includes('Silver Heights') && d.phone.length > 0),
+  )
+
+  ok(
+    'declining without a reason is refused',
+    (await call(`/staff/orders/${delOrder.body.order.id}/decline`, { token: roadToken, body: { reason: '' } })).status === 400,
+  )
+
+  const accepted = await call(`/staff/orders/${delOrder.body.order.id}/accept`, { token: roadToken, method: 'POST' })
+  ok('accepting starts the kitchen', accepted.body.order.status === 'ACCEPTED', accepted.body)
+  for (const st of ['PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']) {
+    const r = await call(`/staff/orders/${delOrder.body.order.id}/status`, { token: roadToken, body: { status: st } })
+    ok(`a delivery walks through ${st.toLowerCase().replace(/_/g, ' ')}`, r.status === 200, r.body)
+  }
+
+  // A second one, this time refused.
+  const del2 = await call('/sessions/delivery', {
+    body: { restaurantId: mornington.id, areaId, address: '88 Saket Nagar, second lane', phone: '9000000000' },
+  })
+  const refusedOrder = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Busy night',
+      sessionToken: del2.body.session.token,
+    },
+  })
+  const declined = await call(`/staff/orders/${refusedOrder.body.order.id}/decline`, {
+    token: roadToken,
+    body: { reason: 'Kitchen is full tonight' },
+  })
+  ok('a full kitchen can refuse an order', declined.body.order.status === 'DECLINED', declined.body)
+  ok('and the reason comes back with it', declined.body.order.declinedReason === 'Kitchen is full tonight')
+  ok(
+    'the customer reads that reason on their own order',
+    (await call(`/orders/${refusedOrder.body.order.orderNumber}?token=${refusedOrder.body.order.verifyToken}`)).body.order
+      .declinedReason === 'Kitchen is full tonight',
+  )
+  ok(
+    'and a refused order cannot be quietly accepted afterwards',
+    (await call(`/staff/orders/${refusedOrder.body.order.id}/accept`, { token: roadToken, method: 'POST' })).status === 409,
+  )
+
   group('ROADSIDE — a car outside is a session like a table is')
   const zoneRes = await call('/staff/zones', {
     token: roadToken,

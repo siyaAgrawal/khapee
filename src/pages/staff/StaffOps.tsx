@@ -32,7 +32,20 @@ type OpsSession = {
   dueCents: number
 }
 type Zone = { id: number; name: string; note: string; isActive: boolean }
+type Delivery = {
+  id: number
+  orderNumber: string
+  status: OrderStatus
+  totalCents: number
+  ageMinutes: number
+  items: { name: string; quantity: number }[]
+  area: string
+  address: string
+  phone: string
+  awaitingAnswer: boolean
+}
 type Board = {
+  deliveries: Delivery[]
   zones: Zone[]
   sessions: OpsSession[]
   unattached: OpsOrder[]
@@ -43,6 +56,7 @@ type Board = {
     preparing: number
     ready: number
     paymentPending: number
+    deliveryRequests: number
     dueCents: number
   }
 }
@@ -100,6 +114,31 @@ export default function StaffOps() {
     }
   }
 
+  const answer = async (d: Delivery, yes: boolean) => {
+    if (!yes) {
+      const reason = window.prompt(
+        `Tell ${d.orderNumber} why you can't take it — they'll read this.`,
+        'Kitchen is full right now',
+      )
+      if (!reason?.trim()) return
+      try {
+        await api(`/staff/orders/${d.id}/decline`, { body: { reason: reason.trim() } })
+        toast(`${d.orderNumber} declined`, 'info')
+        load()
+      } catch (e) {
+        toast((e as ApiError).message, 'bad')
+      }
+      return
+    }
+    try {
+      await api(`/staff/orders/${d.id}/accept`, { method: 'POST' })
+      toast(`${d.orderNumber} accepted`, 'good')
+      load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    }
+  }
+
   const close = async (s: OpsSession) => {
     try {
       await api(`/staff/sessions/${s.id}`, { method: 'DELETE' })
@@ -112,7 +151,9 @@ export default function StaffOps() {
   if (!board) return <LoadingBlock label="Loading the floor…" />
 
   const cars = board.sessions.filter((s) => s.serviceMode === 'car')
-  const inside = board.sessions.filter((s) => s.serviceMode !== 'car')
+  // Deliveries have their own panel above; without this they also appear here
+  // as nameless tables, and the same order is on the board twice.
+  const inside = board.sessions.filter((s) => s.serviceMode !== 'car' && s.serviceMode !== 'delivery')
 
   // Nobody has been to these yet — the whole point of the board.
   const byUrgency = (a: OpsSession, b: OpsSession) =>
@@ -139,6 +180,74 @@ export default function StaffOps() {
         <Stat label="Ready" value={board.summary.ready} tone={board.summary.ready ? 'good' : ''} />
         <Stat label="To collect" value={money(board.summary.dueCents)} tone={board.summary.dueCents ? 'warn' : ''} />
       </div>
+
+      {board.deliveries.length > 0 && (
+        <section className="ops-zone">
+          <header className="ops-zone-head">
+            <h2>Delivery</h2>
+            <span className="tiny muted">
+              {board.summary.deliveryRequests > 0
+                ? `${board.summary.deliveryRequests} waiting on you`
+                : `${board.deliveries.length} on the way`}
+            </span>
+          </header>
+          <div className="ops-grid">
+            {board.deliveries.map((d) => (
+              <article key={d.id} className={`ops-card ${d.awaitingAnswer ? 'unasked' : ''}`}>
+                <header className="ops-card-head">
+                  <span className="ops-label">🛵 {d.area || 'Delivery'}</span>
+                  <span className="ops-age">{d.ageMinutes}m</span>
+                </header>
+                <p className="ops-vehicle">{d.address}</p>
+                <p className="tiny muted">
+                  <a href={`tel:${d.phone}`}>{d.phone}</a>
+                </p>
+
+                <div className="ops-order">
+                  <div className="ops-order-top">
+                    <span className="mono">{d.orderNumber}</span>
+                    <span className={`badge ${d.awaitingAnswer ? '' : 'badge-open'}`}>
+                      {STATUS_LABEL[d.status]}
+                    </span>
+                  </div>
+                  <ul className="ops-items">
+                    {d.items.map((i, n) => (
+                      <li key={n}>
+                        {i.quantity}× {i.name}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="ops-order-foot">
+                    <span className="ops-due">{money(d.totalCents)}</span>
+                    <span className="spacer" />
+                    {d.awaitingAnswer ? (
+                      <>
+                        <button className="btn btn-ghost btn-sm" onClick={() => answer(d, false)}>
+                          Can&rsquo;t take it
+                        </button>
+                        <button className="btn btn-accent btn-sm" onClick={() => answer(d, true)}>
+                          Accept
+                        </button>
+                      </>
+                    ) : (
+                      NEXT_DELIVERY[d.status] && (
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() =>
+                            advance({ id: d.id, orderNumber: d.orderNumber } as OpsOrder, NEXT_DELIVERY[d.status]!.to)
+                          }
+                        >
+                          {NEXT_DELIVERY[d.status]!.label}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {cars.length === 0 && inside.length === 0 && (
         <p className="muted" style={{ marginTop: 24 }}>
@@ -192,6 +301,14 @@ function Stat({ label, value, tone = '' }: { label: string; value: number | stri
       <span className="ops-stat-label">{label}</span>
     </div>
   )
+}
+
+/** A delivery, once accepted, walks its own flow out to the door. */
+const NEXT_DELIVERY: Partial<Record<OrderStatus, { to: OrderStatus; label: string }>> = {
+  ACCEPTED: { to: 'PREPARING', label: 'Start cooking' },
+  PREPARING: { to: 'READY', label: 'Mark ready' },
+  READY: { to: 'OUT_FOR_DELIVERY', label: 'Send it out' },
+  OUT_FOR_DELIVERY: { to: 'DELIVERED', label: 'Delivered' },
 }
 
 const NEXT: Partial<Record<OrderStatus, { to: OrderStatus; label: string }>> = {

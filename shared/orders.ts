@@ -5,20 +5,38 @@ export type OrderType = 'dine_in' | 'pickup'
  * `car` is someone parked on the road outside — the food has to be carried to
  * them, so that flow has a delivery leg the others do not.
  */
-export type ServiceType = 'dine_in' | 'car' | 'takeaway' | 'pickup'
+export type ServiceType = 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery'
 
 export const DINE_IN_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED'] as const
 export const PICKUP_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP'] as const
 export const CAR_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERING', 'DELIVERED'] as const
 
+/**
+ * Delivery opens at REQUESTED rather than NEW, because here "accepted" is a
+ * real decision and not a formality. A small kitchen taking phone orders says
+ * no when it is full, and the app has to be able to say no too — so the order
+ * waits for an answer before the customer is told anything is happening.
+ */
+export const DELIVERY_FLOW = [
+  'REQUESTED',
+  'ACCEPTED',
+  'PREPARING',
+  'READY',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+] as const
+
 export type OrderStatus =
   | (typeof DINE_IN_FLOW)[number]
   | (typeof PICKUP_FLOW)[number]
   | (typeof CAR_FLOW)[number]
+  | (typeof DELIVERY_FLOW)[number]
+  | 'DECLINED'
   | 'CANCELLED'
 
 /** Anything handed over at the counter shares the pickup flow. */
 export function flowFor(type: OrderType | ServiceType): readonly OrderStatus[] {
+  if (type === 'delivery') return DELIVERY_FLOW
   if (type === 'car') return CAR_FLOW
   return type === 'dine_in' ? DINE_IN_FLOW : PICKUP_FLOW
 }
@@ -26,6 +44,7 @@ export function flowFor(type: OrderType | ServiceType): readonly OrderStatus[] {
 export const SERVICE_LABEL: Record<ServiceType, string> = {
   dine_in: 'Dine in',
   car: 'Roadside',
+  delivery: 'Delivery',
   takeaway: 'Takeaway',
   pickup: 'Pickup',
 }
@@ -38,12 +57,14 @@ export function nextStatus(type: OrderType | ServiceType, current: OrderStatus):
 }
 
 export function isTerminal(type: OrderType | ServiceType, status: OrderStatus): boolean {
-  if (status === 'CANCELLED') return true
+  if (status === 'CANCELLED' || status === 'DECLINED') return true
   const flow = flowFor(type)
   return flow[flow.length - 1] === status
 }
 
 export function canTransition(type: OrderType | ServiceType, from: OrderStatus, to: OrderStatus): boolean {
+  // Declining is only ever an answer to a request that is still waiting.
+  if (to === 'DECLINED') return from === 'REQUESTED'
   if (to === 'CANCELLED') return !isTerminal(type, from)
   const flow = flowFor(type)
   const a = flow.indexOf(from)
@@ -61,7 +82,10 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   COMPLETED: 'Completed',
   PICKED_UP: 'Picked up',
   DELIVERING: 'On its way',
+  OUT_FOR_DELIVERY: 'Out for delivery',
   DELIVERED: 'Delivered',
+  REQUESTED: 'Waiting to be accepted',
+  DECLINED: 'Could not be taken',
   CANCELLED: 'Cancelled',
 }
 
@@ -81,6 +105,9 @@ export const MODE_LABEL: Record<ServiceMode, string> = {
  * car who wants to know whether to keep waiting, not for a kitchen display.
  */
 export const CUSTOMER_STATUS_LINE: Partial<Record<OrderStatus, string>> = {
+  REQUESTED: 'Sent to the kitchen — waiting for them to accept',
+  DECLINED: 'The kitchen could not take this one',
+  OUT_FOR_DELIVERY: 'On its way to you',
   NEW: 'Order received',
   ACCEPTED: 'Confirmed by the kitchen',
   PREPARING: 'Being made now',

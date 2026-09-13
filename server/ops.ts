@@ -144,7 +144,29 @@ export function opsBoard(restaurantId: number) {
     .prepare('SELECT * FROM service_zones WHERE restaurant_id = ? ORDER BY sort_order, id')
     .all(restaurantId) as any[]
 
+  // Deliveries waiting for a yes or no. These sit at the top of the board
+  // because until somebody answers, a customer is sitting at home with no idea
+  // whether their food is coming.
+  const deliveryRows = db
+    .prepare(
+      `SELECT o.*, a.name AS area_name
+         FROM orders o LEFT JOIN delivery_areas a ON a.id = o.delivery_area_id
+        WHERE o.restaurant_id = ? AND o.service_mode = 'delivery'
+          AND o.status NOT IN ('DELIVERED', 'DECLINED', 'CANCELLED')
+        ORDER BY o.created_at ASC`,
+    )
+    .all(restaurantId) as any[]
+
+  const deliveries = deliveryRows.map((o) => ({
+    ...shapeOrder(o),
+    area: o.area_name ?? '',
+    address: o.delivery_address ?? '',
+    phone: o.delivery_phone ?? '',
+    awaitingAnswer: o.status === 'REQUESTED',
+  }))
+
   return {
+    deliveries,
     zones: zones.map((z) => ({
       id: z.id,
       name: z.name,
@@ -163,6 +185,7 @@ export function opsBoard(restaurantId: number) {
         .flatMap((s) => s.orders)
         .filter((o) => o.status === 'READY' || o.status === 'READY_FOR_PICKUP').length,
       paymentPending: shaped.filter((s) => s.dueCents > 0).length,
+      deliveryRequests: deliveries.filter((d) => d.awaitingAnswer).length,
       dueCents: shaped.reduce((n, s) => n + s.dueCents, 0),
     },
   }

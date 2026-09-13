@@ -144,9 +144,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       tableLabel = table.label
     }
 
-    if (takeaway || liveSession?.service_mode === 'car') {
-      // A car has no table number, and asking for one is exactly the friction
-      // this mode exists to remove — the zone and the car describe the place.
+    if (takeaway || liveSession?.service_mode === 'car' || liveSession?.service_mode === 'delivery') {
+      // A car has no table number and a delivery has an address instead, and
+      // asking for one is exactly the friction these modes exist to remove.
       tableId = null
       tableLabel = null
     } else if (!tableId) {
@@ -179,8 +179,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         `INSERT INTO orders
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
            status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
-           service_mode, zone_id, dining_session_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'NEW', 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -190,6 +190,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         input.type,
         tableId,
         tableLabel,
+        // Delivery waits to be accepted; everything else is already happening.
+        liveSession?.service_mode === 'delivery' ? 'REQUESTED' : 'NEW',
         paymentMethod,
         totalCents,
         String(input.note ?? '').slice(0, 300),
@@ -201,13 +203,18 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         // never has to work it out from a join.
         liveSession?.service_mode === 'car'
           ? 'car'
-          : takeaway
+          : liveSession?.service_mode === 'delivery'
+            ? 'delivery'
+            : takeaway
             ? 'takeaway'
             : input.type === 'dine_in'
               ? 'dine_in'
               : 'pickup',
         liveSession?.zone_id ?? null,
         liveSession?.id ?? null,
+        liveSession?.service_mode === 'delivery' ? (liveSession.area_id ?? null) : null,
+        liveSession?.service_mode === 'delivery' ? (liveSession.address ?? '') : '',
+        liveSession?.service_mode === 'delivery' ? (liveSession.phone ?? '') : '',
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -328,12 +335,20 @@ export function shapeOrder(row: any) {
     type: row.order_type as OrderType,
     serviceType: (row.service_mode === 'car'
       ? 'car'
-      : row.order_type === 'pickup'
+      : row.service_mode === 'delivery'
+        ? 'delivery'
+        : row.order_type === 'pickup'
         ? 'pickup'
         : row.takeaway
           ? 'takeaway'
           : 'dine_in') as ServiceType,
     serviceMode: (row.service_mode ?? 'dine_in') as ServiceType,
+    deliveryAddress: row.delivery_address ?? '',
+    deliveryPhone: row.delivery_phone ?? '',
+    deliveryArea: row.delivery_area_id
+      ? ((db.prepare('SELECT name FROM delivery_areas WHERE id = ?').get(row.delivery_area_id) as any)?.name ?? null)
+      : null,
+    declinedReason: row.declined_reason ?? '',
     zoneName: row.zone_id
       ? ((db.prepare('SELECT name FROM service_zones WHERE id = ?').get(row.zone_id) as any)?.name ?? null)
       : null,

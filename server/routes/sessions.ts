@@ -7,6 +7,7 @@ import {
   setSessionTable,
   shapeDiningSession,
   startCarSession,
+  startDeliverySession,
   startSession,
 } from '../dining.ts'
 
@@ -35,6 +36,22 @@ sessionsRouter.post('/car', (req, res) => {
     vehicle: String(req.body?.vehicle ?? ''),
     vehicleNumber: String(req.body?.vehicleNumber ?? ''),
     partySize: Number(req.body?.partySize) || 1,
+    userId: req.user?.id ?? null,
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  res.status(201).json({ session: shapeDiningSession(result.session) })
+})
+
+/**
+ * Opens a session for an order going to someone's address. The order it leads
+ * to waits for the kitchen to accept it — see the delivery flow.
+ */
+sessionsRouter.post('/delivery', (req, res) => {
+  const result = startDeliverySession({
+    restaurantId: Number(req.body?.restaurantId),
+    areaId: Number(req.body?.areaId),
+    address: String(req.body?.address ?? ''),
+    phone: String(req.body?.phone ?? ''),
     userId: req.user?.id ?? null,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })

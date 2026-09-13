@@ -103,3 +103,22 @@ export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
   if (theme === 'noir') return NOIR_VOICES[section] ?? FALLBACK
   return FALLBACK
 }
+
+/**
+ * Puts a restaurant's palette on the page while one of its screens is open.
+ *
+ * The app otherwise follows the device, and a themed restaurant's colours
+ * assume their own ground — on a phone set to light, Revery's greens on cream
+ * are unreadable. Cleared on the way out so the rest of the app goes back to
+ * whatever the device asked for.
+ */
+export function applyTheme(theme: ThemeName): () => void {
+  if (!theme) return () => {}
+  const root = document.documentElement
+  const previous = root.dataset.theme
+  root.dataset.theme = theme
+  return () => {
+    if (previous) root.dataset.theme = previous
+    else delete root.dataset.theme
+  }
+}

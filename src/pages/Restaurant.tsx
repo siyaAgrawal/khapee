@@ -10,6 +10,7 @@ import { readDining } from '../lib/dining'
 import { readGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
+import { applyTheme } from '../lib/themes'
 import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
@@ -73,16 +74,7 @@ export default function Restaurant() {
    * cream — the theme's own colours assume a dark ground. Cleared on the way
    * out so the rest of the app goes back to whatever the device asked for.
    */
-  useEffect(() => {
-    if (!themed) return
-    const root = document.documentElement
-    const previous = root.dataset.theme
-    root.dataset.theme = theme
-    return () => {
-      if (previous) root.dataset.theme = previous
-      else delete root.dataset.theme
-    }
-  }, [themed, theme])
+  useEffect(() => applyTheme(theme), [theme])
 
   const onAdd = (item: MenuItem) => {
     if (!data) return
@@ -146,6 +138,20 @@ export default function Restaurant() {
                     </span>
                   </Link>
                 )}
+                {data.restaurant.isOpen && data.restaurant.acceptsDelivery && !dining && (
+                  <Link className="road-cta" to={`/r/${restaurantId}/delivery`}>
+                    <span className="road-cta-mark" aria-hidden>
+                      🛵
+                    </span>
+                    <span>
+                      <strong>Want it at home?</strong>
+                      <span className="tiny muted">We deliver nearby — the kitchen confirms first.</span>
+                    </span>
+                    <span className="road-cta-go" aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                )}
                 {data.restaurant.isOpen && (
                   <div className="noir-hero-dining">
                     <DiningBar restaurantId={restaurantId} />
@@ -192,6 +198,20 @@ export default function Restaurant() {
                     <span>
                       <strong>Sitting in your car?</strong>
                       <span className="tiny muted">Order from the road — we&rsquo;ll bring it out.</span>
+                    </span>
+                    <span className="road-cta-go" aria-hidden>
+                      →
+                    </span>
+                  </Link>
+                )}
+                {data.restaurant.isOpen && data.restaurant.acceptsDelivery && !dining && (
+                  <Link className="road-cta" to={`/r/${restaurantId}/delivery`}>
+                    <span className="road-cta-mark" aria-hidden>
+                      🛵
+                    </span>
+                    <span>
+                      <strong>Want it at home?</strong>
+                      <span className="tiny muted">We deliver nearby — the kitchen confirms first.</span>
                     </span>
                     <span className="road-cta-go" aria-hidden>
                       →

@@ -4,6 +4,7 @@ import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { LoadingBlock, Spinner, useToast } from '../components/ui'
 import { saveDining } from '../lib/dining'
+import { applyTheme, type ThemeName } from '../lib/themes'
 
 type Zone = { id: number; name: string; note: string }
 
@@ -23,7 +24,7 @@ export default function CarEntry() {
   const toast = useToast()
 
   const [zones, setZones] = useState<Zone[] | null>(null)
-  const [restaurant, setRestaurant] = useState<{ name: string; isOpen: boolean } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ name: string; isOpen: boolean; theme?: string } | null>(null)
   const [zoneId, setZoneId] = useState<number | null>(null)
   const [vehicle, setVehicle] = useState('')
   const [plate, setPlate] = useState('')
@@ -40,10 +41,13 @@ export default function CarEntry() {
         if (fromSign && r.zones.some((z) => z.id === fromSign)) setZoneId(fromSign)
       })
       .catch(() => setZones([]))
-    api<{ restaurant: { name: string; isOpen: boolean } }>(`/restaurants/${restaurantId}`)
+    api<{ restaurant: { name: string; isOpen: boolean; theme?: string } }>(`/restaurants/${restaurantId}`)
       .then((r) => setRestaurant(r.restaurant))
       .catch(() => {})
   }, [restaurantId, params])
+
+  // This screen belongs to the restaurant, so it wears the restaurant's colours.
+  useEffect(() => applyTheme((restaurant?.theme ?? '') as ThemeName), [restaurant?.theme])
 
   const start = async () => {
     setBusy(true)

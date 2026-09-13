@@ -15,6 +15,7 @@ import Register from './pages/Register'
 import RegisterRestaurant from './pages/RegisterRestaurant'
 import TableEntry from './pages/TableEntry'
 import CarEntry from './pages/CarEntry'
+import DeliveryEntry from './pages/DeliveryEntry'
 import ZoneEntry from './pages/ZoneEntry'
 import StaffOps from './pages/staff/StaffOps'
 import StaffPos from './pages/staff/StaffPos'
@@ -57,6 +58,7 @@ export default function App() {
       <Route path="/r/:id" element={<Restaurant />} />
       <Route path="/t/:token" element={<TableEntry />} />
       <Route path="/r/:id/car" element={<CarEntry />} />
+      <Route path="/r/:id/delivery" element={<DeliveryEntry />} />
       <Route path="/z/:token" element={<ZoneEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
       <Route path="/profile" element={<Profile />} />

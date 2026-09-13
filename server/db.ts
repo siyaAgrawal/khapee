@@ -261,6 +261,18 @@ addColumn('menu_items', 'tax_rate_id', 'INTEGER')
 addColumn('orders', 'bill_status', "TEXT NOT NULL DEFAULT 'OPEN'")
 addColumn('orders', 'invoice_id', 'INTEGER')
 
+// Not every restaurant delivers, and a cafe with no space for it should not be
+// asked to answer requests it never wanted.
+addColumn('restaurants', 'accepts_delivery', 'INTEGER NOT NULL DEFAULT 0')
+
+// Where the food is going, and who to call when the runner cannot find it.
+addColumn('orders', 'delivery_area_id', 'INTEGER')
+addColumn('orders', 'delivery_address', "TEXT NOT NULL DEFAULT ''")
+addColumn('orders', 'delivery_phone', "TEXT NOT NULL DEFAULT ''")
+addColumn('orders', 'accepted_at', 'TEXT')
+// Said out loud to the customer when the kitchen cannot take an order.
+addColumn('orders', 'declined_reason', "TEXT NOT NULL DEFAULT ''")
+
 // A named group inside a section — a bar list is "Whisky", "Gin", "Beer"
 // under one Bar heading, rather than eight tabs of three drinks each.
 addColumn('menu_items', 'group_label', "TEXT NOT NULL DEFAULT ''")
@@ -369,6 +381,24 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS idx_audit_restaurant ON audit_log(restaurant_id, created_at);
 `)
 
+// Where a restaurant is willing to deliver. Named areas rather than a radius:
+// a small kitchen knows "Saket" and does not know 2.4 km, and a customer picking
+// their own locality from a short list beats typing an address we cannot check.
+db.exec(`
+CREATE TABLE IF NOT EXISTS delivery_areas (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id  INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  name           TEXT    NOT NULL,
+  note           TEXT    NOT NULL DEFAULT '',
+  fee_cents      INTEGER NOT NULL DEFAULT 0,
+  min_order_cents INTEGER NOT NULL DEFAULT 0,
+  is_active      INTEGER NOT NULL DEFAULT 1,
+  sort_order     INTEGER NOT NULL DEFAULT 0,
+  created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_delivery_areas_restaurant ON delivery_areas(restaurant_id);
+`)
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS service_zones (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -474,6 +504,12 @@ addColumn('dining_sessions', 'opened_by', 'INTEGER')
 addColumn('dining_sessions', 'party_size', 'INTEGER NOT NULL DEFAULT 1')
 // A car that moves keeps its session; the zone is corrected, not recreated.
 addColumn('dining_sessions', 'moved_at', 'TEXT')
+
+// A delivery is the same session again — these people, now — standing at their
+// own address rather than at a table or on the road outside.
+addColumn('dining_sessions', 'area_id', 'INTEGER')
+addColumn('dining_sessions', 'address', "TEXT NOT NULL DEFAULT ''")
+addColumn('dining_sessions', 'phone', "TEXT NOT NULL DEFAULT ''")
 
 
 export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')

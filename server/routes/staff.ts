@@ -68,7 +68,9 @@ staffRouter.post('/orders/:id/status', (req, res) => {
   const service =
     row.service_mode === 'car'
       ? 'car'
-      : row.order_type === 'pickup'
+      : row.service_mode === 'delivery'
+        ? 'delivery'
+        : row.order_type === 'pickup'
         ? 'pickup'
         : row.takeaway
           ? 'takeaway'
@@ -1362,5 +1364,119 @@ staffRouter.post('/pos/sale', (req: any, res) => {
   publish('ops', { restaurantId })
   // Re-read: the order was shaped before the update above, so returning it
   // as-is would tell the caller NEW while the database says ACCEPTED.
-  res.status(201).json({ order: shapeOrder(getOrder(result.order.id)) })
+  res.status(201).json({ order: getOrder(result.order.id) })
+})
+
+
+// --- Delivery: the yes or no a phone order gets ------------------------------
+//
+// This is the only mode where accepting is a decision rather than a formality.
+// A small kitchen with no room says no when it is full, and the app has to be
+// able to say no too — with a reason the customer actually reads.
+
+staffRouter.post('/orders/:id/accept', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db
+    .prepare('SELECT * FROM orders WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!order) return res.status(404).json({ error: 'That order is not on your board.' })
+  if (order.status !== 'REQUESTED') {
+    return res.status(409).json({ error: 'That order is not waiting to be accepted.' })
+  }
+  db.prepare(
+    "UPDATE orders SET status = 'ACCEPTED', accepted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+  ).run(order.id)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'ACCEPTED', 'staff')").run(order.id)
+  notifyCustomer(order, 'Order accepted', `${order.order_number} is being made now.`)
+  publish('orders', { restaurantId })
+  publish('ops', { restaurantId })
+  res.json({ order: getOrder(order.id) })
+})
+
+staffRouter.post('/orders/:id/decline', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const order = db
+    .prepare('SELECT * FROM orders WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!order) return res.status(404).json({ error: 'That order is not on your board.' })
+  if (order.status !== 'REQUESTED') {
+    return res.status(409).json({ error: 'That order is not waiting to be accepted.' })
+  }
+  const reason = String(req.body?.reason ?? '').trim().slice(0, 140)
+  if (!reason) return res.status(400).json({ error: 'Say why, so the customer knows.' })
+
+  db.prepare(
+    "UPDATE orders SET status = 'DECLINED', declined_reason = ?, updated_at = datetime('now') WHERE id = ?",
+  ).run(reason, order.id)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'DECLINED', 'staff')").run(order.id)
+  notifyCustomer(order, 'Order could not be taken', reason)
+  audit(restaurantId, actorOf(req), 'order.decline', 'order', order.id, { reason })
+  publish('orders', { restaurantId })
+  publish('ops', { restaurantId })
+  res.json({ order: getOrder(order.id) })
+})
+
+function notifyCustomer(order: any, title: string, body: string) {
+  if (!order.user_id) return
+  db.prepare(
+    'INSERT INTO notifications (restaurant_id, user_id, order_id, title, body) VALUES (?, ?, ?, ?, ?)',
+  ).run(order.restaurant_id, order.user_id, order.id, title, body)
+}
+
+// --- Delivery areas ---------------------------------------------------------
+
+staffRouter.get('/delivery-areas', (req: any, res) => {
+  res.json({
+    areas: db
+      .prepare('SELECT * FROM delivery_areas WHERE restaurant_id = ? ORDER BY sort_order, id')
+      .all(myRestaurant(req)),
+  })
+})
+
+staffRouter.post('/delivery-areas', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const name = String(req.body?.name ?? '').trim().slice(0, 40)
+  if (!name) return res.status(400).json({ error: 'Name the area you deliver to.' })
+  const next = db
+    .prepare('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM delivery_areas WHERE restaurant_id = ?')
+    .get(restaurantId) as any
+  const info = db
+    .prepare(
+      'INSERT INTO delivery_areas (restaurant_id, name, note, fee_cents, min_order_cents, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    .run(
+      restaurantId,
+      name,
+      String(req.body?.note ?? '').trim().slice(0, 80),
+      Math.max(0, Math.round(Number(req.body?.feeRupees) * 100) || 0),
+      Math.max(0, Math.round(Number(req.body?.minOrderRupees) * 100) || 0),
+      next.n,
+    )
+  // A restaurant with somewhere to deliver to is a restaurant that delivers.
+  db.prepare('UPDATE restaurants SET accepts_delivery = 1 WHERE id = ?').run(restaurantId)
+  res.status(201).json({ area: db.prepare('SELECT * FROM delivery_areas WHERE id = ?').get(Number(info.lastInsertRowid)) })
+})
+
+staffRouter.delete('/delivery-areas/:id', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const area = db
+    .prepare('SELECT id FROM delivery_areas WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId)
+  if (!area) return res.status(404).json({ error: 'That area is not on this restaurant.' })
+  db.prepare('DELETE FROM delivery_areas WHERE id = ?').run(Number(req.params.id))
+  const left = db
+    .prepare('SELECT COUNT(*) n FROM delivery_areas WHERE restaurant_id = ? AND is_active = 1')
+    .get(restaurantId) as any
+  if (!left.n) db.prepare('UPDATE restaurants SET accepts_delivery = 0 WHERE id = ?').run(restaurantId)
+  res.json({ ok: true })
+})
+
+/** Turns delivery off or on without losing the areas already set up. */
+staffRouter.post('/delivery/toggle', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const on = req.body?.on ? 1 : 0
+  db.prepare('UPDATE restaurants SET accepts_delivery = ? WHERE id = ?').run(on, restaurantId)
+  audit(restaurantId, actorOf(req), on ? 'delivery.on' : 'delivery.off', 'restaurant', restaurantId, '')
+  publish('ops', { restaurantId })
+  res.json({ ok: true, acceptsDelivery: !!on })
 })

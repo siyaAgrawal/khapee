@@ -33,6 +33,7 @@ function shapeRestaurant(row: any) {
     acceptsGroups: !!row.accepts_groups,
     acceptsUpi: !!String(row.upi_vpa ?? '').trim(),
     acceptsCar: !!row.accepts_car,
+    acceptsDelivery: !!row.accepts_delivery,
     theme: row.theme ?? '',
   }
 }
@@ -183,6 +184,25 @@ publicRouter.get('/restaurants/:id/zones', (req, res) => {
     )
     .all(Number(req.params.id))
   res.json({ zones })
+})
+
+/** The localities this restaurant will deliver to, and what it charges. */
+publicRouter.get('/restaurants/:id/delivery-areas', (req, res) => {
+  const areas = db
+    .prepare(
+      `SELECT id, name, note, fee_cents, min_order_cents FROM delivery_areas
+        WHERE restaurant_id = ? AND is_active = 1 ORDER BY sort_order, id`,
+    )
+    .all(Number(req.params.id)) as any[]
+  res.json({
+    areas: areas.map((a) => ({
+      id: a.id,
+      name: a.name,
+      note: a.note,
+      feeCents: a.fee_cents,
+      minOrderCents: a.min_order_cents,
+    })),
+  })
 })
 
 /** A zone's own QR sign: "parked in Zone A? scan to order". */

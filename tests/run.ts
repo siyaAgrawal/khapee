@@ -176,7 +176,7 @@ async function runTests() {
   ok('staff can generate an access code', gen.status === 201 && /^[A-Z0-9]{6}$/.test(gen.body.code.code), gen.body)
   const code1 = gen.body.code.code
   ok('code carries an expiry countdown', gen.body.code.secondsLeft > 500)
-  ok('code QR payload identifies restaurant + code', gen.body.code.qrPayload === `ORDRO:ACCESS:${mornington.id}:${code1}`)
+  ok('code QR payload identifies restaurant + code', gen.body.code.qrPayload === `KHAPEE:ACCESS:${mornington.id}:${code1}`)
 
   const gen2 = await call('/staff/codes', { token: staffToken, body: { minutes: 10 } })
   ok('generated codes are unique', gen2.body.code.code !== code1)
@@ -187,6 +187,8 @@ async function runTests() {
   const verifyLower = await call('/orders/verify-code', { body: { restaurantId: mornington.id, code: code1.toLowerCase() } })
   ok('code entry is case-insensitive', verifyLower.status === 200)
 
+  // Deliberately the old prefix: codes printed before the rename are still on
+  // tables and in wallets, and must keep scanning.
   const resolveCode = await call('/resolve', { body: { value: `ORDRO:ACCESS:${mornington.id}:${code1}` } })
   ok('scanned access QR resolves to the restaurant', resolveCode.body.kind === 'access' && resolveCode.body.restaurantId === mornington.id)
 
@@ -510,7 +512,7 @@ async function runTests() {
 
   group('Tables & restaurant controls')
   const newTable = await call('/staff/tables', { token: staffToken, body: { label: 'Terrace 1', seats: 6 } })
-  ok('staff can add a table', newTable.status === 201 && newTable.body.table.qrPayload.startsWith('ORDRO:TABLE:'))
+  ok('staff can add a table', newTable.status === 201 && newTable.body.table.qrPayload.startsWith('KHAPEE:TABLE:'))
   const dupTable = await call('/staff/tables', { token: staffToken, body: { label: 'Terrace 1', seats: 2 } })
   ok('duplicate table names are refused', dupTable.status === 409)
   const delTable = await call(`/staff/tables/${newTable.body.table.id}`, { token: staffToken, method: 'DELETE' })
@@ -1804,6 +1806,21 @@ async function runTests() {
     'and the board says it was opened by staff',
     board4.body.sessions.find((x: any) => x.token === guest.body.session.token)?.openedByStaff === true,
   )
+
+  group('OLD QR CODES — printed before the rename, still on tables')
+  {
+    const t = tableRow.token
+    for (const prefix of ['KHAPEE', 'ORDRO', 'TABLO']) {
+      const r = await call('/resolve', { body: { value: `${prefix}:TABLE:${t}` } })
+      ok(`a ${prefix}: table code still scans`, r.status === 200 && r.body.kind === 'table', r.body)
+    }
+    const fresh = await call('/staff/codes', { token: roadToken, body: { minutes: 10 } })
+    const c = fresh.body.code.code
+    for (const prefix of ['KHAPEE', 'ORDRO', 'TABLO']) {
+      const r = await call('/resolve', { body: { value: `${prefix}:ACCESS:${mornington.id}:${c}` } })
+      ok(`a ${prefix}: access code still scans`, r.status === 200 && r.body.kind === 'access', r.body)
+    }
+  }
 
   group('SEARCH — what a crawler is handed')
   {

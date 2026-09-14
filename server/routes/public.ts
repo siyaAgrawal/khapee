@@ -231,8 +231,10 @@ publicRouter.post('/resolve', (req, res) => {
   const raw = String(req.body?.value ?? '').trim()
   if (!raw) return res.status(400).json({ error: 'Enter a code to continue.' })
 
-  // Accepted payloads: ORDRO:TABLE:<token>, a table QR URL (…/t/<token>),
-  // ORDRO:ACCESS:<restaurantId>:<code>, ORDRO:ROOM:<code>, a room link
+  // Accepted payloads: KHAPEE:TABLE:<token>, a table QR URL (…/t/<token>),
+  // KHAPEE:ACCESS:<restaurantId>:<code>, KHAPEE:ROOM:<code>, a room link.
+  // ORDRO: and TABLO: are the names this app had before; codes printed under
+  // them are still on tables and must keep scanning.
   // (…/g/<code>), a bare table token, a typed access code, or a room code.
   const upper = raw.toUpperCase()
   let kind: 'access' | 'table' | 'room' | 'unknown' = 'unknown'
@@ -242,21 +244,21 @@ publicRouter.post('/resolve', (req, res) => {
   // Rooms are G plus four; the earliest ones were four bare characters.
   const roomUrl = raw.match(/\/g\/([A-Za-z0-9]{4,5})(?:[^A-Za-z0-9]|$)/)
 
-  if (upper.includes('ORDRO:ROOM:') || upper.includes('TABLO:ROOM:')) {
+  if (upper.includes('KHAPEE:ROOM:') || upper.includes('ORDRO:ROOM:') || upper.includes('TABLO:ROOM:')) {
     kind = 'room'
-    value = raw.split(/(?:ORDRO|TABLO):ROOM:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
+    value = raw.split(/(?:KHAPEE|ORDRO|TABLO):ROOM:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
   } else if (roomUrl) {
     kind = 'room'
     value = roomUrl[1]
-  } else if (upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) {
+  } else if (upper.includes('KHAPEE:TABLE:') || upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) {
     kind = 'table'
-    value = raw.split(/(?:ORDRO|TABLO):TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
+    value = raw.split(/(?:KHAPEE|ORDRO|TABLO):TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? ''
   } else if (tableUrl) {
     kind = 'table'
     value = tableUrl[1]
-  } else if (upper.includes('ORDRO:ACCESS:') || upper.includes('TABLO:ACCESS:')) {
+  } else if (upper.includes('KHAPEE:ACCESS:') || upper.includes('ORDRO:ACCESS:') || upper.includes('TABLO:ACCESS:')) {
     kind = 'access'
-    const tail = raw.split(/(?:ORDRO|TABLO):ACCESS:/i)[1] ?? ''
+    const tail = raw.split(/(?:KHAPEE|ORDRO|TABLO):ACCESS:/i)[1] ?? ''
     value = tail.split(':').pop() ?? ''
   }
 

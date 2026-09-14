@@ -1,7 +1,7 @@
 /**
  * The reason this exists: the app is on a free host that sleeps when idle, and
  * a cold request gets the host's own "waking up" interstitial before it ever
- * reaches us. Holding the app shell in a cache means opening Ordro shows Ordro
+ * reaches us. Holding the app shell in a cache means opening Khapee shows Khapee
  * — immediately, from the phone — while the server wakes in the background.
  *
  * Only the shell is cached. Menus, orders and codes are never served stale;

@@ -42,8 +42,8 @@ export default function Splash({ onDone }: { onDone: () => void }) {
         <span className="splash-mark" aria-hidden>
           <span className="splash-mark-dot" />
         </span>
-        <h1 className="splash-word" aria-label="Ordro">
-          {'Ordro'.split('').map((c, i) => (
+        <h1 className="splash-word" aria-label="Khapee">
+          {'Khapee'.split('').map((c, i) => (
             <span key={i} style={{ '--c': i } as React.CSSProperties}>
               {c}
             </span>

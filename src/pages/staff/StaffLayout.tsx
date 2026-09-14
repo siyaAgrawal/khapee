@@ -43,7 +43,7 @@ export default function StaffLayout() {
     <div className="staff-shell">
       <aside className="staff-side">
         <div className="brand">
-          <span className="brand-mark">◗</span> Ordro
+          <span className="brand-mark">◗</span> Khapee
         </div>
         <RestaurantSwitcher />
         {LINKS.map((l) => (

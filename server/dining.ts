@@ -113,7 +113,7 @@ export function startSession(input: { value: string; restaurantId?: number | nul
   const tableUrl = raw.match(/\/t\/([a-f0-9]{16})/i)
   let tableToken: string | null = null
 
-  if (upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) tableToken = raw.split(/(?:ORDRO|TABLO):TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? null
+  if (upper.includes('KHAPEE:TABLE:') || upper.includes('ORDRO:TABLE:') || upper.includes('TABLO:TABLE:')) tableToken = raw.split(/(?:KHAPEE|ORDRO|TABLO):TABLE:/i)[1]?.split(/[^A-Za-z0-9]/)[0] ?? null
   else if (tableUrl) tableToken = tableUrl[1]
   else if (/^[a-f0-9]{16}$/i.test(raw)) tableToken = raw
 
@@ -143,7 +143,7 @@ export function startSession(input: { value: string; restaurantId?: number | nul
 
   // Otherwise it is an access code, which identifies its own restaurant.
   let code = raw
-  if (upper.includes('ORDRO:ACCESS:') || upper.includes('TABLO:ACCESS:')) code = (raw.split(/(?:ORDRO|TABLO):ACCESS:/i)[1] ?? '').split(':').pop() ?? ''
+  if (upper.includes('KHAPEE:ACCESS:') || upper.includes('ORDRO:ACCESS:') || upper.includes('TABLO:ACCESS:')) code = (raw.split(/(?:KHAPEE|ORDRO|TABLO):ACCESS:/i)[1] ?? '').split(':').pop() ?? ''
   code = normalizeCode(code)
   if (code.length !== 6) return { ok: false, status: 400, error: 'Access codes are 6 characters, like K7X92P.' }
 

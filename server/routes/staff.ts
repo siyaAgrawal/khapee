@@ -154,7 +154,7 @@ function shapeCode(row: any) {
     usedAt: row.used_at,
     revokedAt: row.revoked_at,
     usedByOrder: row.used_order_number ?? null,
-    qrPayload: `ORDRO:ACCESS:${row.restaurant_id}:${row.code}`,
+    qrPayload: `KHAPEE:ACCESS:${row.restaurant_id}:${row.code}`,
   }
 }
 
@@ -221,7 +221,7 @@ staffRouter.get('/tables', (req, res) => {
       seats: t.seats,
       token: t.token,
       activeOrders: t.active_orders,
-      qrPayload: `ORDRO:TABLE:${t.token}`,
+      qrPayload: `KHAPEE:TABLE:${t.token}`,
     })),
   })
 })
@@ -241,7 +241,7 @@ staffRouter.post('/tables', (req, res) => {
     .run(restaurantId, label, seats, tableToken())
   const t = db.prepare('SELECT * FROM restaurant_tables WHERE id = ?').get(Number(info.lastInsertRowid)) as any
   res.status(201).json({
-    table: { id: t.id, label: t.label, seats: t.seats, token: t.token, activeOrders: 0, qrPayload: `ORDRO:TABLE:${t.token}` },
+    table: { id: t.id, label: t.label, seats: t.seats, token: t.token, activeOrders: 0, qrPayload: `KHAPEE:TABLE:${t.token}` },
   })
 })
 

@@ -14,7 +14,7 @@ export default function Header() {
     <header className="header">
       <Link to="/" className="brand">
         <span className="brand-mark">◗</span>
-        Ordro
+        Khapee
       </Link>
       <div className="header-spacer" />
       <nav className="header-nav">

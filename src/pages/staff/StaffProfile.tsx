@@ -283,7 +283,7 @@ export default function StaffProfile() {
           <section className="card card-pad">
             <h2 style={{ marginBottom: 6 }}>UPI</h2>
             <p className="tiny muted mb-2">
-              Customers pay straight into this UPI ID from their own app. Ordro shows the request and
+              Customers pay straight into this UPI ID from their own app. Khapee shows the request and
               records what they claim — you confirm it under Payments. No payment provider, no fees
               through us.
             </p>

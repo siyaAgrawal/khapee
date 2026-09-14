@@ -1848,6 +1848,60 @@ async function runTests() {
     const map = await text('/sitemap.xml')
     ok('the sitemap lists the front page', map.includes('<loc>' + site + '/</loc>'), map.slice(0, 200))
     ok('and every restaurant with a menu', map.includes(`<loc>${site}/r/${mornington.id}</loc>`))
+
+    // This server has no proxy in front of it, so a caller claiming the request
+    // arrived over https is claiming something only a proxy could know.
+    // Believing them would let anyone dictate the canonical URL we hand Google.
+    const forged = await (await fetch(site + '/', { headers: { 'X-Forwarded-Proto': 'https' } })).text()
+    ok(
+      'a forged X-Forwarded-Proto is ignored with no proxy in front',
+      forged.includes(`rel="canonical" href="${site}/"`),
+      forged.match(/rel="canonical"[^>]*/)?.[0],
+    )
+  }
+
+  group('SEARCH BEHIND A PROXY — the scheme the customer actually used')
+  {
+    // In production the host terminates TLS and forwards to us over plain HTTP.
+    // Taking req.protocol at face value there wrote http:// into every canonical
+    // link, telling Google to prefer a URL that only redirects. Run a second
+    // server the way production runs it and check what a crawler is told.
+    const port = PORT + 1
+    const proxied = spawn('npx', ['tsx', 'server/index.ts'], {
+      cwd: root,
+      env: { ...process.env, NODE_ENV: 'production', TABLO_PORT: String(port), TABLO_DB: DB_PATH },
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+    try {
+      const base = `http://localhost:${port}`
+      for (let i = 0; i < 100; i++) {
+        try {
+          if ((await fetch(base + '/api/health')).ok) break
+        } catch {}
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      // The host stays localhost — a proxy passes the customer's Host through
+      // untouched, and it is only the scheme it has to tell us about.
+      const secure = `https://localhost:${port}`
+      const asEdge = (p: string) =>
+        fetch(base + p, { headers: { 'X-Forwarded-Proto': 'https' } }).then((r) => r.text())
+
+      const home = await asEdge('/')
+      ok(
+        'the canonical url is the https one the customer is on',
+        home.includes(`rel="canonical" href="${secure}/"`),
+        home.match(/rel="canonical"[^>]*/)?.[0],
+      )
+      ok('and so is the url in the link preview', home.includes(`property="og:url" content="${secure}/"`))
+
+      const map = await asEdge('/sitemap.xml')
+      ok('every sitemap url is https', !map.includes('<loc>http://'), map.match(/<loc>[^<]*/)?.[0])
+
+      const robots = await asEdge('/robots.txt')
+      ok('and the sitemap robots points at is too', robots.includes(`Sitemap: ${secure}/sitemap.xml`), robots)
+    } finally {
+      proxied.kill('SIGTERM')
+    }
   }
 
   group('ORDERING FROM AWAY — the path that needs no code')

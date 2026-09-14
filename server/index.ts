@@ -28,6 +28,17 @@ ensureSeed()
 purgeExpiredSessions()
 
 const app = express()
+// A host like Render terminates TLS at its edge and forwards to us over plain
+// HTTP, so req.protocol reads "http" for a request the customer made over
+// https. Everything we build from it then carries the wrong scheme: canonical
+// links telling Google to prefer a URL that only redirects, share previews, and
+// the URLs printed inside zone QR codes. Trusting the proxy's
+// X-Forwarded-Proto makes req.protocol the scheme the customer actually used.
+//
+// Only in production: in development nothing sits in front of us, and trusting
+// a header anyone can set would let a caller claim any scheme or address.
+if (IS_PROD) app.set('trust proxy', true)
+
 // Generous enough for a downsized dish photo posted as a data URL.
 app.use(express.json({ limit: '8mb' }))
 app.use(attachUser)

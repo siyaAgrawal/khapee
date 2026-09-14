@@ -1805,6 +1805,34 @@ async function runTests() {
     board4.body.sessions.find((x: any) => x.token === guest.body.session.token)?.openedByStaff === true,
   )
 
+  group('SEARCH — what a crawler is handed')
+  {
+    // Fetched over HTTP rather than imported: these read the database, and the
+    // test process opens a different one from the server under test.
+    const site = BASE.replace(/\/api$/, '')
+    const text = async (p: string) => (await fetch(site + p)).text()
+
+    const home = await text('/')
+    ok('the front page is named after the site', /<title>Khapee[^<]*<\/title>/.test(home), home.match(/<title>[^<]*<\/title>/)?.[0])
+    ok('and carries a description a result can print', /<meta name="description" content="[^"]{60,}"/.test(home))
+    ok('with a canonical url', home.includes('rel="canonical"'))
+    ok('and an Open Graph image for link previews', home.includes('property="og:image"'))
+
+    const page = await text(`/r/${mornington.id}`)
+    ok('a restaurant page is titled after the restaurant', /<title>Mornington/.test(page), page.match(/<title>[^<]*<\/title>/)?.[0])
+    ok('and still says which site it is on', /<title>[^<]*Khapee/.test(page))
+    ok('it carries Restaurant structured data', page.includes('"@type":"Restaurant"'), page.includes('ld+json'))
+
+    const robots = await text('/robots.txt')
+    ok('robots points crawlers at the sitemap', robots.includes('/sitemap.xml'), robots)
+    ok('and keeps the staff area out of search', robots.includes('Disallow: /staff'))
+    ok("along with anybody's individual order", robots.includes('Disallow: /order/'))
+
+    const map = await text('/sitemap.xml')
+    ok('the sitemap lists the front page', map.includes('<loc>' + site + '/</loc>'), map.slice(0, 200))
+    ok('and every restaurant with a menu', map.includes(`<loc>${site}/r/${mornington.id}</loc>`))
+  }
+
   group('ORDERING FROM AWAY — the path that needs no code')
   ok(
     'eating in still needs proof you are at the restaurant',

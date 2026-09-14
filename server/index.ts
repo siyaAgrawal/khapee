@@ -13,6 +13,7 @@ import { staffRouter } from './routes/staff.ts'
 import { groupsRouter } from './routes/groups.ts'
 import { sessionsRouter } from './routes/sessions.ts'
 import { ensureSeed } from './seed.ts'
+import { injectMeta, metaFor, robotsTxt, sitemapXml, structuredData } from './seo.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // In development this is deliberately not `PORT` — dev harnesses set that for
@@ -94,8 +95,30 @@ const dist = process.env.VERCEL
   ? path.resolve(process.cwd(), 'dist')
   : path.resolve(__dirname, '..', 'dist')
 if (fs.existsSync(path.join(dist, 'index.html'))) {
-  app.use(express.static(dist))
-  app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(dist, 'index.html')))
+  /** Whatever host the visitor actually used, so links and tags match it. */
+  const originOf = (req: any) => `${req.protocol}://${req.get('host')}`
+
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send(robotsTxt(originOf(req)))
+  })
+  app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml').send(sitemapXml(originOf(req)))
+  })
+
+  app.use(express.static(dist, { index: false }))
+
+  // The shell is one file with one title. Crawlers and link previews get the
+  // page's own title, description and picture written into it before it is
+  // sent; the browser then renders the app over the top as usual.
+  const shell = fs.readFileSync(path.join(dist, 'index.html'), 'utf8')
+  app.get(/^(?!\/api).*/, (req, res) => {
+    const origin = originOf(req)
+    const meta = metaFor(req.path, origin)
+    let html = injectMeta(shell, meta, origin)
+    const ld = structuredData(req.path, origin)
+    if (ld) html = html.replace('</head>', `  <script type="application/ld+json">${ld}</script>\n  </head>`)
+    res.type('html').send(html)
+  })
 }
 
 app.use((req, res) => res.status(404).json({ error: `No route for ${req.method} ${req.path}` }))

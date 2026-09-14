@@ -125,7 +125,11 @@ export default function Checkout() {
 
   const seated = tableId ?? dining?.tableId ?? null
   const seatedLabel = tableLabel ?? dining?.tableLabel ?? null
-  const verified = !!dining?.active
+  // Scanning the QR screwed to a table is the proof. The session it opens can
+  // lapse over a long meal, and then the customer — still sitting at the table,
+  // still holding the QR — was told to scan it again or go and ask staff for a
+  // code. Holding its token is the same evidence scanning it again would give.
+  const verified = !!dining?.active || !!scannedTable
   const canPayInApp = !!options?.acceptsUpi
 
   // What still stands between the customer and their food.
@@ -197,7 +201,11 @@ export default function Checkout() {
         })
       }
       clear()
-      clearTableContext()
+      // The table is deliberately not forgotten here. A meal is rarely one
+      // order — drinks, then food, then coffee — and dropping the scan after
+      // the first one sent the customer back to the QR, or to staff for a
+      // code, for every round after it. "End" on the dining bar is how you
+      // say you have finished.
       navigate(`/order/${order.orderNumber}`, { replace: true })
     } catch (e) {
       setError((e as ApiError).message)
@@ -354,14 +362,19 @@ export default function Checkout() {
             <div className="verified-banner">
               <span>✓</span>
               <div style={{ flex: 1 }}>
-                You&rsquo;re at {dining!.restaurantName}
-                {dining!.tableLabel ? ` · ${dining!.tableLabel}` : ''}
+                You&rsquo;re at {dining?.restaurantName ?? scannedTable?.restaurantName ?? cart.restaurantName}
+                {(dining?.tableLabel ?? scannedTable?.tableLabel)
+                  ? ` · ${dining?.tableLabel ?? scannedTable?.tableLabel}`
+                  : ''}
               </div>
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => {
                   clearDining()
+                  clearTableContext()
                   setDining(null)
+                  setTableId(null)
+                  setTableLabel(null)
                 }}
               >
                 Change

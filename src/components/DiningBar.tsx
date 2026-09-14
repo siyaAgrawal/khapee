@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import VerifyModal from './VerifyModal'
-import { clearDining, readDining, type DiningSession } from '../lib/dining'
+import { api } from '../lib/api'
+import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
+import { clearTableContext, readTableContext } from '../lib/table-context'
 
 /**
  * Persistent "you're here" strip. Shows the open session, or offers to start
@@ -17,6 +19,34 @@ export default function DiningBar({
   const [open, setOpen] = useState(false)
 
   const verified = session?.active !== false && !!session
+
+  /**
+   * A table session lasts a few hours; a long lunch can outlast it. Rather than
+   * asking someone sitting at the table to scan the QR taped to it a second
+   * time, the token that QR gave us opens a fresh session quietly. Scanning
+   * again would prove nothing this device cannot already prove.
+   */
+  useEffect(() => {
+    if (verified) return
+    const scanned = readTableContext(restaurantId)
+    if (!scanned?.tableToken) return
+    let cancelled = false
+    api<{ session: DiningSession }>('/sessions', {
+      body: { value: `KHAPEE:TABLE:${scanned.tableToken}`, restaurantId },
+    })
+      .then((r) => {
+        if (cancelled) return
+        saveDining(r.session)
+        setSession(r.session)
+        onChange?.(r.session)
+      })
+      // The table has been removed, or it is not this restaurant's any more.
+      // Forget it and fall back to asking, rather than retrying every render.
+      .catch(() => !cancelled && clearTableContext())
+    return () => {
+      cancelled = true
+    }
+  }, [verified, restaurantId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // "You're at Revery" is true of someone sitting in it and false of someone
   // waiting at home or in the car park, who is the whole point of these two
@@ -50,6 +80,9 @@ export default function DiningBar({
             className="btn btn-ghost btn-sm"
             onClick={() => {
               clearDining()
+              // Also the table it came from, or the effect above would open the
+              // session straight back up and End would do nothing.
+              clearTableContext()
               setSession(null)
               onChange?.(null)
             }}

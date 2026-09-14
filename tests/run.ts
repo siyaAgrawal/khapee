@@ -1106,6 +1106,43 @@ async function runTests() {
   ok('a session from another restaurant is refused when one is named', (await call('/sessions', { body: { value: tableRow.token, restaurantId: basil.id } })).status === 400)
   ok('a nonsense code opens nothing', (await call('/sessions', { body: { value: 'ZZZZZZ' } })).status === 404)
 
+  // The whole point of a QR stuck to one table: scanning it should be the last
+  // thing the customer has to do about where they are sitting. The landing page
+  // only remembered the table and dropped them on the menu, so the checkout
+  // still showed an empty grid of every table, still asked for a staff code,
+  // and the order was refused because nothing carried the QR to the server.
+  {
+    const scanned = await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })
+    const s = scanned.body.session
+    ok('scanning a table QR says which table it was', s.tableLabel === tableRow.label, s)
+    ok('and the session is live, so no code is asked for', s.active === true, s)
+
+    const order = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'Scanned the QR',
+        sessionToken: s.token,
+      },
+    })
+    ok('the order goes through on the QR alone', order.status === 201, order.body)
+    ok('seated at the table on the sticker', order.body.order.tableLabel === tableRow.label, order.body.order)
+
+    // The token on its own is proof too, for a checkout whose session lapsed.
+    const byToken = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'Lapsed session',
+        tableToken: tableRow.token,
+      },
+    })
+    ok('the QR token alone is still enough to order', byToken.status === 201, byToken.body)
+    ok('and still lands on the right table', byToken.body.order.tableLabel === tableRow.label, byToken.body.order)
+  }
+
   const ended = await call(`/sessions/${sessToken}`, { method: 'DELETE' })
   ok('a session can be ended', ended.status === 200)
   const afterEnd = await call('/orders', {

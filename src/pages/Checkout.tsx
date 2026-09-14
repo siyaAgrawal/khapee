@@ -46,8 +46,13 @@ export default function Checkout() {
     return atTheRestaurant ? 'here' : 'later'
   })
   const [tables, setTables] = useState<Table[] | null>(null)
-  const [tableId, setTableId] = useState<number | null>(dining?.tableId ?? null)
-  const [tableLabel, setTableLabel] = useState<string | null>(dining?.tableLabel ?? null)
+  // A scanned table QR already answered "which table", so start on its answer
+  // rather than an empty grid.
+  const scannedTable = restaurantId ? readTableContext(restaurantId) : null
+  const [tableId, setTableId] = useState<number | null>(dining?.tableId ?? scannedTable?.tableId ?? null)
+  const [tableLabel, setTableLabel] = useState<string | null>(
+    dining?.tableLabel ?? scannedTable?.tableLabel ?? null,
+  )
   const [name, setName] = useState(user?.name ?? '')
   const [note, setNote] = useState('')
   const [payNow, setPayNow] = useState(false)
@@ -163,6 +168,11 @@ export default function Checkout() {
           note,
           paymentMethod: paymentClaim ? 'app' : 'counter',
           tableId: seated,
+          // The scanned QR is itself the proof of being at the table. Without
+          // it the server had only the customer's word for the table number,
+          // and turned the order away asking them to scan the QR they had
+          // already scanned.
+          tableToken: where === 'here' ? (scannedTable?.tableToken ?? null) : null,
           sessionToken: withSession ?? dining?.token ?? null,
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
         },

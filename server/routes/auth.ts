@@ -176,3 +176,53 @@ authRouter.patch('/me', requireAuth, (req, res) => {
   }
   res.json({ user: userById(req.user!.id) })
 })
+
+/**
+ * The sign-in itself: the address it is under and the password that opens it.
+ *
+ * Kept apart from PATCH /me, which is a form anyone might save by accident.
+ * These two are the account, so each needs the current password — an unlocked
+ * phone left on a counter should not be enough to lock the owner out of their
+ * own restaurant. Changing either ends every other session, because the usual
+ * reason to change a password is that someone else knows it.
+ */
+authRouter.post('/me/credentials', requireAuth, (req, res) => {
+  const current = String(req.body?.currentPassword ?? '')
+  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user!.id) as any
+  if (!row || !verifyPassword(current, row.password_hash)) {
+    return res.status(403).json({ error: 'That is not your current password.' })
+  }
+
+  const wantsEmail = req.body?.email !== undefined
+  const wantsPassword = req.body?.newPassword !== undefined
+
+  let email = row.email
+  if (wantsEmail) {
+    email = String(req.body.email).trim().toLowerCase()
+    if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'That email does not look right.' })
+    const taken = db.prepare('SELECT id FROM users WHERE email = ? AND id <> ?').get(email, row.id) as any
+    if (taken) return res.status(409).json({ error: 'Another account already uses that email.' })
+  }
+
+  let hash = row.password_hash
+  if (wantsPassword) {
+    const next = String(req.body.newPassword)
+    if (next.length < 8) return res.status(400).json({ error: 'Use at least 8 characters.' })
+    if (verifyPassword(next, row.password_hash)) {
+      return res.status(400).json({ error: 'That is already your password.' })
+    }
+    hash = hashPassword(next)
+  }
+
+  if (!wantsEmail && !wantsPassword) return res.status(400).json({ error: 'Nothing to change.' })
+
+  // Signed back in immediately on this device, so changing a password does not
+  // throw the person doing it out of the screen they are standing at.
+  const token = db.transaction(() => {
+    db.prepare('UPDATE users SET email = ?, password_hash = ? WHERE id = ?').run(email, hash, row.id)
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id)
+    return createSession(row.id)
+  })()
+
+  res.json({ token, user: userFromToken(token) })
+})

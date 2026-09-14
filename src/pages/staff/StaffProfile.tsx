@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { api, ApiError } from '../../lib/api'
+import { api, ApiError, setToken } from '../../lib/api'
 import ImagePicker from '../../components/ImagePicker'
 import LiveStrip from '../../components/LiveStrip'
+import { useSession } from '../../lib/session'
 import { Art, LoadingBlock, Spinner, useToast } from '../../components/ui'
 
 type Profile = {
@@ -31,6 +32,136 @@ type Profile = {
 }
 
 const EMOJI_CHOICES = ['🍽️', '☕', '🍕', '🍝', '🍔', '🍜', '🍛', '🥘', '🌮', '🍣', '🥗', '🧁', '🍦', '🥤', '🫓', '🍢']
+
+/**
+ * The account itself, rather than the restaurant it manages.
+ *
+ * Until this existed a restaurant could edit its menu and its photos but not
+ * the login it was handed, so the password whoever set it up chose was the
+ * password forever, and the address on the account could never move to the
+ * people actually running the place. Both need the current password: everything
+ * else on this screen is recoverable, and these two are not.
+ */
+function SignIn() {
+  const toast = useToast()
+  const { user, refresh } = useSession()
+  const [open, setOpen] = useState(false)
+  const [current, setCurrent] = useState('')
+  const [email, setEmail] = useState('')
+  const [next, setNext] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (user?.email) setEmail(user.email)
+  }, [user?.email])
+
+  const changed = email.trim().toLowerCase() !== (user?.email ?? '').toLowerCase() || next.length > 0
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      const body: Record<string, string> = { currentPassword: current }
+      if (email.trim().toLowerCase() !== (user?.email ?? '').toLowerCase()) body.email = email.trim()
+      if (next) body.newPassword = next
+      const r = await api<{ token: string }>('/auth/me/credentials', { body })
+      // The server ended every session including this one; carry on with the
+      // replacement rather than bouncing the person to the sign-in screen.
+      setToken(r.token)
+      await refresh()
+      setCurrent('')
+      setNext('')
+      setOpen(false)
+      toast('Sign-in updated. Other devices will need it again.', 'good')
+    } catch (err) {
+      setError((err as ApiError).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <section className="card card-pad">
+      <h2 style={{ marginBottom: 6 }}>Sign in</h2>
+      <p className="tiny muted mb-2">
+        The email and password for this account. Change them when the restaurant takes it over.
+      </p>
+      <div className="list-row">
+        <span style={{ fontSize: 14 }} className="mono">
+          {user?.email}
+        </span>
+        <span className="spacer" />
+        {!open && (
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setOpen(true)}>
+            Change
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <form onSubmit={save} style={{ marginTop: 12 }}>
+          {error && <div className="form-error">{error}</div>}
+          <div className="field">
+            <label htmlFor="cr-current">Current password</label>
+            <input
+              id="cr-current"
+              className="input"
+              type="password"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="cr-email">Email</label>
+            <input
+              id="cr-email"
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoCapitalize="none"
+              autoComplete="username"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="cr-new">New password</label>
+            <input
+              id="cr-new"
+              className="input"
+              type="password"
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+              placeholder="Leave blank to keep the current one"
+              autoComplete="new-password"
+            />
+            <span className="hint">At least 8 characters.</span>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn btn-accent" disabled={saving || !current || !changed}>
+              {saving ? <Spinner /> : 'Update sign-in'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setOpen(false)
+                setError('')
+                setCurrent('')
+                setNext('')
+                setEmail(user?.email ?? '')
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
+  )
+}
 
 export default function StaffProfile() {
   const toast = useToast()
@@ -322,6 +453,8 @@ export default function StaffProfile() {
               </div>
             )}
           </section>
+
+          <SignIn />
 
           <section className="card card-pad">
             <h2 style={{ marginBottom: 6 }}>Fallback artwork</h2>

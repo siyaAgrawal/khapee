@@ -167,7 +167,35 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     const quantity = Math.min(50, Math.max(1, Math.floor(Number(line.quantity))))
     priced.push({ item, quantity })
   }
-  const totalCents = priced.reduce((sum, l) => sum + l.item.price_cents * l.quantity, 0)
+  const subtotalCents = priced.reduce((sum, l) => sum + l.item.price_cents * l.quantity, 0)
+
+  // --- What it costs to carry it ------------------------------------------
+  // The area screen promises a fee and a minimum before anyone picks a dish.
+  // Both were being shown and neither applied: an order under the minimum went
+  // through, and the fee was quoted to the customer and then never charged, so
+  // the restaurant paid for its own delivery. The area's terms are read once,
+  // here, and the fee is copied onto the order.
+  let deliveryFeeCents = 0
+  if (liveSession?.service_mode === 'delivery' && liveSession.area_id) {
+    const area = db
+      .prepare('SELECT * FROM delivery_areas WHERE id = ? AND restaurant_id = ?')
+      .get(liveSession.area_id, input.restaurantId) as any
+    if (!area || !area.is_active) {
+      return { ok: false, status: 409, error: 'They have stopped delivering to that area.' }
+    }
+    // The minimum is on the food. Counting the delivery fee towards it would
+    // mean a cheaper order qualifies the further away you live.
+    if (subtotalCents < area.min_order_cents) {
+      const short = area.min_order_cents - subtotalCents
+      return {
+        ok: false,
+        status: 400,
+        error: `${area.name} has a ${money(area.min_order_cents)} minimum — add ${money(short)} more to have this delivered.`,
+      }
+    }
+    deliveryFeeCents = area.fee_cents
+  }
+  const totalCents = subtotalCents + deliveryFeeCents
 
   const orderNumber = generateOrderNumber()
   const verifyToken = randomToken(10)
@@ -179,8 +207,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         `INSERT INTO orders
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
            status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
-           service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone,
+           delivery_fee_cents)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -215,6 +244,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         liveSession?.service_mode === 'delivery' ? (liveSession.area_id ?? null) : null,
         liveSession?.service_mode === 'delivery' ? (liveSession.address ?? '') : '',
         liveSession?.service_mode === 'delivery' ? (liveSession.phone ?? '') : '',
+        deliveryFeeCents,
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -359,6 +389,10 @@ export function shapeOrder(row: any) {
     status: row.status as OrderStatus,
     paymentStatus: row.payment_status as 'UNPAID' | 'PAID',
     paymentMethod: row.payment_method,
+    // The dishes, then what was added to carry them, then what is owed. Kept
+    // apart so a customer can see why the total is more than the menu prices.
+    subtotalCents: row.total_cents - (row.delivery_fee_cents ?? 0),
+    deliveryFeeCents: row.delivery_fee_cents ?? 0,
     totalCents: row.total_cents,
     note: row.note,
     verifyToken: row.verify_token,

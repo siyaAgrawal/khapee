@@ -272,6 +272,10 @@ addColumn('orders', 'delivery_phone', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'accepted_at', 'TEXT')
 // Said out loud to the customer when the kitchen cannot take an order.
 addColumn('orders', 'declined_reason', "TEXT NOT NULL DEFAULT ''")
+// What the area charged to carry it, copied onto the order when it is placed.
+// Read from the order and never from the area again: a restaurant that raises
+// its fee next month must not change what a customer already agreed to pay.
+addColumn('orders', 'delivery_fee_cents', 'INTEGER NOT NULL DEFAULT 0')
 
 // A named group inside a section — a bar list is "Whisky", "Gin", "Beer"
 // under one Bar heading, rather than eight tabs of three drinks each.

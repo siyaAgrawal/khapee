@@ -42,10 +42,19 @@ export function shapeDiningSession(row: any) {
     vehicle: row.vehicle ?? '',
     vehicleNumber: row.vehicle_number ?? '',
     seqNo: row.seq_no ?? null,
-    areaId: row.area_id ?? null,
-    areaName: row.area_id
-      ? ((db.prepare('SELECT name FROM delivery_areas WHERE id = ?').get(row.area_id) as any)?.name ?? null)
-      : null,
+    ...(() => {
+      // Carried on the session so the checkout can show what the delivery adds
+      // and what it still needs, without asking for the area a second time.
+      const area = row.area_id
+        ? (db.prepare('SELECT * FROM delivery_areas WHERE id = ?').get(row.area_id) as any)
+        : null
+      return {
+        areaId: row.area_id ?? null,
+        areaName: area?.name ?? null,
+        deliveryFeeCents: area?.fee_cents ?? 0,
+        minOrderCents: area?.min_order_cents ?? 0,
+      }
+    })(),
     address: row.address ?? '',
     phone: row.phone ?? '',
     code: row.code ?? '',

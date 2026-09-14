@@ -177,6 +177,14 @@ export default function OrderTrack() {
               Note: {order.note}
             </p>
           )}
+          {/* Without this line the dishes add up to less than the total, and it
+              reads as an arithmetic mistake rather than a delivery charge. */}
+          {order.deliveryFeeCents > 0 && (
+            <div className="summary-row" style={{ marginTop: 8 }}>
+              <span>Delivery{order.deliveryArea ? ` to ${order.deliveryArea}` : ''}</span>
+              <span>{money(order.deliveryFeeCents)}</span>
+            </div>
+          )}
           <div className="summary-total">
             <span>Total</span>
             <span>{money(order.totalCents)}</span>
@@ -189,7 +197,13 @@ export default function OrderTrack() {
           </div>
           {order.paymentStatus !== 'PAID' && (
             <p className="tiny muted" style={{ marginTop: 8 }}>
-              {order.paymentMethod === 'app' ? 'Staff will confirm' : 'Pay at the restaurant'}
+              {order.paymentMethod === 'app'
+                ? 'Staff will confirm'
+                : order.serviceMode === 'delivery'
+                  ? 'Pay on delivery'
+                  : order.serviceMode === 'car'
+                    ? 'Pay when they bring it out'
+                    : 'Pay at the restaurant'}
             </p>
           )}
         </div>

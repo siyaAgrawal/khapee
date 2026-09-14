@@ -18,21 +18,33 @@ export default function DiningBar({
 
   const verified = session?.active !== false && !!session
 
+  // "You're at Revery" is true of someone sitting in it and false of someone
+  // waiting at home or in the car park, who is the whole point of these two
+  // modes. Each says where the order is going instead.
+  const mode = session?.serviceMode
+  const heading =
+    mode === 'delivery'
+      ? `Delivering to ${session!.address || session!.areaName || 'your address'}`
+      : mode === 'car'
+        ? `In the car${session!.seqNo ? ` · Car ${session!.seqNo}` : ''}`
+        : `You're at ${session?.restaurantName}${session?.tableLabel ? ` · ${session.tableLabel}` : ''}`
+  const sub =
+    mode === 'delivery'
+      ? `${session!.restaurantName} accepts the order before it is made.`
+      : mode === 'car'
+        ? 'They bring it out to you — no need to come in.'
+        : session?.source === 'payment'
+          ? 'Verified by your payment — order away.'
+          : 'Session open — order without entering the code again.'
+
   return (
     <>
       {verified ? (
         <div className="dining-bar is-on">
-          <span aria-hidden>✓</span>
+          <span aria-hidden>{mode === 'delivery' ? '🛵' : mode === 'car' ? '🚗' : '✓'}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <strong>
-              You&rsquo;re at {session!.restaurantName}
-              {session!.tableLabel ? ` · ${session!.tableLabel}` : ''}
-            </strong>
-            <span className="tiny">
-              {session!.source === 'payment'
-                ? 'Verified by your payment — order away.'
-                : 'Session open — order without entering the code again.'}
-            </span>
+            <strong>{heading}</strong>
+            <span className="tiny">{sub}</span>
           </div>
           <button
             className="btn btn-ghost btn-sm"

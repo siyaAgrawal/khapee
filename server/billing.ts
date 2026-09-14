@@ -157,7 +157,14 @@ export function finaliseInvoice(input: FinaliseInput): FinaliseResult {
       }
     }),
     billDiscountCents: input.billDiscountCents ?? 0,
-    charges: input.charges ?? [],
+    // A delivery fee is part of what was charged, so it belongs on the invoice
+    // as its own line rather than being left off it or buried in a dish price.
+    // It is taken from the order, not from the area, so re-printing an old bill
+    // cannot pick up a fee the restaurant has since changed.
+    charges: [
+      ...(order.delivery_fee_cents > 0 ? [{ name: 'Delivery', amountCents: order.delivery_fee_cents }] : []),
+      ...(input.charges ?? []),
+    ],
     interState: input.interState ?? false,
     roundToRupee: input.roundToRupee ?? false,
   })

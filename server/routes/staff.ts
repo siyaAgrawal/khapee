@@ -857,7 +857,13 @@ staffRouter.post('/orders/:id/items', (req: any, res) => {
     const total = db
       .prepare('SELECT COALESCE(SUM(unit_price_cents * quantity), 0) AS n FROM order_items WHERE order_id = ?')
       .get(order.id) as any
-    db.prepare(`UPDATE orders SET total_cents = ?, updated_at = datetime('now') WHERE id = ?`).run(total.n, order.id)
+    // Rebuilt from the dishes, so anything that is not a dish has to be added
+    // back — otherwise a waiter adding a coffee to a delivery order quietly
+    // cancels the delivery fee.
+    db.prepare(`UPDATE orders SET total_cents = ?, updated_at = datetime('now') WHERE id = ?`).run(
+      total.n + (order.delivery_fee_cents ?? 0),
+      order.id,
+    )
     syncOrderPayment(order.id)
   })()
 
@@ -900,6 +906,8 @@ staffRouter.get('/bill/:id', (req, res) => {
         else acc.push({ name: key, items: [line] })
         return acc
       }, []),
+      subtotalCents: shaped.subtotalCents,
+      deliveryFeeCents: shaped.deliveryFeeCents,
       totalCents: shaped.totalCents,
       paidCents: paid,
       claimedCents: claimed,

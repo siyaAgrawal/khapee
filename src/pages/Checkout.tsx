@@ -53,6 +53,27 @@ export default function Checkout() {
   const [payNow, setPayNow] = useState(false)
   const [options, setOptions] = useState<any>(null)
 
+  /**
+   * An order going to an address costs more than the dishes on it, and will not
+   * go out at all under the area's minimum. Both were being promised on the way
+   * in and neither shown here, so the button quoted a total the customer was
+   * not going to be charged.
+   */
+  const isDelivery = dining?.serviceMode === 'delivery'
+  const deliveryFeeCents = isDelivery ? (dining?.deliveryFeeCents ?? 0) : 0
+  const payableCents = totalCents + deliveryFeeCents
+  const shortOfMinimum = isDelivery ? Math.max(0, (dining?.minOrderCents ?? 0) - totalCents) : 0
+
+  /**
+   * Someone who came in through the car or delivery door has already said where
+   * the food is going, and there is no table involved either way. They were
+   * still being shown the table picker and stopped with "choose your table
+   * number" — a question with no answer, on the two routes that exist
+   * specifically to avoid sitting down.
+   */
+  const isCar = dining?.serviceMode === 'car'
+  const placeDecided = isDelivery || isCar
+
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
   const needsPresence = where === 'here' || where === 'takeaway'
   const hasPresence = !!dining || !!(restaurantId && readTableContext(restaurantId))
@@ -103,7 +124,7 @@ export default function Checkout() {
   const canPayInApp = !!options?.acceptsUpi
 
   // What still stands between the customer and their food.
-  const needsTable = where === 'here' && !seated
+  const needsTable = where === 'here' && !seated && !placeDecided
   const needsProof = where !== 'later' && !verified && !payNow
   const needsName = name.trim().length < 2
   const ready = !needsTable && !needsProof && !needsName
@@ -186,27 +207,49 @@ export default function Checkout() {
 
         {error && <div className="form-error">{error}</div>}
 
-        {/* Where is this going? */}
-        <div className="seg" role="group" aria-label="Where are you?">
-          <button className={`seg-btn ${where === 'here' ? 'active' : ''}`} onClick={() => setWhere('here')}>
-            🍽️ At a table
-          </button>
-          {options?.acceptsTakeaway !== false && (
-            <button
-              className={`seg-btn ${where === 'takeaway' ? 'active' : ''}`}
-              onClick={() => setWhere('takeaway')}
-            >
-              🥡 Takeaway
+        {/* Where is this going? Already answered, if they came by car or asked
+            for it to be brought to them. */}
+        {placeDecided ? (
+          <div className="verified-banner" style={{ marginBottom: 4 }}>
+            <span aria-hidden>{isDelivery ? '🛵' : '🚗'}</span>
+            <div style={{ flex: 1 }}>
+              {isDelivery ? (
+                <>
+                  Delivering to <strong>{dining?.address || dining?.areaName}</strong>
+                </>
+              ) : (
+                <>
+                  Brought out to <strong>{dining?.vehicle || 'your car'}</strong>
+                  {dining?.seqNo ? ` · Car ${dining.seqNo}` : ''}
+                </>
+              )}
+            </div>
+            <Link className="btn btn-ghost btn-sm" to={isDelivery ? `/r/${restaurantId}/delivery` : `/r/${restaurantId}/car`}>
+              Change
+            </Link>
+          </div>
+        ) : (
+          <div className="seg" role="group" aria-label="Where are you?">
+            <button className={`seg-btn ${where === 'here' ? 'active' : ''}`} onClick={() => setWhere('here')}>
+              🍽️ At a table
             </button>
-          )}
-          {options?.acceptsPickup !== false && (
-            <button className={`seg-btn ${where === 'later' ? 'active' : ''}`} onClick={() => setWhere('later')}>
-              🚶 Collect later
-            </button>
-          )}
-        </div>
+            {options?.acceptsTakeaway !== false && (
+              <button
+                className={`seg-btn ${where === 'takeaway' ? 'active' : ''}`}
+                onClick={() => setWhere('takeaway')}
+              >
+                🥡 Takeaway
+              </button>
+            )}
+            {options?.acceptsPickup !== false && (
+              <button className={`seg-btn ${where === 'later' ? 'active' : ''}`} onClick={() => setWhere('later')}>
+                🚶 Collect later
+              </button>
+            )}
+          </div>
+        )}
 
-        {needsPresence && !hasPresence && (
+        {!placeDecided && needsPresence && !hasPresence && (
           <p className="tiny muted" style={{ marginTop: 8 }}>
             {where === 'here' ? 'Eating in' : 'Takeaway'} needs the table QR or a staff code — you order it at the
             restaurant. To order from here, choose <strong>Collect later</strong>.
@@ -215,7 +258,7 @@ export default function Checkout() {
 
         <section className="card card-pad">
           {/* Table — only when eating in */}
-          {where === 'here' && (
+          {where === 'here' && !placeDecided && (
             <div className="field">
               <label>Table</label>
               {!tables ? (
@@ -279,7 +322,7 @@ export default function Checkout() {
               <label>Paying</label>
               <div className="seg" style={{ margin: 0 }}>
                 <button className={`seg-btn ${!payNow ? 'active' : ''}`} onClick={() => setPayNow(false)}>
-                  At the restaurant
+                  {isDelivery ? 'On delivery' : isCar ? 'At the car' : 'At the restaurant'}
                 </button>
                 {canPayInApp && (
                   <button className={`seg-btn ${payNow ? 'active' : ''}`} onClick={() => setPayNow(true)}>
@@ -295,8 +338,9 @@ export default function Checkout() {
             </div>
           )}
 
-          {/* The code — only mentioned when it is actually the missing piece */}
-          {verified ? (
+          {/* The code — only mentioned when it is actually the missing piece.
+              A car or a delivery has said where it is going at the top already. */}
+          {placeDecided ? null : verified ? (
             <div className="verified-banner">
               <span>✓</span>
               <div style={{ flex: 1 }}>
@@ -331,10 +375,39 @@ export default function Checkout() {
             )
           )}
 
+          {isDelivery && (
+            <>
+              <div className="summary-row">
+                <span>Dishes</span>
+                <span>{money(totalCents)}</span>
+              </div>
+              <div className="summary-row">
+                <span>Delivery{dining?.areaName ? ` to ${dining.areaName}` : ''}</span>
+                <span>{deliveryFeeCents > 0 ? money(deliveryFeeCents) : 'Free'}</span>
+              </div>
+            </>
+          )}
+
           <div className="summary-total" style={{ marginBottom: 14 }}>
             <span>Total</span>
-            <span>{money(totalCents)}</span>
+            <span>{money(payableCents)}</span>
           </div>
+
+          {shortOfMinimum > 0 && (
+            <div className="notice" style={{ marginBottom: 12 }}>
+              <span aria-hidden>🛵</span>
+              <div style={{ flex: 1 }}>
+                <strong>{money(shortOfMinimum)} more to be delivered</strong>
+                <p className="tiny">
+                  {dining?.areaName ?? 'This area'} has a {money(dining?.minOrderCents ?? 0)} minimum on
+                  the dishes.
+                </p>
+              </div>
+              <Link className="btn btn-secondary btn-sm" to={`/r/${restaurantId}`}>
+                Add more
+              </Link>
+            </div>
+          )}
 
           <button
             className="btn btn-accent btn-lg btn-block"
@@ -350,6 +423,10 @@ export default function Checkout() {
                 toast('Tap your table number.', 'info')
                 return
               }
+              if (shortOfMinimum > 0) {
+                toast(`Add ${money(shortOfMinimum)} more — ${dining?.areaName ?? 'this area'} has a minimum.`, 'info')
+                return
+              }
               if (needsProof) {
                 // Only the code is missing — ask for it here and continue straight on.
                 setPlaceAfterVerify(true)
@@ -362,12 +439,12 @@ export default function Checkout() {
           >
             {placing ? (
               <Spinner />
+            ) : shortOfMinimum > 0 ? (
+              `Add ${money(shortOfMinimum)} more`
             ) : payNow && canPayInApp ? (
-              `Pay ${money(totalCents)}`
-            ) : needsProof ? (
-              `Place order · ${money(totalCents)}`
+              `Pay ${money(payableCents)}`
             ) : (
-              `Place order · ${money(totalCents)}`
+              `Place order · ${money(payableCents)}`
             )}
           </button>
 

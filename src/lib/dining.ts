@@ -8,6 +8,15 @@ export type DiningSession = {
   tableId: number | null
   tableLabel: string | null
   source: 'code' | 'table_qr' | 'payment'
+  serviceMode?: 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery'
+  areaName?: string | null
+  /** Where it is going: an address for a delivery, a car for the kerb outside. */
+  address?: string
+  vehicle?: string
+  seqNo?: number | null
+  /** What this area adds for carrying the order, and what it will not go out under. */
+  deliveryFeeCents?: number
+  minOrderCents?: number
   active: boolean
   secondsLeft: number
 }

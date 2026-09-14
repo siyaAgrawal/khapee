@@ -1691,10 +1691,12 @@ async function runTests() {
     body: { restaurantId: mornington.id, areaId, address: '88 Saket Nagar, second lane', phone: '9000000000' },
   })
   const refusedOrder = await call('/orders', {
+    // Two, because one is under the area's minimum now that the minimum is
+    // actually applied.
     body: {
       restaurantId: mornington.id,
       type: 'dine_in',
-      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      items: [{ menuItemId: coldCoffee.id, quantity: 2 }],
       customerName: 'Busy night',
       sessionToken: del2.body.session.token,
     },
@@ -1714,6 +1716,168 @@ async function runTests() {
     'and a refused order cannot be quietly accepted afterwards',
     (await call(`/staff/orders/${refusedOrder.body.order.id}/accept`, { token: roadToken, method: 'POST' })).status === 409,
   )
+
+  group('WHAT DELIVERY COSTS — the fee and the minimum, both promised up front')
+  {
+    // The area screen advertises "₹30 delivery · ₹250 minimum" before anyone
+    // picks a dish. Neither was applied: an order under the minimum went
+    // through, and the fee was quoted and then never charged, so the restaurant
+    // was paying to deliver its own food.
+    // Priced from the menu as it stands right now: earlier tests deliberately
+    // move these prices around, and a hardcoded rupee figure here would be
+    // testing the fixture rather than the rule.
+    const live = (await call(`/restaurants/${mornington.id}`)).body.menu
+      .flatMap((c: any) => c.items)
+      .find((i: any) => i.id === coldCoffee.id)
+    const unit = live.priceCents
+    // One is under the minimum, two are over it, whatever the coffee costs today.
+    const minRupees = Math.ceil((unit * 2) / 100)
+
+    const kerb = await call('/staff/delivery-areas', {
+      token: roadToken,
+      body: { name: 'Test Kerb', note: 'For the money checks', feeRupees: 30, minOrderRupees: minRupees },
+    })
+    const kerbId = kerb.body.area.id
+
+    const session = async () =>
+      (
+        await call('/sessions/delivery', {
+          body: { restaurantId: mornington.id, areaId: kerbId, address: '5 Saket Nagar, top floor', phone: '9811111111' },
+        })
+      ).body.session
+
+    const s1 = await session()
+    ok('the session carries what delivery adds', s1.deliveryFeeCents === 3000, s1)
+    ok('and what it will not go out under', s1.minOrderCents === minRupees * 100, s1)
+
+    const under = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'Too small',
+        sessionToken: s1.token,
+      },
+    })
+    ok('an order under the minimum is refused', under.status === 400, under.body)
+    ok('and says how much more is needed', /add ₹/i.test(under.body.error ?? ''), under.body.error)
+
+    const s2 = await session()
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 2 }],
+        customerName: 'Pays the fee',
+        sessionToken: s2.token,
+      },
+    })
+    ok('an order over it goes through', paid.status === 201, paid.body)
+    ok('the dishes are the dishes', paid.body.order.subtotalCents === unit * 2, paid.body.order)
+    ok('the fee is charged on top', paid.body.order.deliveryFeeCents === 3000, paid.body.order)
+    ok('and the total is both', paid.body.order.totalCents === unit * 2 + 3000, paid.body.order)
+
+    // Rebuilt totals are the classic way a charge disappears.
+    const added = await call(`/staff/orders/${paid.body.order.id}/items`, {
+      token: roadToken,
+      body: { items: [{ menuItemId: croissant.id, quantity: 1 }] },
+    })
+    ok('a waiter adding a dish does not cancel the fee', added.body.order.deliveryFeeCents === 3000, added.body.order)
+    ok(
+      'and the total still counts it',
+      added.body.order.totalCents === added.body.order.subtotalCents + 3000,
+      added.body.order,
+    )
+
+    const bill = await call(`/staff/bill/${paid.body.order.id}`, { token: roadToken })
+    ok('the counter bill shows it as its own line', bill.body.bill.deliveryFeeCents === 3000, bill.body.bill)
+
+    const inv = await call('/staff/pos/finalise', { token: roadToken, body: { orderId: paid.body.order.id } })
+    ok('the invoice carries it as a charge', inv.status === 200 || inv.status === 201, inv.body)
+    ok(
+      'named so a customer can see what it was',
+      JSON.stringify(inv.body.invoice).includes('Delivery'),
+      inv.body.invoice?.charges ?? inv.body.invoice,
+    )
+    ok(
+      'and the invoice is worth what the order was',
+      inv.body.invoice.totalCents === added.body.order.totalCents,
+      { invoice: inv.body.invoice.totalCents, order: added.body.order.totalCents },
+    )
+
+    // The fee was copied onto the order, so what the customer agreed to pay
+    // survives the restaurant changing its mind about the area afterwards.
+    await call(`/staff/delivery-areas/${kerbId}`, { token: roadToken, method: 'DELETE' })
+    ok(
+      'dropping the area later leaves an existing order alone',
+      (await call(`/orders/${paid.body.order.orderNumber}?token=${paid.body.order.verifyToken}`)).body.order
+        .deliveryFeeCents === 3000,
+    )
+  }
+
+  group('THE ACCOUNT ITSELF — a restaurant taking over its own login')
+  {
+    // A restaurant could edit its menu and its photos but not the login it was
+    // handed, so the password whoever set it up chose was the password forever.
+    const start = await call('/auth/register-restaurant', {
+      body: {
+        name: 'Handover Owner',
+        email: 'handover@tablo.test',
+        password: 'firstpass1',
+        restaurantName: 'Handover Cafe',
+      },
+    })
+    ok('a restaurant account exists', start.status === 201, start.body)
+    let token = start.body.token
+
+    ok(
+      'the wrong current password changes nothing',
+      (await call('/auth/me/credentials', { token, body: { currentPassword: 'nope', newPassword: 'secondpass1' } }))
+        .status === 403,
+    )
+    ok(
+      'and a short new password is refused',
+      (await call('/auth/me/credentials', { token, body: { currentPassword: 'firstpass1', newPassword: 'abc' } }))
+        .status === 400,
+    )
+    ok(
+      'an email somebody else already uses is refused',
+      (await call('/auth/me/credentials', {
+        token,
+        body: { currentPassword: 'firstpass1', email: 'test.customer@tablo.test' },
+      })).status === 409,
+    )
+
+    const moved = await call('/auth/me/credentials', {
+      token,
+      body: { currentPassword: 'firstpass1', email: 'the.actual.cafe@tablo.test', newPassword: 'secondpass1' },
+    })
+    ok('the account moves to the restaurant’s own address', moved.status === 200, moved.body)
+    ok('and hands back a token so the screen keeps working', !!moved.body.token, moved.body)
+    token = moved.body.token
+    ok(
+      'that token is still good for staff work',
+      (await call('/staff/restaurant', { token })).status === 200,
+    )
+
+    ok(
+      'the old password no longer opens it',
+      (await call('/auth/login', { body: { email: 'the.actual.cafe@tablo.test', password: 'firstpass1' } })).status ===
+        401,
+    )
+    ok(
+      'the old address no longer opens it either',
+      (await call('/auth/login', { body: { email: 'handover@tablo.test', password: 'secondpass1' } })).status === 401,
+    )
+    const back = await call('/auth/login', {
+      body: { email: 'the.actual.cafe@tablo.test', password: 'secondpass1' },
+    })
+    ok('the new pair does', back.status === 200, back.body)
+    ok(
+      'and whoever else was signed in has been signed out',
+      (await call('/staff/restaurant', { token: start.body.token })).status === 401,
+    )
+  }
 
   group('ROADSIDE — a car outside is a session like a table is')
   const zoneRes = await call('/staff/zones', {

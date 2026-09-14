@@ -37,23 +37,34 @@ if (!tables.length) {
 const escape = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
+/** The QR for one table, as SVG. High correction: these get printed, taped
+ *  down, and scanned across a table at night under a glass of water. */
+const qrSvg = (url: string) =>
+  QRCode.toString(url, {
+    type: 'svg',
+    errorCorrectionLevel: 'H',
+    margin: 0,
+    color: { dark: '#111111', light: '#ffffff' },
+  })
+
+/** The drawing inside a QR's <svg>, plus the grid size it was drawn against. */
+function qrParts(svg: string): { inner: string; size: number } {
+  const box = svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) /)
+  const inner = svg.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>[\s\S]*$/, '')
+  return { inner, size: box ? Number(box[1]) : 25 }
+}
+
+const host = site.replace(/^https?:\/\//, '').replace(/\/$/, '')
+
 const cards = await Promise.all(
   tables.map(async (t) => {
-    const url = `${site}/t/${t.token}`
-    // High correction: these get printed, taped down, and scanned under a glass
-    // of water at night.
-    const svg = await QRCode.toString(url, {
-      type: 'svg',
-      errorCorrectionLevel: 'H',
-      margin: 0,
-      color: { dark: '#111111', light: '#ffffff' },
-    })
+    const svg = await qrSvg(`${site}/t/${t.token}`)
+    // Three things in order, and nothing else on the card: which table this is,
+    // the code for it, and where it goes.
     return `    <section class="card">
-      <p class="place">${escape(restaurant.name)}</p>
       <h2 class="table">${escape(t.label)}</h2>
       <div class="qr">${svg.replace(/<\?xml[^>]*\?>/, '')}</div>
-      <p class="how">Point your camera here to see the menu and order</p>
-      <p class="url">${escape(url.replace(/^https:\/\//, ''))}</p>
+      <p class="url">${escape(host)}</p>
     </section>`
   }),
 )
@@ -81,22 +92,20 @@ const html = `<!doctype html>
     background: #fff;
     border: 1px dashed #bbb;
     border-radius: 6mm;
-    padding: 8mm 5mm 6mm;
+    padding: 9mm 5mm 8mm;
     text-align: center;
     break-inside: avoid;
   }
-  .place {
-    margin: 0 0 2mm;
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #8a8a8a;
+  .table {
+    margin: 0 0 6mm;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 30px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
-  .table { margin: 0 0 5mm; font-size: 26px; letter-spacing: -0.02em; }
-  .qr { width: 42mm; height: 42mm; margin: 0 auto 5mm; }
+  .qr { width: 44mm; height: 44mm; margin: 0 auto 6mm; }
   .qr svg { width: 100%; height: 100%; display: block; }
-  .how { margin: 0 0 2mm; font-size: 11px; line-height: 1.35; color: #444; }
-  .url { margin: 0; font-size: 9px; color: #9a9a9a; font-family: ui-monospace, Menlo, monospace; }
+  .url { margin: 0; font-size: 13px; letter-spacing: 0.12em; color: #555; }
   @media print {
     body { background: #fff; }
     .lede { display: none; }
@@ -123,11 +132,27 @@ fs.mkdirSync(outDir, { recursive: true })
 const file = path.join(outDir, `${slug}-tables.html`)
 fs.writeFileSync(file, html)
 
-// The same codes as standalone images, for anyone who would rather drop one
-// into a poster than print the sheet.
+// Each card on its own, as a vector: the same three things, drawn rather than
+// laid out, so it prints crisply at a business card or a whole page and can be
+// handed to a print shop as-is.
+const CARD_W = 300
+const CARD_H = 400
 for (const t of tables) {
-  const url = `${site}/t/${t.token}`
-  await QRCode.toFile(path.join(outDir, `${slug}-${t.label.toLowerCase().replace(/\s+/g, '-')}.png`), url, {
+  const { inner, size } = qrParts(await qrSvg(`${site}/t/${t.token}`))
+  const qrBox = 200
+  const scale = qrBox / size
+  const card = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_W} ${CARD_H}" width="${CARD_W}" height="${CARD_H}">
+  <rect width="${CARD_W}" height="${CARD_H}" fill="#ffffff"/>
+  <text x="${CARD_W / 2}" y="76" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="40" fill="#111111">${escape(t.label)}</text>
+  <g transform="translate(${(CARD_W - qrBox) / 2}, 112) scale(${scale})">${inner}</g>
+  <text x="${CARD_W / 2}" y="364" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="19" letter-spacing="2.2" fill="#555555">${escape(host)}</text>
+</svg>
+`
+  const base = `${slug}-${t.label.toLowerCase().replace(/\s+/g, '-')}`
+  fs.writeFileSync(path.join(outDir, `${base}-card.svg`), card)
+
+  // The bare code as an image too, for dropping into a poster or a menu.
+  await QRCode.toFile(path.join(outDir, `${base}.png`), `${site}/t/${t.token}`, {
     errorCorrectionLevel: 'H',
     margin: 2,
     width: 900,
@@ -136,5 +161,6 @@ for (const t of tables) {
 
 console.log(`\n  ${restaurant.name}: ${tables.length} table QR code${tables.length === 1 ? '' : 's'}`)
 for (const t of tables) console.log(`    ${t.label.padEnd(9)} ${site}/t/${t.token}`)
-console.log(`\n  Sheet:  ${path.relative(process.cwd(), file)}`)
-console.log(`  Images: ${path.relative(process.cwd(), outDir)}/${slug}-table-*.png\n`)
+console.log(`\n  Sheet:  ${path.relative(process.cwd(), file)}   (all ${tables.length} on one page)`)
+console.log(`  Cards:  ${path.relative(process.cwd(), outDir)}/${slug}-table-*-card.svg`)
+console.log(`  Codes:  ${path.relative(process.cwd(), outDir)}/${slug}-table-*.png\n`)

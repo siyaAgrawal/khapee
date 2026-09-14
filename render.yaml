@@ -24,6 +24,14 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
 
+    # The app's own domain. Render provisions the certificate once the DNS below
+    # points here; until then the onrender.com address keeps working, and after
+    # it does both do. Nothing in the app hardcodes either — QR codes and share
+    # links are built from whichever host the request came in on.
+    domains:
+      - khapee.com
+      - www.khapee.com
+
     envVars:
       # NODE_ENV is deliberately NOT set here. Render applies env vars to the
       # build as well as the run, and NODE_ENV=production makes npm drop the

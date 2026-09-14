@@ -24,6 +24,15 @@ function groupByPerson(items: any[]): { name: string; items: any[] }[] {
 
 type Order = any
 
+/** Placed today, read the way the server stores it: "YYYY-MM-DD HH:MM:SS" UTC. */
+function isToday(createdAt: string): boolean {
+  const d = new Date(String(createdAt).replace(' ', 'T') + 'Z')
+  const now = new Date()
+  return (
+    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  )
+}
+
 const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
   { key: 'new', title: 'New', statuses: ['NEW'] },
   { key: 'accepted', title: 'Accepted', statuses: ['ACCEPTED'] },
@@ -41,6 +50,7 @@ export default function StaffOrders() {
   const [busyId, setBusyId] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [view, setView] = useState<'board' | 'list'>('board')
+  const [focus, setFocus] = useState<string | null>(null)
   const [alerts, setAlerts] = useState(notifyPermission())
   const knownIds = useRef<Set<number>>(new Set())
   const firstLoad = useRef(true)
@@ -78,12 +88,27 @@ export default function StaffOrders() {
   }, [load])
 
   // Live push from the server, with a slow poll as a safety net.
+  //
+  // A phone left on the counter is the normal case, and a backgrounded tab gets
+  // its timers throttled to nothing and its event stream dropped. Coming back
+  // to it, the board could be minutes stale with no sign of it — which is what
+  // made reloading by hand feel necessary. So it also refreshes the moment the
+  // screen is looked at again.
   useEffect(() => {
     const close = openStream(() => load())
     const poll = setInterval(load, 8000)
+    const onWake = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onWake)
+    window.addEventListener('focus', onWake)
+    window.addEventListener('online', onWake)
     return () => {
       close()
       clearInterval(poll)
+      document.removeEventListener('visibilitychange', onWake)
+      window.removeEventListener('focus', onWake)
+      window.removeEventListener('online', onWake)
     }
   }, [load])
 
@@ -114,17 +139,78 @@ export default function StaffOrders() {
     }
   }
 
-  const visible = useMemo(
-    () => (orders ?? []).filter((o) => filter === 'all' || o.type === filter),
-    [orders, filter],
-  )
+  /**
+   * The numbers along the top are the quickest way to say what you want to look
+   * at, and they were only ever decoration — you read "3 unpaid" and then went
+   * hunting for which three. Tapping one now narrows the screen to exactly
+   * those orders, and says so in a line you can dismiss.
+   */
+  const FOCUS: Record<string, { label: string; match: (o: Order) => boolean; asList?: boolean }> = {
+    new: { label: 'New orders', match: (o) => o.status === 'NEW' },
+    active: {
+      label: 'Orders in progress',
+      match: (o) => !['COMPLETED', 'PICKED_UP', 'CANCELLED'].includes(o.status),
+    },
+    today: { label: "Today's orders", match: (o) => isToday(o.createdAt), asList: true },
+    paid: {
+      label: 'Paid today',
+      match: (o) => isToday(o.createdAt) && o.paymentStatus === 'PAID' && o.status !== 'CANCELLED',
+      asList: true,
+    },
+    unpaid: {
+      label: 'Waiting to be paid',
+      match: (o) => o.paymentStatus === 'UNPAID' && o.status !== 'CANCELLED',
+      asList: true,
+    },
+  }
+
+  const focusOn = (key: string) => {
+    setFocus(key)
+    // History has to be in scope for anything that can include a finished
+    // order, or tapping "Today" on a quiet afternoon shows nothing at all.
+    if (FOCUS[key]?.asList) {
+      setScope('all')
+      setView('list')
+    }
+  }
+
+  const visible = useMemo(() => {
+    const f = focus ? FOCUS[focus] : null
+    return (orders ?? []).filter(
+      (o) => (filter === 'all' || o.type === filter) && (!f || f.match(o)),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, filter, focus])
 
   return (
     <>
+      {/* Title and state on the first line, the controls on their own line
+          below. All of it used to wrap into one heap: on a phone the heading,
+          a badge, five tabs and two buttons came out as four ragged rows of
+          things that looked equally important. */}
       <div className="staff-head">
         <h1>Orders</h1>
         <span className="badge badge-accent badge-live">Live</span>
         <div className="spacer" />
+        {alerts !== 'granted' && alerts !== 'unsupported' && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={async () => setAlerts((await askToNotify()) ? 'granted' : notifyPermission())}
+          >
+            🔔 <span className="hide-phone">Alert me</span>
+          </button>
+        )}
+      </div>
+
+      <div className="staff-controls">
+        <div className="tabs" style={{ marginBottom: 0 }}>
+          <button className={`tab ${view === 'board' ? 'active' : ''}`} onClick={() => setView('board')}>
+            Board
+          </button>
+          <button className={`tab ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>
+            List
+          </button>
+        </div>
         <div className="tabs" style={{ marginBottom: 0 }}>
           {(['all', 'dine_in', 'pickup'] as const).map((f) => (
             <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
@@ -132,52 +218,51 @@ export default function StaffOrders() {
             </button>
           ))}
         </div>
-        <div className="tabs" style={{ marginBottom: 0 }}>
-          <button className={`tab ${view === 'board' ? 'active' : ''}`} onClick={() => setView('board')}>
-            Board
-          </button>
-          <button className={`tab ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>
-            All orders
-          </button>
-        </div>
+        <span className="spacer" />
         <button
           className="btn btn-secondary btn-sm"
           onClick={() => setScope(scope === 'active' ? 'all' : 'active')}
         >
           {scope === 'active' ? 'Show history' : 'Active only'}
         </button>
-        {alerts !== 'granted' && alerts !== 'unsupported' && (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={async () => setAlerts((await askToNotify()) ? 'granted' : notifyPermission())}
-          >
-            🔔 Alert me
-          </button>
-        )}
       </div>
 
       {summary && (
         <div className="stat-row">
-          <div className="stat">
-            <span>New</span>
-            <strong>{summary.newOrders}</strong>
-          </div>
-          <div className="stat">
-            <span>In progress</span>
-            <strong>{summary.activeOrders}</strong>
-          </div>
-          <div className="stat">
-            <span>Today</span>
-            <strong>{summary.todayOrders}</strong>
-          </div>
-          <div className="stat">
-            <span>Today&rsquo;s sales</span>
-            <strong>{money(summary.todayCents)}</strong>
-          </div>
-          <div className="stat">
-            <span>Unpaid</span>
-            <strong>{summary.unpaid}</strong>
-          </div>
+          {(
+            [
+              ['new', 'New', summary.newOrders, null],
+              ['active', 'In progress', summary.activeOrders, null],
+              ['today', 'Today', summary.todayOrders, null],
+              ['paid', 'Taken today', money(summary.todayCents), 'paid in full'],
+              ['unpaid', 'Unpaid', summary.unpaid, summary.unpaidCents ? money(summary.unpaidCents) : null],
+            ] as const
+          ).map(([key, label, value, note]) => (
+            <button
+              key={key}
+              type="button"
+              className={`stat stat-btn ${focus === key ? 'on' : ''}`}
+              aria-pressed={focus === key}
+              onClick={() => (focus === key ? setFocus(null) : focusOn(key))}
+            >
+              <span>{label}</span>
+              <strong>{value}</strong>
+              {note && <em className="stat-note">{note}</em>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {focus && (
+        <div className="focus-bar">
+          <strong>{FOCUS[focus]?.label}</strong>
+          <span className="tiny muted">
+            {visible.length} order{visible.length === 1 ? '' : 's'}
+          </span>
+          <span className="spacer" />
+          <button className="btn btn-ghost btn-sm" onClick={() => setFocus(null)}>
+            Show everything
+          </button>
         </div>
       )}
 

@@ -1724,6 +1724,12 @@ textarea {
   font-weight: 700;
   text-align: center;
 }
+/* Transparent on wide screens: the links stay direct children of the sidebar
+   column, exactly as they were before they were wrapped for the phone layout. */
+.side-links {
+  display: contents;
+}
+
 .side-foot {
   margin-top: auto;
   padding-top: 14px;
@@ -1772,6 +1778,58 @@ textarea {
   font-size: 25px;
   font-family: var(--serif);
   letter-spacing: -0.02em;
+  display: block;
+}
+.stat-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-style: normal;
+  color: var(--muted);
+}
+
+/* The figures double as the filter, so they have to look pressable. */
+.stat-btn {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.stat-btn:hover {
+  border-color: var(--line-strong);
+}
+.stat-btn.on {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+/* The row of controls under the heading: view, then what to show, then scope. */
+.staff-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.staff-controls .spacer {
+  flex: 1;
+}
+
+.focus-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+.focus-bar .spacer {
+  flex: 1;
 }
 
 /* ---------------------------------------------------------- orders board */
@@ -2188,9 +2246,10 @@ textarea {
 /* ------------------------------------------------------------ responsive */
 @media (max-width: 860px) {
   .staff-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .staff-side {
+    min-width: 0;
     position: sticky;
     top: 0;
     height: auto;
@@ -2212,8 +2271,27 @@ textarea {
   .side-link {
     white-space: nowrap;
   }
+  /* Which restaurant and who you are on the first line; everywhere you can go
+     on the second, scrolling sideways. Only the links scroll, so the
+     switcher's menu still has room to open over the page. */
+  .side-links {
+    order: 2;
+    flex: 1 0 100%;
+    /* Without this the row of links sets the width of the whole grid column
+       and drags the page out from under the content below it. */
+    min-width: 0;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .side-links::-webkit-scrollbar {
+    display: none;
+  }
   /* Sign out stays reachable in the compact bar. */
   .side-foot {
+    order: 1;
     margin: 0 0 0 auto;
     padding: 0 0 0 8px;
     border-top: 0;
@@ -2264,6 +2342,59 @@ textarea {
   }
   .modal {
     align-self: flex-end;
+  }
+
+  /* ------------------------------------------------ the staff screens, small
+     Five stat cards, a heading, two sets of tabs and two buttons were all
+     fighting over the same 360 pixels. Two columns of figures, one scrolling
+     row of tabs, and smaller type gives each of them a shape again. */
+  .staff-head {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .staff-head h1 {
+    font-size: 21px;
+  }
+  .stat-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .stat {
+    padding: 10px 12px;
+  }
+  .stat span {
+    font-size: 10.5px;
+  }
+  .staff-controls {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .staff-controls::-webkit-scrollbar {
+    display: none;
+  }
+  .staff-controls .tabs {
+    flex: 0 0 auto;
+  }
+  .staff-controls .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  /* A column at a time, so the board reads as pages rather than a smear. */
+  .board {
+    grid-auto-columns: 86%;
+    scroll-snap-type: x mandatory;
+    gap: 10px;
+  }
+  .board-col {
+    scroll-snap-align: start;
+  }
+  .hide-phone {
+    display: none;
   }
 }
 
@@ -2617,9 +2748,26 @@ textarea {
   }
   .staff-side .switcher {
     display: block;
+    /* Shares the top line with Sign out rather than claiming all of it. */
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  /* The top line is: which restaurant, and the way out. "Order as a customer"
+     is a detour, not a control, and the address is already on the Restaurant
+     screen — both were pushing Sign out off a phone entirely, which left no
+     way to leave the dashboard at all. */
+  .side-foot > .side-link {
+    display: none;
   }
   .side-user {
+    display: block;
+    padding: 0;
+  }
+  .side-user .tiny {
     display: none;
+  }
+  .side-user .btn {
+    white-space: nowrap;
   }
 }
 

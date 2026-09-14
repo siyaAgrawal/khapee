@@ -542,6 +542,37 @@ async function runTests() {
   group('Sessions')
   const summaryBefore = await call('/staff/summary', { token: staffToken })
   ok('staff summary reports live counts', summaryBefore.body.summary.todayOrders > 0)
+
+  {
+    // "Today's sales" is what a restaurant reads as the money it has taken, and
+    // it was the value of every order placed today — food still on the stove
+    // and bills nobody had settled included.
+    const before = summaryBefore.body.summary
+    const unpaidNow = (await call('/staff/orders?scope=all', { token: staffToken })).body.orders.filter(
+      (o: any) => o.paymentStatus === 'UNPAID' && o.status !== 'CANCELLED',
+    )
+    ok('there are unpaid orders on the board', unpaidNow.length > 0, unpaidNow.length)
+    ok(
+      'and none of their money is counted as taken',
+      before.todayCents < unpaidNow.reduce((n: number, o: any) => n + o.totalCents, 0) + before.todayCents,
+      before,
+    )
+    ok('what is owed is reported alongside the count', before.unpaidCents > 0, before)
+
+    const one = unpaidNow[0]
+    await call(`/staff/orders/${one.id}/payment`, { token: staffToken, body: { paymentStatus: 'PAID' } })
+    const after = (await call('/staff/summary', { token: staffToken })).body.summary
+    ok('marking one paid moves its value into sales', after.todayCents === before.todayCents + one.totalCents, {
+      before: before.todayCents,
+      after: after.todayCents,
+      order: one.totalCents,
+    })
+    ok('and takes it off what is owed', after.unpaidCents === before.unpaidCents - one.totalCents, {
+      before: before.unpaidCents,
+      after: after.unpaidCents,
+    })
+    ok('the unpaid count drops by one too', after.unpaid === before.unpaid - 1, { before: before.unpaid, after: after.unpaid })
+  }
   await call('/auth/logout', { token: staffToken, method: 'POST' })
   ok('logging out invalidates the session', (await call('/staff/orders', { token: staffToken })).status === 401)
   const reLogin = await call('/auth/login', { body: { email: 'staff@mornington.test', password: 'password123' } })
@@ -2021,6 +2052,44 @@ async function runTests() {
       const r = await call('/resolve', { body: { value: `${prefix}:ACCESS:${mornington.id}:${c}` } })
       ok(`a ${prefix}: access code still scans`, r.status === 200 && r.body.kind === 'access', r.body)
     }
+  }
+
+  group('STAYING SIGNED IN — across the rebuild that happens every night')
+  {
+    // The free plan's container has no disk: each time the site sleeps, the
+    // database is rebuilt from the snapshot and the sessions table comes back
+    // empty. Every login died with it, so a restaurant signed in again every
+    // time it opened the dashboard. A token that proves itself does not.
+    const who = await call('/auth/login', { body: { email: 'owner@newplace.test', password: 'hunter22' } })
+    ok('an owner signs in', who.status === 200, who.body)
+    const token = who.body.token
+    ok('and the token says who it is for, signed', /^v1\.\d+\.\d+\./.test(token), token)
+
+    // Exactly what a restart does to it.
+    const wipe = new Database(DB_PATH)
+    wipe.prepare('DELETE FROM sessions').run()
+    wipe.close()
+
+    ok(
+      'the same token still works with the sessions table emptied',
+      (await call('/staff/restaurant', { token })).status === 200,
+    )
+    ok(
+      'and still on the same restaurant',
+      (await call('/auth/me', { token })).body.user.restaurantId != null,
+    )
+
+    // The things that should still turn a token away.
+    ok(
+      'a token signed for nobody is refused',
+      (await call('/staff/restaurant', { token: 'v1.1.99999999999999.notasignature' })).status === 401,
+    )
+    ok(
+      'and one whose expiry has been edited is refused',
+      (await call('/staff/restaurant', { token: token.replace(/\.(\d+)\./, '.99999999999999.') })).status === 401,
+    )
+    const out = await call('/auth/logout', { token, method: 'POST' })
+    ok('signing out still ends it', out.status === 200 && (await call('/auth/me', { token })).status === 401)
   }
 
   group('SEARCH — what a crawler is handed')

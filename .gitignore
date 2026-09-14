@@ -13,3 +13,6 @@ data/uploads/
 .DS_Store
 .vercel
 api/_bundle.mjs
+
+# The key that signs login tokens. Never committed.
+data/.session-secret

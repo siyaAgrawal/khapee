@@ -75,13 +75,11 @@ export default function Login() {
           Run a restaurant? <Link to="/for-restaurants">List it on Khapee</Link>
         </p>
 
-        <div className="demo-box">
-          <b>Restaurant logins</b> — each restaurant signs in with its own address, in the form{' '}
-          <code>name@tablo.local</code> (for example <code>yazu-at-the-dome@tablo.local</code>).
-          <br />
-          Imported restaurants start with the password <code>password123</code> — change it once you
-          hand the dashboard over.
-        </div>
+        {/* There used to be a note here spelling out the address format every
+            imported restaurant uses and the password they all start with. This
+            page is open to anyone on the internet, and those accounts are real
+            and still exist, so it was a list of working keys. Whoever runs a
+            restaurant is handed its login directly. */}
       </div>
     </div>
   )

@@ -185,6 +185,15 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TEXT    NOT NULL DEFAULT (datetime('now')),
   expires_at TEXT    NOT NULL
 );
+
+-- A login token proves itself by its signature, so signing out cannot simply
+-- forget the row: it has to say so. Not carried in the snapshot — a token that
+-- outlives a rebuild is the point, and by then the browser holding a signed-out
+-- one has long since thrown it away.
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+  token      TEXT    PRIMARY KEY,
+  revoked_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
 `)
 
 /** Additive migrations so an existing database picks up new columns on boot. */

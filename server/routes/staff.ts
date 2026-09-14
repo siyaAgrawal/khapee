@@ -631,10 +631,18 @@ staffRouter.get('/summary', (req, res) => {
         (SELECT COUNT(*) FROM orders WHERE restaurant_id = ? AND status = 'NEW') AS newOrders,
         (SELECT COUNT(*) FROM orders WHERE restaurant_id = ? AND status NOT IN ('COMPLETED','PICKED_UP','CANCELLED')) AS activeOrders,
         (SELECT COUNT(*) FROM orders WHERE restaurant_id = ? AND date(created_at) = date('now')) AS todayOrders,
-        (SELECT COALESCE(SUM(total_cents),0) FROM orders WHERE restaurant_id = ? AND date(created_at) = date('now') AND status != 'CANCELLED') AS todayCents,
-        (SELECT COUNT(*) FROM orders WHERE restaurant_id = ? AND payment_status = 'UNPAID' AND status NOT IN ('CANCELLED')) AS unpaid`,
+        -- Taken, not ordered. This counted every order placed today whether or
+        -- not a rupee had arrived, so the figure a restaurant reads as "what we
+        -- made" included food still being cooked and bills nobody had settled.
+        (SELECT COALESCE(SUM(total_cents),0) FROM orders
+          WHERE restaurant_id = ? AND date(created_at) = date('now')
+            AND status != 'CANCELLED' AND payment_status = 'PAID') AS todayCents,
+        (SELECT COUNT(*) FROM orders WHERE restaurant_id = ? AND payment_status = 'UNPAID' AND status NOT IN ('CANCELLED')) AS unpaid,
+        -- What is still owed, so the count next to it means something.
+        (SELECT COALESCE(SUM(total_cents),0) FROM orders
+          WHERE restaurant_id = ? AND payment_status = 'UNPAID' AND status NOT IN ('CANCELLED')) AS unpaidCents`,
     )
-    .get(restaurantId, restaurantId, restaurantId, restaurantId, restaurantId) as any
+    .get(restaurantId, restaurantId, restaurantId, restaurantId, restaurantId, restaurantId) as any
   res.json({ summary: row })
 })
 

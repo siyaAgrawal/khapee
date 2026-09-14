@@ -44,6 +44,15 @@ services:
       - key: ORDRO_SEED
         value: snapshot
 
+      # Signs login tokens. Render generates it once and keeps it across
+      # deploys and restarts, which is the whole point: the container has no
+      # disk, so the database — and with it the sessions table — is rebuilt
+      # from the snapshot every time the service wakes. A key that outlives
+      # that is what stops everyone being signed out each time the site sleeps.
+      # Changing it signs everybody out.
+      - key: KHAPEE_SECRET
+        generateValue: true
+
     # --- Paid upgrade: persistent data ---------------------------------------
     # Set plan: starter above, then uncomment both of these.
     #

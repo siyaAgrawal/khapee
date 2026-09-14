@@ -46,13 +46,18 @@ export default function StaffLayout() {
           <span className="brand-mark">◗</span> Khapee
         </div>
         <RestaurantSwitcher />
-        {LINKS.map((l) => (
-          <NavLink key={l.to} to={l.to} className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
-            <span aria-hidden>{l.icon}</span>
-            {l.label}
-            {l.to === '/staff/orders' && newCount > 0 && <span className="pill">{newCount}</span>}
-          </NavLink>
-        ))}
+        {/* `display: contents` on wide screens, so the sidebar is unchanged;
+            on a phone this becomes the one row that scrolls sideways, instead
+            of twelve links wrapping into five rows of chrome above the work. */}
+        <nav className="side-links">
+          {LINKS.map((l) => (
+            <NavLink key={l.to} to={l.to} className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
+              <span aria-hidden>{l.icon}</span>
+              {l.label}
+              {l.to === '/staff/orders' && newCount > 0 && <span className="pill">{newCount}</span>}
+            </NavLink>
+          ))}
+        </nav>
         <div className="side-foot">
           <NavLink to="/" className="side-link">
             <span aria-hidden>🍽️</span> Order as a customer

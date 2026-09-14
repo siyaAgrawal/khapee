@@ -90,8 +90,13 @@ app.get('/api/stream', (req, res) => {
   res.flushHeaders?.()
   res.write('retry: 3000\n\n')
 
+  // Membership, not the account's original role — the same rule requireStaff
+  // follows. An address that signed up as a customer and later took over a
+  // restaurant has role 'customer' forever, and this line was reading that as
+  // "not staff" and subscribing them to nothing: their board only ever changed
+  // when they reloaded it by hand.
   const client = addClient(res, {
-    restaurantId: req.user?.role === 'staff' ? req.user.restaurantId : null,
+    restaurantId: req.user?.restaurantId ?? null,
     userId: req.user?.id ?? null,
   })
   res.write(`event: ready\ndata: ${JSON.stringify({ ok: true })}\n\n`)

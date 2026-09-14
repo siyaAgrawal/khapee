@@ -42,6 +42,24 @@ export function readDining(restaurantId?: number): DiningSession | null {
   }
 }
 
+/**
+ * Whether this order belongs to one party on its own, rather than to a table
+ * several people are adding to.
+ *
+ * A group room is a table's shared ticket — it is keyed to a table, and the
+ * kitchen sends it to that table. Someone waiting in their car or at home is
+ * not at a table, so a group handle left over from an earlier visit must not
+ * capture their order: it did, and the cart offered "Add to table" as the only
+ * button, with no way to place the car order at all.
+ *
+ * The group itself is left alone rather than cleared. It is still theirs, and
+ * it comes back the moment the car or delivery session ends.
+ */
+export function ownOrderOnly(restaurantId?: number): boolean {
+  const mode = readDining(restaurantId)?.serviceMode
+  return mode === 'car' || mode === 'delivery'
+}
+
 export function clearDining() {
   try {
     localStorage.removeItem(KEY)

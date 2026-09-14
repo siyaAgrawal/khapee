@@ -4,7 +4,7 @@ import Header from '../components/Header'
 import { useCart } from '../lib/cart'
 import { api, ApiError } from '../lib/api'
 import { readGroup, saveGroup } from '../lib/group'
-import { readDining } from '../lib/dining'
+import { ownOrderOnly, readDining } from '../lib/dining'
 import { readTableContext } from '../lib/table-context'
 import { useSession } from '../lib/session'
 import { QRCanvas } from '../lib/qr'
@@ -16,7 +16,11 @@ export default function Cart() {
   const toast = useToast()
   const { user } = useSession()
   const group = readGroup()
-  const inGroup = !!group && group.restaurantId === cart.restaurantId
+  // Waiting in a car or at home is this party's own order, whatever room they
+  // were last in at this restaurant. Group ordering is untouched everywhere
+  // else — see ownOrderOnly.
+  const ownOrder = ownOrderOnly(cart.restaurantId ?? undefined)
+  const inGroup = !!group && group.restaurantId === cart.restaurantId && !ownOrder
   const [adding, setAdding] = useState(false)
   const [roomCode, setRoomCode] = useState<string | null>(inGroup ? group!.code : null)
   const [shareOpen, setShareOpen] = useState(false)
@@ -109,13 +113,18 @@ export default function Cart() {
                   </p>
                   <h2 style={{ marginBottom: 6 }}>{cart.restaurantName}</h2>
                 </div>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={roomCode ? () => setShareOpen(true) : invite}
-                  disabled={opening}
-                >
-                  {opening ? <Spinner /> : roomCode ? `👥 ${roomCode}` : '👥 Invite'}
-                </button>
+                {/* A room is a table's shared ticket, so there is nothing to
+                    invite anyone to from a car or an address — and offering it
+                    there only led to "Please choose your table number". */}
+                {!ownOrder && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={roomCode ? () => setShareOpen(true) : invite}
+                    disabled={opening}
+                  >
+                    {opening ? <Spinner /> : roomCode ? `👥 ${roomCode}` : '👥 Invite'}
+                  </button>
+                )}
               </div>
               {cart.lines.map((line) => (
                 <div key={line.menuItemId} className="cart-line">

@@ -6,7 +6,7 @@ import { useVegMode } from '../lib/veg'
 import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../components/ui'
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
-import { readDining } from '../lib/dining'
+import { ownOrderOnly, readDining } from '../lib/dining'
 import { readGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
@@ -43,7 +43,9 @@ export default function Restaurant() {
   const tableCtx = readTableContext(restaurantId)
   const dining = readDining(restaurantId)
   const activeGroup = readGroup()
-  const inThisGroup = activeGroup?.restaurantId === restaurantId
+  // Somebody in their car was being told "You're at table GSRCQ — add to it"
+  // in the same breath as "In the car". The session they are actually in wins.
+  const inThisGroup = activeGroup?.restaurantId === restaurantId && !ownOrderOnly(restaurantId)
 
   const load = () => {
     setError('')

@@ -71,6 +71,21 @@ export function createSession(input: {
   // An open dining session is proof enough to start a group.
   const dining = input.sessionToken ? diningByToken(input.sessionToken) : null
   const hasDining = !!dining && diningIsValid(dining, input.restaurantId)
+
+  // A room is a table's shared ticket: the kitchen sends it to that table.
+  // Someone sitting outside in their car, or waiting at an address, has no
+  // table for it to go to, and asking them for a table number — which is where
+  // this used to end up — is a question with no answer.
+  if (hasDining && (dining.service_mode === 'car' || dining.service_mode === 'delivery')) {
+    return {
+      ok: false,
+      status: 409,
+      error:
+        dining.service_mode === 'car'
+          ? 'A shared table order needs a table. Order for the car instead, and they will bring it out.'
+          : 'A shared table order needs a table. Order for delivery instead.',
+    }
+  }
   if (hasDining && dining.table_id && !tableId) {
     tableId = dining.table_id
     tableLabel = dining.table_label

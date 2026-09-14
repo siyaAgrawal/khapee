@@ -2145,6 +2145,66 @@ async function runTests() {
     bareRuns.body.groups.map((g: any) => g.zone),
   )
 
+  group('A CAR IS NOT A TABLE — where group ordering stops')
+  {
+    // A room is a table's shared ticket and the kitchen sends it to that table.
+    // Someone in their car has no table for it to go to. The cart was deciding
+    // "you are in a group" from a handle left over at this restaurant, so a car
+    // customer with an old room was offered "Add to table" as the only button
+    // and could not place a car order at all.
+    const car = await call('/sessions/car', {
+      body: { restaurantId: mornington.id, vehicle: 'Grey Alto' },
+    })
+    const fromCar = await call('/groups', {
+      body: { restaurantId: mornington.id, hostName: 'Siya', sessionToken: car.body.session.token, ahead: true },
+    })
+    ok('a room cannot be opened from a car', fromCar.status === 409, fromCar.body)
+    ok(
+      'and it says what to do instead of asking for a table number',
+      /bring it out/.test(fromCar.body.error ?? ''),
+      fromCar.body.error,
+    )
+
+    const areaForCar = await call('/staff/delivery-areas', {
+      token: roadToken,
+      body: { name: 'Kerbside', note: 'For the room checks', feeRupees: 0, minOrderRupees: 0 },
+    })
+    const home = await call('/sessions/delivery', {
+      body: {
+        restaurantId: mornington.id,
+        areaId: areaForCar.body.area.id,
+        address: '4 Saket Nagar, blue gate',
+        phone: '9822222222',
+      },
+    })
+    const fromHome = await call('/groups', {
+      body: { restaurantId: mornington.id, hostName: 'Siya', sessionToken: home.body.session.token, ahead: true },
+    })
+    ok('nor from an address', fromHome.status === 409, fromHome.body)
+
+    // The feature itself is untouched: this is the same call without a car.
+    const stillWorks = await call('/groups', {
+      body: { restaurantId: mornington.id, hostName: 'Siya', ahead: true },
+    })
+    ok('a room still opens around an ordinary cart', stillWorks.status === 201, stillWorks.body)
+
+    // And the car order the customer actually wanted goes through.
+    const carOrder = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'Grey Alto',
+        sessionToken: car.body.session.token,
+      },
+    })
+    ok('the car orders for itself', carOrder.status === 201, carOrder.body)
+    ok('as a car order, not a table one', carOrder.body.order.serviceType === 'car', carOrder.body.order)
+    ok('with no room attached to it', !carOrder.body.order.roomCode, carOrder.body.order.roomCode)
+
+    await call(`/staff/delivery-areas/${areaForCar.body.area.id}`, { token: roadToken, method: 'DELETE' })
+  }
+
   group('GROUPED ITEMS — a bar list inside one section')
   const grouped = await call(`/restaurants/${mornington.id}`)
   ok(

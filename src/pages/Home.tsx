@@ -116,8 +116,12 @@ export default function Home() {
     <div className="app">
       <Header />
       <main className="page">
+        {/* The name says it: kha-pee, eat and drink. The line under it stays in
+            plain English so the page still explains itself to someone who does
+            not read the joke. */}
         <div className="hero">
-          <h1>Order at the table, or ahead of time.</h1>
+          <h1 className="hero-line">Kuch khapee lo.</h1>
+          <p>Order at the table, from your car, or to your door.</p>
         </div>
 
         <div className="search-row">

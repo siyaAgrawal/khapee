@@ -35,6 +35,7 @@ import StaffCodes from './pages/staff/StaffCodes'
 import StaffTables from './pages/staff/StaffTables'
 import StaffMenu from './pages/staff/StaffMenu'
 import StaffVerify from './pages/staff/StaffVerify'
+import { MenuSection, OrdersSection, SettingsSection, TillSection } from './pages/staff/Sections'
 
 function StaffGate({ children }: { children: JSX.Element }) {
   const { user, loading } = useSession()
@@ -80,19 +81,42 @@ export default function App() {
         }
       >
         <Route index element={<Navigate to="/staff/orders" replace />} />
-        <Route path="till" element={<StaffPos />} />
-        <Route path="floor" element={<StaffOps />} />
-        <Route path="runs" element={<StaffRuns />} />
-        <Route path="zones" element={<StaffZones />} />
-        <Route path="orders" element={<StaffOrders />} />
-        <Route path="profile" element={<StaffProfile />} />
-        <Route path="payments" element={<StaffPayments />} />
-        <Route path="codes" element={<StaffCodes />} />
-        <Route path="tables" element={<StaffTables />} />
-        <Route path="menu" element={<StaffMenu />} />
-        <Route path="photos" element={<StaffPhotos />} />
+
+        {/* Four sections, each holding the views for one job. */}
+        <Route path="orders" element={<OrdersSection />}>
+          <Route index element={<StaffOrders />} />
+          <Route path="floor" element={<StaffOps />} />
+          <Route path="deliveries" element={<StaffRuns />} />
+          <Route path="check" element={<StaffVerify />} />
+        </Route>
+        <Route path="till" element={<TillSection />}>
+          <Route index element={<StaffPos />} />
+          <Route path="payments" element={<StaffPayments />} />
+        </Route>
+        <Route path="menu" element={<MenuSection />}>
+          <Route index element={<StaffMenu />} />
+          <Route path="photos" element={<StaffPhotos />} />
+        </Route>
+        <Route path="settings" element={<SettingsSection />}>
+          <Route index element={<StaffProfile />} />
+          <Route path="tables" element={<StaffTables />} />
+          <Route path="codes" element={<StaffCodes />} />
+          <Route path="zones" element={<StaffZones />} />
+        </Route>
+
         <Route path="table/:id" element={<StaffTable />} />
-        <Route path="verify" element={<StaffVerify />} />
+
+        {/* Where those views used to live. Bookmarks and anything already open
+            keep working rather than dropping someone on the front page. */}
+        <Route path="floor" element={<Navigate to="/staff/orders/floor" replace />} />
+        <Route path="runs" element={<Navigate to="/staff/orders/deliveries" replace />} />
+        <Route path="verify" element={<Navigate to="/staff/orders/check" replace />} />
+        <Route path="payments" element={<Navigate to="/staff/till/payments" replace />} />
+        <Route path="photos" element={<Navigate to="/staff/menu/photos" replace />} />
+        <Route path="profile" element={<Navigate to="/staff/settings" replace />} />
+        <Route path="tables" element={<Navigate to="/staff/settings/tables" replace />} />
+        <Route path="codes" element={<Navigate to="/staff/settings/codes" replace />} />
+        <Route path="zones" element={<Navigate to="/staff/settings/zones" replace />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

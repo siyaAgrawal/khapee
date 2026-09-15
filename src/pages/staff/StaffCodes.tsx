@@ -75,7 +75,6 @@ export default function StaffCodes() {
   return (
     <>
       <div className="staff-head">
-        <h1>Access codes</h1>
         <div className="spacer" />
         <button className="btn btn-accent" onClick={generate} disabled={busy}>
           {busy ? <Spinner /> : 'Generate new code'}

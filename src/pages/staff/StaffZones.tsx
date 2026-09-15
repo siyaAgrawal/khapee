@@ -55,7 +55,6 @@ export default function StaffZones() {
   return (
     <>
       <div className="staff-head">
-        <h1>Roadside zones</h1>
       </div>
       <p className="muted" style={{ marginTop: -6, marginBottom: 16 }}>
         The areas outside where customers park. Staff see these on the floor board.

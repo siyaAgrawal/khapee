@@ -57,7 +57,6 @@ export default function StaffVerify() {
   return (
     <>
       <div className="staff-head">
-        <h1>Verify an order</h1>
       </div>
 
       <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'minmax(280px, 380px) 1fr', alignItems: 'start' }}>

@@ -143,7 +143,6 @@ export default function StaffPos() {
   return (
     <>
       <div className="staff-head">
-        <h1>Till</h1>
         <div className="spacer" />
         <span className="tiny muted">
           {open.unbilled.length} to bill · {open.awaitingPayment.length} awaiting payment

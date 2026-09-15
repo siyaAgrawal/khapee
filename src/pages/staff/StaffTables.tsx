@@ -70,7 +70,6 @@ export default function StaffTables() {
   return (
     <>
       <div className="staff-head">
-        <h1>Tables</h1>
       </div>
 
       <form className="card card-pad mb-2" onSubmit={addTable}>

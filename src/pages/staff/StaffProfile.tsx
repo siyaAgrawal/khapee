@@ -239,7 +239,6 @@ export default function StaffProfile() {
   return (
     <>
       <div className="staff-head">
-        <h1>Your restaurant</h1>
         <div className="spacer" />
         <span className={`badge ${form.isOpen ? 'badge-open' : 'badge-closed'}`}>
           {form.isOpen ? 'Accepting orders' : 'Closed'}

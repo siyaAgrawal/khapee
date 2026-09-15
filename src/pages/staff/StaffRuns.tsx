@@ -72,7 +72,6 @@ export default function StaffRuns() {
   return (
     <>
       <div className="staff-head">
-        <h1>Deliveries</h1>
         <div className="spacer" />
         <span className="tiny muted">{total} waiting to go out</span>
       </div>

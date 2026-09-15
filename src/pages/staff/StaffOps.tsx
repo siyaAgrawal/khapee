@@ -166,7 +166,6 @@ export default function StaffOps() {
   return (
     <>
       <div className="staff-head">
-        <h1>Floor</h1>
         <div className="spacer" />
         <button className="btn btn-accent" onClick={() => setAdding(true)}>
           Add a car

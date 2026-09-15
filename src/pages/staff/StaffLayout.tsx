@@ -4,19 +4,21 @@ import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 
+/**
+ * Four places, not twelve.
+ *
+ * The old list named every screen in the app, which meant reading twelve
+ * labels to find the one you wanted and, on a phone, five rows of them above
+ * the work. These are the four jobs a restaurant actually does — take orders,
+ * take money, keep the menu, set the place up — and each opens onto the views
+ * that belong to it.
+ */
 const LINKS = [
-  { to: '/staff/till', label: 'Till', icon: '🧾' },
-  { to: '/staff/floor', label: 'Floor', icon: '🗺️' },
-  { to: '/staff/runs', label: 'Deliveries', icon: '🏃' },
-  { to: '/staff/orders', label: 'Orders', icon: '🧾' },
-  { to: '/staff/menu', label: 'Menu', icon: '📋' },
-  { to: '/staff/photos', label: 'Photos', icon: '📷' },
-  { to: '/staff/payments', label: 'Payments', icon: '💸' },
-  { to: '/staff/codes', label: 'Access codes', icon: '🔑' },
-  { to: '/staff/tables', label: 'Tables', icon: '🪑' },
-  { to: '/staff/zones', label: 'Roadside zones', icon: '🚗' },
-  { to: '/staff/verify', label: 'Verify order', icon: '📷' },
-  { to: '/staff/profile', label: 'Restaurant', icon: '🏪' },
+  // Hints are short enough to fit the sidebar without being cut off.
+  { to: '/staff/orders', label: 'Orders', hint: 'Live right now', icon: '🍳' },
+  { to: '/staff/till', label: 'Till', hint: 'Sales & payments', icon: '💳' },
+  { to: '/staff/menu', label: 'Menu', hint: 'Dishes & photos', icon: '📋' },
+  { to: '/staff/settings', label: 'Settings', hint: 'Tables & setup', icon: '⚙️' },
 ]
 
 export default function StaffLayout() {
@@ -52,8 +54,13 @@ export default function StaffLayout() {
         <nav className="side-links">
           {LINKS.map((l) => (
             <NavLink key={l.to} to={l.to} className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
-              <span aria-hidden>{l.icon}</span>
-              {l.label}
+              <span className="side-icon" aria-hidden>
+                {l.icon}
+              </span>
+              <span className="side-text">
+                {l.label}
+                <em>{l.hint}</em>
+              </span>
               {l.to === '/staff/orders' && newCount > 0 && <span className="pill">{newCount}</span>}
             </NavLink>
           ))}

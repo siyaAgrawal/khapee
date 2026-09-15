@@ -86,7 +86,6 @@ export default function StaffPhotos() {
   return (
     <>
       <div className="staff-head">
-        <h1>Photos</h1>
         <span className="badge">{assigned}/{data.photos.length} placed</span>
         <div className="spacer" />
         <div className="tabs" style={{ marginBottom: 0 }}>

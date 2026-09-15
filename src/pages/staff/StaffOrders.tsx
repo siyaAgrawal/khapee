@@ -24,6 +24,14 @@ function groupByPerson(items: any[]): { name: string; items: any[] }[] {
 
 type Order = any
 
+/** Where this one is going, in the words staff use for it. */
+function placeOf(o: any): string {
+  if (o.serviceMode === 'delivery' || o.serviceType === 'delivery') return o.deliveryArea || 'Delivery'
+  if (o.serviceMode === 'car' || o.serviceType === 'car') return o.zoneName ? `Car · ${o.zoneName}` : 'Car outside'
+  if (o.tableLabel) return o.tableLabel
+  return SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]
+}
+
 /** Placed today, read the way the server stores it: "YYYY-MM-DD HH:MM:SS" UTC. */
 function isToday(createdAt: string): boolean {
   const d = new Date(String(createdAt).replace(' ', 'T') + 'Z')
@@ -49,7 +57,14 @@ export default function StaffOrders() {
   const [scope, setScope] = useState<'active' | 'all'>('active')
   const [busyId, setBusyId] = useState<number | null>(null)
   const [error, setError] = useState('')
-  const [view, setView] = useState<'board' | 'list'>('board')
+  // A board needs five columns of width. On a phone it had one, so the queue
+  // is what opens there; anything wide enough for the board gets the board.
+  const [view, setView] = useState<'queue' | 'board' | 'list'>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 860 ? 'queue' : 'board',
+  )
+  const [openId, setOpenId] = useState<number | null>(null)
+  const [showDone, setShowDone] = useState(false)
+  const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<string | null>(null)
   const [alerts, setAlerts] = useState(notifyPermission())
   const knownIds = useRef<Set<number>>(new Set())
@@ -170,46 +185,41 @@ export default function StaffOrders() {
     // order, or tapping "Today" on a quiet afternoon shows nothing at all.
     if (FOCUS[key]?.asList) {
       setScope('all')
-      setView('list')
+      // The table view is eight columns wide; on a phone that is the thing
+      // being escaped, so narrow screens stay in the queue.
+      setView(window.innerWidth < 860 ? 'queue' : 'list')
     }
   }
 
   const visible = useMemo(() => {
     const f = focus ? FOCUS[focus] : null
+    const q = query.trim().toLowerCase()
+    const hit = (o: Order) =>
+      !q ||
+      [o.orderNumber, o.customerName, o.tableLabel, placeOf(o), ...o.items.map((i: any) => i.name)]
+        .filter(Boolean)
+        .some((s: string) => String(s).toLowerCase().includes(q))
     return (orders ?? []).filter(
-      (o) => (filter === 'all' || o.type === filter) && (!f || f.match(o)),
+      (o) => (filter === 'all' || o.type === filter) && (!f || f.match(o)) && hit(o),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders, filter, focus])
+  }, [orders, filter, focus, query])
 
   return (
     <>
-      {/* Title and state on the first line, the controls on their own line
-          below. All of it used to wrap into one heap: on a phone the heading,
-          a badge, five tabs and two buttons came out as four ragged rows of
-          things that looked equally important. */}
-      <div className="staff-head">
-        <h1>Orders</h1>
-        <span className="badge badge-accent badge-live">Live</span>
-        <div className="spacer" />
-        {alerts !== 'granted' && alerts !== 'unsupported' && (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={async () => setAlerts((await askToNotify()) ? 'granted' : notifyPermission())}
-          >
-            🔔 <span className="hide-phone">Alert me</span>
-          </button>
-        )}
-      </div>
-
       <div className="staff-controls">
         <div className="tabs" style={{ marginBottom: 0 }}>
-          <button className={`tab ${view === 'board' ? 'active' : ''}`} onClick={() => setView('board')}>
-            Board
-          </button>
-          <button className={`tab ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')}>
-            List
-          </button>
+          {(['queue', 'board', 'list'] as const).map((v) => (
+            <button
+              key={v}
+              /* Board and Table both need width they do not have on a phone,
+                 and offering them there is offering the problem. */
+              className={`tab ${view === v ? 'active' : ''} ${v !== 'queue' ? 'hide-phone' : ''}`}
+              onClick={() => setView(v)}
+            >
+              {v === 'queue' ? 'Queue' : v === 'board' ? 'Board' : 'Table'}
+            </button>
+          ))}
         </div>
         <div className="tabs" style={{ marginBottom: 0 }}>
           {(['all', 'dine_in', 'pickup'] as const).map((f) => (
@@ -218,6 +228,16 @@ export default function StaffOrders() {
             </button>
           ))}
         </div>
+        {/* On a busy night the board is thirty rows long and the one you are
+            being asked about is somewhere in it. Typing any part of the order
+            number, the name, or the table finds it. */}
+        <input
+          className="input input-sm order-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Find an order…"
+          aria-label="Find an order by number, name or table"
+        />
         <span className="spacer" />
         <button
           className="btn btn-secondary btn-sm"
@@ -225,6 +245,14 @@ export default function StaffOrders() {
         >
           {scope === 'active' ? 'Show history' : 'Active only'}
         </button>
+        {alerts !== 'granted' && alerts !== 'unsupported' && (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={async () => setAlerts((await askToNotify()) ? 'granted' : notifyPermission())}
+          >
+            🔔 <span className="hide-phone">Alert me</span>
+          </button>
+        )}
       </div>
 
       {summary && (
@@ -337,6 +365,111 @@ export default function StaffOrders() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/*
+        The queue.
+
+        A board is five columns side by side, which is a shape a phone does not
+        have: it became one narrow column you scrolled sideways through, and
+        with thirty orders on a Friday night you could not see the one you
+        wanted in any of them. This is the same work as one column down the
+        page — grouped by what has to happen to it, newest first, each order a
+        line you can read at arm's length with its next step on it. Tapping a
+        line opens what is in it.
+      */}
+      {orders && visible.length > 0 && view === 'queue' && (
+        <div className="queue">
+          {COLUMNS.map((col) => {
+            const rows = visible.filter((o) => col.statuses.includes(o.status))
+            if (!rows.length) return null
+            const done = col.key === 'done'
+            return (
+              <section key={col.key} className="queue-group">
+                <h3 className="queue-head">
+                  {col.title}
+                  <span className="queue-count">{rows.length}</span>
+                </h3>
+                {(done && !showDone ? rows.slice(0, 3) : rows).map((o) => {
+                  const next = nextStatus(o.serviceType ?? o.type, o.status)
+                  const open = openId === o.id
+                  return (
+                    <article key={o.id} className={`qrow ${o.status === 'NEW' ? 'is-new' : ''} ${open ? 'open' : ''}`}>
+                      <button className="qrow-main" onClick={() => setOpenId(open ? null : o.id)}>
+                        <span className="qrow-where">
+                          <b>{placeOf(o)}</b>
+                          <em>
+                            #{o.orderNumber} · {o.customerName || 'Guest'}
+                          </em>
+                        </span>
+                        <span className="qrow-meta">
+                          <b>{money(o.totalCents)}</b>
+                          <em>
+                            {o.items.reduce((n: number, i: any) => n + i.quantity, 0)} items ·{' '}
+                            {timeAgo(o.createdAt)}
+                          </em>
+                        </span>
+                        {o.paymentStatus !== 'PAID' && <span className="qrow-dot" title="Not paid" />}
+                      </button>
+
+                      {next && (
+                        <button
+                          className="btn btn-accent btn-sm qrow-go"
+                          disabled={busyId === o.id}
+                          onClick={() => advance(o, next)}
+                        >
+                          {STATUS_LABEL[next]}
+                        </button>
+                      )}
+
+                      {open && (
+                        <div className="qrow-body">
+                          <ul className="qrow-items">
+                            {o.items.map((i: any) => (
+                              <li key={i.id}>
+                                <b>{i.quantity}×</b> {i.name}
+                                {i.memberName ? <em> · {i.memberName}</em> : null}
+                              </li>
+                            ))}
+                          </ul>
+                          {o.note && <p className="qrow-note">“{o.note}”</p>}
+                          <div className="qrow-actions">
+                            <button
+                              className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}
+                              style={{ border: 0, cursor: 'pointer' }}
+                              disabled={busyId === o.id}
+                              onClick={() => togglePaid(o)}
+                            >
+                              {o.paymentStatus === 'PAID' ? 'Paid' : 'Mark paid'}
+                            </button>
+                            <Link className="btn btn-secondary btn-sm" to={`/staff/table/${o.id}`}>
+                              Open bill
+                            </Link>
+                            <span className="spacer" />
+                            {!['COMPLETED', 'PICKED_UP', 'CANCELLED'].includes(o.status) && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                disabled={busyId === o.id}
+                                onClick={() => advance(o, 'CANCELLED')}
+                              >
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  )
+                })}
+                {done && rows.length > 3 && (
+                  <button className="btn btn-ghost btn-sm" onClick={() => setShowDone(!showDone)}>
+                    {showDone ? 'Show fewer' : `Show ${rows.length - 3} more`}
+                  </button>
+                )}
+              </section>
+            )
+          })}
         </div>
       )}
 

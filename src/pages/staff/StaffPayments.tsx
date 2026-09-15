@@ -57,7 +57,6 @@ export default function StaffPayments() {
   return (
     <>
       <div className="staff-head">
-        <h1>Payments</h1>
         {waiting.length > 0 && <span className="badge badge-warn">{waiting.length} to check</span>}
       </div>
 

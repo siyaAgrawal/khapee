@@ -194,7 +194,6 @@ export default function StaffMenu() {
   return (
     <>
       <div className="staff-head">
-        <h1>Menu</h1>
         <div className="spacer" />
         <span className={`badge ${data.restaurant.isOpen ? 'badge-open' : 'badge-closed'}`}>
           {data.restaurant.isOpen ? 'Accepting orders' : 'Closed'}

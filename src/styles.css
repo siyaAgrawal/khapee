@@ -3534,6 +3534,55 @@ textarea {
   .bill-print td:last-child {
     text-align: right;
   }
+
+  /* The table card, printed on its own: the same three things that are on the
+     cards a restaurant sticks to its tables — which table, the code, and where
+     it goes — rather than a screenshot of the dashboard around a bare QR. */
+  #qr-print-card,
+  #qr-print-card * {
+    visibility: visible;
+  }
+  #qr-print-card {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    margin: 0 auto;
+    border: 0;
+    background: #fff;
+    color: #111;
+    page-break-inside: avoid;
+  }
+  #qr-print-card .qr-frame {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+/* ------------------------------------------------------- a table's QR card */
+.qr-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 22px 26px 20px;
+  border-radius: var(--r-lg);
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+.qr-card-table {
+  font-family: var(--serif);
+  font-size: 30px;
+  letter-spacing: -0.01em;
+  color: #111;
+}
+.qr-card-host {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: #444;
+}
+.qr-card-hint {
+  font-size: 12px;
+  color: #888;
 }
 
 /* This month's specials — a mark, not a banner. */

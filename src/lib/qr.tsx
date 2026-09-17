@@ -11,10 +11,14 @@ export function QRCanvas({ value, size = 200, className }: { value: string; size
     let cancelled = false
     setFailed(false)
     QRCode.toDataURL(value, {
-      margin: 1,
+      // Four modules of white, which is what the format asks for. It was one,
+      // which leaves the code touching whatever is drawn next to it: a camera
+      // has to find the edges of a QR before it can read one, and on a screen
+      // full of cards and buttons a single module is not enough to find.
+      margin: 4,
       width: size * 2,
       errorCorrectionLevel: 'M',
-      color: { dark: '#17120fff', light: '#ffffffff' },
+      color: { dark: '#111111', light: '#ffffff' },
     })
       .then((url) => !cancelled && setDataUrl(url))
       .catch(() => !cancelled && setFailed(true))

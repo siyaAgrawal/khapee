@@ -66,6 +66,10 @@ export default function StaffTables() {
   }
 
   const tableUrl = (t: Table) => `${baseUrl}/t/${t.token}`
+  /** What the card prints under the code — the address without the scheme. */
+  const hostLabel = baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  /** Local addresses only mean anything while developing on this machine. */
+  const onRealDomain = !/localhost|127\.0\.0\.1|^https?:\/\/\d/.test(window.location.origin)
 
   return (
     <>
@@ -97,7 +101,10 @@ export default function StaffTables() {
           Each table gets its own QR. A customer who scans it lands on your menu with the table already set — no code
           needed.
         </p>
-        {baseChoices.length > 1 && (
+        {/* A published restaurant has one address and it is the one they are
+            looking at. Offering a list there is an invitation to print a QR
+            that works on nobody's phone. */}
+        {!onRealDomain && baseChoices.length > 1 && (
           <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
             <label htmlFor="qr-base">Address printed on the QR</label>
             <select id="qr-base" className="select" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}>
@@ -126,7 +133,7 @@ export default function StaffTables() {
               <strong>{t.label}</strong>
               <span className="tiny muted">{t.seats} seats</span>
               <div style={{ display: 'grid', placeItems: 'center' }}>
-                <QRCanvas value={tableUrl(t)} size={104} />
+                <QRCanvas value={tableUrl(t)} size={148} />
               </div>
               {t.activeOrders > 0 ? (
                 <span className="badge badge-accent">{t.activeOrders} open</span>
@@ -149,11 +156,35 @@ export default function StaffTables() {
       <Modal open={!!qrFor} onClose={() => setQrFor(null)} title={qrFor?.label ?? 'Table'}>
         {qrFor && (
           <div className="center">
-            <div style={{ display: 'grid', placeItems: 'center', margin: '8px 0 14px' }}>
-              <QRCanvas value={tableUrl(qrFor)} size={250} />
+            {/* The card itself, exactly as it prints: the table's name, its
+                code, and where it goes. Printing the old modal gave you a bare
+                QR with no way to tell which table it belonged to. */}
+            <div className="qr-card" id="qr-print-card">
+              <strong className="qr-card-table">{qrFor.label}</strong>
+              <QRCanvas value={tableUrl(qrFor)} size={300} />
+              <span className="qr-card-host">{hostLabel}</span>
+              <span className="qr-card-hint">Scan to see the menu and order</span>
             </div>
-            <p className="tiny muted">Print this and put it on {qrFor.label}.</p>
-            <p className="tiny mono muted" style={{ marginTop: 6, wordBreak: 'break-all' }}>
+
+            <div className="row" style={{ justifyContent: 'center', marginTop: 14 }}>
+              <button className="btn btn-accent" onClick={() => window.print()}>
+                Print this card
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(tableUrl(qrFor))
+                    toast('Link copied', 'good')
+                  } catch {
+                    toast(tableUrl(qrFor), 'info')
+                  }
+                }}
+              >
+                Copy link
+              </button>
+            </div>
+            <p className="tiny mono muted" style={{ marginTop: 10, wordBreak: 'break-all' }}>
               {tableUrl(qrFor)}
             </p>
           </div>

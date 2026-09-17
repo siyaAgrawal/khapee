@@ -325,3 +325,68 @@ publicRouter.post('/resolve', (req, res) => {
     code,
   })
 })
+
+/**
+ * A precinct as a customer standing in it sees it: the places they might be
+ * standing, and every kitchen willing to walk an order over.
+ *
+ * The point of the screen this feeds is that it is not about one restaurant.
+ * Somebody outside a café in 140 wants what is available in 140, which is the
+ * question the rest of the app never asks.
+ */
+publicRouter.get('/precincts/:slug', (req, res) => {
+  const precinct = db
+    .prepare('SELECT * FROM precincts WHERE slug = ? AND is_active = 1')
+    .get(String(req.params.slug).toLowerCase()) as any
+  if (!precinct) return res.status(404).json({ error: 'That area is not on Khapee.' })
+
+  const spots = db
+    .prepare(
+      `SELECT id, label, note FROM precinct_spots
+        WHERE precinct_id = ? AND is_active = 1 ORDER BY sort_order, id`,
+    )
+    .all(precinct.id) as any[]
+
+  // Only restaurants that have joined, are open, and have something to sell.
+  const restaurants = db
+    .prepare(
+      `SELECT r.id, r.name, r.slug, r.description, r.categories, r.emoji, r.hue, r.image_path,
+              r.prep_minutes, r.is_open, r.rating
+         FROM restaurant_precincts rp
+         JOIN restaurants r ON r.id = rp.restaurant_id
+        WHERE rp.precinct_id = ?
+          AND EXISTS (SELECT 1 FROM menu_items m WHERE m.restaurant_id = r.id AND m.is_available = 1)
+        ORDER BY r.is_open DESC, r.name`,
+    )
+    .all(precinct.id) as any[]
+
+  res.json({
+    precinct: { id: precinct.id, slug: precinct.slug, name: precinct.name, city: precinct.city, note: precinct.note },
+    spots,
+    restaurants: restaurants.map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      description: r.description,
+      categories: String(r.categories || '').split(',').map((c: string) => c.trim()).filter(Boolean),
+      emoji: r.emoji,
+      hue: r.hue,
+      imageUrl: imageUrl(r.image_path),
+      prepMinutes: r.prep_minutes,
+      isOpen: !!r.is_open,
+      rating: r.rating,
+    })),
+  })
+})
+
+/** Every precinct with anyone serving it — for a "near me" list later. */
+publicRouter.get('/precincts', (_req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT p.id, p.slug, p.name, p.city, p.note,
+              (SELECT COUNT(*) FROM restaurant_precincts rp WHERE rp.precinct_id = p.id) AS restaurants
+         FROM precincts p WHERE p.is_active = 1 ORDER BY p.name`,
+    )
+    .all() as any[]
+  res.json({ precincts: rows })
+})

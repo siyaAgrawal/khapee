@@ -76,14 +76,21 @@ export function createSession(input: {
   // Someone sitting outside in their car, or waiting at an address, has no
   // table for it to go to, and asking them for a table number — which is where
   // this used to end up — is a question with no answer.
-  if (hasDining && (dining.service_mode === 'car' || dining.service_mode === 'delivery')) {
+  if (
+    hasDining &&
+    (dining.service_mode === 'car' ||
+      dining.service_mode === 'delivery' ||
+      dining.service_mode === 'precinct')
+  ) {
     return {
       ok: false,
       status: 409,
       error:
         dining.service_mode === 'car'
           ? 'A shared table order needs a table. Order for the car instead, and they will bring it out.'
-          : 'A shared table order needs a table. Order for delivery instead.',
+          : dining.service_mode === 'precinct'
+            ? 'A shared table order needs a table. Order to where you are standing instead.'
+            : 'A shared table order needs a table. Order for delivery instead.',
     }
   }
   if (hasDining && dining.table_id && !tableId) {

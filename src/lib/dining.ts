@@ -8,10 +8,14 @@ export type DiningSession = {
   tableId: number | null
   tableLabel: string | null
   source: 'code' | 'table_qr' | 'payment'
-  serviceMode?: 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery'
+  serviceMode?: 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery' | 'precinct'
   areaName?: string | null
-  /** Where it is going: an address for a delivery, a car for the kerb outside. */
+  /** Where it is going: an address for a delivery, a car for the kerb outside,
+   *  or a landmark for somebody standing in a precinct. */
   address?: string
+  precinctSlug?: string | null
+  precinctName?: string | null
+  spotLabel?: string | null
   vehicle?: string
   seqNo?: number | null
   /** What this area adds for carrying the order, and what it will not go out under. */
@@ -57,7 +61,7 @@ export function readDining(restaurantId?: number): DiningSession | null {
  */
 export function ownOrderOnly(restaurantId?: number): boolean {
   const mode = readDining(restaurantId)?.serviceMode
-  return mode === 'car' || mode === 'delivery'
+  return mode === 'car' || mode === 'delivery' || mode === 'precinct'
 }
 
 export function clearDining() {

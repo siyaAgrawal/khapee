@@ -16,6 +16,7 @@ import RegisterRestaurant from './pages/RegisterRestaurant'
 import TableEntry from './pages/TableEntry'
 import CarEntry from './pages/CarEntry'
 import DeliveryEntry from './pages/DeliveryEntry'
+import PrecinctEntry from './pages/PrecinctEntry'
 import ZoneEntry from './pages/ZoneEntry'
 import StaffOps from './pages/staff/StaffOps'
 import StaffPos from './pages/staff/StaffPos'
@@ -35,6 +36,7 @@ import StaffCodes from './pages/staff/StaffCodes'
 import StaffTables from './pages/staff/StaffTables'
 import StaffMenu from './pages/staff/StaffMenu'
 import StaffVerify from './pages/staff/StaffVerify'
+import StaffPrecincts from './pages/staff/StaffPrecincts'
 import { MenuSection, OrdersSection, SettingsSection, TillSection } from './pages/staff/Sections'
 
 function StaffGate({ children }: { children: JSX.Element }) {
@@ -60,6 +62,8 @@ export default function App() {
       <Route path="/t/:token" element={<TableEntry />} />
       <Route path="/r/:id/car" element={<CarEntry />} />
       <Route path="/r/:id/delivery" element={<DeliveryEntry />} />
+      {/* A street, not a restaurant: everyone here who will walk an order out. */}
+      <Route path="/p/:slug" element={<PrecinctEntry />} />
       <Route path="/z/:token" element={<ZoneEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
       <Route path="/profile" element={<Profile />} />
@@ -102,6 +106,7 @@ export default function App() {
           <Route path="tables" element={<StaffTables />} />
           <Route path="codes" element={<StaffCodes />} />
           <Route path="zones" element={<StaffZones />} />
+          <Route path="nearby" element={<StaffPrecincts />} />
         </Route>
 
         <Route path="table/:id" element={<StaffTable />} />

@@ -281,6 +281,14 @@ addColumn('orders', 'delivery_phone', "TEXT NOT NULL DEFAULT ''")
 addColumn('orders', 'accepted_at', 'TEXT')
 // Said out loud to the customer when the kitchen cannot take an order.
 addColumn('orders', 'declined_reason', "TEXT NOT NULL DEFAULT ''")
+// Standing somewhere in a precinct rather than at a table, in a car, or at an
+// address: the landmark they chose, and whatever they added so the runner can
+// pick them out of the people standing at it.
+addColumn('orders', 'precinct_id', 'INTEGER')
+addColumn('orders', 'spot_id', 'INTEGER')
+// The matching columns on dining_sessions live further down, after that table
+// is created — a migration above its own CREATE TABLE runs against nothing.
+
 // What the area charged to carry it, copied onto the order when it is placed.
 // Read from the order and never from the area again: a restaurant that raises
 // its fee next month must not change what a customer already agreed to pay.
@@ -427,6 +435,46 @@ CREATE INDEX IF NOT EXISTS idx_service_zones_restaurant ON service_zones(restaur
 `)
 
 db.exec(`
+-- A precinct: one stretch of a city where the restaurants are close enough
+-- together that a waiter can walk an order out and back.
+--
+-- 140 in Indore already works this way without an app. You stand outside one
+-- café, ring another, and somebody carries your food over — then walks back a
+-- second time to be paid, and sometimes a third to ask what you meant. The
+-- machinery for it already exists here, because eating in a parked car is the
+-- same problem: somebody has to leave the counter and find a person who is not
+-- at a table. This gives that a name, a map of places to stand, and a list of
+-- restaurants willing to come to them.
+CREATE TABLE IF NOT EXISTS precincts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug       TEXT    NOT NULL UNIQUE,
+  name       TEXT    NOT NULL,
+  city       TEXT    NOT NULL DEFAULT 'Indore',
+  note       TEXT    NOT NULL DEFAULT '',
+  is_active  INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Somewhere inside it a person can be found: a shopfront, a bench, a corner.
+-- A landmark rather than an address, because nobody standing in 140 has one.
+CREATE TABLE IF NOT EXISTS precinct_spots (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  precinct_id INTEGER NOT NULL REFERENCES precincts(id) ON DELETE CASCADE,
+  label       TEXT    NOT NULL,
+  note        TEXT    NOT NULL DEFAULT '',
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  is_active   INTEGER NOT NULL DEFAULT 1
+);
+
+-- Which restaurants will carry an order out into it. Opt-in: a kitchen with
+-- one person on a Sunday should be able to stop without leaving the precinct.
+CREATE TABLE IF NOT EXISTS restaurant_precincts (
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  precinct_id   INTEGER NOT NULL REFERENCES precincts(id) ON DELETE CASCADE,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (restaurant_id, precinct_id)
+);
+
 CREATE TABLE IF NOT EXISTS photo_library (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
@@ -507,6 +555,9 @@ addColumn('payments', 'reason', "TEXT NOT NULL DEFAULT ''")
 // stands for a car at the roadside: same session, different place.
 addColumn('dining_sessions', 'service_mode', "TEXT NOT NULL DEFAULT 'dine_in'")
 addColumn('dining_sessions', 'zone_id', 'INTEGER')
+// …and for someone standing somewhere in a precinct: the landmark they picked.
+addColumn('dining_sessions', 'precinct_id', 'INTEGER')
+addColumn('dining_sessions', 'spot_id', 'INTEGER')
 addColumn('dining_sessions', 'vehicle', "TEXT NOT NULL DEFAULT ''")
 addColumn('dining_sessions', 'vehicle_number', "TEXT NOT NULL DEFAULT ''")
 // What staff and customer say to each other out loud: "Car 27".

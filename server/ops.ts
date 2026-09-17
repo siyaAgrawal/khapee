@@ -57,10 +57,16 @@ function minutesSince(iso: string): number {
 export function opsBoard(restaurantId: number) {
   const sessions = db
     .prepare(
+      // Sessions that are places in the restaurant: a table, or a car at the
+      // kerb. An order going out to an address or to somebody standing down the
+      // street is already on the delivery list below, and showing it here too
+      // put a phantom "Table" on the floor plan for a customer who is not in
+      // the building.
       `SELECT s.*, z.name AS zone_name
          FROM dining_sessions s
          LEFT JOIN service_zones z ON z.id = s.zone_id
         WHERE s.restaurant_id = ? AND s.closed_at IS NULL
+          AND COALESCE(s.service_mode, 'dine_in') NOT IN ('delivery', 'precinct')
         ORDER BY s.created_at ASC`,
     )
     .all(restaurantId) as any[]
@@ -147,11 +153,17 @@ export function opsBoard(restaurantId: number) {
   // Deliveries waiting for a yes or no. These sit at the top of the board
   // because until somebody answers, a customer is sitting at home with no idea
   // whether their food is coming.
+  // An order carried two streets into 140 is the same job as one driven across
+  // town: somebody agreed to leave the counter, and until they answer, a person
+  // is standing somewhere waiting. Both belong on the same list.
   const deliveryRows = db
     .prepare(
-      `SELECT o.*, a.name AS area_name
-         FROM orders o LEFT JOIN delivery_areas a ON a.id = o.delivery_area_id
-        WHERE o.restaurant_id = ? AND o.service_mode = 'delivery'
+      `SELECT o.*, a.name AS area_name, s.label AS spot_label, p.name AS precinct_name
+         FROM orders o
+         LEFT JOIN delivery_areas a ON a.id = o.delivery_area_id
+         LEFT JOIN precinct_spots s ON s.id = o.spot_id
+         LEFT JOIN precincts p ON p.id = o.precinct_id
+        WHERE o.restaurant_id = ? AND o.service_mode IN ('delivery', 'precinct')
           AND o.status NOT IN ('DELIVERED', 'DECLINED', 'CANCELLED')
         ORDER BY o.created_at ASC`,
     )
@@ -159,8 +171,12 @@ export function opsBoard(restaurantId: number) {
 
   const deliveries = deliveryRows.map((o) => ({
     ...shapeOrder(o),
-    area: o.area_name ?? '',
-    address: o.delivery_address ?? '',
+    // For a precinct order the landmark is the area and the detail is the
+    // address — "outside Chai Sutta", "blue scooter, grey shirt".
+    area: o.service_mode === 'precinct' ? (o.precinct_name ?? 'Nearby') : (o.area_name ?? ''),
+    address: o.service_mode === 'precinct' ? (o.spot_label ?? '') : (o.delivery_address ?? ''),
+    detail: o.service_mode === 'precinct' ? (o.delivery_address ?? '') : '',
+    nearby: o.service_mode === 'precinct',
     phone: o.delivery_phone ?? '',
     awaitingAnswer: o.status === 'REQUESTED',
   }))

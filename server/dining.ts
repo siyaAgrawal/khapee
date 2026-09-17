@@ -1,6 +1,7 @@
 import { db } from './db.ts'
 import { normalizeCode, randomToken } from './ids.ts'
 import { checkAccessCode } from './orders-service.ts'
+import type { ServiceMode } from '../shared/orders.ts'
 
 /**
  * A dining session is "this person is here, at this restaurant, right now".
@@ -34,7 +35,7 @@ export function shapeDiningSession(row: any) {
     tableId: row.table_id,
     tableLabel: row.table_label,
     source: row.source as 'code' | 'table_qr' | 'payment',
-    serviceMode: (row.service_mode ?? 'dine_in') as 'dine_in' | 'car' | 'takeaway' | 'pickup',
+    serviceMode: (row.service_mode ?? 'dine_in') as ServiceMode,
     zoneId: row.zone_id ?? null,
     zoneName: row.zone_id
       ? ((db.prepare('SELECT name FROM service_zones WHERE id = ?').get(row.zone_id) as any)?.name ?? null)
@@ -55,6 +56,26 @@ export function shapeDiningSession(row: any) {
         minOrderCents: area?.min_order_cents ?? 0,
       }
     })(),
+    ...(() => {
+      // The landmark someone is standing at, and the precinct it belongs to.
+      const spot = row.spot_id
+        ? (db
+            .prepare(
+              `SELECT s.label, s.note, p.name AS precinct_name, p.slug AS precinct_slug
+                 FROM precinct_spots s JOIN precincts p ON p.id = s.precinct_id
+                WHERE s.id = ?`,
+            )
+            .get(row.spot_id) as any)
+        : null
+      return {
+        precinctId: row.precinct_id ?? null,
+        precinctName: spot?.precinct_name ?? null,
+        precinctSlug: spot?.precinct_slug ?? null,
+        spotId: row.spot_id ?? null,
+        spotLabel: spot?.label ?? null,
+        spotNote: spot?.note ?? '',
+      }
+    })(),
     address: row.address ?? '',
     phone: row.phone ?? '',
     code: row.code ?? '',
@@ -63,7 +84,10 @@ export function shapeDiningSession(row: any) {
         ? `Car ${row.seq_no ?? ''}`.trim()
         : (row.service_mode ?? '') === 'delivery'
           ? 'Delivery'
-          : (row.table_label ?? null),
+          : (row.service_mode ?? '') === 'precinct'
+            ? ((db.prepare('SELECT label FROM precinct_spots WHERE id = ?').get(row.spot_id) as any)?.label ??
+              'Nearby')
+            : (row.table_label ?? null),
     openedByStaff: !!row.opened_by,
     partySize: row.party_size ?? 1,
     active: !!live?.active,
@@ -356,5 +380,67 @@ export function startDeliverySession(opts: {
      VALUES (?, ?, NULL, NULL, NULL, 'code', ?, datetime('now', '+${SESSION_HOURS} hours'),
         'delivery', ?, ?, ?)`,
   ).run(token, opts.restaurantId, opts.userId, area.id, address, phone)
+  return { ok: true, session: db.prepare('SELECT * FROM dining_sessions WHERE token = ?').get(token) as any }
+}
+
+/**
+ * Opens a session for somebody standing in a precinct.
+ *
+ * Not at a table, not in a car, and without an address — the three things every
+ * other way of ordering assumes. What they have instead is a landmark ("outside
+ * Chai Sutta") and whatever makes them findable once the runner gets there
+ * ("blue scooter, grey shirt"). That is enough, because the walk is two
+ * minutes, which is the whole reason this works at all.
+ */
+export function startPrecinctSession(opts: {
+  restaurantId: number
+  spotId: number
+  detail: string
+  userId: number | null
+}): { ok: true; session: any } | { ok: false; status: number; error: string } {
+  const restaurant = db
+    .prepare('SELECT id, name, is_open FROM restaurants WHERE id = ?')
+    .get(opts.restaurantId) as any
+  if (!restaurant) return { ok: false, status: 404, error: 'That restaurant no longer exists.' }
+  if (!restaurant.is_open) {
+    return { ok: false, status: 409, error: `${named(restaurant.name)} is closed right now.` }
+  }
+
+  const spot = db
+    .prepare(
+      `SELECT s.*, p.id AS precinct_id, p.name AS precinct_name, p.is_active AS precinct_active
+         FROM precinct_spots s JOIN precincts p ON p.id = s.precinct_id
+        WHERE s.id = ? AND s.is_active = 1`,
+    )
+    .get(opts.spotId) as any
+  if (!spot || !spot.precinct_active) {
+    return { ok: false, status: 400, error: 'Pick where you are from the list.' }
+  }
+
+  // A restaurant joins a precinct and can leave it again; one that has not
+  // agreed to walk orders out must not be handed one.
+  const serves = db
+    .prepare('SELECT 1 FROM restaurant_precincts WHERE restaurant_id = ? AND precinct_id = ?')
+    .get(opts.restaurantId, spot.precinct_id)
+  if (!serves) {
+    return {
+      ok: false,
+      status: 409,
+      error: `${named(restaurant.name)} isn't bringing orders out into ${spot.precinct_name} right now.`,
+    }
+  }
+
+  // Optional: the landmark alone is often enough, and demanding a description
+  // of yourself before you can order is friction this exists to remove.
+  const detail = String(opts.detail ?? '').trim().slice(0, 140)
+
+  const token = randomToken(14)
+  db.prepare(
+    `INSERT INTO dining_sessions
+       (token, restaurant_id, table_id, table_label, access_code_id, source, user_id, expires_at,
+        service_mode, precinct_id, spot_id, address)
+     VALUES (?, ?, NULL, NULL, NULL, 'code', ?, datetime('now', '+${SESSION_HOURS} hours'),
+        'precinct', ?, ?, ?)`,
+  ).run(token, opts.restaurantId, opts.userId, spot.precinct_id, spot.id, detail)
   return { ok: true, session: db.prepare('SELECT * FROM dining_sessions WHERE token = ?').get(token) as any }
 }

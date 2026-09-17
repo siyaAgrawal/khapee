@@ -53,13 +53,17 @@ export default function DiningBar({
   // modes. Each says where the order is going instead.
   const mode = session?.serviceMode
   const heading =
-    mode === 'delivery'
+    mode === 'precinct'
+      ? `They're bringing it to ${session!.spotLabel ?? 'you'}`
+      : mode === 'delivery'
       ? `Delivering to ${session!.address || session!.areaName || 'your address'}`
       : mode === 'car'
         ? `In the car${session!.seqNo ? ` · Car ${session!.seqNo}` : ''}`
         : `You're at ${session?.restaurantName}${session?.tableLabel ? ` · ${session.tableLabel}` : ''}`
   const sub =
-    mode === 'delivery'
+    mode === 'precinct'
+      ? `${session!.restaurantName} accepts the order, then walks it over.`
+      : mode === 'delivery'
       ? `${session!.restaurantName} accepts the order before it is made.`
       : mode === 'car'
         ? 'They bring it out to you — no need to come in.'
@@ -71,7 +75,7 @@ export default function DiningBar({
     <>
       {verified ? (
         <div className="dining-bar is-on">
-          <span aria-hidden>{mode === 'delivery' ? '🛵' : mode === 'car' ? '🚗' : '✓'}</span>
+          <span aria-hidden>{mode === 'precinct' ? '🚶' : mode === 'delivery' ? '🛵' : mode === 'car' ? '🚗' : '✓'}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <strong>{heading}</strong>
             <span className="tiny">{sub}</span>

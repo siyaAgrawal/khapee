@@ -2284,6 +2284,95 @@ async function runTests() {
     bareRuns.body.groups.map((g: any) => g.zone),
   )
 
+  group('A PRECINCT — ordering from wherever you are standing')
+  {
+    // 140 in Indore already works this way with a phone: you stand outside one
+    // café, ring another, and somebody carries it over. The app's job is to
+    // remove the second and third walk — back for the money, back to ask what
+    // you meant — not to invent the first one.
+    const made = new Database(DB_PATH)
+    made.prepare("INSERT OR IGNORE INTO precincts (slug, name, city) VALUES ('t140', 'Test 140', 'Indore')").run()
+    const pid = (made.prepare("SELECT id FROM precincts WHERE slug = 't140'").get() as any).id
+    made
+      .prepare('INSERT INTO precinct_spots (precinct_id, label, note, sort_order) VALUES (?, ?, ?, 1)')
+      .run(pid, 'Outside the sweet shop', 'The shopfront')
+    const spotId = (made.prepare('SELECT id FROM precinct_spots WHERE precinct_id = ?').get(pid) as any).id
+    made.close()
+
+    const seen = await call(`/precincts/t140`)
+    ok('the area is a page of its own', seen.status === 200 && seen.body.precinct.name === 'Test 140', seen.body)
+    ok('with somewhere to stand', seen.body.spots.some((s: any) => s.id === spotId), seen.body.spots)
+    ok(
+      'and nobody on it until a restaurant joins',
+      !seen.body.restaurants.some((r: any) => r.id === mornington.id),
+      seen.body.restaurants.map((r: any) => r.name),
+    )
+
+    const beforeJoin = await call('/sessions/precinct', {
+      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter' },
+    })
+    ok('and will not take an order for one that has not', beforeJoin.status === 409, beforeJoin.body)
+
+    const list = await call('/staff/precincts', { token: roadToken })
+    const mine = list.body.precincts.find((p: any) => p.slug === 't140')
+    ok('a restaurant sees the area on its own settings', !!mine && mine.joined === false, list.body)
+    const joined = await call(`/staff/precincts/${pid}/join`, { token: roadToken, body: { joined: true } })
+    ok('and can put itself on the list', joined.status === 200 && joined.body.joined === true, joined.body)
+    ok(
+      'after which customers see it there',
+      (await call('/precincts/t140')).body.restaurants.some((r: any) => r.id === mornington.id),
+    )
+
+    const sess = await call('/sessions/precinct', {
+      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter, grey shirt' },
+    })
+    ok('somebody standing there opens a session', sess.status === 201, sess.body)
+    ok('which knows the landmark', sess.body.session.spotLabel === 'Outside the sweet shop', sess.body.session)
+    ok('and what to look for', sess.body.session.address === 'Blue scooter, grey shirt')
+    ok('with no table and no code', sess.body.session.tableLabel === null && sess.body.session.spotId === spotId)
+
+    const order = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'Standing outside',
+        sessionToken: sess.body.session.token,
+      },
+    })
+    ok('the order goes through with neither', order.status === 201, order.body)
+    ok('it waits to be accepted, like a delivery', order.body.order.status === 'REQUESTED', order.body.order)
+    ok('and is its own kind of order', order.body.order.serviceType === 'precinct', order.body.order)
+    ok('carrying the landmark for whoever walks it out', order.body.order.spotLabel === 'Outside the sweet shop')
+    ok('and nothing is charged for the walk', order.body.order.deliveryFeeCents === 0, order.body.order)
+
+    const board = await call('/staff/ops', { token: roadToken })
+    ok(
+      'it lands on the same list as the deliveries',
+      board.body.deliveries.some((d: any) => d.orderNumber === order.body.order.orderNumber && d.nearby),
+      board.body.deliveries.map((d: any) => [d.orderNumber, d.area]),
+    )
+    ok('waiting on an answer', board.body.summary.deliveryRequests >= 1, board.body.summary)
+
+    const yes = await call(`/staff/orders/${order.body.order.id}/accept`, { token: roadToken, method: 'POST' })
+    ok('the kitchen can take it', yes.body.order.status === 'ACCEPTED', yes.body)
+    for (const st of ['PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']) {
+      const r = await call(`/staff/orders/${order.body.order.id}/status`, { token: roadToken, body: { status: st } })
+      ok(`and walk it through ${st.toLowerCase().replace(/_/g, ' ')}`, r.status === 200, r.body)
+    }
+
+    // Leaving has to work too: one person on a Sunday cannot go anywhere.
+    await call(`/staff/precincts/${pid}/join`, { token: roadToken, body: { joined: false } })
+    ok(
+      'stepping off the list takes them off the area page',
+      !(await call('/precincts/t140')).body.restaurants.some((r: any) => r.id === mornington.id),
+    )
+    ok(
+      'and stops new orders at once',
+      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, detail: '' } })).status === 409,
+    )
+  }
+
   group('A CAR IS NOT A TABLE — where group ordering stops')
   {
     // A room is a table's shared ticket and the kitchen sends it to that table.

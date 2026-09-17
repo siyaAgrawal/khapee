@@ -70,11 +70,13 @@ staffRouter.post('/orders/:id/status', (req, res) => {
       ? 'car'
       : row.service_mode === 'delivery'
         ? 'delivery'
-        : row.order_type === 'pickup'
-        ? 'pickup'
-        : row.takeaway
-          ? 'takeaway'
-          : 'dine_in'
+        : row.service_mode === 'precinct'
+          ? 'precinct'
+          : row.order_type === 'pickup'
+          ? 'pickup'
+          : row.takeaway
+            ? 'takeaway'
+            : 'dine_in'
   if (!canTransition(service, row.status, to)) {
     return res.status(400).json({ error: `Cannot move ${row.status} to ${to}.` })
   }
@@ -1495,4 +1497,89 @@ staffRouter.post('/delivery/toggle', (req: any, res) => {
   audit(restaurantId, actorOf(req), on ? 'delivery.on' : 'delivery.off', 'restaurant', restaurantId, '')
   publish('ops', { restaurantId })
   res.json({ ok: true, acceptsDelivery: !!on })
+})
+
+// --- Precincts ---------------------------------------------------------------
+
+/**
+ * Which nearby areas this restaurant has agreed to carry orders out into, and
+ * which ones it could. Joining is a promise to send someone out, so it is
+ * opt-in and can be undone the moment the one person on shift cannot leave.
+ */
+staffRouter.get('/precincts', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const rows = db
+    .prepare(
+      `SELECT p.id, p.slug, p.name, p.city, p.note,
+              EXISTS (SELECT 1 FROM restaurant_precincts rp
+                       WHERE rp.precinct_id = p.id AND rp.restaurant_id = ?) AS joined,
+              (SELECT COUNT(*) FROM precinct_spots s
+                WHERE s.precinct_id = p.id AND s.is_active = 1) AS spots
+         FROM precincts p WHERE p.is_active = 1 ORDER BY p.name`,
+    )
+    .all(restaurantId) as any[]
+  res.json({ precincts: rows.map((p) => ({ ...p, joined: !!p.joined })) })
+})
+
+staffRouter.post('/precincts/:id/join', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const precinct = db.prepare('SELECT * FROM precincts WHERE id = ? AND is_active = 1').get(Number(req.params.id)) as any
+  if (!precinct) return res.status(404).json({ error: 'That area no longer exists.' })
+
+  const join = req.body?.joined !== false
+  if (join) {
+    db.prepare(
+      'INSERT OR IGNORE INTO restaurant_precincts (restaurant_id, precinct_id) VALUES (?, ?)',
+    ).run(restaurantId, precinct.id)
+  } else {
+    db.prepare('DELETE FROM restaurant_precincts WHERE restaurant_id = ? AND precinct_id = ?').run(
+      restaurantId,
+      precinct.id,
+    )
+  }
+  res.json({ joined: join, name: precinct.name })
+})
+
+/** The landmarks inside an area. Any restaurant in it can correct the list —
+ *  they are the ones standing there, and a wrong landmark wastes a walk. */
+staffRouter.get('/precincts/:id/spots', (req: any, res) => {
+  const spots = db
+    .prepare('SELECT id, label, note, sort_order FROM precinct_spots WHERE precinct_id = ? ORDER BY sort_order, id')
+    .all(Number(req.params.id)) as any[]
+  res.json({ spots })
+})
+
+staffRouter.post('/precincts/:id/spots', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const precinctId = Number(req.params.id)
+  const member = db
+    .prepare('SELECT 1 FROM restaurant_precincts WHERE restaurant_id = ? AND precinct_id = ?')
+    .get(restaurantId, precinctId)
+  if (!member) return res.status(403).json({ error: 'Join the area before editing its landmarks.' })
+
+  const label = String(req.body?.label ?? '').trim().slice(0, 60)
+  if (label.length < 2) return res.status(400).json({ error: 'Give the landmark a name.' })
+  const note = String(req.body?.note ?? '').trim().slice(0, 120)
+  const next = (db.prepare('SELECT COALESCE(MAX(sort_order), 0) AS n FROM precinct_spots WHERE precinct_id = ?').get(precinctId) as any).n
+  const info = db
+    .prepare('INSERT INTO precinct_spots (precinct_id, label, note, sort_order) VALUES (?, ?, ?, ?)')
+    .run(precinctId, label, note, next + 1)
+  res.status(201).json({ spot: db.prepare('SELECT id, label, note FROM precinct_spots WHERE id = ?').get(Number(info.lastInsertRowid)) })
+})
+
+staffRouter.delete('/precincts/:id/spots/:spotId', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const precinctId = Number(req.params.id)
+  const member = db
+    .prepare('SELECT 1 FROM restaurant_precincts WHERE restaurant_id = ? AND precinct_id = ?')
+    .get(restaurantId, precinctId)
+  if (!member) return res.status(403).json({ error: 'Join the area before editing its landmarks.' })
+
+  // Kept, not deleted: orders already placed point at it, and a runner reading
+  // an old ticket still needs to know where they were sent.
+  db.prepare('UPDATE precinct_spots SET is_active = 0 WHERE id = ? AND precinct_id = ?').run(
+    Number(req.params.spotId),
+    precinctId,
+  )
+  res.json({ ok: true })
 })

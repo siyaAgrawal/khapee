@@ -5,7 +5,7 @@ export type OrderType = 'dine_in' | 'pickup'
  * `car` is someone parked on the road outside — the food has to be carried to
  * them, so that flow has a delivery leg the others do not.
  */
-export type ServiceType = 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery'
+export type ServiceType = 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery' | 'precinct'
 
 export const DINE_IN_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED'] as const
 export const PICKUP_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP'] as const
@@ -36,7 +36,10 @@ export type OrderStatus =
 
 /** Anything handed over at the counter shares the pickup flow. */
 export function flowFor(type: OrderType | ServiceType): readonly OrderStatus[] {
-  if (type === 'delivery') return DELIVERY_FLOW
+  // An order carried out into a precinct is a delivery in every way that
+  // matters to the kitchen: it has to be agreed to before it is cooked, and
+  // somebody has to walk it out. Only the distance is different.
+  if (type === 'delivery' || type === 'precinct') return DELIVERY_FLOW
   if (type === 'car') return CAR_FLOW
   return type === 'dine_in' ? DINE_IN_FLOW : PICKUP_FLOW
 }
@@ -47,6 +50,7 @@ export const SERVICE_LABEL: Record<ServiceType, string> = {
   delivery: 'Delivery',
   takeaway: 'Takeaway',
   pickup: 'Pickup',
+  precinct: 'Nearby',
 }
 
 export function nextStatus(type: OrderType | ServiceType, current: OrderStatus): OrderStatus | null {
@@ -89,7 +93,8 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   CANCELLED: 'Cancelled',
 }
 
-export const SERVICE_MODES = ['dine_in', 'car', 'takeaway', 'pickup'] as const
+/** Every place a session can put someone. */
+export const SERVICE_MODES = ['dine_in', 'car', 'takeaway', 'pickup', 'delivery', 'precinct'] as const
 export type ServiceMode = (typeof SERVICE_MODES)[number]
 
 /** What a customer sees for where they are, in their own words. */
@@ -98,6 +103,8 @@ export const MODE_LABEL: Record<ServiceMode, string> = {
   car: 'In my car',
   takeaway: 'Takeaway',
   pickup: 'Pickup',
+  delivery: 'To my address',
+  precinct: 'Somewhere nearby',
 }
 
 /**

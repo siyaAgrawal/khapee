@@ -78,16 +78,20 @@ export default function Checkout() {
    * specifically to avoid sitting down.
    */
   const isCar = dining?.serviceMode === 'car'
-  const placeDecided = isDelivery || isCar
+  // Standing somewhere in a precinct: no table, no address, a landmark.
+  const isNearby = dining?.serviceMode === 'precinct'
+  const placeDecided = isDelivery || isCar || isNearby
 
   /** Named for the situation, so "pay later" means something concrete. */
   const payLaterLabel = isDelivery
     ? 'Pay on delivery'
     : isCar
       ? 'Pay at the car'
-      : where === 'later'
-        ? 'Pay when you collect'
-        : 'Pay at the restaurant'
+      : isNearby
+        ? 'Pay when it arrives'
+        : where === 'later'
+          ? 'Pay when you collect'
+          : 'Pay at the restaurant'
 
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
   const needsPresence = where === 'here' || where === 'takeaway'
@@ -253,9 +257,14 @@ export default function Checkout() {
             for it to be brought to them. */}
         {placeDecided ? (
           <div className="verified-banner" style={{ marginBottom: 4 }}>
-            <span aria-hidden>{isDelivery ? '🛵' : '🚗'}</span>
+            <span aria-hidden>{isNearby ? '🚶' : isDelivery ? '🛵' : '🚗'}</span>
             <div style={{ flex: 1 }}>
-              {isDelivery ? (
+              {isNearby ? (
+                <>
+                  Bringing it to <strong>{dining?.spotLabel}</strong>
+                  {dining?.address ? ` · ${dining.address}` : ''}
+                </>
+              ) : isDelivery ? (
                 <>
                   Delivering to <strong>{dining?.address || dining?.areaName}</strong>
                 </>
@@ -266,7 +275,16 @@ export default function Checkout() {
                 </>
               )}
             </div>
-            <Link className="btn btn-ghost btn-sm" to={isDelivery ? `/r/${restaurantId}/delivery` : `/r/${restaurantId}/car`}>
+            <Link
+              className="btn btn-ghost btn-sm"
+              to={
+                isNearby
+                  ? `/p/${dining?.precinctSlug ?? ''}`
+                  : isDelivery
+                    ? `/r/${restaurantId}/delivery`
+                    : `/r/${restaurantId}/car`
+              }
+            >
               Change
             </Link>
           </div>

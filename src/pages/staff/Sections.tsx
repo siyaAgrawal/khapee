@@ -113,6 +113,7 @@ export function SettingsSection() {
         { to: '/staff/settings/tables', label: 'Tables & QR codes' },
         { to: '/staff/settings/codes', label: 'Access codes' },
         { to: '/staff/settings/zones', label: 'Kerbside' },
+        { to: '/staff/settings/nearby', label: 'Nearby areas' },
       ]}
     />
   )

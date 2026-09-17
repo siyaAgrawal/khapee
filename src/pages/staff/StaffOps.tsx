@@ -40,7 +40,12 @@ type Delivery = {
   ageMinutes: number
   items: { name: string; quantity: number }[]
   area: string
+  /** The address, or the landmark somebody in a precinct is standing at. */
   address: string
+  /** What to look for once you are there — precinct orders only. */
+  detail?: string
+  /** Carried out on foot to somewhere nearby rather than driven to an address. */
+  nearby?: boolean
   phone: string
   awaitingAnswer: boolean
 }
@@ -195,13 +200,20 @@ export default function StaffOps() {
             {board.deliveries.map((d) => (
               <article key={d.id} className={`ops-card ${d.awaitingAnswer ? 'unasked' : ''}`}>
                 <header className="ops-card-head">
-                  <span className="ops-label">🛵 {d.area || 'Delivery'}</span>
+                  <span className="ops-label">
+                    {d.nearby ? '🚶' : '🛵'} {d.area || 'Delivery'}
+                  </span>
                   <span className="ops-age">{d.ageMinutes}m</span>
                 </header>
                 <p className="ops-vehicle">{d.address}</p>
-                <p className="tiny muted">
-                  <a href={`tel:${d.phone}`}>{d.phone}</a>
-                </p>
+                {/* What the runner is looking for once they get there. Two
+                    people standing at the same shopfront look identical. */}
+                {d.detail && <p className="tiny">{d.detail}</p>}
+                {d.phone && (
+                  <p className="tiny muted">
+                    <a href={`tel:${d.phone}`}>{d.phone}</a>
+                  </p>
+                )}
 
                 <div className="ops-order">
                   <div className="ops-order-top">

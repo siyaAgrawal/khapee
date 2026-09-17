@@ -144,7 +144,12 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       tableLabel = table.label
     }
 
-    if (takeaway || liveSession?.service_mode === 'car' || liveSession?.service_mode === 'delivery') {
+    if (
+      takeaway ||
+      liveSession?.service_mode === 'car' ||
+      liveSession?.service_mode === 'delivery' ||
+      liveSession?.service_mode === 'precinct'
+    ) {
       // A car has no table number and a delivery has an address instead, and
       // asking for one is exactly the friction these modes exist to remove.
       tableId = null
@@ -208,8 +213,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
            status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
            service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone,
-           delivery_fee_cents)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           delivery_fee_cents, precinct_id, spot_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -220,7 +225,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         tableId,
         tableLabel,
         // Delivery waits to be accepted; everything else is already happening.
-        liveSession?.service_mode === 'delivery' ? 'REQUESTED' : 'NEW',
+        liveSession?.service_mode === 'delivery' || liveSession?.service_mode === 'precinct'
+          ? 'REQUESTED'
+          : 'NEW',
         paymentMethod,
         totalCents,
         String(input.note ?? '').slice(0, 300),
@@ -234,6 +241,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
           ? 'car'
           : liveSession?.service_mode === 'delivery'
             ? 'delivery'
+            : liveSession?.service_mode === 'precinct'
+              ? 'precinct'
             : takeaway
             ? 'takeaway'
             : input.type === 'dine_in'
@@ -242,9 +251,13 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         liveSession?.zone_id ?? null,
         liveSession?.id ?? null,
         liveSession?.service_mode === 'delivery' ? (liveSession.area_id ?? null) : null,
-        liveSession?.service_mode === 'delivery' ? (liveSession.address ?? '') : '',
+        liveSession?.service_mode === 'delivery' || liveSession?.service_mode === 'precinct'
+          ? (liveSession.address ?? '')
+          : '',
         liveSession?.service_mode === 'delivery' ? (liveSession.phone ?? '') : '',
         deliveryFeeCents,
+        liveSession?.service_mode === 'precinct' ? (liveSession.precinct_id ?? null) : null,
+        liveSession?.service_mode === 'precinct' ? (liveSession.spot_id ?? null) : null,
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -367,6 +380,8 @@ export function shapeOrder(row: any) {
       ? 'car'
       : row.service_mode === 'delivery'
         ? 'delivery'
+        : row.service_mode === 'precinct'
+          ? 'precinct'
         : row.order_type === 'pickup'
         ? 'pickup'
         : row.takeaway
@@ -377,6 +392,13 @@ export function shapeOrder(row: any) {
     deliveryPhone: row.delivery_phone ?? '',
     deliveryArea: row.delivery_area_id
       ? ((db.prepare('SELECT name FROM delivery_areas WHERE id = ?').get(row.delivery_area_id) as any)?.name ?? null)
+      : null,
+    // Where in the precinct they are standing, for whoever walks it out.
+    precinctName: row.precinct_id
+      ? ((db.prepare('SELECT name FROM precincts WHERE id = ?').get(row.precinct_id) as any)?.name ?? null)
+      : null,
+    spotLabel: row.spot_id
+      ? ((db.prepare('SELECT label FROM precinct_spots WHERE id = ?').get(row.spot_id) as any)?.label ?? null)
       : null,
     declinedReason: row.declined_reason ?? '',
     zoneName: row.zone_id

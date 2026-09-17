@@ -8,6 +8,7 @@ import {
   shapeDiningSession,
   startCarSession,
   startDeliverySession,
+  startPrecinctSession,
   startSession,
 } from '../dining.ts'
 
@@ -91,4 +92,20 @@ sessionsRouter.get('/:token/tables', (req, res) => {
     .prepare('SELECT id, label, seats FROM restaurant_tables WHERE restaurant_id = ? ORDER BY id')
     .all(row.restaurant_id)
   res.json({ tables })
+})
+
+/**
+ * Opens a session for somebody standing somewhere in a precinct. Needs no code
+ * and no table: the landmark is the address, and the restaurant agreed to walk
+ * out there when it joined.
+ */
+sessionsRouter.post('/precinct', (req, res) => {
+  const result = startPrecinctSession({
+    restaurantId: Number(req.body?.restaurantId),
+    spotId: Number(req.body?.spotId),
+    detail: String(req.body?.detail ?? ''),
+    userId: req.user?.id ?? null,
+  })
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  res.status(201).json({ session: shapeDiningSession(result.session) })
 })

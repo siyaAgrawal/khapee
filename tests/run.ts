@@ -2309,7 +2309,7 @@ async function runTests() {
     )
 
     const beforeJoin = await call('/sessions/precinct', {
-      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter', phone: '9876543210' },
+      body: { restaurantId: mornington.id, spotId, lookFor: 'Blue scooter', phone: '9876543210' },
     })
     ok('and will not take an order for one that has not', beforeJoin.status === 409, beforeJoin.body)
 
@@ -2325,18 +2325,52 @@ async function runTests() {
 
     ok(
       'a number is required — they may have to ring before setting off',
-      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, detail: 'x' } })).status ===
+      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, lookFor: 'x' } })).status ===
         400,
     )
 
     const sess = await call('/sessions/precinct', {
-      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter, grey shirt', phone: '9876543210' },
+      body: { restaurantId: mornington.id, spotId, lookFor: 'Blue scooter, grey shirt', phone: '9876543210' },
     })
     ok('somebody standing there opens a session', sess.status === 201, sess.body)
     ok('which knows the landmark', sess.body.session.spotLabel === 'Outside the sweet shop', sess.body.session)
-    ok('and what to look for', sess.body.session.address === 'Blue scooter, grey shirt')
+    ok('and what to look for', sess.body.session.lookFor === 'Blue scooter, grey shirt', sess.body.session)
     ok('and a number to ring', sess.body.session.phone === '9876543210', sess.body.session)
     ok('with no table and no code', sess.body.session.tableLabel === null && sess.body.session.spotId === spotId)
+
+    // A list of shopfronts cannot name every doorway in a market, so somebody
+    // standing between two of them says where they are in their own words.
+    ok(
+      'a landmark nobody picked and no words either is refused',
+      (await call('/sessions/precinct', {
+        body: { restaurantId: mornington.id, precinctSlug: 't140', phone: '9876543210' },
+      })).status === 400,
+    )
+    const own = await call('/sessions/precinct', {
+      body: {
+        restaurantId: mornington.id,
+        precinctSlug: 't140',
+        place: 'By the ATM next to the bank',
+        lookFor: 'Red helmet',
+        phone: '9811111111',
+      },
+    })
+    ok('their own words open a session just as well', own.status === 201, own.body)
+    ok('with no landmark attached', own.body.session.spotId === null, own.body.session)
+    ok('and where they are is what they typed', own.body.session.whereLabel === 'By the ATM next to the bank')
+    ok('still in the right area', own.body.session.precinctName === 'Test 140', own.body.session)
+
+    const ownOrder = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        customerName: 'By the ATM',
+        sessionToken: own.body.session.token,
+      },
+    })
+    ok('and the order carries those words to the runner', ownOrder.body.order.whereLabel === 'By the ATM next to the bank', ownOrder.body.order)
+    ok('with what to look for kept separate', ownOrder.body.order.lookFor === 'Red helmet', ownOrder.body.order)
 
     const order = await call('/orders', {
       body: {
@@ -2398,7 +2432,7 @@ async function runTests() {
     )
     ok(
       'and stops new orders at once',
-      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, detail: '', phone: '9876543210' } }))
+      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, phone: '9876543210' } }))
         .status === 409,
     )
   }

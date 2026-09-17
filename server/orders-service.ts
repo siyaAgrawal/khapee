@@ -213,8 +213,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
            status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
            service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone,
-           delivery_fee_cents, precinct_id, spot_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           delivery_fee_cents, precinct_id, spot_id, look_for)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -260,6 +260,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         deliveryFeeCents,
         liveSession?.service_mode === 'precinct' ? (liveSession.precinct_id ?? null) : null,
         liveSession?.service_mode === 'precinct' ? (liveSession.spot_id ?? null) : null,
+        liveSession?.service_mode === 'precinct' ? (liveSession.look_for ?? '') : '',
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -402,6 +403,14 @@ export function shapeOrder(row: any) {
     spotLabel: row.spot_id
       ? ((db.prepare('SELECT label FROM precinct_spots WHERE id = ?').get(row.spot_id) as any)?.label ?? null)
       : null,
+    /** Where they are, whether they picked it from the list or typed it. */
+    whereLabel:
+      row.service_mode === 'precinct'
+        ? (row.spot_id
+            ? ((db.prepare('SELECT label FROM precinct_spots WHERE id = ?').get(row.spot_id) as any)?.label ?? '')
+            : (row.delivery_address ?? ''))
+        : '',
+    lookFor: row.look_for ?? '',
     declinedReason: row.declined_reason ?? '',
     zoneName: row.zone_id
       ? ((db.prepare('SELECT name FROM service_zones WHERE id = ?').get(row.zone_id) as any)?.name ?? null)

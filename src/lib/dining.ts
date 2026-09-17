@@ -16,6 +16,9 @@ export type DiningSession = {
   precinctSlug?: string | null
   precinctName?: string | null
   spotLabel?: string | null
+  /** Where they are, landmark or their own words. */
+  whereLabel?: string | null
+  lookFor?: string
   vehicle?: string
   seqNo?: number | null
   /** What this area adds for carrying the order, and what it will not go out under. */

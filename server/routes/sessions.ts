@@ -102,8 +102,10 @@ sessionsRouter.get('/:token/tables', (req, res) => {
 sessionsRouter.post('/precinct', (req, res) => {
   const result = startPrecinctSession({
     restaurantId: Number(req.body?.restaurantId),
-    spotId: Number(req.body?.spotId),
-    detail: String(req.body?.detail ?? ''),
+    precinctSlug: req.body?.precinctSlug ?? null,
+    spotId: req.body?.spotId ? Number(req.body.spotId) : null,
+    place: String(req.body?.place ?? ''),
+    lookFor: String(req.body?.lookFor ?? req.body?.detail ?? ''),
     phone: String(req.body?.phone ?? ''),
     userId: req.user?.id ?? null,
   })

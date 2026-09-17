@@ -261,8 +261,8 @@ export default function Checkout() {
             <div style={{ flex: 1 }}>
               {isNearby ? (
                 <>
-                  Bringing it to <strong>{dining?.spotLabel}</strong>
-                  {dining?.address ? ` · ${dining.address}` : ''}
+                  Bringing it to <strong>{dining?.whereLabel || dining?.spotLabel}</strong>
+                  {dining?.lookFor ? ` · ${dining.lookFor}` : ''}
                 </>
               ) : isDelivery ? (
                 <>

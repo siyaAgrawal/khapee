@@ -28,7 +28,10 @@ export default function NearbyEntry() {
   const [spots, setSpots] = useState<Spot[] | null>(null)
   const [restaurant, setRestaurant] = useState<{ name: string; theme?: string } | null>(null)
   const [spotId, setSpotId] = useState<number | null>(null)
-  const [detail, setDetail] = useState('')
+  /** Their own words, when none of the landmarks is where they are standing. */
+  const [own, setOwn] = useState(false)
+  const [place, setPlace] = useState('')
+  const [lookFor, setLookFor] = useState('')
   const [phone, setPhone] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -53,10 +56,17 @@ export default function NearbyEntry() {
     setError('')
     try {
       const r = await api<{ session: any }>('/sessions/precinct', {
-        body: { restaurantId, spotId, detail: detail.trim(), phone: phone.trim() },
+        body: {
+          restaurantId,
+          precinctSlug: slug,
+          spotId: own ? null : spotId,
+          place: own ? place.trim() : '',
+          lookFor: lookFor.trim(),
+          phone: phone.trim(),
+        },
       })
       saveDining(r.session)
-      toast(`They'll bring it to ${r.session.spotLabel}`, 'good')
+      toast(`They'll bring it to ${r.session.whereLabel}`, 'good')
       navigate(`/r/${restaurantId}`)
     } catch (e) {
       setError((e as ApiError).message)
@@ -66,7 +76,7 @@ export default function NearbyEntry() {
   }
 
   const phoneOk = phone.replace(/\D/g, '').length >= 10
-  const ready = !!spotId && phoneOk
+  const ready = phoneOk && (own ? place.trim().length >= 4 : !!spotId)
 
   return (
     <div className="app">
@@ -87,14 +97,43 @@ export default function NearbyEntry() {
             {spots.map((s) => (
               <button
                 key={s.id}
-                className={`spot-card ${spotId === s.id ? 'on' : ''}`}
-                onClick={() => setSpotId(s.id)}
-                aria-pressed={spotId === s.id}
+                className={`spot-card ${!own && spotId === s.id ? 'on' : ''}`}
+                onClick={() => {
+                  setOwn(false)
+                  setSpotId(s.id)
+                }}
+                aria-pressed={!own && spotId === s.id}
               >
                 <strong>{s.label}</strong>
                 {s.note && <span>{s.note}</span>}
               </button>
             ))}
+            {/* A list of shopfronts cannot name every doorway and bench in a
+                market. Being told to pick one of these when none of them is
+                where you are standing is how somebody gives up and rings. */}
+            <button
+              className={`spot-card ${own ? 'on' : ''}`}
+              onClick={() => setOwn(true)}
+              aria-pressed={own}
+            >
+              <strong>Somewhere else</strong>
+              <span>Say where in your own words</span>
+            </button>
+          </div>
+        )}
+
+        {own && (
+          <div className="field" style={{ marginTop: 12, marginBottom: 0 }}>
+            <label htmlFor="pr-place">Where are you?</label>
+            <input
+              id="pr-place"
+              className="input"
+              value={place}
+              onChange={(e) => setPlace(e.target.value.slice(0, 140))}
+              placeholder="By the ATM next to the bank"
+              autoFocus
+            />
+            <span className="hint">Somewhere the person walking over will recognise.</span>
           </div>
         )}
 
@@ -102,8 +141,8 @@ export default function NearbyEntry() {
         <p className="tiny muted">Two people at the same spot look the same from the door.</p>
         <input
           className="input"
-          value={detail}
-          onChange={(e) => setDetail(e.target.value.slice(0, 140))}
+          value={lookFor}
+          onChange={(e) => setLookFor(e.target.value.slice(0, 140))}
           placeholder="Blue scooter, grey shirt"
         />
 

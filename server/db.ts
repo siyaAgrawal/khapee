@@ -286,6 +286,10 @@ addColumn('orders', 'declined_reason', "TEXT NOT NULL DEFAULT ''")
 // pick them out of the people standing at it.
 addColumn('orders', 'precinct_id', 'INTEGER')
 addColumn('orders', 'spot_id', 'INTEGER')
+// Two different things, and the runner needs both. Where they are — a listed
+// landmark, or their own words when none of them fit — is delivery_address.
+// What to look for once you are standing there is this.
+addColumn('orders', 'look_for', "TEXT NOT NULL DEFAULT ''")
 // The matching columns on dining_sessions live further down, after that table
 // is created — a migration above its own CREATE TABLE runs against nothing.
 
@@ -558,6 +562,7 @@ addColumn('dining_sessions', 'zone_id', 'INTEGER')
 // …and for someone standing somewhere in a precinct: the landmark they picked.
 addColumn('dining_sessions', 'precinct_id', 'INTEGER')
 addColumn('dining_sessions', 'spot_id', 'INTEGER')
+addColumn('dining_sessions', 'look_for', "TEXT NOT NULL DEFAULT ''")
 addColumn('dining_sessions', 'vehicle', "TEXT NOT NULL DEFAULT ''")
 addColumn('dining_sessions', 'vehicle_number', "TEXT NOT NULL DEFAULT ''")
 // What staff and customer say to each other out loud: "Car 27".

@@ -67,13 +67,19 @@ export function shapeDiningSession(row: any) {
             )
             .get(row.spot_id) as any)
         : null
+      const area = row.precinct_id
+        ? (db.prepare('SELECT name, slug FROM precincts WHERE id = ?').get(row.precinct_id) as any)
+        : null
       return {
         precinctId: row.precinct_id ?? null,
-        precinctName: spot?.precinct_name ?? null,
-        precinctSlug: spot?.precinct_slug ?? null,
+        precinctName: area?.name ?? null,
+        precinctSlug: area?.slug ?? null,
         spotId: row.spot_id ?? null,
         spotLabel: spot?.label ?? null,
         spotNote: spot?.note ?? '',
+        // Where they are, in whichever way they said it.
+        whereLabel: spot?.label ?? row.address ?? '',
+        lookFor: row.look_for ?? '',
       }
     })(),
     address: row.address ?? '',
@@ -85,8 +91,9 @@ export function shapeDiningSession(row: any) {
         : (row.service_mode ?? '') === 'delivery'
           ? 'Delivery'
           : (row.service_mode ?? '') === 'precinct'
-            ? ((db.prepare('SELECT label FROM precinct_spots WHERE id = ?').get(row.spot_id) as any)?.label ??
-              'Nearby')
+            ? ((row.spot_id
+                ? (db.prepare('SELECT label FROM precinct_spots WHERE id = ?').get(row.spot_id) as any)?.label
+                : row.address) || 'Nearby')
             : (row.table_label ?? null),
     openedByStaff: !!row.opened_by,
     partySize: row.party_size ?? 1,
@@ -394,8 +401,11 @@ export function startDeliverySession(opts: {
  */
 export function startPrecinctSession(opts: {
   restaurantId: number
-  spotId: number
-  detail: string
+  precinctSlug?: string | null
+  spotId?: number | null
+  /** Their own words for where they are, when no landmark fits. */
+  place?: string
+  lookFor: string
   phone: string
   userId: number | null
 }): { ok: true; session: any } | { ok: false; status: number; error: string } {
@@ -407,33 +417,52 @@ export function startPrecinctSession(opts: {
     return { ok: false, status: 409, error: `${named(restaurant.name)} is closed right now.` }
   }
 
-  const spot = db
-    .prepare(
-      `SELECT s.*, p.id AS precinct_id, p.name AS precinct_name, p.is_active AS precinct_active
-         FROM precinct_spots s JOIN precincts p ON p.id = s.precinct_id
-        WHERE s.id = ? AND s.is_active = 1`,
-    )
-    .get(opts.spotId) as any
-  if (!spot || !spot.precinct_active) {
+  // Either a landmark from the list, or their own description of where they
+  // are. A list of shopfronts cannot name every doorway, bench and parked car
+  // in a market, and being told "pick one of these" when none of them is where
+  // you are standing is how somebody gives up and rings instead.
+  const place = String(opts.place ?? '').trim().slice(0, 140)
+  const spot = opts.spotId
+    ? (db
+        .prepare(
+          `SELECT s.*, p.id AS precinct_id, p.name AS precinct_name, p.is_active AS precinct_active
+             FROM precinct_spots s JOIN precincts p ON p.id = s.precinct_id
+            WHERE s.id = ? AND s.is_active = 1`,
+        )
+        .get(opts.spotId) as any)
+    : null
+  if (opts.spotId && (!spot || !spot.precinct_active)) {
     return { ok: false, status: 400, error: 'Pick where you are from the list.' }
   }
+  if (!spot && place.length < 4) {
+    return { ok: false, status: 400, error: 'Pick a landmark, or say where you are in a few words.' }
+  }
+
+  // Without a landmark the precinct has to come from somewhere, so a typed
+  // location names the area it belongs to.
+  const precinct = spot
+    ? { id: spot.precinct_id, name: spot.precinct_name }
+    : (db
+        .prepare('SELECT id, name FROM precincts WHERE slug = ? AND is_active = 1')
+        .get(String(opts.precinctSlug ?? '').toLowerCase()) as any)
+  if (!precinct) return { ok: false, status: 400, error: 'That area is not on Khapee.' }
 
   // A restaurant joins a precinct and can leave it again; one that has not
   // agreed to walk orders out must not be handed one.
   const serves = db
     .prepare('SELECT 1 FROM restaurant_precincts WHERE restaurant_id = ? AND precinct_id = ?')
-    .get(opts.restaurantId, spot.precinct_id)
+    .get(opts.restaurantId, precinct.id)
   if (!serves) {
     return {
       ok: false,
       status: 409,
-      error: `${named(restaurant.name)} isn't bringing orders out into ${spot.precinct_name} right now.`,
+      error: `${named(restaurant.name)} isn't bringing orders out into ${precinct.name} right now.`,
     }
   }
 
   // Optional: the landmark alone is often enough, and demanding a description
   // of yourself before you can order is friction this exists to remove.
-  const detail = String(opts.detail ?? '').trim().slice(0, 140)
+  const lookFor = String(opts.lookFor ?? '').trim().slice(0, 140)
 
   // The number is not optional. This is the one way of ordering where the
   // kitchen commits a member of staff to the street on the strength of it, and
@@ -447,9 +476,9 @@ export function startPrecinctSession(opts: {
   db.prepare(
     `INSERT INTO dining_sessions
        (token, restaurant_id, table_id, table_label, access_code_id, source, user_id, expires_at,
-        service_mode, precinct_id, spot_id, address, phone)
+        service_mode, precinct_id, spot_id, address, look_for, phone)
      VALUES (?, ?, NULL, NULL, NULL, 'code', ?, datetime('now', '+${SESSION_HOURS} hours'),
-        'precinct', ?, ?, ?, ?)`,
-  ).run(token, opts.restaurantId, opts.userId, spot.precinct_id, spot.id, detail, phone)
+        'precinct', ?, ?, ?, ?, ?)`,
+  ).run(token, opts.restaurantId, opts.userId, precinct.id, spot?.id ?? null, place, lookFor, phone)
   return { ok: true, session: db.prepare('SELECT * FROM dining_sessions WHERE token = ?').get(token) as any }
 }

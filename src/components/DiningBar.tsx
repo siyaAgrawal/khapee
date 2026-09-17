@@ -54,7 +54,7 @@ export default function DiningBar({
   const mode = session?.serviceMode
   const heading =
     mode === 'precinct'
-      ? `They're bringing it to ${session!.spotLabel ?? 'you'}`
+      ? `They're bringing it to ${session!.whereLabel || session!.spotLabel || 'you'}`
       : mode === 'delivery'
       ? `Delivering to ${session!.address || session!.areaName || 'your address'}`
       : mode === 'car'

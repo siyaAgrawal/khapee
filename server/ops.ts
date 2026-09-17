@@ -174,8 +174,12 @@ export function opsBoard(restaurantId: number) {
     // For a precinct order the landmark is the area and the detail is the
     // address — "outside Chai Sutta", "blue scooter, grey shirt".
     area: o.service_mode === 'precinct' ? (o.precinct_name ?? 'Nearby') : (o.area_name ?? ''),
-    address: o.service_mode === 'precinct' ? (o.spot_label ?? '') : (o.delivery_address ?? ''),
-    detail: o.service_mode === 'precinct' ? (o.delivery_address ?? '') : '',
+    // A landmark if they picked one, their own words if they typed them.
+    address:
+      o.service_mode === 'precinct'
+        ? (o.spot_label || o.delivery_address || 'Somewhere nearby')
+        : (o.delivery_address ?? ''),
+    detail: o.service_mode === 'precinct' ? (o.look_for ?? '') : '',
     nearby: o.service_mode === 'precinct',
     phone: o.delivery_phone ?? '',
     awaitingAnswer: o.status === 'REQUESTED',
@@ -246,13 +250,13 @@ export function runQueue(restaurantId: number) {
       status: o.status,
       label:
         o.service_mode === 'precinct'
-          ? (o.spot_label ?? 'Nearby')
+          ? (o.spot_label || o.delivery_address || 'Nearby')
           : o.session_mode === 'car'
             ? `Car ${o.seq_no ?? ''}`.trim()
             : o.table_label || (o.service_mode === 'dine_in' ? 'Table' : 'Counter'),
       // What the runner is looking for, and the number to ring if they cannot
       // see them.
-      detail: o.service_mode === 'precinct' ? (o.delivery_address ?? '') : '',
+      detail: o.service_mode === 'precinct' ? (o.look_for ?? '') : '',
       phone: o.delivery_phone ?? '',
       vehicle: o.vehicle || '',
       vehicleNumber: o.vehicle_number || '',

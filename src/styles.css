@@ -4923,3 +4923,25 @@ button.nav-link {
 .r-card.is-shut {
   opacity: 0.6;
 }
+
+/* ------------------------------------------------------ an area in the grid
+   Sits among the restaurant cards because from the street it is the same kind
+   of choice, but reads as a place rather than a kitchen: no photo, no open or
+   closed, just the name of the street and how many kitchens are on it. */
+.area-card .area-art {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--bg-tint), var(--surface));
+  border-bottom: 1px solid var(--line);
+}
+.area-mark {
+  font-family: var(--serif);
+  font-size: 46px;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.area-card .badge-accent {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+}

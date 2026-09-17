@@ -6,6 +6,8 @@ import { useVegMode } from '../lib/veg'
 import { cuisineBackground, cuisineEmoji } from '../lib/cuisine-art'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 
+type Precinct = { id: number; slug: string; name: string; city: string; note: string; restaurants: number }
+
 export type RestaurantCard = {
   id: number
   slug: string
@@ -70,6 +72,18 @@ export default function Home() {
       })
       .catch((e: ApiError) => setError(e.message))
   }
+
+  /**
+   * Areas sit in the same list as the restaurants, because from the street they
+   * are the same kind of choice: a place you can order from. Tapping one asks
+   * where you are standing and then shows every kitchen in it at once.
+   */
+  const [precincts, setPrecincts] = useState<Precinct[]>([])
+  useEffect(() => {
+    api<{ precincts: Precinct[] }>('/precincts')
+      .then((r) => setPrecincts(r.precincts.filter((p) => p.restaurants > 0)))
+      .catch(() => setPrecincts([]))
+  }, [])
 
   useEffect(() => {
     load(coords, veg)
@@ -215,6 +229,29 @@ export default function Home() {
 
         {restaurants && visible.length > 0 && (
           <div className="grid">
+            {!query.trim() &&
+              filter === 'All' &&
+              precincts.map((p) => (
+                <Link key={`p-${p.id}`} to={`/p/${p.slug}`} className="r-card area-card">
+                  <div className="r-card-art area-art">
+                    <span className="area-mark">{p.name}</span>
+                  </div>
+                  <div className="r-card-body">
+                    <div className="r-card-title">
+                      <h3>{p.name}</h3>
+                      <span className="badge badge-accent">Area</span>
+                    </div>
+                    <p>{p.note || 'Order from any kitchen here and they bring it to you.'}</p>
+                    <div className="r-card-meta">
+                      <span>
+                        {p.restaurants} place{p.restaurants === 1 ? '' : 's'}
+                      </span>
+                      <span className="dot-sep">{p.city}</span>
+                      <span className="dot-sep">They come to you</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
             {visible.map((r, i) => (
               <Link key={r.id} to={`/r/${r.id}`} className="r-card" style={{ animationDelay: `${i * 45}ms` }}>
                 <Art

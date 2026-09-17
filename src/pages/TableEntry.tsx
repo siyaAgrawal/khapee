@@ -20,10 +20,31 @@ export default function TableEntry() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
   const [error, setError] = useState('')
+  const [slow, setSlow] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    api<{ session: any }>('/sessions', { body: { value: `KHAPEE:TABLE:${token}` } })
-      .then((r) => {
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout>
+
+    /**
+     * Keeps trying, because this is the one request the whole QR depends on and
+     * the things that break it are all temporary.
+     *
+     * The app sleeps when nobody has ordered for a quarter of an hour and takes
+     * the better part of a minute to wake; café wifi drops; a phone walking in
+     * off the street hands over from mobile data. One attempt met any of those
+     * with a dead end reading "Browse restaurants", which to whoever is sitting
+     * at the table is simply a QR that does not work.
+     *
+     * Only a network failure is worth retrying. A token the server has actually
+     * rejected — a QR from a table that was removed — will be rejected just as
+     * firmly the fifth time, so that is reported at once.
+     */
+    const tryOnce = async (n: number) => {
+      try {
+        const r = await api<{ session: any }>('/sessions', { body: { value: `KHAPEE:TABLE:${token}` } })
+        if (cancelled) return
         saveDining(r.session)
         // Kept alongside the session: it is what the room and the payment
         // shortcut read to know which table QR was scanned.
@@ -35,8 +56,29 @@ export default function TableEntry() {
           tableToken: token,
         })
         navigate(`/r/${r.session.restaurantId}`, { replace: true })
-      })
-      .catch((e: ApiError) => setError(e.message))
+      } catch (e) {
+        if (cancelled) return
+        const err = e as ApiError
+        // status 0 is "could not reach it at all"; 5xx is a host still coming
+        // up. Both pass. A 404 for a table that no longer exists, or a 400 for
+        // a malformed code, is a real answer and is shown straight away.
+        const worthRetrying = err.status === 0 || err.status >= 500
+        if (!worthRetrying || n >= 6) {
+          setError(err.message)
+          return
+        }
+        setSlow(true)
+        setAttempt(n + 1)
+        // 1s, 2s, 4s, 8s, 10s, 10s — about half a minute of waking time.
+        timer = setTimeout(() => tryOnce(n + 1), Math.min(1000 * 2 ** n, 10000))
+      }
+    }
+
+    tryOnce(0)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [token, navigate])
 
   return (
@@ -45,14 +87,27 @@ export default function TableEntry() {
         {error ? (
           <>
             <ErrorState message={error} />
-            <div className="center">
-              <Link className="btn btn-accent" to="/">
+            <div className="center" style={{ display: 'grid', gap: 10, justifyItems: 'center' }}>
+              <button
+                className="btn btn-accent"
+                onClick={() => {
+                  setError('')
+                  setSlow(false)
+                  setAttempt((n) => n + 1)
+                  location.reload()
+                }}
+              >
+                Try again
+              </button>
+              <Link className="btn btn-ghost btn-sm" to="/">
                 Browse restaurants
               </Link>
             </div>
           </>
         ) : (
-          <LoadingBlock label="Finding your table…" />
+          <LoadingBlock
+            label={slow ? `Waking the kitchen… (${attempt})` : 'Finding your table…'}
+          />
         )}
       </main>
     </div>

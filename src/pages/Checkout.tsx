@@ -56,6 +56,7 @@ export default function Checkout() {
   const [name, setName] = useState(user?.name ?? '')
   const [note, setNote] = useState('')
   const [payNow, setPayNow] = useState(false)
+  const [payOpen, setPayOpen] = useState(false)
   const [options, setOptions] = useState<any>(null)
 
   /**
@@ -78,6 +79,15 @@ export default function Checkout() {
    */
   const isCar = dining?.serviceMode === 'car'
   const placeDecided = isDelivery || isCar
+
+  /** Named for the situation, so "pay later" means something concrete. */
+  const payLaterLabel = isDelivery
+    ? 'Pay on delivery'
+    : isCar
+      ? 'Pay at the car'
+      : where === 'later'
+        ? 'Pay when you collect'
+        : 'Pay at the restaurant'
 
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
   const needsPresence = where === 'here' || where === 'takeaway'
@@ -131,6 +141,17 @@ export default function Checkout() {
   // code. Holding its token is the same evidence scanning it again would give.
   const verified = !!dining?.active || !!scannedTable
   const canPayInApp = !!options?.acceptsUpi
+
+  /** The line under the choice — what it actually means for this order. */
+  const paySub = !canPayInApp
+    ? 'Cash or UPI at the counter — this place has no UPI ID on Khapee yet'
+    : payNow
+      ? isDelivery
+        ? `${cart.restaurantName} accepts the order first — if they can’t take it, they refund you`
+        : where === 'here' && !placeDecided
+          ? 'Paying is proof you are here — no code needed'
+          : 'Pay from your own UPI app before it is made'
+      : 'Cash or UPI, when you get it'
 
   // What still stands between the customer and their food.
   const needsTable = where === 'here' && !seated && !placeDecided
@@ -337,46 +358,6 @@ export default function Checkout() {
             />
           </div>
 
-          {/* Paying — offered on every way of ordering.
-              It used to be hidden for "Collect later", so the one case where
-              paying up front is most obviously useful — ordering ahead, then
-              walking in to pick it up — was the one case you could not do it
-              in. */}
-          <div className="field">
-            <label>Paying</label>
-            <div className="seg" style={{ margin: 0 }}>
-              <button className={`seg-btn ${!payNow ? 'active' : ''}`} onClick={() => setPayNow(false)}>
-                {isDelivery
-                  ? 'On delivery'
-                  : isCar
-                    ? 'At the car'
-                    : where === 'later'
-                      ? 'When I collect'
-                      : 'At the restaurant'}
-              </button>
-              {canPayInApp && (
-                <button className={`seg-btn ${payNow ? 'active' : ''}`} onClick={() => setPayNow(true)}>
-                  Now, by UPI
-                </button>
-              )}
-            </div>
-            {canPayInApp ? (
-              <span className="hint">
-                {isDelivery && payNow
-                  ? /* A delivery is accepted or refused after it is placed, so
-                       paying first means trusting them to send it back. Said
-                       plainly rather than discovered afterwards. */
-                    `${cart.restaurantName} accepts the order before cooking — if they can’t take it, they refund you.`
-                  : where === 'here' && !placeDecided
-                    ? 'Paying now is proof you are here — no code needed.'
-                    : 'Pay straight into the restaurant’s UPI from your own app.'}
-              </span>
-            ) : (
-              <span className="hint">
-                This restaurant hasn’t added a UPI ID yet, so payment is on the spot.
-              </span>
-            )}
-          </div>
 
           {/* The code — only mentioned when it is actually the missing piece.
               A car or a delivery has said where it is going at the top already. */}
@@ -453,6 +434,60 @@ export default function Checkout() {
               </Link>
             </div>
           )}
+
+          {/*
+            How this is being paid for, immediately above the button that does
+            it — the last thing read before committing, rather than a field
+            somewhere up the form. It is always here, whatever way the order is
+            being placed: paying was hidden entirely for "collect later", so the
+            one case where paying up front is most obviously the point had no
+            way to do it.
+          */}
+          <div className={`pay-row ${payOpen ? 'open' : ''}`}>
+            <button
+              type="button"
+              className="pay-pick"
+              onClick={() => canPayInApp && setPayOpen(!payOpen)}
+              aria-expanded={payOpen}
+              disabled={!canPayInApp}
+            >
+              <span className="pay-kicker">Pay using</span>
+              <strong>{payNow ? 'UPI, now' : payLaterLabel}</strong>
+              <span className="pay-sub">{paySub}</span>
+              {canPayInApp && (
+                <span className="pay-caret" aria-hidden>
+                  {payOpen ? '▴' : '▾'}
+                </span>
+              )}
+            </button>
+
+            {payOpen && canPayInApp && (
+              <div className="pay-choices">
+                <button
+                  type="button"
+                  className={!payNow ? 'on' : ''}
+                  onClick={() => {
+                    setPayNow(false)
+                    setPayOpen(false)
+                  }}
+                >
+                  <strong>{payLaterLabel}</strong>
+                  <span>Cash or UPI, when you get it</span>
+                </button>
+                <button
+                  type="button"
+                  className={payNow ? 'on' : ''}
+                  onClick={() => {
+                    setPayNow(true)
+                    setPayOpen(false)
+                  }}
+                >
+                  <strong>UPI, now</strong>
+                  <span>Straight into {cart.restaurantName}&rsquo;s account</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             className="btn btn-accent btn-lg btn-block"

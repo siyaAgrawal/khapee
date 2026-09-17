@@ -4783,3 +4783,106 @@ button.nav-link {
     flex: 0 0 150px;
   }
 }
+
+/* ------------------------------------------------- how this is being paid for
+   Sits directly above the button that places the order: the last thing read
+   before committing. Always present, whatever way the order is going out. */
+.pay-row {
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+.pay-row.open {
+  border-color: var(--line-strong);
+}
+.pay-pick {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pay-pick:disabled {
+  cursor: default;
+}
+.pay-kicker {
+  grid-column: 1;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pay-pick strong {
+  grid-column: 1;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+.pay-sub {
+  grid-column: 1;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pay-caret {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pay-choices {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+.pay-choices button {
+  display: grid;
+  gap: 2px;
+  padding: 11px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pay-choices button:last-child {
+  border-bottom: 0;
+}
+.pay-choices button:hover {
+  background: var(--bg-tint);
+}
+.pay-choices button.on {
+  background: var(--bg-tint);
+}
+.pay-choices button.on strong::after {
+  content: ' ✓';
+  color: var(--ink);
+}
+.pay-choices strong {
+  font-size: 14.5px;
+}
+.pay-choices span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* The thank-you the customer can send themselves, from their own number. */
+.wa-share {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.wa-share::before {
+  content: '💬';
+  font-size: 14px;
+}

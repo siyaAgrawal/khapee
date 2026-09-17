@@ -4,6 +4,8 @@ import { requireAuth } from '../auth.ts'
 import { checkAccessCode, createOrder, getOrder, shapeOrder } from '../orders-service.ts'
 import { normalizeCode } from '../ids.ts'
 import { upiLink } from '../payments.ts'
+import { sessionByToken } from '../dining.ts'
+import { money } from '../../shared/orders.ts'
 
 export const ordersRouter = Router()
 
@@ -62,6 +64,26 @@ ordersRouter.post('/payment-request', (req, res) => {
     amountCents += item.price_cents * Math.max(1, Math.floor(Number(line.quantity) || 1))
   }
   if (amountCents <= 0) return res.status(400).json({ error: 'Your cart is empty.' })
+
+  // What the customer is actually charged, not just what the dishes cost.
+  // This summed the menu lines alone, so a delivery quoted at ₹480 in the
+  // checkout asked their UPI app for ₹450 and left the restaurant carrying the
+  // fee it had just told them about.
+  const session = req.body?.sessionToken ? sessionByToken(String(req.body.sessionToken)) : null
+  if (session && session.restaurant_id === restaurantId && session.service_mode === 'delivery' && session.area_id) {
+    const area = db
+      .prepare('SELECT * FROM delivery_areas WHERE id = ? AND restaurant_id = ?')
+      .get(session.area_id, restaurantId) as any
+    if (area) {
+      // No point taking money for an order the kitchen will turn away.
+      if (amountCents < area.min_order_cents) {
+        return res.status(400).json({
+          error: `${area.name} has a ${money(area.min_order_cents)} minimum — add ${money(area.min_order_cents - amountCents)} more.`,
+        })
+      }
+      amountCents += area.fee_cents
+    }
+  }
 
   const ref = `TABLO${Date.now().toString(36).toUpperCase()}`
   res.json({

@@ -146,6 +146,9 @@ export default function Checkout() {
         body: {
           restaurantId,
           items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          // So the amount asked for is the amount owed: a delivery adds a fee
+          // that the dishes alone do not account for.
+          sessionToken: dining?.token ?? null,
         },
       })
       setPayRequest(r)
@@ -334,27 +337,46 @@ export default function Checkout() {
             />
           </div>
 
-          {/* Payment — and the shortcut it unlocks */}
-          {where !== 'later' && (
-            <div className="field">
-              <label>Paying</label>
-              <div className="seg" style={{ margin: 0 }}>
-                <button className={`seg-btn ${!payNow ? 'active' : ''}`} onClick={() => setPayNow(false)}>
-                  {isDelivery ? 'On delivery' : isCar ? 'At the car' : 'At the restaurant'}
+          {/* Paying — offered on every way of ordering.
+              It used to be hidden for "Collect later", so the one case where
+              paying up front is most obviously useful — ordering ahead, then
+              walking in to pick it up — was the one case you could not do it
+              in. */}
+          <div className="field">
+            <label>Paying</label>
+            <div className="seg" style={{ margin: 0 }}>
+              <button className={`seg-btn ${!payNow ? 'active' : ''}`} onClick={() => setPayNow(false)}>
+                {isDelivery
+                  ? 'On delivery'
+                  : isCar
+                    ? 'At the car'
+                    : where === 'later'
+                      ? 'When I collect'
+                      : 'At the restaurant'}
+              </button>
+              {canPayInApp && (
+                <button className={`seg-btn ${payNow ? 'active' : ''}`} onClick={() => setPayNow(true)}>
+                  Now, by UPI
                 </button>
-                {canPayInApp && (
-                  <button className={`seg-btn ${payNow ? 'active' : ''}`} onClick={() => setPayNow(true)}>
-                    Now, in the app
-                  </button>
-                )}
-              </div>
-              {canPayInApp ? (
-                <span className="hint">No code needed.</span>
-              ) : (
-                <span className="hint">UPI not set up here.</span>
               )}
             </div>
-          )}
+            {canPayInApp ? (
+              <span className="hint">
+                {isDelivery && payNow
+                  ? /* A delivery is accepted or refused after it is placed, so
+                       paying first means trusting them to send it back. Said
+                       plainly rather than discovered afterwards. */
+                    `${cart.restaurantName} accepts the order before cooking — if they can’t take it, they refund you.`
+                  : where === 'here' && !placeDecided
+                    ? 'Paying now is proof you are here — no code needed.'
+                    : 'Pay straight into the restaurant’s UPI from your own app.'}
+              </span>
+            ) : (
+              <span className="hint">
+                This restaurant hasn’t added a UPI ID yet, so payment is on the spot.
+              </span>
+            )}
+          </div>
 
           {/* The code — only mentioned when it is actually the missing piece.
               A car or a delivery has said where it is going at the top already. */}

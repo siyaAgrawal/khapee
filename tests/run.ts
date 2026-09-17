@@ -1845,6 +1845,39 @@ async function runTests() {
     ok('the fee is charged on top', paid.body.order.deliveryFeeCents === 3000, paid.body.order)
     ok('and the total is both', paid.body.order.totalCents === unit * 2 + 3000, paid.body.order)
 
+    // Paying by UPI has to ask for what is owed. This summed the dishes alone,
+    // so the app quoted one total on screen and asked the customer's bank for
+    // a smaller one, leaving the restaurant carrying the fee it had just
+    // advertised.
+    const s3 = await session()
+    const quote = await call('/orders/payment-request', {
+      body: {
+        restaurantId: mornington.id,
+        items: [{ menuItemId: coldCoffee.id, quantity: 2 }],
+        sessionToken: s3.token,
+      },
+    })
+    ok('a UPI request for a delivery includes the fee', quote.body.amountCents === unit * 2 + 3000, quote.body)
+    ok(
+      'and the link asks the bank for that same amount',
+      quote.body.upiLink.includes(`am=${((unit * 2 + 3000) / 100).toFixed(2)}`),
+      quote.body.upiLink,
+    )
+    const underQuote = await call('/orders/payment-request', {
+      body: {
+        restaurantId: mornington.id,
+        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+        sessionToken: s3.token,
+      },
+    })
+    ok('and it will not take money for an order under the minimum', underQuote.status === 400, underQuote.body)
+
+    // Every other way of ordering still asks for exactly the dishes.
+    const plain = await call('/orders/payment-request', {
+      body: { restaurantId: mornington.id, items: [{ menuItemId: coldCoffee.id, quantity: 2 }] },
+    })
+    ok('a request with no delivery behind it is just the dishes', plain.body.amountCents === unit * 2, plain.body)
+
     // Rebuilt totals are the classic way a charge disappears.
     const added = await call(`/staff/orders/${paid.body.order.id}/items`, {
       token: roadToken,

@@ -2309,7 +2309,7 @@ async function runTests() {
     )
 
     const beforeJoin = await call('/sessions/precinct', {
-      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter' },
+      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter', phone: '9876543210' },
     })
     ok('and will not take an order for one that has not', beforeJoin.status === 409, beforeJoin.body)
 
@@ -2323,12 +2323,19 @@ async function runTests() {
       (await call('/precincts/t140')).body.restaurants.some((r: any) => r.id === mornington.id),
     )
 
+    ok(
+      'a number is required — they may have to ring before setting off',
+      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, detail: 'x' } })).status ===
+        400,
+    )
+
     const sess = await call('/sessions/precinct', {
-      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter, grey shirt' },
+      body: { restaurantId: mornington.id, spotId, detail: 'Blue scooter, grey shirt', phone: '9876543210' },
     })
     ok('somebody standing there opens a session', sess.status === 201, sess.body)
     ok('which knows the landmark', sess.body.session.spotLabel === 'Outside the sweet shop', sess.body.session)
     ok('and what to look for', sess.body.session.address === 'Blue scooter, grey shirt')
+    ok('and a number to ring', sess.body.session.phone === '9876543210', sess.body.session)
     ok('with no table and no code', sess.body.session.tableLabel === null && sess.body.session.spotId === spotId)
 
     const order = await call('/orders', {
@@ -2345,6 +2352,7 @@ async function runTests() {
     ok('and is its own kind of order', order.body.order.serviceType === 'precinct', order.body.order)
     ok('carrying the landmark for whoever walks it out', order.body.order.spotLabel === 'Outside the sweet shop')
     ok('and nothing is charged for the walk', order.body.order.deliveryFeeCents === 0, order.body.order)
+    ok('the number rides along with it', order.body.order.deliveryPhone === '9876543210', order.body.order)
 
     const board = await call('/staff/ops', { token: roadToken })
     ok(
@@ -2356,10 +2364,31 @@ async function runTests() {
 
     const yes = await call(`/staff/orders/${order.body.order.id}/accept`, { token: roadToken, method: 'POST' })
     ok('the kitchen can take it', yes.body.order.status === 'ACCEPTED', yes.body)
-    for (const st of ['PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']) {
+    for (const st of ['PREPARING', 'READY', 'OUT_FOR_DELIVERY']) {
       const r = await call(`/staff/orders/${order.body.order.id}/status`, { token: roadToken, body: { status: st } })
       ok(`and walk it through ${st.toLowerCase().replace(/_/g, ' ')}`, r.status === 200, r.body)
     }
+
+    // Out of the door but not yet handed over: still the runner's problem, and
+    // still needing a button to say it arrived.
+    const onFoot = await call('/staff/runs', { token: roadToken })
+    const drop = onFoot.body.groups
+      .flatMap((g: any) => g.drops.map((d: any) => ({ ...d, zone: g.zone })))
+      .find((d: any) => d.orderNumber === order.body.order.orderNumber)
+    ok('it stays on the runner list while it is out', !!drop, onFoot.body.groups.map((g: any) => g.zone))
+    ok('grouped by the area, the way a zone is', drop?.zone === 'Test 140', drop?.zone)
+    ok('showing the landmark', drop?.label === 'Outside the sweet shop', drop?.label)
+    ok('what to look for', drop?.detail === 'Blue scooter, grey shirt', drop?.detail)
+    ok('and the number to ring', drop?.phone === '9876543210', drop?.phone)
+
+    const handed = await call(`/staff/orders/${order.body.order.id}/delivered`, { token: roadToken, method: 'POST' })
+    ok('handing it over closes it', handed.status === 200, handed.body)
+    ok(
+      'and it leaves the runner list',
+      !(await call('/staff/runs', { token: roadToken })).body.groups.some((g: any) =>
+        g.drops.some((d: any) => d.orderNumber === order.body.order.orderNumber),
+      ),
+    )
 
     // Leaving has to work too: one person on a Sunday cannot go anywhere.
     await call(`/staff/precincts/${pid}/join`, { token: roadToken, body: { joined: false } })
@@ -2369,7 +2398,8 @@ async function runTests() {
     )
     ok(
       'and stops new orders at once',
-      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, detail: '' } })).status === 409,
+      (await call('/sessions/precinct', { body: { restaurantId: mornington.id, spotId, detail: '', phone: '9876543210' } }))
+        .status === 409,
     )
   }
 

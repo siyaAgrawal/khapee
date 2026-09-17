@@ -396,6 +396,7 @@ export function startPrecinctSession(opts: {
   restaurantId: number
   spotId: number
   detail: string
+  phone: string
   userId: number | null
 }): { ok: true; session: any } | { ok: false; status: number; error: string } {
   const restaurant = db
@@ -434,13 +435,21 @@ export function startPrecinctSession(opts: {
   // of yourself before you can order is friction this exists to remove.
   const detail = String(opts.detail ?? '').trim().slice(0, 140)
 
+  // The number is not optional. This is the one way of ordering where the
+  // kitchen commits a member of staff to the street on the strength of it, and
+  // the walk is wasted if they get there and cannot find anybody.
+  const phone = String(opts.phone ?? '').replace(/[^0-9+ ]/g, '').trim().slice(0, 20)
+  if (phone.replace(/\D/g, '').length < 10) {
+    return { ok: false, status: 400, error: 'Add a phone number so they can ring you when they set off.' }
+  }
+
   const token = randomToken(14)
   db.prepare(
     `INSERT INTO dining_sessions
        (token, restaurant_id, table_id, table_label, access_code_id, source, user_id, expires_at,
-        service_mode, precinct_id, spot_id, address)
+        service_mode, precinct_id, spot_id, address, phone)
      VALUES (?, ?, NULL, NULL, NULL, 'code', ?, datetime('now', '+${SESSION_HOURS} hours'),
-        'precinct', ?, ?, ?)`,
-  ).run(token, opts.restaurantId, opts.userId, spot.precinct_id, spot.id, detail)
+        'precinct', ?, ?, ?, ?)`,
+  ).run(token, opts.restaurantId, opts.userId, spot.precinct_id, spot.id, detail, phone)
   return { ok: true, session: db.prepare('SELECT * FROM dining_sessions WHERE token = ?').get(token) as any }
 }

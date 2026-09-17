@@ -214,30 +214,46 @@ export function opsBoard(restaurantId: number) {
 export function runQueue(restaurantId: number) {
   const rows = db
     .prepare(
+      // OUT_FOR_DELIVERY belongs here too. An order walked out into the street
+      // is still in somebody's hands, and dropping it off this list the moment
+      // they set off left them with nothing to tap when they handed it over.
       `SELECT o.*, s.seq_no, s.vehicle, s.vehicle_number, s.table_label, s.service_mode AS session_mode,
-              z.name AS zone_name, z.id AS zone_id, u.name AS runner_name
+              z.name AS zone_name, z.id AS zone_id, u.name AS runner_name,
+              sp.label AS spot_label, pr.name AS precinct_name
          FROM orders o
          LEFT JOIN dining_sessions s ON s.id = o.dining_session_id
          LEFT JOIN service_zones z ON z.id = COALESCE(o.zone_id, s.zone_id)
          LEFT JOIN users u ON u.id = o.runner_id
+         LEFT JOIN precinct_spots sp ON sp.id = o.spot_id
+         LEFT JOIN precincts pr ON pr.id = o.precinct_id
         WHERE o.restaurant_id = ?
-          AND o.status IN ('READY', 'DELIVERING')
+          AND o.status IN ('READY', 'DELIVERING', 'OUT_FOR_DELIVERY')
         ORDER BY o.created_at ASC`,
     )
     .all(restaurantId) as any[]
 
   const groups = new Map<string, any>()
   for (const o of rows) {
-    const key = o.zone_name ?? (o.session_mode === 'car' ? 'Outside' : 'Inside')
+    // Orders going to the same area are one trip, the way one zone is.
+    const key =
+      o.service_mode === 'precinct'
+        ? (o.precinct_name ?? 'Nearby')
+        : (o.zone_name ?? (o.session_mode === 'car' ? 'Outside' : 'Inside'))
     const g = groups.get(key) ?? { zone: key, zoneId: o.zone_id ?? null, drops: [] }
     g.drops.push({
       id: o.id,
       orderNumber: o.order_number,
       status: o.status,
       label:
-        o.session_mode === 'car'
-          ? `Car ${o.seq_no ?? ''}`.trim()
-          : o.table_label || (o.service_mode === 'dine_in' ? 'Table' : 'Counter'),
+        o.service_mode === 'precinct'
+          ? (o.spot_label ?? 'Nearby')
+          : o.session_mode === 'car'
+            ? `Car ${o.seq_no ?? ''}`.trim()
+            : o.table_label || (o.service_mode === 'dine_in' ? 'Table' : 'Counter'),
+      // What the runner is looking for, and the number to ring if they cannot
+      // see them.
+      detail: o.service_mode === 'precinct' ? (o.delivery_address ?? '') : '',
+      phone: o.delivery_phone ?? '',
       vehicle: o.vehicle || '',
       vehicleNumber: o.vehicle_number || '',
       ageMinutes: minutesSince(o.created_at),

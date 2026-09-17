@@ -17,6 +17,7 @@ import TableEntry from './pages/TableEntry'
 import CarEntry from './pages/CarEntry'
 import DeliveryEntry from './pages/DeliveryEntry'
 import PrecinctEntry from './pages/PrecinctEntry'
+import NearbyEntry from './pages/NearbyEntry'
 import ZoneEntry from './pages/ZoneEntry'
 import StaffOps from './pages/staff/StaffOps'
 import StaffPos from './pages/staff/StaffPos'
@@ -64,6 +65,7 @@ export default function App() {
       <Route path="/r/:id/delivery" element={<DeliveryEntry />} />
       {/* A street, not a restaurant: everyone here who will walk an order out. */}
       <Route path="/p/:slug" element={<PrecinctEntry />} />
+      <Route path="/r/:id/nearby/:slug" element={<NearbyEntry />} />
       <Route path="/z/:token" element={<ZoneEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
       <Route path="/profile" element={<Profile />} />

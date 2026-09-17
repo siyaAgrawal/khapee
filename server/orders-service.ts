@@ -254,7 +254,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         liveSession?.service_mode === 'delivery' || liveSession?.service_mode === 'precinct'
           ? (liveSession.address ?? '')
           : '',
-        liveSession?.service_mode === 'delivery' ? (liveSession.phone ?? '') : '',
+        liveSession?.service_mode === 'delivery' || liveSession?.service_mode === 'precinct'
+          ? (liveSession.phone ?? '')
+          : '',
         deliveryFeeCents,
         liveSession?.service_mode === 'precinct' ? (liveSession.precinct_id ?? null) : null,
         liveSession?.service_mode === 'precinct' ? (liveSession.spot_id ?? null) : null,

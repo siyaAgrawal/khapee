@@ -32,6 +32,8 @@ export type RestaurantCard = {
   acceptsUpi?: boolean
   /** Whether this restaurant serves customers parked outside. */
   acceptsCar?: boolean
+  /** Areas this restaurant will carry an order out into. */
+  precincts?: { id: number; slug: string; name: string }[]
   /** Whether this restaurant delivers to nearby areas it has named. */
   acceptsDelivery?: boolean
   /** A restaurant with its own look on its page. Empty is the standard one. */

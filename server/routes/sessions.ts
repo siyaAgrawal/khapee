@@ -104,6 +104,7 @@ sessionsRouter.post('/precinct', (req, res) => {
     restaurantId: Number(req.body?.restaurantId),
     spotId: Number(req.body?.spotId),
     detail: String(req.body?.detail ?? ''),
+    phone: String(req.body?.phone ?? ''),
     userId: req.user?.id ?? null,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })

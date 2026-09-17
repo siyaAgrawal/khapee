@@ -126,6 +126,27 @@ export default function Restaurant() {
                   </div>
                 </div>
 
+                {/* Ordering to wherever you are standing in the area, beside
+                    eating in, takeaway and the kerb — because from the street
+                    it is simply another way to order from this kitchen. */}
+                {data.restaurant.isOpen &&
+                  !dining &&
+                  (data.restaurant.precincts ?? []).map((p) => (
+                    <Link key={p.id} className="road-cta" to={`/r/${restaurantId}/nearby/${p.slug}`}>
+                      <span className="road-cta-mark" aria-hidden>
+                        🚶
+                      </span>
+                      <span>
+                        <strong>Somewhere in {p.name}?</strong>
+                        <span className="tiny muted">
+                          Tell them where you are and they&rsquo;ll walk it over.
+                        </span>
+                      </span>
+                      <span className="road-cta-go" aria-hidden>
+                        →
+                      </span>
+                    </Link>
+                  ))}
                 {data.restaurant.isOpen && data.restaurant.acceptsCar && !dining && (
                   <Link className="road-cta" to={`/r/${restaurantId}/car`}>
                     <span className="road-cta-mark" aria-hidden>
@@ -192,6 +213,27 @@ export default function Restaurant() {
                   <span className="dot-sep">{data.restaurant.hours}</span>
                   <span className="dot-sep">~{data.restaurant.prepMinutes} min</span>
                 </div>
+                {/* Ordering to wherever you are standing in the area, beside
+                    eating in, takeaway and the kerb — because from the street
+                    it is simply another way to order from this kitchen. */}
+                {data.restaurant.isOpen &&
+                  !dining &&
+                  (data.restaurant.precincts ?? []).map((p) => (
+                    <Link key={p.id} className="road-cta" to={`/r/${restaurantId}/nearby/${p.slug}`}>
+                      <span className="road-cta-mark" aria-hidden>
+                        🚶
+                      </span>
+                      <span>
+                        <strong>Somewhere in {p.name}?</strong>
+                        <span className="tiny muted">
+                          Tell them where you are and they&rsquo;ll walk it over.
+                        </span>
+                      </span>
+                      <span className="road-cta-go" aria-hidden>
+                        →
+                      </span>
+                    </Link>
+                  ))}
                 {data.restaurant.isOpen && data.restaurant.acceptsCar && !dining && (
                   <Link className="road-cta" to={`/r/${restaurantId}/car`}>
                     <span className="road-cta-mark" aria-hidden>

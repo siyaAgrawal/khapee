@@ -34,6 +34,15 @@ function shapeRestaurant(row: any) {
     acceptsUpi: !!String(row.upi_vpa ?? '').trim(),
     acceptsCar: !!row.accepts_car,
     acceptsDelivery: !!row.accepts_delivery,
+    // The areas this kitchen will carry an order out into, so its own page can
+    // offer that alongside eating in, takeaway and the kerb.
+    precincts: db
+      .prepare(
+        `SELECT p.id, p.slug, p.name FROM restaurant_precincts rp
+           JOIN precincts p ON p.id = rp.precinct_id
+          WHERE rp.restaurant_id = ? AND p.is_active = 1 ORDER BY p.name`,
+      )
+      .all(row.id) as { id: number; slug: string; name: string }[],
     theme: row.theme ?? '',
   }
 }

@@ -10,6 +10,9 @@ type Drop = {
   label: string
   vehicle: string
   vehicleNumber: string
+  /** What to look for, for an order going out into an area. */
+  detail?: string
+  phone?: string
   ageMinutes: number
   totalCents: number
   paymentStatus: 'UNPAID' | 'PAID'
@@ -101,6 +104,12 @@ export default function StaffRuns() {
                       {d.vehicleNumber && <span className="ops-plate">{d.vehicleNumber}</span>}
                     </p>
                   )}
+                  {d.detail && <p className="tiny">{d.detail}</p>}
+                  {d.phone && (
+                    <p className="tiny muted">
+                      <a href={`tel:${d.phone}`}>{d.phone}</a>
+                    </p>
+                  )}
                   <p className="run-items">{d.items.join(' · ')}</p>
                   <p className="tiny">
                     {d.paymentStatus === 'PAID' ? (
@@ -119,7 +128,7 @@ export default function StaffRuns() {
                     </button>
                   )}
                   <button className="btn btn-accent btn-sm" onClick={() => deliver(d)}>
-                    Delivered
+                    Handed over
                   </button>
                 </div>
               </article>

@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | 'revery' | 'dark' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | 'plain' | ''
 
 /** How one section of a themed menu presents itself. */
 export type SectionVoice = {
@@ -113,7 +113,10 @@ export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
  * whatever the device asked for.
  */
 export function applyTheme(theme: ThemeName): () => void {
-  if (!theme) return () => {}
+  // "plain" is not a palette — it is the ordinary app with the photographs
+  // left off — so it must not stamp a data-theme nobody has written colours
+  // for, which would leave the page with no palette at all.
+  if (!theme || theme === 'plain') return () => {}
   const root = document.documentElement
   const previous = root.dataset.theme
   root.dataset.theme = theme

@@ -28,6 +28,8 @@ function shapeRestaurant(row: any) {
     rating: row.rating > 0 ? row.rating : null,
     itemCount: row.item_count ?? undefined,
     city: row.city ?? '',
+    /** Above the alphabet and above nearest-first. Zero for almost everywhere. */
+    topRank: row.top_rank ?? 0,
     acceptsPickup: !!row.accepts_pickup,
     acceptsTakeaway: !!row.accepts_takeaway,
     acceptsGroups: !!row.accepts_groups,
@@ -60,7 +62,7 @@ publicRouter.get('/restaurants', (req, res) => {
     .prepare(
       `SELECT r.*, (SELECT COUNT(*) FROM menu_items m
                     WHERE m.restaurant_id = r.id AND m.is_available = 1 AND (0 = ? OR m.is_veg = 1)) AS item_count
-       FROM restaurants r ORDER BY r.is_open DESC, r.name ASC`,
+       FROM restaurants r ORDER BY r.is_open DESC, r.top_rank DESC, r.name ASC`,
     )
     .all(vegOnly ? 1 : 0) as any[]
   const visible = includeDrafts ? rows : rows.filter((r) => r.item_count > 0)
@@ -81,6 +83,9 @@ publicRouter.get('/restaurants', (req, res) => {
 
   if (hasPosition) {
     shaped = shaped.sort((a, b) => {
+      // A restaurant put at the top stays there. Nearest-first is a
+      // convenience; being first is a decision, and the decision wins.
+      if (a.topRank !== b.topRank) return b.topRank - a.topRank
       if (a.distanceKm == null && b.distanceKm == null) return 0
       if (a.distanceKm == null) return 1
       if (b.distanceKm == null) return -1
@@ -365,7 +370,7 @@ publicRouter.get('/precincts/:slug', (req, res) => {
          JOIN restaurants r ON r.id = rp.restaurant_id
         WHERE rp.precinct_id = ?
           AND EXISTS (SELECT 1 FROM menu_items m WHERE m.restaurant_id = r.id AND m.is_available = 1)
-        ORDER BY r.is_open DESC, r.name`,
+        ORDER BY r.is_open DESC, r.top_rank DESC, r.name`,
     )
     .all(precinct.id) as any[]
 

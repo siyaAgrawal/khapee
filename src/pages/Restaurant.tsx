@@ -62,17 +62,17 @@ export default function Restaurant() {
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
-  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'dark' | ''
+  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'plain' | ''
   const noir = theme === 'noir'
   const hut = theme === 'hut'
   const revery = theme === 'revery'
   /**
-   * "dark" is not a look of its own — it is the ordinary page, always dark and
-   * with the photographs left off. A restaurant whose pictures are not good
-   * enough to sell the food is better read than looked at, and the standard
-   * layout is easier to use than any of the dressed-up ones.
+   * "plain" is not a look of its own — it is the ordinary page with the
+   * photographs left off. A restaurant whose pictures are not good enough to
+   * sell the food is better read than looked at, and the standard layout is
+   * easier to use than any of the dressed-up ones.
    */
-  const plainDark = theme === 'dark'
+  const noPhotos = theme === 'plain'
   /** Themed restaurants share the menu and page shell, dressed differently. */
   const themed = noir || hut || revery
   const noirPage = themed
@@ -110,7 +110,7 @@ export default function Restaurant() {
                   <Art
                     emoji={data.restaurant.emoji}
                     hue={data.restaurant.hue}
-                    imageUrl={plainDark ? null : data.restaurant.imageUrl}
+                    imageUrl={noPhotos ? null : data.restaurant.imageUrl}
                     alt={data.restaurant.name}
                     className="noir-hero-img"
                   />
@@ -198,7 +198,7 @@ export default function Restaurant() {
               <Art
                 emoji={data.restaurant.emoji}
                 hue={data.restaurant.hue}
-                imageUrl={plainDark ? null : data.restaurant.imageUrl}
+                imageUrl={noPhotos ? null : data.restaurant.imageUrl}
                 alt={data.restaurant.name}
                 className={`r-hero-art ${data.restaurant.isOpen ? '' : 'closed-art'}`}
               />
@@ -349,7 +349,7 @@ export default function Restaurant() {
                         <Art
                           emoji={item.emoji}
                           hue={item.hue}
-                          imageUrl={plainDark ? null : item.imageUrl}
+                          imageUrl={noPhotos ? null : item.imageUrl}
                           alt={item.name}
                           className="item-art"
                         />

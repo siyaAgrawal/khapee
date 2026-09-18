@@ -231,6 +231,12 @@ addColumn('restaurants', 'accepts_groups', 'INTEGER NOT NULL DEFAULT 1')
 addColumn('restaurants', 'upi_vpa', "TEXT NOT NULL DEFAULT ''")
 addColumn('restaurants', 'upi_name', "TEXT NOT NULL DEFAULT ''")
 
+// Where a restaurant sits in the list, above the usual alphabetical order.
+// Zero for almost everywhere; a higher number comes first. It exists because
+// "the one you open the app to see" is a decision somebody makes, not
+// something the alphabet or a distance happens to get right.
+addColumn('restaurants', 'top_rank', 'INTEGER NOT NULL DEFAULT 0')
+
 // Where the restaurant is, for "near me" sorting. Filled in by the restaurant.
 addColumn('restaurants', 'city', "TEXT NOT NULL DEFAULT ''")
 addColumn('restaurants', 'lat', 'REAL')

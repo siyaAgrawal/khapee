@@ -742,17 +742,6 @@ textarea {
     );
   }
 }
-/* A restaurant that has chosen to be dark stays dark on a phone set to light.
-   Without this the tiles keep their pale daytime gradient and the page reads as
-   a dark screen with a row of cream squares cut out of it. */
-:root[data-theme='dark'] .art {
-  background: linear-gradient(
-    145deg,
-    hsl(var(--art-hue) 42% 34%) 0%,
-    hsl(calc(var(--art-hue) + 18) 38% 26%) 55%,
-    hsl(calc(var(--art-hue) - 12) 34% 20%) 100%
-  );
-}
 
 .art-photo img {
   width: 100%;
@@ -4676,10 +4665,7 @@ button.nav-link {
    a deep planted green with the light of those bulbs as its accent, rather than
    the charcoal of La Tavola or the roadside amber of Lotus Hut. */
 
-/* A restaurant that wants the app's ordinary layout but always dark, and no
-   photographs — because bad photographs of food are worse than none. */
-:root[data-theme='revery'],
-:root[data-theme='dark'] {
+:root[data-theme='revery'] {
   --bg: #0f1712;
   --bg-tint: #15201a;
   --surface: #16211b;
@@ -4803,26 +4789,57 @@ button.nav-link {
    before committing. Always present, whatever way the order is going out. */
 /* How you are paying, sitting on top of the button that does it. The whole
    row is the control — it opens the sheet whether or not there is a second
-   option, because a tap that does nothing reads as a broken app. */
+   option, because a tap that does nothing reads as a broken app.
+
+   It is deliberately louder than the card it sits in: tinted, with a real
+   button on the right and a nudge as the page settles. A quiet bordered
+   panel here reads as a label, and nobody taps a label. */
 .pay-row {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 2px 10px;
+  gap: 2px 12px;
   width: 100%;
   margin-bottom: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
+  padding: 13px 14px;
+  border: 1.5px solid var(--line-strong);
   border-radius: var(--r-lg);
-  background: var(--surface);
+  background: var(--accent-soft);
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
+  animation: pay-nudge 2.4s var(--ease) 0.5s 2;
+  transition:
+    border-color 0.18s var(--ease),
+    transform 0.18s var(--ease);
 }
-.pay-row:hover,
+.pay-row:hover {
+  border-color: var(--accent);
+}
+.pay-row:active {
+  transform: scale(0.99);
+}
 .pay-row.open {
-  border-color: var(--line-strong);
+  border-color: var(--accent);
+  animation: none;
+}
+/* Two slow pulses, then it stops for good — enough to catch the eye on the
+   way down the page, not a light left blinking at somebody trying to read. */
+@keyframes pay-nudge {
+  0%,
+  70%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+  35% {
+    box-shadow: 0 0 0 5px var(--accent-soft);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pay-row {
+    animation: none;
+  }
 }
 .pay-kicker {
   grid-column: 1;
@@ -4845,11 +4862,19 @@ button.nav-link {
 .pay-change {
   grid-column: 2;
   grid-row: 1 / span 3;
+  justify-self: end;
+  padding: 7px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--accent, var(--ink));
+  white-space: nowrap;
+}
+.pay-row:hover .pay-change {
+  border-color: var(--accent);
 }
 
 /* A sheet up from the bottom edge, where a thumb already is. */

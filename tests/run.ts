@@ -2890,6 +2890,23 @@ async function runTests() {
     const dropped = await call('/alerts/registered', { body: { endpoint: 'https://push.example/kept-two' } })
     ok('a phone the server has forgotten reads as off', dropped.body.registered === false, dropped.body)
 
+    // The WhatsApp step, testable on its own. Trying it used to mean a second
+    // phone, a real order carrying a number, and an accept — and when nothing
+    // happened there was no way to tell which of those had failed.
+    const waTest = await call('/staff/alerts/test-whatsapp', {
+      token: roadToken,
+      body: { phone: '98765 43210' },
+    })
+    ok('the WhatsApp step can be tested without a real order', waTest.status === 200, waTest.body)
+    ok('addressed the way WhatsApp wants it', waTest.body.to === '919876543210', waTest.body)
+    const waNoNumber = await call('/staff/alerts/test-whatsapp', { token: roadToken, body: { phone: 'xyz' } })
+    ok(
+      'and it asks for a number rather than sending to nowhere',
+      waNoNumber.status === 400 || waNoNumber.body.to,
+      waNoNumber.body,
+    )
+    ok('the test needs an account', (await call('/staff/alerts/test-whatsapp', { body: {} })).status === 401)
+
     const withInvited = (await call('/staff/alerts', { token: roadToken })).body.push.list as any[]
     ok(
       'the invited phone is on the list, marked as invited',

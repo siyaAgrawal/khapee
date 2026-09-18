@@ -10,6 +10,22 @@
  */
 const SHELL = 'ordro-assets-v6'
 
+/**
+ * Which version of this file a phone is actually running.
+ *
+ * A service worker is replaced on the browser's own schedule, not on ours, and
+ * an installed app can go on running a copy from weeks ago while the pages it
+ * serves are entirely current. That is invisible from the outside and it looks
+ * exactly like a bug that was never fixed — so the page can ask, and say.
+ *
+ * Raise it whenever the behaviour below changes.
+ */
+const SW_VERSION = 7
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'version') event.ports?.[0]?.postMessage(SW_VERSION)
+})
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL).then((cache) => cache.addAll(['/manifest.webmanifest', '/apple-touch-icon.png'])),

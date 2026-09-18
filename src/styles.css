@@ -5368,3 +5368,24 @@ button.nav-link {
 .thank-go {
   margin-bottom: 12px;
 }
+
+/* The WhatsApp self-test, set apart from the switch above it: they are two
+   different questions — "does this phone ring" and "does the ring reach
+   WhatsApp" — and answering the first told you nothing about the second. */
+.wa-test {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.wa-test label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.wa-test .row {
+  flex-wrap: wrap;
+}
+.wa-test .input {
+  flex: 1 1 180px;
+  min-width: 0;
+}

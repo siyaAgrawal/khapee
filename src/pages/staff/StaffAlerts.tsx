@@ -7,6 +7,8 @@ import {
   enablePush,
   needsHomeScreen,
   pushSupported,
+  SW_WANTED,
+  workerVersion,
   type AlertState,
 } from '../../lib/push'
 
@@ -30,6 +32,14 @@ export default function StaffAlerts() {
   const [onThisDevice, setOnThisDevice] = useState(false)
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState('')
+  /** Where the WhatsApp test message should go — usually the owner's own phone. */
+  const [testPhone, setTestPhone] = useState('')
+  /** What the worker on this phone says it is, against what this build expects. */
+  const [swv, setSwv] = useState<number | null | 'asking'>('asking')
+
+  useEffect(() => {
+    void workerVersion().then(setSwv)
+  }, [])
 
   const load = async () => {
     try {
@@ -71,6 +81,31 @@ export default function StaffAlerts() {
       const r = await api<{ sent: number }>('/staff/alerts/test', { body: {} })
       toast(
         r.sent ? `Sent to ${r.sent} device${r.sent === 1 ? '' : 's'}.` : 'No device is signed up yet.',
+        r.sent ? 'good' : 'info',
+      )
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  /**
+   * The thank-you notification on demand, so the WhatsApp step can be tried on
+   * its own. Testing it used to mean a second phone, a real order with a number
+   * on it, and an accept — and when nothing happened, no way to tell which of
+   * those had failed.
+   */
+  const testWhatsApp = async () => {
+    setBusy('wa')
+    try {
+      const r = await api<{ sent: number; to: string }>('/staff/alerts/test-whatsapp', {
+        body: { phone: testPhone.trim() },
+      })
+      toast(
+        r.sent
+          ? 'Sent. Tap that notification — WhatsApp should open with the message written.'
+          : 'No phone is signed up to send it to. Turn alerts on above first.',
         r.sent ? 'good' : 'info',
       )
     } catch (e) {
@@ -230,6 +265,44 @@ export default function StaffAlerts() {
             {busy === 'ring' ? 'Ringing…' : 'Ring them now'}
           </button>
         </p>
+
+        {/* The WhatsApp step, on its own.
+            It is the last link in the chain and the one that has been hard to
+            see: everything before it can work perfectly and the message still
+            not arrive. This sends the same notification an accepted order
+            sends, so what is being tested is only the part in doubt. */}
+        <div className="wa-test">
+          <label htmlFor="wa-num">Test the WhatsApp step</label>
+          <p className="tiny muted">
+            Sends you the same notification an accepted order sends. Tap it, and WhatsApp should open
+            with the message already written — nothing is sent to anybody until you press send.
+          </p>
+          <div className="row" style={{ gap: 10, marginTop: 10 }}>
+            <input
+              id="wa-num"
+              className="input input-sm"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="Your own mobile number"
+              inputMode="tel"
+              autoComplete="tel"
+            />
+            <button className="btn btn-secondary btn-sm" disabled={busy === 'wa'} onClick={testWhatsApp}>
+              {busy === 'wa' ? <Spinner /> : 'Send the test'}
+            </button>
+          </div>
+          {/* A phone can run a worker from weeks ago while every page it serves
+              is current, and that looks exactly like a fix that never worked.
+              This is the difference between "it is broken" and "this phone has
+              not picked it up yet", which are not the same problem. */}
+          {swv !== 'asking' && swv !== null && swv < SW_WANTED && (
+            <p className="form-error" style={{ textAlign: 'left', marginTop: 10 }}>
+              This phone is still running an older version of Khapee’s background worker (v{swv}, and
+              v{SW_WANTED} is current). Close Khapee completely — swipe it away — and open it again.
+              Until then it will keep behaving the way it did before.
+            </p>
+          )}
+        </div>
 
         {/* The account is the key here, not the device: anybody who can sign in
             can put these on a phone of their own. So the list is shown, and any

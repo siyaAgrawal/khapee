@@ -43,6 +43,37 @@ export async function workerReady(): Promise<ServiceWorkerRegistration> {
   ])
 }
 
+/** What the service worker on this phone says it is, or '' if it will not say. */
+export const SW_WANTED = 7
+
+/**
+ * Asks the installed worker its version, and gives up quickly.
+ *
+ * A phone can run a service worker from weeks ago while every page it serves
+ * is current — the browser replaces it on its own schedule — and from the
+ * outside that is indistinguishable from a fix that never worked. An old
+ * number here is the answer to "why is it still doing the old thing".
+ */
+export async function workerVersion(): Promise<number | null> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return null
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    const worker = reg?.active
+    if (!worker) return null
+    return await new Promise<number | null>((resolve) => {
+      const channel = new MessageChannel()
+      const timer = setTimeout(() => resolve(null), 2000)
+      channel.port1.onmessage = (e) => {
+        clearTimeout(timer)
+        resolve(typeof e.data === 'number' ? e.data : null)
+      }
+      worker.postMessage('version', [channel.port2])
+    })
+  } catch {
+    return null
+  }
+}
+
 /** What this phone actually reports, for when it will not do as it is told. */
 export function pushFacts(): Record<string, string> {
   if (typeof window === 'undefined') return {}

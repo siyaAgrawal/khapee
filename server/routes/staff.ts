@@ -12,6 +12,7 @@ import { opsBoard, runQueue } from '../ops.ts'
 import { tellCustomer } from '../customer-notify.ts'
 import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
+import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
 import { mailConfigured, sendMail } from '../mail.ts'
 import {
   audit,
@@ -898,6 +899,43 @@ staffRouter.post('/alerts/test', async (req: any, res) => {
     tag: 'khapee-test',
   })
   res.json({ ok: true, sent })
+})
+
+/**
+ * The thank-you notification, on demand, without waiting for a real order.
+ *
+ * Testing this meant placing an order from a second phone, with a number on
+ * it, then accepting it — and when nothing happened there was no way to tell
+ * which of those four steps had failed. This sends exactly the notification an
+ * accepted order sends, so the only thing being tested is the part in doubt:
+ * that tapping it arrives at WhatsApp with the message written.
+ *
+ * It goes to a number the caller gives, defaulting to the restaurant's own, so
+ * it can be tried without messaging a customer.
+ */
+staffRouter.post('/alerts/test-whatsapp', async (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const asked = waNumber(String(req.body?.phone ?? ''))
+  const own = waNumber(
+    String((db.prepare('SELECT phone FROM restaurants WHERE id = ?').get(restaurantId) as any)?.phone ?? ''),
+  )
+  const to = asked || own
+  if (!to) {
+    return res.status(400).json({
+      error: 'Put a mobile number in the box first — the test message needs somewhere to go.',
+    })
+  }
+
+  const message = thanksText('Aarav')
+  const url = `/thank?to=${to}&who=Aarav&text=${encodeURIComponent(message)}`
+  const sent = await pushToRestaurant(restaurantId, {
+    title: 'Thank Aarav on WhatsApp',
+    body: 'This is the test. Tap it — WhatsApp should open with the message written.',
+    url,
+    wa: waAppLink(to, message),
+    tag: 'khapee-thank-test',
+  })
+  res.json({ ok: true, sent, to })
 })
 
 staffRouter.get('/summary', (req, res) => {

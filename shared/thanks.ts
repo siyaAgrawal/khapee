@@ -5,8 +5,8 @@
  * restaurant's own WhatsApp, a push notification, and Meta's paid API if that
  * is ever switched on — and three copies of a sentence drift apart.
  */
-export function thanksText(customerName: string, restaurantName: string): string {
-  return `Hi ${customerName}, Thanks for ordering from ${restaurantName} today! We hope you enjoy your food. 🍕`
+export function thanksText(customerName: string): string {
+  return `Hi ${customerName}, Thanks for ordering through Khapee today! We hope you enjoy your food. 🍕`
 }
 
 /**

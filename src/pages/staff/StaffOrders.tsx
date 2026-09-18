@@ -532,7 +532,7 @@ export default function StaffOrders() {
                                 className="btn btn-ghost btn-sm"
                                 href={waLink(
                                   o.customerPhone,
-                                  thanksText(o.customerName || 'there', o.restaurantName ?? ''),
+                                  thanksText(o.customerName || 'there'),
                                 )}
                                 target="_blank"
                                 rel="noreferrer"

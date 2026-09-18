@@ -2831,14 +2831,14 @@ async function runTests() {
       trackUrl: 'https://khapee.com/order/A123',
     })
     ok(
-      'the message greets the customer by name and names the restaurant',
-      written === 'Hi Siya, Thanks for ordering from Revery today! We hope you enjoy your food. 🍕',
+      'the message greets the customer by name and thanks them for Khapee',
+      written === 'Hi Siya, Thanks for ordering through Khapee today! We hope you enjoy your food. 🍕',
       written,
     )
     ok(
       'and the template registered with Meta is the same sentence',
       WHATSAPP_TEMPLATE_BODY ===
-        'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoy your food. 🍕',
+        'Hi {{1}}, Thanks for ordering through Khapee today! We hope you enjoy your food. 🍕',
       WHATSAPP_TEMPLATE_BODY,
     )
     ok('but the attempt is written down', !!row, row)

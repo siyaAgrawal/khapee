@@ -55,14 +55,13 @@ export type OrderMessage = {
 /**
  * The message, word for word, in one place.
  *
- * The two names are the whole point of it: the customer's own, and the
- * restaurant they actually ordered from. Meta needs the same sentence
- * registered as a template with the names as {{1}} and {{2}} — see
- * WHATSAPP_TEMPLATE_BODY below — and the two have to match, so both are
- * written from here.
+ * It thanks them on Khapee's behalf rather than the restaurant's, which is
+ * whose message it is. Meta needs the same sentence registered as a template
+ * with the name as {{1}} — see WHATSAPP_TEMPLATE_BODY below — and the two have
+ * to match, so both are written from here.
  */
 export function orderMessageText(m: OrderMessage): string {
-  return thanksText(m.customerName, m.restaurantName)
+  return thanksText(m.customerName)
 }
 
 /**
@@ -71,11 +70,11 @@ export function orderMessageText(m: OrderMessage): string {
  * A business cannot message somebody out of the blue on WhatsApp in its own
  * words: the sentence has to be approved in advance, with the variable parts
  * numbered. Submit this, with the name `order_confirmation`, under Message
- * Templates, category Utility. The numbers are filled in per order by
+ * Templates, category Utility. {{1}} is filled in per order by
  * sendOrderConfirmation.
  */
 export const WHATSAPP_TEMPLATE_BODY =
-  'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoy your food. 🍕'
+  'Hi {{1}}, Thanks for ordering through Khapee today! We hope you enjoy your food. 🍕'
 
 function record(orderId: number | null, to: string, status: string, detail: string) {
   try {
@@ -122,8 +121,8 @@ export async function sendOrderConfirmation(
           components: [
             {
               type: 'body',
-              // {{1}} and {{2}} of the approved template, in that order.
-              parameters: [m.customerName, m.restaurantName].map((text) => ({ type: 'text', text })),
+              // {{1}} of the approved template.
+              parameters: [{ type: 'text', text: m.customerName }],
             },
           ],
         },

@@ -64,7 +64,7 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
       // worker asking it to open somebody else's site is declined quietly — a
       // notification that does nothing when tapped. Our own page is always
       // allowed, and from there WhatsApp is an ordinary navigation.
-      const message = thanksText(row.customer_name || 'there', row.restaurant)
+      const message = thanksText(row.customer_name || 'there')
       const url =
         `/thank?to=${to}` +
         `&who=${encodeURIComponent(row.customer_name || 'them')}` +
@@ -88,7 +88,7 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
     db.prepare("UPDATE customer_push SET thanked_at = datetime('now') WHERE order_id = ?").run(orderId)
     void pushToCustomer(orderId, {
       title: `Thanks from ${row.restaurant}`,
-      body: thanksText(row.customer_name || 'there', row.restaurant),
+      body: thanksText(row.customer_name || 'there'),
       url: `/order/${row.order_number}`,
       tag: `khapee-thanks-${orderId}`,
     }).catch(() => {})

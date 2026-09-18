@@ -5222,3 +5222,101 @@ button.nav-link {
   border-color: var(--accent);
   background: var(--bg-tint);
 }
+
+/* The second after an order is placed.
+   The page underneath is a receipt and a progress bar — correct, and no
+   answer to the only question being asked right then, which is whether that
+   worked. It covers the page for two seconds, draws a tick, and goes. */
+.placed {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+  background: var(--bg);
+  animation: placed-out 0.45s var(--ease) 1.65s both;
+}
+.placed strong {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.placed p {
+  margin: 2px 0 6px;
+  max-width: 30ch;
+  color: var(--muted);
+  font-size: 14px;
+}
+.placed-mark {
+  width: 104px;
+  height: 104px;
+  margin-bottom: 14px;
+}
+.placed-mark svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* Drawn rather than faded in: a line that arrives by being written reads as
+   something that just happened, which is what it is. */
+.placed-ring,
+.placed-tick {
+  fill: none;
+  stroke: #1f9d55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.placed-ring {
+  stroke-width: 4;
+  stroke-dasharray: 214;
+  stroke-dashoffset: 214;
+  animation: placed-draw 0.5s var(--ease) forwards;
+}
+.placed-tick {
+  stroke-width: 6;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: placed-draw 0.32s var(--ease) 0.42s forwards;
+}
+@keyframes placed-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes placed-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+/* Nobody needs a drawing animation to know an order went through. */
+@media (prefers-reduced-motion: reduce) {
+  .placed-ring,
+  .placed-tick {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+  .placed {
+    animation-duration: 0.01s;
+  }
+}
+
+/* Paid over UPI, not yet checked against the restaurant's own app. Green,
+   because the money has been sent and an order that shows amber reads as one
+   about to walk out without paying — but its own green, so it is still
+   distinguishable at a glance from one somebody has actually verified. */
+.badge-paid-upi {
+  background: rgba(31, 157, 85, 0.12);
+  color: #1f7a45;
+  border: 1px dashed rgba(31, 157, 85, 0.55);
+}
+@media (prefers-color-scheme: dark) {
+  .badge-paid-upi {
+    background: rgba(74, 200, 128, 0.16);
+    color: #7fd7a4;
+    border-color: rgba(127, 215, 164, 0.5);
+  }
+}

@@ -246,7 +246,13 @@ export default function Checkout() {
       // the first one sent the customer back to the QR, or to staff for a
       // code, for every round after it. "End" on the dining bar is how you
       // say you have finished.
-      navigate(`/order/${order.orderNumber}`, { replace: true })
+      // Said on the next screen rather than here, so the confirmation and the
+      // thing being confirmed are the same page — a toast on a page that is
+      // already disappearing is read by nobody.
+      navigate(`/order/${order.orderNumber}`, {
+        replace: true,
+        state: { justPlaced: true, paid: !!paymentClaim },
+      })
     } catch (e) {
       setError((e as ApiError).message)
       setPlacing(false)

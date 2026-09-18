@@ -312,7 +312,13 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       insertItem.run(orderId, l.item.id, l.item.name, l.item.emoji, l.item.price_cents, l.quantity)
     }
 
-    db.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (?, 'NEW', 'customer')`).run(orderId)
+    // The first event is whatever the order actually started as. It was always
+    // written as NEW, so an order waiting on the kitchen's yes had a history
+    // saying it had already been accepted into one.
+    db.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (?, ?, 'customer')`).run(
+      orderId,
+      input.paymentClaim ? 'NEW' : 'REQUESTED',
+    )
 
     if (input.paymentClaim) {
       const claimed = Math.max(0, Math.round(Number(input.paymentClaim.amountCents) || totalCents))
@@ -526,6 +532,24 @@ export function shapeOrder(row: any) {
     })),
     claimedCents: payments.filter((p) => p.status === 'CLAIMED').reduce((n, p) => n + p.amount_cents, 0),
     confirmedCents: payments.filter((p) => p.status === 'CONFIRMED').reduce((n, p) => n + p.amount_cents, 0),
+    /**
+     * Three states, not two, because there really are three.
+     *
+     * Money over UPI goes straight from the customer's bank to the
+     * restaurant's, and Khapee is not in the middle of it — so between "owes
+     * money" and "paid, confirmed" there is a real state: the customer has
+     * sent it and the restaurant has not looked yet. Reporting that as UNPAID
+     * told a customer who had just paid that they had not, and told the
+     * kitchen nothing about an order that was in fact settled.
+     */
+    paymentState:
+      row.payment_status === 'PAID'
+        ? 'paid'
+        : payments.some((p) => p.status === 'CLAIMED')
+          ? 'sent'
+          : 'unpaid',
+    /** What the customer typed off their UPI app, for matching against a statement. */
+    upiRef: payments.find((p) => p.status === 'CLAIMED' || p.status === 'CONFIRMED')?.upi_ref ?? '',
     events: events.map((e) => ({ status: e.status, actor: e.actor, at: e.created_at })),
   }
 }

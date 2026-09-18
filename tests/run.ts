@@ -2404,6 +2404,64 @@ async function runTests() {
     ok('with the reason on it', no.body.order.declinedReason === 'Out of croissants')
   }
 
+  group('WHAT THE MONEY LOOKS LIKE FROM BOTH SIDES')
+  {
+    // Money over UPI goes bank to bank and Khapee is not in the middle, so
+    // between "owes money" and "confirmed" there is a real third state that
+    // both screens have to be able to say.
+    const cash = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Pays later',
+      },
+    })
+    ok('an order nobody has paid for reads as unpaid', cash.body.order.paymentState === 'unpaid', cash.body.order)
+    ok(
+      'and its history starts where it actually is, not at NEW',
+      cash.body.order.events[0]?.status === 'REQUESTED',
+      cash.body.order.events,
+    )
+
+    const sent = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Paid in the app',
+        paymentClaim: { upiRef: '402311112222' },
+      },
+    })
+    ok('one paid through the app reads as sent, not unpaid', sent.body.order.paymentState === 'sent', sent.body.order)
+    ok('with the reference the customer gave', sent.body.order.upiRef === '402311112222', sent.body.order)
+    ok('and it did not wait for a yes', sent.body.order.status === 'NEW', sent.body.order)
+
+    // The board sees the same thing the customer was told.
+    const board = await call('/staff/orders?scope=active', { token: roadToken })
+    const onBoard = (board.body.orders as any[]).find((o) => o.id === sent.body.order.id)
+    ok('the restaurant sees it as sent too', onBoard?.paymentState === 'sent', onBoard)
+
+    // And confirming it settles the claim rather than leaving two records that
+    // disagree about the same money.
+    const confirmed = await call(`/staff/orders/${sent.body.order.id}/payment`, {
+      token: roadToken,
+      body: { paymentStatus: 'PAID' },
+    })
+    ok('confirming makes it paid', confirmed.body.order.paymentState === 'paid', confirmed.body.order)
+    ok(
+      'and the claim is settled, not left waiting',
+      confirmed.body.order.claimedCents === 0 && confirmed.body.order.confirmedCents > 0,
+      confirmed.body.order,
+    )
+
+    const undone = await call(`/staff/orders/${sent.body.order.id}/payment`, {
+      token: roadToken,
+      body: { paymentStatus: 'UNPAID' },
+    })
+    ok('undoing puts the claim back', undone.body.order.paymentState === 'sent', undone.body.order)
+  }
+
   group('A NUMBER THEY CAN RING')
   {
     // The two calls a kitchen actually makes are "we are out of that" and "we

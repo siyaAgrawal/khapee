@@ -113,6 +113,20 @@ staffRouter.post('/orders/:id/payment', (req, res) => {
     return res.status(400).json({ error: 'Payment status must be PAID or UNPAID.' })
   }
   db.prepare(`UPDATE orders SET payment_status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, id)
+  // Marking the order settles whatever the customer said they sent, so the
+  // board and the Payments list cannot disagree about the same money — one of
+  // them saying PAID while the other still lists a claim waiting on somebody.
+  if (status === 'PAID') {
+    db.prepare(
+      `UPDATE payments SET status = 'CONFIRMED', settled_at = datetime('now')
+        WHERE order_id = ? AND status = 'CLAIMED'`,
+    ).run(id)
+  } else {
+    db.prepare(
+      `UPDATE payments SET status = 'CLAIMED', settled_at = NULL
+        WHERE order_id = ? AND status = 'CONFIRMED'`,
+    ).run(id)
+  }
   const order = getOrder(id)
   publish('order:update', { restaurantId, userId: row.user_id, orderId: id, order })
   res.json({ order })

@@ -52,6 +52,27 @@ const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
   { key: 'done', title: 'Completed', statuses: ['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'] },
 ]
 
+
+/**
+ * What the restaurant needs to know about the money on one order.
+ *
+ * Three states, because there are three: nobody has paid, the customer has
+ * sent it over UPI and nobody has checked, and it is confirmed. The middle one
+ * used to show as UNPAID with a small grey "claim" beside it, which reads at a
+ * glance as an unpaid order — so a table that had already paid looked exactly
+ * like one about to walk out without paying.
+ */
+function payLook(o: Order): { cls: string; label: string; hint: string } {
+  if (o.paymentState === 'paid') return { cls: 'badge-open', label: 'PAID', hint: 'Confirmed. Tap to undo.' }
+  if (o.paymentState === 'sent')
+    return {
+      cls: 'badge-paid-upi',
+      label: `PAID · UPI`,
+      hint: `Customer sent ${money(o.claimedCents)}${o.upiRef ? ` · ref ${o.upiRef}` : ''}. Check your UPI app, then tap to confirm.`,
+    }
+  return { cls: 'badge-warn', label: 'UNPAID', hint: 'Tap when they have paid.' }
+}
+
 export default function StaffOrders() {
   const toast = useToast()
   const [orders, setOrders] = useState<Order[] | null>(null)
@@ -400,16 +421,14 @@ export default function StaffOrders() {
                   </td>
                   <td>
                     <button
-                      className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}
+                      className={`badge ${payLook(o).cls}`}
                       style={{ border: 0, cursor: 'pointer' }}
                       disabled={busyId === o.id}
                       onClick={() => togglePaid(o)}
+                      title={payLook(o).hint}
                     >
-                      {o.paymentStatus}
+                      {payLook(o).label}
                     </button>
-                    {o.claimedCents > 0 && o.paymentStatus !== 'PAID' && (
-                      <span className="tiny muted"> claim {money(o.claimedCents)}</span>
-                    )}
                   </td>
                   <td>
                     <span className="badge">{STATUS_LABEL[o.status as OrderStatus]}</span>
@@ -464,7 +483,7 @@ export default function StaffOrders() {
                             {timeAgo(o.createdAt)}
                           </em>
                         </span>
-                        {o.paymentStatus !== 'PAID' && <span className="qrow-dot" title="Not paid" />}
+                        {o.paymentState === 'unpaid' && <span className="qrow-dot" title="Not paid" />}
                       </button>
 
                       {next && (
@@ -595,18 +614,16 @@ export default function StaffOrders() {
 
                         <div className="o-foot" style={{ marginBottom: 8 }}>
                           <button
-                            className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}
+                            className={`badge ${payLook(o).cls}`}
                             style={{ border: 0, cursor: 'pointer' }}
                             disabled={busyId === o.id}
                             onClick={() => togglePaid(o)}
-                            title="Tap to change payment status"
+                            title={payLook(o).hint}
                           >
-                            {o.paymentStatus}
+                            {payLook(o).label}
                           </button>
-                          {o.claimedCents > 0 && (
-                            <span className="badge badge-info" title="Customer says they paid — confirm under Payments">
-                              claim {money(o.claimedCents)}
-                            </span>
+                          {o.paymentState === 'sent' && !!o.upiRef && (
+                            <span className="tiny muted">ref {o.upiRef}</span>
                           )}
                           <span className="spacer" />
                           <span className="o-total">{money(o.totalCents)}</span>

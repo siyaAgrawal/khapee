@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { useVegMode } from '../lib/veg'
+import { dishMatches, searchWords } from '../lib/menu-search'
 import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../components/ui'
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
@@ -121,19 +122,12 @@ export default function Restaurant() {
   useEffect(() => applyTheme(theme), [theme])
 
   /** The menu as it should read right now: every section, minus what was typed out. */
-  const needle = query.trim().toLowerCase()
-  const shown = !needle
+  const words = searchWords(query)
+  const needle = query.trim()
+  const shown = !words.length
     ? (data?.menu ?? [])
     : (data?.menu ?? [])
-        .map((c) => ({
-          ...c,
-          items: c.items.filter(
-            (i) =>
-              i.name.toLowerCase().includes(needle) ||
-              i.description.toLowerCase().includes(needle) ||
-              c.name.toLowerCase().includes(needle),
-          ),
-        }))
+        .map((c) => ({ ...c, items: c.items.filter((i) => dishMatches(i, c.name, words)) }))
         .filter((c) => c.items.length > 0)
   const foundCount = shown.reduce((n, c) => n + c.items.length, 0)
 

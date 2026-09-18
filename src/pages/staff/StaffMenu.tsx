@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { dishMatches, searchWords } from '../../lib/menu-search'
 import LiveStrip from '../../components/LiveStrip'
 import { api, ApiError } from '../../lib/api'
 import ImagePicker from '../../components/ImagePicker'
@@ -216,19 +217,13 @@ export default function StaffMenu() {
   // What is on screen while something is typed in the find box. Sections stay
   // whole so a match is still shown in the section it belongs to — a dish out
   // of context is not enough to decide whether it is the right one.
-  const needle = find.trim().toLowerCase()
-  const sections = !needle
+  const words = searchWords(find)
+  const needle = find.trim()
+  const sections = !words.length
     ? data.categories
     : data.categories
-        .map((c) => ({
-          ...c,
-          items: c.items.filter(
-            (i) =>
-              i.name.toLowerCase().includes(needle) ||
-              i.description.toLowerCase().includes(needle),
-          ),
-        }))
-        .filter((c) => c.items.length > 0 || c.name.toLowerCase().includes(needle))
+        .map((c) => ({ ...c, items: c.items.filter((i) => dishMatches(i, c.name, words)) }))
+        .filter((c) => c.items.length > 0)
   const foundCount = sections.reduce((n, c) => n + c.items.length, 0)
 
   return (

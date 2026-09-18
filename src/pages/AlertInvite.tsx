@@ -241,45 +241,9 @@ export default function AlertInvite() {
             {invite.everywhere ? 'Order alerts for every restaurant' : `Order alerts for ${invite.restaurant}`}
           </h1>
           {done ? (
-            <>
-              <p className="muted">
-                Done. This phone will ring for every new order, even with Khapee closed.
-              </p>
-              {/* Proved here, rather than left to the first real order.
-                  Somebody setting this up with a code has no dashboard to
-                  check, so without this the only way to find out was to put
-                  the phone down and hope — and a missed first order is an
-                  expensive way to learn it never worked. */}
-              <div className="wa-test">
-                <button className="btn btn-secondary btn-block" disabled={busy} onClick={() => tryIt('')}>
-                  {busy ? <Spinner /> : 'Ring this phone now'}
-                </button>
-                <p className="tiny muted" style={{ marginTop: 14 }}>
-                  And the WhatsApp step — put your own number in and this sends you the exact
-                  notification an accepted order sends. Tap it and WhatsApp should open with the
-                  message written. Nothing reaches anybody until you press send.
-                </p>
-                <div className="row" style={{ gap: 10, marginTop: 8 }}>
-                  <input
-                    className="input input-sm"
-                    value={testPhone}
-                    onChange={(e) => setTestPhone(e.target.value)}
-                    placeholder="Your own mobile number"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    aria-label="Your own mobile number"
-                  />
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    disabled={busy || !testPhone.trim()}
-                    onClick={() => tryIt(testPhone.trim())}
-                  >
-                    Test WhatsApp
-                  </button>
-                </div>
-                {!!tried && <p className="tiny muted" style={{ marginTop: 10 }}>{tried}</p>}
-              </div>
-            </>
+            <p className="muted">
+              Done. This phone will ring for every new order, even with Khapee closed.
+            </p>
           ) : (
             <p className="muted">
               Turn this on and this phone rings whenever an order comes in
@@ -292,6 +256,44 @@ export default function AlertInvite() {
             <button className="btn btn-accent btn-lg btn-block" disabled={busy} onClick={accept}>
               {busy ? <Spinner /> : 'Turn on alerts for this phone'}
             </button>
+          )}
+
+          {/* Shown as soon as a code is loaded, not only after switching on.
+              It was hidden until the button above had been tapped in this
+              visit, which is precisely backwards: somebody who set this phone
+              up yesterday and came back to find out whether it still works saw
+              no way to ask. Neither of them registers anything — they only
+              make a noise — so there is nothing to gate them on. */}
+          {invite.available && (
+            <div className="wa-test">
+              <button className="btn btn-secondary btn-block" disabled={busy} onClick={() => tryIt('')}>
+                {busy ? <Spinner /> : 'Ring this phone now'}
+              </button>
+              <p className="tiny muted" style={{ marginTop: 14 }}>
+                And the WhatsApp step — put your own number in and this sends you the exact
+                notification an accepted order sends. Tap it and WhatsApp should open with the message
+                written. Nothing reaches anybody until you press send.
+              </p>
+              <div className="row" style={{ gap: 10, marginTop: 8 }}>
+                <input
+                  className="input input-sm"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  placeholder="Your own mobile number"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  aria-label="Your own mobile number"
+                />
+                <button
+                  className="btn btn-secondary btn-sm"
+                  disabled={busy || !testPhone.trim()}
+                  onClick={() => tryIt(testPhone.trim())}
+                >
+                  Test WhatsApp
+                </button>
+              </div>
+              {!!tried && <p className="tiny muted" style={{ marginTop: 10 }}>{tried}</p>}
+            </div>
           )}
 
           {!done && !pushSupported() && needsHomeScreen() && (

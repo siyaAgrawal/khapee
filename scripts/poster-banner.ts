@@ -56,17 +56,16 @@ const sheet = new PNG({ width: pxWide, height: pxTall })
 sheet.data.fill(255)
 
 /**
- * Where the artwork sits in the taller page.
+ * Where the artwork sits in the taller page: hard against the bottom.
  *
- * All of the extra height at the top left a foot and a half of nothing above
- * the logo. Most of it goes there — a banner wants a margin, and the eye
- * belongs at the middle rather than the top — but a third goes below, where
- * the last row of the artwork is repeated downwards. That row is white on the
- * left and the dark rim of the bowl on the right, so repeating it reads as the
- * bowl running off the bottom edge rather than as a band stuck underneath.
+ * The extra height was split, with the artwork's last row repeated downwards
+ * to fill the bottom. One row of pixels stretched a foot is a row of vertical
+ * streaks, and under a photograph of pasta it looked like the bowl was
+ * dripping. There is nothing below the bowl to invent, so nothing is
+ * invented — the bowl runs off the bottom edge where it belongs and the spare
+ * height becomes margin above, which is what the top of a banner is for.
  */
-const spare = pxTall - art.height
-const top = Math.round(spare * 0.66)
+const top = pxTall - art.height
 for (let y = 0; y < art.height; y++)
   for (let x = 0; x < Math.min(art.width, pxWide); x++) {
     const from = (y * art.width + x) * 4
@@ -76,16 +75,6 @@ for (let y = 0; y < art.height; y++)
     sheet.data[to + 2] = art.data[from + 2]
     sheet.data[to + 3] = 255
   }
-for (let y = top + art.height; y < pxTall; y++)
-  for (let x = 0; x < Math.min(art.width, pxWide); x++) {
-    const from = ((art.height - 1) * art.width + x) * 4
-    const to = (y * pxWide + x) * 4
-    sheet.data[to] = art.data[from]
-    sheet.data[to + 1] = art.data[from + 1]
-    sheet.data[to + 2] = art.data[from + 2]
-    sheet.data[to + 3] = 255
-  }
-
 // --- the code, drawn again rather than enlarged ------------------------------
 const at = (x: number, y: number) => {
   const i = (y * pxWide + x) * 4

@@ -5197,3 +5197,42 @@ button.nav-link {
 .device-list p {
   margin: 1px 0 0;
 }
+
+/* Handing a phone alerts without handing it the password. */
+.invite-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.invite-row .tiny {
+  flex: 1 1 260px;
+  max-width: 46ch;
+}
+.device-list .mono {
+  word-break: break-all;
+}
+
+/* The page that link opens. */
+.invite {
+  text-align: center;
+}
+.invite h1 {
+  font-size: 22px;
+  margin: 10px 0 6px;
+}
+.invite p {
+  max-width: 40ch;
+  margin: 0 auto 18px;
+}
+.invite-bell {
+  font-size: 34px;
+}
+.invite .alert-steps {
+  text-align: left;
+  max-width: 34ch;
+  margin: 0 auto;
+}

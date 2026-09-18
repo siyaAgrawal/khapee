@@ -19,6 +19,8 @@ export type AlertState = {
     /** Who is signed up, so an owner can see a phone they do not recognise. */
     list: { id: number; who: string; whose: string; since: string; lastOk: string | null; failing: boolean }[]
   }
+  /** Links handed out and not yet used. */
+  invites: { id: number; path: string; since: string; until: string }[]
   email: { available: boolean; to: string; own: string }
 }
 

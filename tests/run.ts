@@ -2695,6 +2695,46 @@ async function runTests() {
     const entry = (listed.body.push.list as any[]).find((d) => d.who)
     ok('with who signed each one up', !!entry?.who, listed.body.push.list)
 
+    // A link instead of the password: it grants one capability to one device.
+    const invite = await call('/staff/alerts/invite', { token: roadToken, body: {} })
+    ok('an owner can make an invite link', invite.status === 201 && !!invite.body.token, invite.body)
+
+    const opened = await call(`/alerts/invite/${invite.body.token}`)
+    ok(
+      'the phone that opens it is told which restaurant',
+      opened.body.restaurant === 'Mornington Coffee House',
+      opened.body,
+    )
+    ok('and given the key to subscribe with', typeof opened.body.publicKey === 'string', opened.body)
+
+    const invitedDevice = {
+      endpoint: 'https://push.example/invited-phone',
+      keys: { p256dh: 'BDpUB9' + 'w'.repeat(80), auth: 'zyxwvutsrqponmlk' },
+    }
+    const took = await call(`/alerts/invite/${invite.body.token}`, { body: { subscription: invitedDevice } })
+    ok('it can sign that phone up with no account at all', took.status === 200, took.body)
+
+    const reused = await call(`/alerts/invite/${invite.body.token}`, { body: { subscription: invitedDevice } })
+    ok('and is spent — a second phone cannot use it', reused.status === 410, reused.body)
+
+    const withInvited = (await call('/staff/alerts', { token: roadToken })).body.push.list as any[]
+    ok(
+      'the invited phone is on the list, marked as invited',
+      withInvited.some((d) => /invited/i.test(d.who)),
+      withInvited,
+    )
+
+    const spare = await call('/staff/alerts/invite', { token: roadToken, body: {} })
+    const cancelled = await call(`/staff/alerts/invite/${(await call('/staff/alerts', { token: roadToken })).body.invites[0].id}/revoke`, {
+      token: roadToken,
+      body: {},
+    })
+    ok('an unused link can be called back', cancelled.status === 200, cancelled.body)
+    ok(
+      'and stops working once it is',
+      (await call(`/alerts/invite/${spare.body.token}`)).status === 410,
+    )
+
     const notMine = await call('/staff/alerts/devices/999999/remove', { token: roadToken, body: {} })
     ok('a device on another restaurant cannot be removed', notMine.status === 404, notMine.body)
 

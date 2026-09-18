@@ -211,6 +211,20 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 CREATE INDEX IF NOT EXISTS idx_push_restaurant ON push_subscriptions(restaurant_id);
 
+-- A one-time link that puts order alerts on one phone without handing over the
+-- dashboard password. It grants exactly one thing — the right to be notified —
+-- and stops working the moment it is used or the moment it expires.
+CREATE TABLE IF NOT EXISTS alert_invites (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  created_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  token         TEXT    NOT NULL UNIQUE,
+  expires_at    TEXT    NOT NULL,
+  used_at       TEXT,
+  revoked_at    TEXT,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
 -- The customer's own device, signed up from their order page. Kept against the
 -- order rather than an account, because most people ordering never make one —
 -- the receipt token they already hold is the proof it is theirs.
@@ -282,6 +296,10 @@ addColumn('orders', 'contact_phone', "TEXT NOT NULL DEFAULT ''")
 
 // Where order alerts are emailed. Blank means the owner's own address.
 addColumn('restaurants', 'order_email', "TEXT NOT NULL DEFAULT ''")
+
+// How a device came to be on the alert list — signed in, or handed a one-time
+// invite — so an owner reading the list can tell one from the other.
+addColumn('push_subscriptions', 'label', "TEXT NOT NULL DEFAULT ''")
 
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because

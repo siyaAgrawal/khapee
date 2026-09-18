@@ -119,6 +119,45 @@ export default function StaffAlerts() {
         ? 'On. This phone rings for every new order — on the website, with Khapee closed, nothing installed.'
         : 'Off. Turn it on and this phone rings for every new order — on the website, with Khapee closed, nothing installed.'
 
+  const origin = typeof window === 'undefined' ? '' : window.location.origin
+
+  const makeInvite = async () => {
+    setBusy('invite')
+    try {
+      const r = await api<{ path: string }>('/staff/alerts/invite', { body: {} })
+      await copy(origin + r.path)
+      void load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast('Link copied — send it to that phone.', 'good')
+    } catch {
+      // Clipboard is blocked outside a secure context and on some phones; the
+      // link is on screen either way, which is why it is shown and not hidden.
+      toast('Copy the link shown below and send it to that phone.', 'info')
+    }
+  }
+
+  const revoke = async (id: number) => {
+    setBusy('revoke')
+    try {
+      await api(`/staff/alerts/invite/${id}/revoke`, { body: {} })
+      toast('That link will not work now.', 'info')
+      void load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
   const forget = async (id: number, who: string) => {
     if (!window.confirm(`Stop sending alerts to ${who}'s device?`)) return
     setBusy('forget')
@@ -206,6 +245,41 @@ export default function StaffAlerts() {
                 <button className="link-btn" onClick={() => forget(d.id, d.who)} disabled={busy === 'forget'}>
                   Remove
                 </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* A link instead of the password. Handing somebody the password to
+            make their phone buzz gives them the whole dashboard — every order
+            and every customer's number — and cannot be taken back without
+            changing it for everyone. */}
+        <div className="invite-row">
+          <button className="btn btn-secondary btn-sm" disabled={busy === 'invite'} onClick={makeInvite}>
+            {busy === 'invite' ? <Spinner /> : 'Invite another phone'}
+          </button>
+          <span className="tiny muted">
+            Sends a one-time link. The phone that opens it gets alerts and nothing else — no sign-in,
+            no password.
+          </span>
+        </div>
+
+        {!!state.invites?.length && (
+          <ul className="device-list">
+            {state.invites.map((i) => (
+              <li key={i.id}>
+                <div>
+                  <strong className="mono tiny">{origin + i.path}</strong>
+                  <p className="tiny muted">Not used yet · expires {new Date(i.until + 'Z').toLocaleString()}</p>
+                </div>
+                <span className="row" style={{ gap: 10 }}>
+                  <button className="link-btn" onClick={() => copy(origin + i.path)}>
+                    Copy
+                  </button>
+                  <button className="link-btn" onClick={() => revoke(i.id)} disabled={busy === 'revoke'}>
+                    Cancel
+                  </button>
+                </span>
               </li>
             ))}
           </ul>

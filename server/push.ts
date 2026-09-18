@@ -159,9 +159,10 @@ export type Subscription = {
  * was also choosing which orders would wake them.
  */
 export function saveSubscription(
-  userId: number,
+  userId: number | null,
   restaurantId: number,
   sub: Subscription,
+  label = '',
 ): { ok: boolean; error?: string } {
   const endpoint = String(sub?.endpoint ?? '').trim()
   const p256dh = String(sub?.keys?.p256dh ?? '').trim()
@@ -169,15 +170,16 @@ export function saveSubscription(
   if (!endpoint || !p256dh || !auth) return { ok: false, error: 'That subscription is incomplete.' }
 
   db.prepare(
-    `INSERT INTO push_subscriptions (user_id, restaurant_id, endpoint, p256dh, auth)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO push_subscriptions (user_id, restaurant_id, endpoint, p256dh, auth, label)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(endpoint) DO UPDATE SET
        user_id = excluded.user_id,
        restaurant_id = excluded.restaurant_id,
        p256dh = excluded.p256dh,
        auth = excluded.auth,
+       label = excluded.label,
        failures = 0`,
-  ).run(userId, restaurantId, endpoint, p256dh, auth)
+  ).run(userId, restaurantId, endpoint, p256dh, auth, label)
   return { ok: true }
 }
 
@@ -218,7 +220,7 @@ export function subscriptionCount(restaurantId: number): number {
 export function subscriptionList(restaurantId: number): any[] {
   return db
     .prepare(
-      `SELECT ps.id, ps.endpoint, ps.created_at, ps.last_ok_at, ps.failures,
+      `SELECT ps.id, ps.endpoint, ps.created_at, ps.last_ok_at, ps.failures, ps.label,
               u.name AS who, u.email AS whose
          FROM (${DEVICES_FOR}) ps
          LEFT JOIN users u ON u.id = ps.user_id

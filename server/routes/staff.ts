@@ -733,13 +733,22 @@ staffRouter.get('/alerts', (req: any, res) => {
       // recognise and take it off.
       list: subscriptionList(restaurantId).map((d) => ({
         id: d.id,
-        who: d.who || 'Somebody signed in',
-        whose: d.whose || '',
+        who: d.label || d.who || 'Somebody signed in',
+        whose: d.label ? '' : d.whose || '',
         since: d.created_at,
         lastOk: d.last_ok_at,
         failing: d.failures > 3,
       })),
     },
+    // Links handed out and not yet used, so they can be seen and called back.
+    invites: db
+      .prepare(
+        `SELECT id, token, created_at, expires_at FROM alert_invites
+          WHERE restaurant_id = ? AND used_at IS NULL AND revoked_at IS NULL
+            AND expires_at > datetime('now') ORDER BY id DESC`,
+      )
+      .all(restaurantId)
+      .map((i: any) => ({ id: i.id, path: `/alerts/${i.token}`, since: i.created_at, until: i.expires_at })),
     email: {
       available: mailConfigured(),
       // What is actually used, and what was typed — they differ when the
@@ -825,6 +834,39 @@ staffRouter.post('/alerts/unsubscribe', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   dropSubscription(String(req.body?.endpoint ?? ''))
   res.json({ ok: true, devices: subscriptionCount(restaurantId) })
+})
+
+/**
+ * A link that puts alerts on one phone without handing over the password.
+ *
+ * The password is the wrong thing to give somebody who only needs their phone
+ * to buzz: it is the whole dashboard, and it cannot be taken back without
+ * changing it for everybody. This grants exactly one capability — be notified
+ * about this restaurant's orders — to exactly one device, and stops working
+ * the moment it is used.
+ */
+staffRouter.post('/alerts/invite', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  if (!pushConfigured()) return res.status(503).json({ error: pushReason() })
+  const token = randomToken(18)
+  db.prepare(
+    `INSERT INTO alert_invites (restaurant_id, created_by, token, expires_at)
+     VALUES (?, ?, ?, datetime('now', '+2 days'))`,
+  ).run(restaurantId, req.user.id, token)
+  audit(restaurantId, actorOf(req), 'alerts.invite', 'restaurant', restaurantId, {})
+  res.status(201).json({ token, path: `/alerts/${token}` })
+})
+
+staffRouter.post('/alerts/invite/:id/revoke', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const done = db
+    .prepare(
+      `UPDATE alert_invites SET revoked_at = datetime('now')
+        WHERE id = ? AND restaurant_id = ? AND used_at IS NULL AND revoked_at IS NULL`,
+    )
+    .run(Number(req.params.id), restaurantId)
+  if (!done.changes) return res.status(404).json({ error: 'That invite is already used or gone.' })
+  res.json({ ok: true })
 })
 
 /** Takes one phone off the list — the one place an owner can undo a sign-up. */

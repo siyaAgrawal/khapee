@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
+import { pushConfigured, pushPublicKey, saveSubscription } from '../push.ts'
 import { normalizeCode } from '../ids.ts'
 import { checkAccessCode } from '../orders-service.ts'
 import { imageUrl } from '../uploads.ts'
@@ -169,6 +170,53 @@ publicRouter.get('/restaurants/:id', (req, res) => {
 
   // An empty section is noise once veg mode has filtered the menu down.
   res.json({ restaurant: shapeRestaurant(row), menu: sections.filter((s) => s.items.length > 0) })
+})
+
+/**
+ * An invite to put order alerts on this phone.
+ *
+ * Deliberately outside the dashboard: whoever opens this has no account and
+ * needs none. The token is the whole of their authority, it buys exactly one
+ * thing — being notified about this restaurant's orders — and it is spent the
+ * moment a device takes it.
+ */
+publicRouter.get('/alerts/invite/:token', (req, res) => {
+  const row = db
+    .prepare(
+      `SELECT ai.*, r.name AS restaurant FROM alert_invites ai
+         JOIN restaurants r ON r.id = ai.restaurant_id
+        WHERE ai.token = ?`,
+    )
+    .get(String(req.params.token)) as any
+  if (!row) return res.status(404).json({ error: 'That link is not valid.' })
+  if (row.revoked_at) return res.status(410).json({ error: 'That link was cancelled.' })
+  if (row.used_at) return res.status(410).json({ error: 'That link has already been used on a phone.' })
+  const expired = db
+    .prepare(`SELECT (? <= datetime('now')) AS gone`)
+    .get(row.expires_at) as any
+  if (expired?.gone) return res.status(410).json({ error: 'That link has expired. Ask for a new one.' })
+  res.json({ restaurant: row.restaurant, available: pushConfigured(), publicKey: pushPublicKey() })
+})
+
+publicRouter.post('/alerts/invite/:token', (req, res) => {
+  const row = db.prepare('SELECT * FROM alert_invites WHERE token = ?').get(String(req.params.token)) as any
+  if (!row) return res.status(404).json({ error: 'That link is not valid.' })
+  if (row.used_at || row.revoked_at) return res.status(410).json({ error: 'That link has already been used.' })
+  const expired = db.prepare(`SELECT (? <= datetime('now')) AS gone`).get(row.expires_at) as any
+  if (expired?.gone) return res.status(410).json({ error: 'That link has expired.' })
+
+  const by = row.created_by
+    ? ((db.prepare('SELECT name FROM users WHERE id = ?').get(row.created_by) as any)?.name ?? '')
+    : ''
+  const saved = saveSubscription(
+    null,
+    row.restaurant_id,
+    req.body?.subscription ?? req.body,
+    by ? `Phone invited by ${by}` : 'Invited phone',
+  )
+  if (!saved.ok) return res.status(400).json({ error: saved.error })
+  db.prepare("UPDATE alert_invites SET used_at = datetime('now') WHERE id = ?").run(row.id)
+  res.json({ ok: true })
 })
 
 /** Not a real category row — the specials section is assembled per request. */

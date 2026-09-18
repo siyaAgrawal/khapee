@@ -31,6 +31,7 @@ import StaffLayout from './pages/staff/StaffLayout'
 import StaffOrders from './pages/staff/StaffOrders'
 import StaffProfile from './pages/staff/StaffProfile'
 import StaffAlerts from './pages/staff/StaffAlerts'
+import AlertInvite from './pages/AlertInvite'
 import StaffPayments from './pages/staff/StaffPayments'
 import StaffPhotos from './pages/staff/StaffPhotos'
 import StaffTable from './pages/staff/StaffTable'
@@ -70,6 +71,8 @@ export default function App() {
       <Route path="/z/:token" element={<ZoneEntry />} />
       <Route path="/g/:code" element={<GroupJoin />} />
       <Route path="/profile" element={<Profile />} />
+      {/* One phone, one capability, no account. See src/pages/AlertInvite.tsx */}
+      <Route path="/alerts/:token" element={<AlertInvite />} />
       <Route path="/group" element={<GroupSession />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />

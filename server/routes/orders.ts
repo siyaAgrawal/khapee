@@ -151,12 +151,28 @@ ordersRouter.get('/notify-key', (_req, res) => {
  */
 ordersRouter.get('/:orderNumber', (req, res) => {
   const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
-  const row = db.prepare('SELECT id, user_id, verify_token FROM orders WHERE order_number = ?').get(orderNumber) as any
+  const row = db
+    .prepare('SELECT id, user_id, verify_token, restaurant_id FROM orders WHERE order_number = ?')
+    .get(orderNumber) as any
   if (!row) return res.status(404).json({ error: 'We could not find that order.' })
 
   const token = String(req.query.token ?? '')
   const isOwner = req.user && row.user_id === req.user.id
-  const isStaffHere = req.user?.role === 'staff'
+  /**
+   * Working here is a membership, not a job title on the account.
+   *
+   * `role` is set once when an address registers and is never revised, so
+   * somebody who ordered a coffee before they took over a café reads as
+   * 'customer' forever — and this refused them their own restaurant's orders.
+   * It also said yes to staff at any other restaurant on Khapee, which is the
+   * same mistake pointing the other way. The question is whether this person
+   * works at the place that took this order.
+   */
+  const isStaffHere =
+    !!req.user &&
+    !!db
+      .prepare('SELECT 1 FROM restaurant_staff WHERE user_id = ? AND restaurant_id = ?')
+      .get(req.user.id, row.restaurant_id)
   if (!isOwner && !isStaffHere && token !== row.verify_token) {
     return res.status(403).json({ error: 'That order belongs to someone else.' })
   }

@@ -399,6 +399,18 @@ async function runTests() {
   ok('receipt is not readable without the token', guestNoToken.status === 403)
   const wrongTokenLookup = await call(`/orders/${o3.orderNumber}?token=nope`)
   ok('a wrong receipt token is rejected', wrongTokenLookup.status === 403)
+
+  // Who may read an order is decided by where somebody works, not by the role
+  // written on their account the day they registered. That role is never
+  // revised — an address that ordered a coffee before it took over a café
+  // stays 'customer' — and reading it here locked owners out of their own
+  // orders while letting staff at unrelated restaurants in.
+  // o3 was placed at Basil & Bay, so basil's staff are the ones who worked it
+  // and Mornington's are the unrelated restaurant.
+  const hereLookup = await call(`/orders/${o3.orderNumber}`, { token: basilToken })
+  ok('the restaurant that took the order can open it', hereLookup.status === 200, hereLookup.body)
+  const elsewhereLookup = await call(`/orders/${o3.orderNumber}`, { token: staffToken })
+  ok('another restaurant on Khapee cannot', elsewhereLookup.status === 403, elsewhereLookup.body)
   const mine = await call('/orders/mine', { token: customerToken })
   ok('signed-in customer sees their own orders', mine.body.orders.length === 2 && mine.body.orders.every((o: any) => o.customerName === 'Test Customer'))
   ok('customer order history excludes other people\'s orders', !mine.body.orders.some((o: any) => o.orderNumber === o3.orderNumber))

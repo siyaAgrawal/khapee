@@ -20,7 +20,19 @@ export default function Login() {
     try {
       const user = await login(email.trim(), password)
       const from = location.state?.from as string | undefined
-      if (user.role === 'staff') navigate(from?.startsWith('/staff') ? from : '/staff/orders', { replace: true })
+      /**
+       * Where somebody lands is decided by what they run, not by how they
+       * first signed up.
+       *
+       * `role` is written once, at registration, and never changes: an address
+       * that ordered a coffee before it took over a restaurant is 'customer'
+       * for good. Reading that here dropped the owner of two cafés onto the
+       * customer home page every time they signed in, with the board they were
+       * signing in for nowhere in sight. Membership is the thing that is true
+       * now, and it is what requireStaff on the server already goes by.
+       */
+      const runsSomewhere = !!user.restaurantId || user.restaurants?.length > 0
+      if (runsSomewhere) navigate(from?.startsWith('/staff') ? from : '/staff/orders', { replace: true })
       else navigate(from && !from.startsWith('/staff') ? from : '/', { replace: true })
     } catch (err) {
       setError((err as ApiError).message)

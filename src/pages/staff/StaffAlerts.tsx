@@ -119,6 +119,20 @@ export default function StaffAlerts() {
         ? 'On. This phone rings for every new order — on the website, with Khapee closed, nothing installed.'
         : 'Off. Turn it on and this phone rings for every new order — on the website, with Khapee closed, nothing installed.'
 
+  const forget = async (id: number, who: string) => {
+    if (!window.confirm(`Stop sending alerts to ${who}'s device?`)) return
+    setBusy('forget')
+    try {
+      await api(`/staff/alerts/devices/${id}/remove`, { body: {} })
+      toast('That device will not be alerted again.', 'info')
+      void load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
   return (
     <>
       <section className="card card-pad">
@@ -173,6 +187,29 @@ export default function StaffAlerts() {
             </button>
           )}
         </p>
+
+        {/* The account is the key here, not the device: anybody who can sign in
+            can put these on a phone of their own. So the list is shown, and any
+            of it can be taken off. */}
+        {!!state.push.list?.length && (
+          <ul className="device-list">
+            {state.push.list.map((d) => (
+              <li key={d.id}>
+                <div>
+                  <strong>{d.who}</strong>
+                  {d.whose && <span className="tiny muted"> · {d.whose}</span>}
+                  <p className="tiny muted">
+                    On since {new Date(d.since + 'Z').toLocaleDateString()}
+                    {d.failing ? ' · not answering — probably gone' : ''}
+                  </p>
+                </div>
+                <button className="link-btn" onClick={() => forget(d.id, d.who)} disabled={busy === 'forget'}>
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {state.ringsFor.length > 1 && (
           <p className="tiny muted" style={{ marginTop: 8 }}>

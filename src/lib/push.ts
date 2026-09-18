@@ -11,7 +11,14 @@ import { api } from './api'
 export type AlertState = {
   /** Every restaurant a switched-on device will ring for. */
   ringsFor: string[]
-  push: { available: boolean; publicKey: string; devices: number; reason: string }
+  push: {
+    available: boolean
+    publicKey: string
+    devices: number
+    reason: string
+    /** Who is signed up, so an owner can see a phone they do not recognise. */
+    list: { id: number; who: string; whose: string; since: string; lastOk: string | null; failing: boolean }[]
+  }
   email: { available: boolean; to: string; own: string }
 }
 

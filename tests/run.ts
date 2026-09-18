@@ -2688,11 +2688,30 @@ async function runTests() {
       body: { endpoint: 'https://push.example/owner-phone' },
     })
 
+    // Anybody who can sign in can add a phone, so an owner has to be able to
+    // see the list and take one off it.
+    const listed = await call('/staff/alerts', { token: roadToken })
+    ok('the devices are listed, not just counted', Array.isArray(listed.body.push.list), listed.body.push)
+    const entry = (listed.body.push.list as any[]).find((d) => d.who)
+    ok('with who signed each one up', !!entry?.who, listed.body.push.list)
+
+    const notMine = await call('/staff/alerts/devices/999999/remove', { token: roadToken, body: {} })
+    ok('a device on another restaurant cannot be removed', notMine.status === 404, notMine.body)
+
+    const removed = await call(`/staff/alerts/devices/${entry.id}/remove`, { token: roadToken, body: {} })
+    ok('and the owner can take one off', removed.status === 200, removed.body)
+    ok(
+      'which takes it off the list',
+      !((await call('/staff/alerts', { token: roadToken })).body.push.list as any[]).some(
+        (d) => d.id === entry.id,
+      ),
+    )
+
     const off = await call('/staff/alerts/unsubscribe', {
       token: roadToken,
       body: { endpoint: 'https://push.example/real-device' },
     })
-    ok('and it can stop being told', off.body.devices === good.body.devices - 1, off.body)
+    ok('and a device can stop itself too', off.status === 200, off.body)
 
     ok(
       'none of this is anybody else\u2019s to read',

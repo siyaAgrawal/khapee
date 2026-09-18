@@ -10,7 +10,7 @@ import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPa
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
 import { tellCustomer } from '../customer-notify.ts'
-import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, saveSubscription, subscriptionCount } from '../push.ts'
+import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { mailConfigured, sendMail } from '../mail.ts'
 import {
@@ -729,6 +729,16 @@ staffRouter.get('/alerts', (req: any, res) => {
       publicKey: pushPublicKey(),
       devices: subscriptionCount(restaurantId),
       reason: pushReason(),
+      // Who is actually getting these, so an owner can see a phone they do not
+      // recognise and take it off.
+      list: subscriptionList(restaurantId).map((d) => ({
+        id: d.id,
+        who: d.who || 'Somebody signed in',
+        whose: d.whose || '',
+        since: d.created_at,
+        lastOk: d.last_ok_at,
+        failing: d.failures > 3,
+      })),
     },
     email: {
       available: mailConfigured(),
@@ -814,6 +824,15 @@ staffRouter.post('/alerts/subscribe', (req: any, res) => {
 staffRouter.post('/alerts/unsubscribe', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   dropSubscription(String(req.body?.endpoint ?? ''))
+  res.json({ ok: true, devices: subscriptionCount(restaurantId) })
+})
+
+/** Takes one phone off the list — the one place an owner can undo a sign-up. */
+staffRouter.post('/alerts/devices/:id/remove', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const gone = removeSubscription(restaurantId, Number(req.params.id))
+  if (!gone) return res.status(404).json({ error: 'That device is not on this restaurant.' })
+  audit(restaurantId, actorOf(req), 'alerts.remove', 'restaurant', restaurantId, { id: req.params.id })
   res.json({ ok: true, devices: subscriptionCount(restaurantId) })
 })
 

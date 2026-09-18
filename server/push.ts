@@ -205,6 +205,38 @@ export function subscriptionCount(restaurantId: number): number {
   return rows.length
 }
 
+/**
+ * Every device signed up, and who signed it up.
+ *
+ * The account is the key here, not the device: anybody who can sign in to a
+ * restaurant's dashboard can put its notifications — customer names and
+ * numbers included — on a phone of their own. Nothing stops that, and nothing
+ * should, since it is how the person at the counter gets alerts. But an owner
+ * has to be able to see the list and take a phone off it, which needed the
+ * list to exist.
+ */
+export function subscriptionList(restaurantId: number): any[] {
+  return db
+    .prepare(
+      `SELECT ps.id, ps.endpoint, ps.created_at, ps.last_ok_at, ps.failures,
+              u.name AS who, u.email AS whose
+         FROM (${DEVICES_FOR}) ps
+         LEFT JOIN users u ON u.id = ps.user_id
+        ORDER BY ps.id`,
+    )
+    .all(restaurantId, restaurantId) as any[]
+}
+
+/** Takes one device off, but only one belonging to this restaurant. */
+export function removeSubscription(restaurantId: number, id: number): boolean {
+  const mine = db
+    .prepare(`SELECT id FROM (${DEVICES_FOR}) ps WHERE ps.id = ?`)
+    .get(restaurantId, restaurantId, id) as any
+  if (!mine) return false
+  db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(id)
+  return true
+}
+
 export type PushNote = { title: string; body: string; url?: string; tag?: string }
 
 /**

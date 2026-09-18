@@ -82,8 +82,18 @@ export default function PayPanel({
           </>
         ))}
 
+      {/*
+        Not optional any more.
+
+        Khapee never sees the money — it goes from the customer's bank to the
+        restaurant's — so the only thing standing between "I paid" and a free
+        meal is whether the restaurant can find the payment. The UTR is the
+        number printed on both sides of that transfer: with it, they check
+        their app and tick it off in seconds. Without it they are searching a
+        statement for an amount that several people paid today.
+      */}
       <div className="field">
-        <label htmlFor="upi-ref">UPI reference number (optional)</label>
+        <label htmlFor="upi-ref">UPI reference number</label>
         <input
           id="upi-ref"
           className="input"
@@ -92,11 +102,18 @@ export default function PayPanel({
           value={ref}
           onChange={(e) => setRef(e.target.value.replace(/\D/g, '').slice(0, 20))}
         />
-        <span className="hint">Helps the restaurant match your payment faster.</span>
+        <span className="hint">
+          In your UPI app it is on the payment, as &ldquo;UTR&rdquo; or &ldquo;UPI transaction ID&rdquo;.
+          {' '}{payeeName} needs it to find your payment.
+        </span>
       </div>
 
-      <button className="btn btn-accent btn-lg btn-block" disabled={busy} onClick={() => onPaid(ref)}>
-        {busy ? <Spinner /> : "I've paid"}
+      <button
+        className="btn btn-accent btn-lg btn-block"
+        disabled={busy || ref.trim().length < 12}
+        onClick={() => onPaid(ref)}
+      >
+        {busy ? <Spinner /> : ref.trim().length < 12 ? 'Enter the 12-digit reference' : "I've paid"}
       </button>
       {onCancel && (
         <button className="btn btn-ghost btn-block" style={{ marginTop: 8 }} onClick={onCancel} disabled={busy}>

@@ -244,6 +244,21 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   const verifyToken = randomToken(10)
   const paymentMethod = input.paymentMethod === 'app' ? 'app' : 'counter'
 
+  // Khapee never sees the money, so a payment it is told about has to come
+  // with the one number the restaurant can look up: the UTR their own UPI app
+  // prints against the transfer. Without it "I paid" is unfalsifiable, and the
+  // person left carrying that is whoever made the food.
+  if (input.paymentClaim) {
+    const ref = String(input.paymentClaim.upiRef ?? '').replace(/\D/g, '')
+    if (ref.length < 12) {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Enter the 12-digit UPI reference so the restaurant can find your payment.',
+      }
+    }
+  }
+
   const run = db.transaction(() => {
     const info = db
       .prepare(

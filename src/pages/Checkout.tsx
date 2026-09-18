@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
-import PaySheet from '../components/PaySheet'
 import VerifyModal from '../components/VerifyModal'
 import { api, ApiError } from '../lib/api'
 import { useCart } from '../lib/cart'
@@ -59,7 +58,6 @@ export default function Checkout() {
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [note, setNote] = useState('')
   const [payNow, setPayNow] = useState(false)
-  const [payOpen, setPayOpen] = useState(false)
   const [options, setOptions] = useState<any>(null)
 
   /**
@@ -493,26 +491,59 @@ export default function Checkout() {
 
           {/*
             How this is being paid for, immediately above the button that does
-            it — the last thing read before committing, rather than a field
-            somewhere up the form. It is always here, whatever way the order is
-            being placed: paying was hidden entirely for "collect later", so the
-            one case where paying up front is most obviously the point had no
-            way to do it.
+            it — the last thing read before committing.
+
+            Both ways are on the page, one under the other, rather than one
+            line with a Change button that opened a sheet. A sheet hides the
+            choice behind a tap and behind a word: somebody who does not read
+            "Change" as a button never learns the other way exists, and
+            somebody who does has to open, read, pick and come back to see what
+            they picked. Two rows say everything at once.
           */}
-          <button
-            type="button"
-            className={`pay-row ${payOpen ? 'open' : ''}`}
-            onClick={() => setPayOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={payOpen}
-          >
-            <span className="pay-kicker">Pay using</span>
-            <strong>{payNow ? 'Any UPI app' : payLaterLabel}</strong>
-            <span className="pay-sub">{paySub}</span>
-            <span className="pay-change" aria-hidden>
-              Change
-            </span>
-          </button>
+          <p className="pay-head-label">Pay using</p>
+          <div className="pay-picks">
+            <button
+              type="button"
+              className={`pay-pick ${payNow ? 'on' : ''} ${canPayInApp ? '' : 'off'}`}
+              onClick={() => canPayInApp && setPayNow(true)}
+              disabled={!canPayInApp}
+              aria-pressed={payNow}
+            >
+              <span className="pay-pick-icon" aria-hidden>
+                ⚡
+              </span>
+              <strong>Any UPI app</strong>
+              <span className="pay-pick-sub">
+                {canPayInApp
+                  ? `GPay, PhonePe, Paytm, FamApp — straight into ${cart.restaurantName}\u2019s account`
+                  : `${cart.restaurantName} has not added a UPI ID to Khapee yet`}
+              </span>
+              <span className="pay-pick-dot" aria-hidden />
+            </button>
+
+            <button
+              type="button"
+              className={`pay-pick ${payNow ? '' : 'on'}`}
+              onClick={() => setPayNow(false)}
+              aria-pressed={!payNow}
+            >
+              <span className="pay-pick-icon" aria-hidden>
+                💵
+              </span>
+              <strong>{payLaterLabel}</strong>
+              <span className="pay-pick-sub">
+                {isDelivery
+                  ? 'Cash or UPI when it reaches you'
+                  : isCar
+                    ? 'Cash or UPI at the car'
+                    : isNearby
+                      ? 'Cash or UPI when they hand it over'
+                      : 'Cash or UPI at the counter'}
+              </span>
+              <span className="pay-pick-dot" aria-hidden />
+            </button>
+          </div>
+          <p className="tiny muted pay-picks-foot">{paySub}</p>
 
           <button
             className="btn btn-accent btn-lg btn-block"
@@ -570,33 +601,6 @@ export default function Checkout() {
             </p>
           )}
         </section>
-
-        <PaySheet
-          open={payOpen}
-          onClose={() => setPayOpen(false)}
-          value={payNow ? 'now' : 'later'}
-          onPick={(choice) => setPayNow(choice === 'now')}
-          amountCents={payableCents}
-          restaurantName={cart.restaurantName}
-          laterLabel={payLaterLabel}
-          laterSub={
-            isDelivery
-              ? 'Cash or UPI when it reaches you'
-              : isCar
-                ? 'Cash or UPI at the car'
-                : isNearby
-                  ? 'Cash or UPI when they hand it over'
-                  : 'Cash or UPI at the counter'
-          }
-          canPayNow={canPayInApp}
-          nowSub={`GPay, PhonePe, Paytm — straight into ${cart.restaurantName}\u2019s account`}
-          unavailableReason={`${cart.restaurantName} has not added a UPI ID to Khapee yet`}
-          footNote={
-            payNow && canPayInApp
-              ? 'Paid orders go straight to the kitchen.'
-              : `${cart.restaurantName} accepts the order before it is made — you pay when you get it.`
-          }
-        />
 
         <VerifyModal
           open={verifyOpen}

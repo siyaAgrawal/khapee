@@ -4832,213 +4832,66 @@ button.nav-link {
 /* ------------------------------------------------- how this is being paid for
    Sits directly above the button that places the order: the last thing read
    before committing. Always present, whatever way the order is going out. */
-/* How you are paying, sitting on top of the button that does it. The whole
-   row is the control — it opens the sheet whether or not there is a second
-   option, because a tap that does nothing reads as a broken app.
-
-   It is deliberately louder than the card it sits in: tinted, with a real
-   button on the right and a nudge as the page settles. A quiet bordered
-   panel here reads as a label, and nobody taps a label. */
-.pay-row {
+/* How you are paying: both ways, one under the other, above the button that
+   does it. This was a single line with a Change button that opened a sheet —
+   which hid the second option behind a tap and behind a word, and made you
+   open, read, pick and come back just to see what you had picked. */
+.pay-head-label {
+  margin: 4px 0 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pay-picks {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 2px 12px;
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 13px 14px;
-  border: 1.5px solid var(--line-strong);
-  border-radius: var(--r-lg);
-  background: var(--accent-soft);
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  animation: pay-nudge 2.4s var(--ease) 0.5s 2;
-  transition:
-    border-color 0.18s var(--ease),
-    transform 0.18s var(--ease);
+  gap: 8px;
 }
-.pay-row:hover {
-  border-color: var(--accent);
-}
-.pay-row:active {
-  transform: scale(0.99);
-}
-.pay-row.open {
-  border-color: var(--accent);
-  animation: none;
-}
-/* Two slow pulses, then it stops for good — enough to catch the eye on the
-   way down the page, not a light left blinking at somebody trying to read. */
-@keyframes pay-nudge {
-  0%,
-  70%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-  }
-  35% {
-    box-shadow: 0 0 0 5px var(--accent-soft);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pay-row {
-    animation: none;
-  }
-}
-.pay-kicker {
-  grid-column: 1;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.pay-row strong {
-  grid-column: 1;
-  font-size: 16px;
-  letter-spacing: -0.01em;
-}
-.pay-sub {
-  grid-column: 1;
-  font-size: 12px;
-  color: var(--muted);
-}
-.pay-change {
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  justify-self: end;
-  padding: 7px 13px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.pay-row:hover .pay-change {
-  border-color: var(--accent);
-}
-
-/* A sheet up from the bottom edge, where a thumb already is. */
-.sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(15, 11, 9, 0.5);
-  backdrop-filter: blur(3px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: fade 0.2s var(--ease) both;
-}
-.sheet {
-  width: min(100%, 460px);
-  max-height: 88dvh;
-  overflow: auto;
-  background: var(--surface);
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
-  box-shadow: var(--shadow-lg);
-  padding-bottom: max(14px, env(safe-area-inset-bottom));
-  animation: sheet-up 0.26s var(--ease) both;
-}
-@media (min-width: 560px) {
-  .sheet-backdrop {
-    align-items: center;
-    padding: 18px;
-  }
-  .sheet {
-    border-radius: var(--r-xl);
-  }
-}
-@keyframes sheet-up {
-  from {
-    transform: translateY(14px);
-    opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
-}
-.sheet-grip {
-  display: block;
-  width: 38px;
-  height: 4px;
-  margin: 8px auto 0;
-  border-radius: 99px;
-  background: var(--line-strong);
-}
-.sheet-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px 4px;
-}
-.sheet-head h2 {
-  font-size: 19px;
-  letter-spacing: -0.015em;
-}
-.sheet-body {
-  padding: 6px 16px 4px;
-}
-.sheet-group {
-  margin: 14px 0 6px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-/* One way to pay: mark, name, what it means, and where the choice shows. */
-.pay-opt {
+.pay-pick {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 2px 12px;
   width: 100%;
-  padding: 12px 13px;
-  border: 1px solid var(--line);
+  padding: 13px;
+  border: 1.5px solid var(--line);
   border-radius: var(--r-lg);
-  background: none;
+  background: var(--surface);
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
+  transition:
+    border-color 0.16s var(--ease),
+    background 0.16s var(--ease);
 }
-.pay-opt + .pay-opt {
-  margin-top: 8px;
-}
-.pay-opt:hover {
+.pay-pick:hover {
   border-color: var(--line-strong);
 }
-.pay-opt.on {
-  border-color: var(--ink);
+.pay-pick.on {
+  border-color: var(--accent);
   background: var(--bg-tint);
 }
-.pay-opt.off {
+.pay-pick.off {
   cursor: default;
-  opacity: 0.55;
+  opacity: 0.5;
 }
-.pay-opt-icon {
+.pay-pick-icon {
   grid-column: 1;
   grid-row: 1 / span 2;
   font-size: 19px;
 }
-.pay-opt strong {
+.pay-pick strong {
   grid-column: 2;
   font-size: 15px;
 }
-.pay-opt-sub {
+.pay-pick-sub {
   grid-column: 2;
   font-size: 12px;
   color: var(--muted);
 }
-.pay-opt-dot {
+.pay-pick-dot {
   grid-column: 3;
   grid-row: 1 / span 2;
   width: 19px;
@@ -5046,112 +4899,16 @@ button.nav-link {
   border-radius: 50%;
   border: 2px solid var(--line-strong);
 }
-.pay-opt.on .pay-opt-dot {
-  border-color: var(--ink);
+.pay-pick.on .pay-pick-dot {
+  border-color: var(--accent);
+  background: var(--accent);
   box-shadow: inset 0 0 0 3.5px var(--surface);
-  background: var(--ink);
 }
-.pay-opt.off .pay-opt-dot {
+.pay-pick.off .pay-pick-dot {
   display: none;
 }
-.sheet-foot {
-  margin: 14px 0 0;
-}
-
-/* ------------------------------------------------------- standing somewhere
-   A landmark is what someone in a precinct has instead of an address. */
-.spot-grid {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-}
-.spot-card {
-  display: grid;
-  gap: 2px;
-  padding: 11px 13px;
-  text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-.spot-card:hover {
-  border-color: var(--line-strong);
-}
-.spot-card.on {
-  border-color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
-}
-.spot-card strong {
-  font-size: 14.5px;
-}
-.spot-card span {
-  font-size: 12px;
-  color: var(--muted);
-}
-.r-card.is-shut {
-  opacity: 0.6;
-}
-
-/* ------------------------------------------------------ an area in the grid
-   Sits among the restaurant cards because from the street it is the same kind
-   of choice, but reads as a place rather than a kitchen: no photo, no open or
-   closed, just the name of the street and how many kitchens are on it. */
-.area-card .area-art {
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, var(--bg-tint), var(--surface));
-  border-bottom: 1px solid var(--line);
-}
-.area-mark {
-  font-family: var(--serif);
-  font-size: 46px;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-.area-card .badge-accent {
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 10.5px;
-}
-
-/* A numbered step on the notifications page: the number, what it does, and
-   the switch, on one line that wraps to two on a phone. */
-.alert-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.alert-step > div {
-  flex: 1 1 220px;
-  min-width: 0;
-}
-.alert-step h2 {
-  font-size: 17px;
-  margin-bottom: 3px;
-}
-.alert-step p {
-  max-width: 56ch;
-}
-.alert-num {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-.alert-foot {
-  margin: 14px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+.pay-picks-foot {
+  margin: 10px 2px 14px;
 }
 
 /* One route by which a restaurant can be told an order arrived: what it is,
@@ -5318,5 +5075,52 @@ button.nav-link {
     background: rgba(74, 200, 128, 0.16);
     color: #7fd7a4;
     border-color: rgba(127, 215, 164, 0.5);
+  }
+}
+
+/* Waiting on the restaurant to confirm a UPI payment.
+   Deliberately not a tick. Khapee cannot see the money — it went bank to
+   bank — so the only honest thing to show until the restaurant has looked is
+   that somebody is looking. */
+.paying {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 auto;
+  max-width: 640px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-tint);
+}
+.paying strong {
+  display: block;
+  font-size: 14.5px;
+}
+.paying p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  max-width: 52ch;
+}
+.paying-spin {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--ink);
+  animation: paying-turn 0.9s linear infinite;
+}
+@keyframes paying-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paying-spin {
+    animation-duration: 3s;
   }
 }

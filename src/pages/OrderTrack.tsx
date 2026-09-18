@@ -23,7 +23,30 @@ export default function OrderTrack() {
    * rather than by opening the link again later.
    */
   const placed = (useLocation().state ?? {}) as { justPlaced?: boolean; paid?: boolean }
-  const [celebrate, setCelebrate] = useState(!!placed.justPlaced)
+  /**
+   * Nothing here can check a UPI payment.
+   *
+   * The money goes from the customer's bank to the restaurant's and Khapee is
+   * not in the middle of it; verifying it would need a payment gateway sitting
+   * between them, taking a cut of every order. The only party who can see it
+   * arrive is the restaurant, looking at their own app.
+   *
+   * So a tick is not claimed on the customer's word. An order paid at the
+   * counter is settled the moment it is placed and says so; one paid through
+   * the app waits, visibly, and the tick is drawn when the restaurant ticks it
+   * off — which arrives here on its own over the live stream.
+   */
+  const [celebrate, setCelebrate] = useState(!!placed.justPlaced && !placed.paid)
+  const [confirmedNow, setConfirmedNow] = useState(false)
+  const waitingOnPayment = !!placed.justPlaced && !!placed.paid && order?.paymentState === 'sent'
+
+  useEffect(() => {
+    if (!placed.justPlaced || !placed.paid) return
+    if (order?.paymentState !== 'paid' || confirmedNow) return
+    setConfirmedNow(true)
+    setCelebrate(true)
+  }, [order?.paymentState, placed.justPlaced, placed.paid, confirmedNow])
+
   useEffect(() => {
     if (!celebrate) return
     const done = setTimeout(() => setCelebrate(false), 2100)
@@ -119,15 +142,28 @@ export default function OrderTrack() {
               <path className="placed-tick" d="M24 41 L35 52 L57 29" />
             </svg>
           </div>
-          <strong>Order placed</strong>
+          <strong>{confirmedNow ? 'Payment confirmed' : 'Order placed'}</strong>
           <p>
-            {placed.paid
-              ? `${money(order.totalCents)} sent to ${order.restaurantName}.`
+            {confirmedNow
+              ? `${order.restaurantName} has your ${money(order.totalCents)}.`
               : order.status === 'REQUESTED'
                 ? `${order.restaurantName} is looking at it now.`
                 : `${order.restaurantName} has it.`}
           </p>
           <span className="tiny muted">#{order.orderNumber}</span>
+        </div>
+      )}
+      {waitingOnPayment && (
+        <div className="paying" role="status" aria-live="polite">
+          <span className="paying-spin" aria-hidden />
+          <div>
+            <strong>Checking your payment</strong>
+            <p className="tiny">
+              {order.restaurantName} is matching {money(order.totalCents)}
+              {order.upiRef ? ` · ref ${order.upiRef}` : ''} against their UPI app. Your order is
+              already with them — this page updates itself.
+            </p>
+          </div>
         </div>
       )}
       <main className="page page-narrow">

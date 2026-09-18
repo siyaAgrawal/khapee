@@ -2433,6 +2433,30 @@ async function runTests() {
         paymentClaim: { upiRef: '402311112222' },
       },
     })
+    // Khapee never sees the money, so "I paid" has to come with the number the
+    // restaurant can look up. Without it the claim is unfalsifiable and the
+    // person carrying the risk is whoever made the food.
+    const noRef = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'No reference',
+        paymentClaim: { upiRef: '' },
+      },
+    })
+    ok('a payment claim without a reference is refused', noRef.status === 400, noRef.body)
+    const shortRef = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Half a reference',
+        paymentClaim: { upiRef: '4023111' },
+      },
+    })
+    ok('and so is half of one', shortRef.status === 400, shortRef.body)
+
     ok('one paid through the app reads as sent, not unpaid', sent.body.order.paymentState === 'sent', sent.body.order)
     ok('with the reference the customer gave', sent.body.order.upiRef === '402311112222', sent.body.order)
     ok('and it did not wait for a yes', sent.body.order.status === 'NEW', sent.body.order)

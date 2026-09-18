@@ -5342,3 +5342,29 @@ button.nav-link {
   margin: 0;
   font-weight: 600;
 }
+
+/* The one tap between a notification and WhatsApp. Big, because it is the
+   only thing on the page and somebody is mid-service. */
+.thank {
+  text-align: center;
+}
+.thank-kicker {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.thank-message {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  background: var(--bg-tint);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: left;
+}
+.thank-go {
+  margin-bottom: 12px;
+}

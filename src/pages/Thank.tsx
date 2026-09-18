@@ -1,62 +1,53 @@
-import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 
 /**
  * The step between tapping "thank them" and WhatsApp opening.
  *
- * The notification could carry the wa.me link itself, and on a desktop it
- * would work. An app installed on an iPhone Home Screen is another matter: it
- * runs in its own window with its own scope, and a service worker asking that
- * window to open somebody else's site is the kind of thing Safari declines
- * quietly. The result is a notification that does nothing when tapped, which
- * is worse than no notification.
+ * The notification cannot point straight at WhatsApp: an app installed on an
+ * iPhone Home Screen runs in its own scope, and a service worker asking that
+ * window to open somebody else's site is declined quietly. So it points here,
+ * at our own page, which is always allowed.
  *
- * So the notification points here — our own page, always allowed — and here
- * asks for WhatsApp, which is an ordinary navigation of the kind every browser
- * permits. The button underneath is for when even that is refused, and is the
- * reason this page has anything on it at all rather than being a redirect.
+ * And this page does not redirect either, for the same family of reason: iOS
+ * will not let a page hand you to another app unless you asked it to, so an
+ * automatic jump into WhatsApp is refused silently and what is left on screen
+ * is Khapee, looking as though the notification did nothing. The button is the
+ * ask. One tap, and it works every time.
  */
 export default function Thank() {
   const [params] = useSearchParams()
   const to = (params.get('to') ?? '').replace(/\D/g, '')
   const text = params.get('text') ?? ''
   const who = params.get('who') ?? 'them'
-  const [tried, setTried] = useState(false)
 
   const link = to ? `https://wa.me/${to}?text=${encodeURIComponent(text)}` : ''
 
-  useEffect(() => {
-    if (!link) return
-    // Straight away, before anything is painted — the page somebody wanted is
-    // WhatsApp, not this one.
-    const go = setTimeout(() => {
-      setTried(true)
-      window.location.href = link
-    }, 60)
-    return () => clearTimeout(go)
-  }, [link])
+  /**
+   * No automatic redirect, on purpose.
+   *
+   * A page cannot hand you over to another app unless you asked it to: iOS
+   * refuses a navigation into WhatsApp that nobody tapped, silently, and what
+   * is left on screen is this page looking like the notification did nothing.
+   * A button is the ask. It costs one tap and it works every time, which is
+   * the better trade.
+   */
 
   return (
     <div className="app">
       <Header />
       <main className="page page-narrow">
-        <div className="card card-pad invite">
-          <span className="invite-bell" aria-hidden>
-            💬
-          </span>
-          <h1>Thank {who}</h1>
+        <div className="card card-pad thank">
           {link ? (
             <>
-              <p className="muted">
-                {tried ? 'WhatsApp should be opening.' : 'Opening WhatsApp…'} The message is already
-                written — you just press send.
-              </p>
-              <a className="btn btn-accent btn-lg btn-block" href={link}>
+              <p className="thank-kicker">Send to {who}</p>
+              <p className="thank-message">{text}</p>
+              <a className="btn btn-accent btn-lg btn-block thank-go" href={link}>
                 Open WhatsApp
               </a>
-              <p className="tiny muted" style={{ marginTop: 14 }}>
-                Going to {to.replace(/^91/, '+91 ')}
+              <p className="tiny muted">
+                It opens the chat with {to.replace(/^91/, '+91 ')} and the message already written.
+                You press send.
               </p>
             </>
           ) : (

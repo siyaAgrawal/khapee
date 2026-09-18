@@ -99,7 +99,11 @@ export default function AlertInvite() {
       })
       await api(`/alerts/invite/${token}`, { body: { subscription: sub.toJSON() } })
       try {
+        // Kept, not discarded: the server forgets its device list every time it
+        // restarts, and this is what lets the phone put itself back without
+        // anybody being asked to do this again. See keepAlertsAlive.
         localStorage.removeItem('khapee.alertCode')
+        localStorage.setItem('khapee.alertGrant', token.trim().toUpperCase())
       } catch {
         /* nothing to tidy */
       }

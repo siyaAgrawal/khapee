@@ -165,3 +165,36 @@ export async function followOrder(
     return { ok: false, error: (e as Error)?.message || 'The browser refused to subscribe.' }
   }
 }
+
+/**
+ * Puts this phone's alerts back after the server has forgotten them.
+ *
+ * The database is rebuilt from the published copy whenever the service
+ * restarts, which on the free plan is often — and the device registrations
+ * live in it, so a phone that was set up last night is quietly unsubscribed by
+ * morning with nothing to say so. The phone still holds a live push
+ * subscription and still remembers the code it was set up with, so it can
+ * simply present both again. Nothing new is granted: it is the same phone
+ * claiming the same invite it already claimed.
+ *
+ * Silent by design. If the server has not forgotten, the invite reports itself
+ * used and this does nothing, which is the ordinary case.
+ */
+export async function keepAlertsAlive(): Promise<void> {
+  let grant = ''
+  try {
+    grant = localStorage.getItem('khapee.alertGrant') ?? ''
+  } catch {
+    return
+  }
+  if (!grant || !pushSupported()) return
+
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return
+    await api(`/alerts/invite/${grant}`, { body: { subscription: sub.toJSON() } })
+  } catch {
+    /* already registered, or the invite is spent for good: nothing to do */
+  }
+}

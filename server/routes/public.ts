@@ -195,7 +195,12 @@ publicRouter.get('/alerts/invite/:token', (req, res) => {
     .prepare(`SELECT (? <= datetime('now')) AS gone`)
     .get(row.expires_at) as any
   if (expired?.gone) return res.status(410).json({ error: 'That link has expired. Ask for a new one.' })
-  res.json({ restaurant: row.restaurant, available: pushConfigured(), publicKey: pushPublicKey() })
+  res.json({
+    restaurant: row.all_restaurants ? 'every restaurant on Khapee' : row.restaurant,
+    everywhere: !!row.all_restaurants,
+    available: pushConfigured(),
+    publicKey: pushPublicKey(),
+  })
 })
 
 publicRouter.post('/alerts/invite/:token', (req, res) => {
@@ -214,7 +219,8 @@ publicRouter.post('/alerts/invite/:token', (req, res) => {
     null,
     row.restaurant_id,
     req.body?.subscription ?? req.body,
-    by ? `Phone invited by ${by}` : 'Invited phone',
+    row.all_restaurants ? 'Phone following every restaurant' : by ? `Phone invited by ${by}` : 'Invited phone',
+    !!row.all_restaurants,
   )
   if (!saved.ok) return res.status(400).json({ error: saved.error })
   db.prepare("UPDATE alert_invites SET used_at = datetime('now') WHERE id = ?").run(row.id)

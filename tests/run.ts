@@ -2744,6 +2744,36 @@ async function runTests() {
       (await call(`/alerts/invite/${spare.body.token}`)).status === 410,
     )
 
+    // One device can follow the whole platform rather than one kitchen —
+    // whoever runs Khapee wants the board, not a subscription per restaurant
+    // that has to be redone every time one joins.
+    const everywhere = new Database(DB_PATH)
+    everywhere
+      .prepare(
+        `INSERT INTO alert_invites (restaurant_id, token, expires_at, all_restaurants)
+         VALUES (?, 'ALLONE', datetime('now', '+1 day'), 1)`,
+      )
+      .run(mornington.id)
+    everywhere.close()
+
+    const wide = await call('/alerts/invite/ALLONE')
+    ok('a platform-wide code says so', wide.body.everywhere === true, wide.body)
+
+    await call('/alerts/invite/ALLONE', {
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/owner-everywhere',
+          keys: { p256dh: 'BDpUB9' + 'v'.repeat(80), auth: 'lkjhgfdsamnbvcxz' },
+        },
+      },
+    })
+    const elsewhere = await call('/staff/alerts', { token: basilToken })
+    ok(
+      'and that phone counts for a restaurant it was never invited to',
+      (elsewhere.body.push.list as any[]).some((d) => /every restaurant/i.test(d.who)),
+      elsewhere.body.push.list,
+    )
+
     const notMine = await call('/staff/alerts/devices/999999/remove', { token: roadToken, body: {} })
     ok('a device on another restaurant cannot be removed', notMine.status === 404, notMine.body)
 

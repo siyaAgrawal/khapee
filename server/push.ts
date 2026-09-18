@@ -163,6 +163,7 @@ export function saveSubscription(
   restaurantId: number,
   sub: Subscription,
   label = '',
+  allRestaurants = false,
 ): { ok: boolean; error?: string } {
   const endpoint = String(sub?.endpoint ?? '').trim()
   const p256dh = String(sub?.keys?.p256dh ?? '').trim()
@@ -170,16 +171,17 @@ export function saveSubscription(
   if (!endpoint || !p256dh || !auth) return { ok: false, error: 'That subscription is incomplete.' }
 
   db.prepare(
-    `INSERT INTO push_subscriptions (user_id, restaurant_id, endpoint, p256dh, auth, label)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO push_subscriptions (user_id, restaurant_id, endpoint, p256dh, auth, label, all_restaurants)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(endpoint) DO UPDATE SET
        user_id = excluded.user_id,
        restaurant_id = excluded.restaurant_id,
        p256dh = excluded.p256dh,
        auth = excluded.auth,
        label = excluded.label,
+       all_restaurants = excluded.all_restaurants,
        failures = 0`,
-  ).run(userId, restaurantId, endpoint, p256dh, auth, label)
+  ).run(userId, restaurantId, endpoint, p256dh, auth, label, allRestaurants ? 1 : 0)
   return { ok: true }
 }
 
@@ -196,7 +198,8 @@ export function dropSubscription(endpoint: string): void {
  */
 const DEVICES_FOR = `
   SELECT ps.* FROM push_subscriptions ps
-   WHERE ps.restaurant_id = ?
+   WHERE ps.all_restaurants = 1
+      OR ps.restaurant_id = ?
       OR (ps.user_id IS NOT NULL
           AND EXISTS (SELECT 1 FROM restaurant_staff rs
                        WHERE rs.user_id = ps.user_id AND rs.restaurant_id = ?))

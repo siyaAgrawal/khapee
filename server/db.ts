@@ -297,6 +297,13 @@ addColumn('orders', 'contact_phone', "TEXT NOT NULL DEFAULT ''")
 // Where order alerts are emailed. Blank means the owner's own address.
 addColumn('restaurants', 'order_email', "TEXT NOT NULL DEFAULT ''")
 
+// A device that follows every restaurant on Khapee, not one of them. For
+// whoever runs the platform rather than a kitchen: they want the whole board,
+// and a subscription per restaurant would have to be redone every time one
+// joined.
+addColumn('push_subscriptions', 'all_restaurants', 'INTEGER NOT NULL DEFAULT 0')
+addColumn('alert_invites', 'all_restaurants', 'INTEGER NOT NULL DEFAULT 0')
+
 // How a device came to be on the alert list — signed in, or handed a one-time
 // invite — so an owner reading the list can tell one from the other.
 addColumn('push_subscriptions', 'label', "TEXT NOT NULL DEFAULT ''")

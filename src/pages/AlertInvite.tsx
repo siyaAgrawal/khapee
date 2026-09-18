@@ -24,16 +24,21 @@ export default function AlertInvite() {
   const [typed, setTyped] = useState('')
   const token = fromLink || typed
   const toast = useToast()
-  const [invite, setInvite] = useState<{ restaurant: string; available: boolean; publicKey: string } | null>(
-    null,
-  )
+  const [invite, setInvite] = useState<{
+    restaurant: string
+    everywhere?: boolean
+    available: boolean
+    publicKey: string
+  } | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
 
   useEffect(() => {
     if (!fromLink) return
-    api<{ restaurant: string; available: boolean; publicKey: string }>(`/alerts/invite/${fromLink}`)
+    api<{ restaurant: string; everywhere?: boolean; available: boolean; publicKey: string }>(
+      `/alerts/invite/${fromLink}`,
+    )
       .then(setInvite)
       .catch((e: ApiError) => setError(e.message))
   }, [fromLink])
@@ -43,7 +48,7 @@ export default function AlertInvite() {
     setError('')
     try {
       setInvite(
-        await api<{ restaurant: string; available: boolean; publicKey: string }>(
+        await api<{ restaurant: string; everywhere?: boolean; available: boolean; publicKey: string }>(
           `/alerts/invite/${typed.trim().toUpperCase()}`,
         ),
       )
@@ -153,7 +158,9 @@ export default function AlertInvite() {
           <span className="invite-bell" aria-hidden>
             🔔
           </span>
-          <h1>Order alerts for {invite.restaurant}</h1>
+          <h1>
+            {invite.everywhere ? 'Order alerts for every restaurant' : `Order alerts for ${invite.restaurant}`}
+          </h1>
           {done ? (
             <p className="muted">
               Done. This phone will ring for every new order, even with Khapee closed. Nothing else to
@@ -161,8 +168,9 @@ export default function AlertInvite() {
             </p>
           ) : (
             <p className="muted">
-              Turn this on and this phone rings whenever an order comes in. It does not sign you in and
-              it works on one phone only — this one.
+              Turn this on and this phone rings whenever an order comes in
+              {invite.everywhere ? ' at any restaurant on Khapee' : ''}. It does not sign you in and it
+              works on one phone only — this one.
             </p>
           )}
 

@@ -31,7 +31,17 @@ declare global {
   }
 }
 
-const SESSION_DAYS = 30
+/**
+ * A year, because a restaurant's phone should be signed in the way a till is.
+ *
+ * Thirty days is the right answer for a bank and the wrong one for a counter:
+ * the phone behind it is signed in once by whoever set it up and then used by
+ * whoever is on shift, none of whom know the password or should. Being asked
+ * to sign in again, months later and mid-service, is how a device stops being
+ * used. Signing out still works — it is written down, not merely forgotten —
+ * and changing the password still ends every session the account has.
+ */
+const SESSION_DAYS = 365
 
 /**
  * Why a signed token rather than only a row in `sessions`.

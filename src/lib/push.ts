@@ -9,6 +9,8 @@ import { api } from './api'
  * or locked, in an apron pocket — still rings.
  */
 export type AlertState = {
+  /** Every restaurant a switched-on device will ring for. */
+  ringsFor: string[]
   push: { available: boolean; publicKey: string; devices: number; reason: string }
   email: { available: boolean; to: string; own: string }
 }
@@ -23,16 +25,24 @@ export function pushSupported(): boolean {
 }
 
 /**
- * Safari only allows push to a web app that has been added to the Home Screen,
- * so on an iPhone in the browser this is worth saying rather than failing.
+ * Whether this is an iPhone in Safari rather than on the Home Screen.
+ *
+ * Everywhere else — Android, and every desktop browser — push works on the
+ * plain website with nothing installed. Apple is the exception: Safari only
+ * allows it once the site has been added to the Home Screen, which is a
+ * bookmark rather than an app, but has to be done before the switch works at
+ * all. Worth saying, with the steps, rather than failing.
  */
 export function needsHomeScreen(): boolean {
   if (typeof navigator === 'undefined') return false
-  const iOS = /iP(hone|ad|od)/.test(navigator.userAgent)
-  const installed =
+  const iOS =
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    // An iPad reports itself as a Mac; the touch points give it away.
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const onHomeScreen =
     (navigator as any).standalone === true ||
     window.matchMedia?.('(display-mode: standalone)')?.matches === true
-  return iOS && !installed && !('PushManager' in window)
+  return iOS && !onHomeScreen && !('PushManager' in window)
 }
 
 /** The key arrives as base64url and the browser wants raw bytes. */

@@ -2462,6 +2462,7 @@ async function runTests() {
     ok('the dashboard can read what its alerts can do', state.status === 200, state.body)
     ok('including the key a browser subscribes with', typeof state.body.push?.publicKey === 'string', state.body)
     ok('and where the email would go', typeof state.body.email?.to === 'string', state.body)
+    ok('and everywhere a switched-on phone will ring for', Array.isArray(state.body.ringsFor), state.body)
     ok(
       'which is the owner of this restaurant',
       String(state.body.email.to).includes('@'),
@@ -2525,6 +2526,39 @@ async function runTests() {
       },
     })
     ok('the same device does not count twice', again.body.devices === good.body.devices, again.body)
+
+    // One phone, an owner with two places. Nobody should have to guess that
+    // the picker at the top of the dashboard was also choosing which orders
+    // would wake them.
+    const bothPlaces = await call('/staff/alerts', { token: dualToken })
+    ok('an owner is told everywhere a phone will ring for', bothPlaces.body.ringsFor.length === 2, bothPlaces.body)
+
+    // Subscribed with one restaurant selected...
+    const activeNow = (await call('/staff/menu', { token: dualToken })).body.restaurant.id
+    await call('/staff/alerts/subscribe', {
+      token: dualToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/owner-phone',
+          keys: { p256dh: 'BDpUB9' + 'z'.repeat(80), auth: 'qrstuvwxyzabcdef' },
+        },
+      },
+    })
+    // ...and it counts for the other one too, without being told about it.
+    const otherPlace = (
+      (await call('/auth/me', { token: dualToken })).body.user.restaurants as any[]
+    ).find((r) => r.id !== activeNow)
+    await call('/staff/switch', { token: dualToken, body: { restaurantId: otherPlace.id } })
+    const fromOther = await call('/staff/alerts', { token: dualToken })
+    ok(
+      'and one phone covers both places, not just the selected one',
+      fromOther.body.push.devices >= 1,
+      fromOther.body.push,
+    )
+    await call('/staff/alerts/unsubscribe', {
+      token: dualToken,
+      body: { endpoint: 'https://push.example/owner-phone' },
+    })
 
     const off = await call('/staff/alerts/unsubscribe', {
       token: roadToken,

@@ -108,15 +108,16 @@ export default function StaffAlerts() {
     }
   }
 
+  const iphone = needsHomeScreen()
   const deviceLine = !pushSupported()
-    ? needsHomeScreen()
-      ? 'On iPhone, Safari only alerts an app that has been added to the Home Screen. Open Khapee in Safari, tap Share, then Add to Home Screen — and turn this on from there.'
-      : 'This browser cannot ring with Khapee closed. Try Chrome on Android, or Safari on an iPhone with Khapee added to the Home Screen.'
+    ? iphone
+      ? 'Safari needs Khapee on your Home Screen before it will allow this. It takes three taps and installs nothing — the steps are below.'
+      : 'This browser cannot ring with Khapee closed. Chrome, Edge and Firefox all can, on a phone or a computer.'
     : !state.push.available
       ? state.push.reason
       : onThisDevice
-        ? 'On. This phone or computer rings for every new order, even with Khapee closed.'
-        : 'Off. Turn it on and this phone rings for every new order, even with Khapee closed.'
+        ? 'On. This phone rings for every new order — on the website, with Khapee closed, nothing installed.'
+        : 'Off. Turn it on and this phone rings for every new order — on the website, with Khapee closed, nothing installed.'
 
   return (
     <>
@@ -140,6 +141,27 @@ export default function StaffAlerts() {
           )}
         </div>
 
+        {/* Apple is the only platform that will not do this from the website
+            alone. Saying so is not enough — the three taps are not where
+            anybody looks for them, so they are written out here. */}
+        {iphone && (
+          <ol className="alert-steps">
+            <li>
+              Open <strong>khapee.com</strong> in Safari (not Chrome — on iPhone only Safari can do
+              this).
+            </li>
+            <li>
+              Tap the <strong>Share</strong> button, the square with an arrow coming out of it.
+            </li>
+            <li>
+              Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
+            </li>
+            <li>
+              Open Khapee from the new icon, come back to this page, and the button above will work.
+            </li>
+          </ol>
+        )}
+
         <p className="tiny muted alert-foot">
           Turn it on once on every phone that should ring — the one behind the counter, and yours.{' '}
           {state.push.devices
@@ -151,6 +173,13 @@ export default function StaffAlerts() {
             </button>
           )}
         </p>
+
+        {state.ringsFor.length > 1 && (
+          <p className="tiny muted" style={{ marginTop: 8 }}>
+            A phone you switch on rings for every order at {state.ringsFor.slice(0, -1).join(', ')} and{' '}
+            {state.ringsFor[state.ringsFor.length - 1]} — you do not have to do this once per place.
+          </p>
+        )}
       </section>
 
       <section className="card card-pad mt-3">

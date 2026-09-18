@@ -149,8 +149,14 @@ export type Subscription = {
  * Remembers a device so it can be told about orders later.
  *
  * An endpoint is the device, so re-subscribing simply moves it to whoever is
- * signed in now — a shared kitchen phone that changes hands should alert the
- * restaurant it is currently signed into, and only that one.
+ * signed in now — a shared kitchen phone that changes hands should stop
+ * ringing for the place it used to belong to.
+ *
+ * The restaurant recorded here is only the one that happened to be selected
+ * when the switch was tapped. Who the device actually rings for is worked out
+ * at send time from the account, because somebody who runs two places wants
+ * both, and has no reason to guess that the picker at the top of the dashboard
+ * was also choosing which orders would wake them.
  */
 export function saveSubscription(
   userId: number,
@@ -179,11 +185,24 @@ export function dropSubscription(endpoint: string): void {
   db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(String(endpoint ?? ''))
 }
 
+/**
+ * Every device that should ring for this restaurant.
+ *
+ * Either it was subscribed while this restaurant was selected, or it belongs
+ * to somebody who runs this restaurant — the second is what makes one phone
+ * enough for an owner with two places.
+ */
+const DEVICES_FOR = `
+  SELECT ps.* FROM push_subscriptions ps
+   WHERE ps.restaurant_id = ?
+      OR (ps.user_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM restaurant_staff rs
+                       WHERE rs.user_id = ps.user_id AND rs.restaurant_id = ?))
+`
+
 export function subscriptionCount(restaurantId: number): number {
-  const row = db
-    .prepare('SELECT COUNT(*) n FROM push_subscriptions WHERE restaurant_id = ?')
-    .get(restaurantId) as any
-  return row?.n ?? 0
+  const rows = db.prepare(DEVICES_FOR).all(restaurantId, restaurantId) as any[]
+  return rows.length
 }
 
 export type PushNote = { title: string; body: string; url?: string; tag?: string }
@@ -198,9 +217,7 @@ export type PushNote = { title: string; body: string; url?: string; tag?: string
  */
 export async function pushToRestaurant(restaurantId: number, note: PushNote): Promise<number> {
   if (!KEYS) return 0
-  const rows = db
-    .prepare('SELECT * FROM push_subscriptions WHERE restaurant_id = ?')
-    .all(restaurantId) as any[]
+  const rows = db.prepare(DEVICES_FOR).all(restaurantId, restaurantId) as any[]
   if (!rows.length) return 0
 
   const payload = JSON.stringify({

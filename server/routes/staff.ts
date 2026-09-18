@@ -697,7 +697,16 @@ staffRouter.post('/switch', (req: any, res) => {
 staffRouter.get('/alerts', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   const own = db.prepare('SELECT order_email FROM restaurants WHERE id = ?').get(restaurantId) as any
+  // Everywhere this account runs, so a switched-on phone can say what it will
+  // actually ring for rather than leaving an owner with two places guessing.
+  const mine = db
+    .prepare(
+      `SELECT r.name FROM restaurant_staff rs JOIN restaurants r ON r.id = rs.restaurant_id
+        WHERE rs.user_id = ? ORDER BY r.name`,
+    )
+    .all(req.user.id) as any[]
   res.json({
+    ringsFor: mine.map((r) => r.name),
     push: {
       available: pushConfigured(),
       publicKey: pushPublicKey(),

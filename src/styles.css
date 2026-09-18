@@ -5197,3 +5197,18 @@ button.nav-link {
   opacity: 0.5;
   cursor: default;
 }
+
+/* The three taps an iPhone needs before Safari will allow notifications.
+   Written out rather than referred to: nobody finds Add to Home Screen by
+   being told it exists. */
+.alert-steps {
+  margin: 14px 0 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.alert-steps strong {
+  color: var(--ink);
+}

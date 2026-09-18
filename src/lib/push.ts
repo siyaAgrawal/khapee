@@ -24,6 +24,44 @@ export type AlertState = {
   email: { available: boolean; to: string; own: string }
 }
 
+/**
+ * A service worker that is definitely registered and definitely ready.
+ *
+ * `navigator.serviceWorker.ready` never resolves if nothing ever registered —
+ * it waits forever rather than rejecting — so a page whose registration failed
+ * shows a button that spins and does nothing, with no error anywhere. This
+ * registers if needed and gives up loudly rather than silently.
+ */
+export async function workerReady(): Promise<ServiceWorkerRegistration> {
+  const existing = await navigator.serviceWorker.getRegistration()
+  if (!existing) await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+  return await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<ServiceWorkerRegistration>((_, reject) =>
+      setTimeout(() => reject(new Error('The app could not start its background worker.')), 12000),
+    ),
+  ])
+}
+
+/** What this phone actually reports, for when it will not do as it is told. */
+export function pushFacts(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  const nav = navigator as any
+  return {
+    'Home Screen app': nav.standalone === true || window.matchMedia?.('(display-mode: standalone)')?.matches
+      ? 'yes'
+      : 'no — Safari tab',
+    'Push available': 'PushManager' in window ? 'yes' : 'no',
+    'Service worker': 'serviceWorker' in navigator ? 'yes' : 'no',
+    Permission: typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+    Browser: /CriOS/.test(navigator.userAgent)
+      ? 'Chrome on iPhone — use Safari'
+      : /Safari/.test(navigator.userAgent) && /iP/.test(navigator.userAgent)
+        ? 'Safari on iPhone'
+        : 'other',
+  }
+}
+
 export function pushSupported(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -96,7 +134,7 @@ export async function enablePush(publicKey: string): Promise<{ ok: boolean; erro
   }
 
   try {
-    const reg = await navigator.serviceWorker.ready
+    const reg = await workerReady()
     // A subscription made against an older key cannot be re-used, and the push
     // service refuses the new one while the old one stands.
     const existing = await reg.pushManager.getSubscription()
@@ -152,7 +190,7 @@ export async function followOrder(
   if (permission !== 'granted') return { ok: false, error: 'Updates were blocked in your browser settings.' }
 
   try {
-    const reg = await navigator.serviceWorker.ready
+    const reg = await workerReady()
     const existing = await reg.pushManager.getSubscription()
     if (existing) await existing.unsubscribe().catch(() => {})
     const sub = await reg.pushManager.subscribe({

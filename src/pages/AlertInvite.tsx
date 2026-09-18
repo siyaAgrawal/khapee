@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { ErrorState, LoadingBlock, Spinner, useToast } from '../components/ui'
-import { needsHomeScreen, pushSupported } from '../lib/push'
+import { needsHomeScreen, pushFacts, pushSupported, workerReady } from '../lib/push'
 
 /**
  * Putting order alerts on one phone, without handing over the password.
@@ -42,6 +42,7 @@ export default function AlertInvite() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+  const [trouble, setTrouble] = useState('')
 
   useEffect(() => {
     if (fromLink) remember(fromLink.trim().toUpperCase())
@@ -86,9 +87,14 @@ export default function AlertInvite() {
     try {
       if (!pushSupported()) throw new Error('This browser cannot show alerts when Khapee is closed.')
       const permission = await Notification.requestPermission()
-      if (permission !== 'granted') throw new Error('Alerts were blocked. Allow notifications and try again.')
+      if (permission === 'denied') {
+        throw new Error(
+          'Notifications are blocked for Khapee. Turn them on in Settings → Notifications → Khapee, then try again.',
+        )
+      }
+      if (permission !== 'granted') throw new Error('The permission prompt was dismissed. Tap again and allow it.')
 
-      const reg = await navigator.serviceWorker.ready
+      const reg = await workerReady()
       const existing = await reg.pushManager.getSubscription()
       if (existing) await existing.unsubscribe().catch(() => {})
       const raw = (invite?.publicKey ?? '') + '='.repeat((4 - ((invite?.publicKey ?? '').length % 4)) % 4)
@@ -110,7 +116,12 @@ export default function AlertInvite() {
       setDone(true)
       toast('This phone will ring for every new order.', 'good')
     } catch (e) {
-      toast((e as Error).message || 'Could not switch alerts on.', 'bad')
+      // Shown on the page as well as in a toast: a toast is gone in four
+      // seconds and this is the message somebody needs to read twice, or
+      // photograph and send to whoever can fix it.
+      const said = (e as Error).message || 'Could not switch alerts on.'
+      setTrouble(said)
+      toast(said, 'bad')
     } finally {
       setBusy(false)
     }
@@ -242,6 +253,25 @@ export default function AlertInvite() {
 
           {!done && !invite.available && (
             <p className="tiny muted">Alerts are not switched on for this server yet.</p>
+          )}
+
+          {!!trouble && <p className="form-error" style={{ textAlign: 'left' }}>{trouble}</p>}
+
+          {/* What the phone itself reports. Guessing at somebody else's phone
+              from a description of it is slow and usually wrong; this is four
+              lines they can photograph. */}
+          {!done && (
+            <details className="facts">
+              <summary>Not working? What this phone says</summary>
+              <dl>
+                {Object.entries(pushFacts()).map(([k, v]) => (
+                  <div key={k}>
+                    <dt>{k}</dt>
+                    <dd>{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
           )}
         </div>
       </main>

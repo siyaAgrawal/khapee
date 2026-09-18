@@ -5311,3 +5311,34 @@ button.nav-link {
 .back-btn:hover {
   background: var(--bg-tint);
 }
+
+/* What the phone itself reports, for when it will not do as it is told.
+   Folded away, because it is only ever read when something is wrong. */
+.facts {
+  margin-top: 18px;
+  text-align: left;
+  font-size: 12.5px;
+}
+.facts summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.facts dl {
+  margin: 10px 0 0;
+  display: grid;
+  gap: 4px;
+}
+.facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  font-weight: 600;
+}

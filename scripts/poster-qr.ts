@@ -170,7 +170,9 @@ if (!block) {
   // asked for, letterboxed inside its own white.
   const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 130" width="130" height="130">
   <rect width="130" height="130" fill="#ffffff"/>
-  <g stroke="${line}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Leaning a few degrees, like the pizza slice and the coffee cup do. Upright
+       among them looks like it was dropped in rather than drawn with them. -->
+  <g transform="rotate(-8 65 70)" stroke="${line}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
     <!-- An ice cream cone, and not the fries that were here before: thin
          strokes rising out of a tapered tub read as a plant in a pot no matter
          how they are drawn, and an icon you have to explain is the wrong icon.

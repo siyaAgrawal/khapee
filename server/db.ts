@@ -34,6 +34,18 @@ function resolveDbPath(): string {
 export const DB_PATH = resolveDbPath()
 export const IS_EPHEMERAL = SERVERLESS && !process.env.TABLO_DB
 
+/**
+ * Whether anything written here outlives the container.
+ *
+ * It does not on a host that seeds itself from the committed snapshot and has
+ * no disk mounted: the filesystem comes back empty on the next deploy, and on
+ * a free plan every time the service wakes from sleeping. Menu edits made in
+ * the dashboard are then quietly undone hours later, which is the worst way
+ * for this to be found out. TABLO_DB pointing at a mounted disk is what makes
+ * it permanent, so that is exactly the test.
+ */
+export const WRITES_ARE_TEMPORARY = SEED_FROM_SNAPSHOT && !process.env.TABLO_DB
+
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 
 if (SEED_FROM_SNAPSHOT && !fs.existsSync(DB_PATH) && fs.existsSync(SNAPSHOT)) {

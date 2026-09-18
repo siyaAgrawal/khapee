@@ -47,9 +47,14 @@ export default function Restaurant() {
   // in the same breath as "In the car". The session they are actually in wins.
   const inThisGroup = activeGroup?.restaurantId === restaurantId && !ownOrderOnly(restaurantId)
 
-  const load = () => {
+  /**
+   * `quietly` refetches without blanking the page first, which is what a
+   * refresh in the background has to do — clearing to a spinner every time
+   * somebody switches back to the tab is worse than a stale price.
+   */
+  const load = (quietly = false) => {
     setError('')
-    setData(null)
+    if (!quietly) setData(null)
     api<{ restaurant: RestaurantCard; menu: Category[] }>(
       `/restaurants/${restaurantId}${veg ? '?veg=1' : ''}`,
     )
@@ -57,7 +62,26 @@ export default function Restaurant() {
       .catch((e: ApiError) => setError(e.message))
   }
 
-  useEffect(load, [restaurantId, veg])
+  useEffect(() => load(), [restaurantId, veg]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * A menu left open on a phone is a photograph of a moment.
+   *
+   * The restaurant edits a price or marks something sold out, looks at the
+   * page it already had open, and sees the old menu — because nothing asked
+   * the server again. Coming back to the tab is the moment to ask.
+   */
+  useEffect(() => {
+    const again = () => {
+      if (document.visibilityState === 'visible') load(true)
+    }
+    document.addEventListener('visibilitychange', again)
+    window.addEventListener('focus', again)
+    return () => {
+      document.removeEventListener('visibilitychange', again)
+      window.removeEventListener('focus', again)
+    }
+  }, [restaurantId, veg]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a

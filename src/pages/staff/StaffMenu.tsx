@@ -53,7 +53,11 @@ function emptyDraft(categoryId: number): Draft {
 
 export default function StaffMenu() {
   const toast = useToast()
-  const [data, setData] = useState<{ restaurant: any; categories: Category[] } | null>(null)
+  const [data, setData] = useState<{
+    restaurant: any
+    categories: Category[]
+    writesAreTemporary?: boolean
+  } | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
@@ -63,7 +67,7 @@ export default function StaffMenu() {
   const [find, setFind] = useState('')
 
   const load = useCallback(() => {
-    api<{ restaurant: any; categories: Category[] }>('/staff/menu')
+    api<{ restaurant: any; categories: Category[]; writesAreTemporary?: boolean }>('/staff/menu')
       .then(setData)
       .catch((e: ApiError) => toast(e.message, 'bad'))
   }, [toast])
@@ -249,6 +253,21 @@ export default function StaffMenu() {
           isOpen={!!data.restaurant.isOpen}
           onOpen={toggleOpen}
         />
+      )}
+
+      {data.writesAreTemporary && (
+        <div className="notice mb-2">
+          <span aria-hidden>⚠️</span>
+          <div>
+            <strong>Changes here are not saved permanently yet</strong>
+            <p className="tiny">
+              This server keeps no disk of its own, so the menu is rebuilt from the published copy
+              whenever the app restarts — and anything edited here is undone with it. Customers see
+              your edits straight away; they just will not survive the next restart. Ask whoever set
+              Khapee up to attach a disk, and this notice disappears.
+            </p>
+          </div>
+        </div>
       )}
 
       <form className="card card-pad mb-2" onSubmit={addSection}>

@@ -46,6 +46,22 @@ app.use(attachUser)
 // Restaurant and dish photos, stored on this machine only.
 app.use('/api/uploads', express.static(UPLOAD_DIR, { maxAge: '7d', fallthrough: true }))
 
+/**
+ * Nothing the API answers is ever worth re-reading from a cache.
+ *
+ * None of these responses carried a Cache-Control header, which does not mean
+ * "do not cache" — with an ETag and no explicit freshness, a browser is free to
+ * guess a lifetime and serve a menu it fetched earlier without asking. That is
+ * how a price changed in the dashboard keeps showing the old figure on the
+ * restaurant's own page: nothing is broken, the phone simply never asked
+ * again. Menus, orders, codes and session state are all live by definition, so
+ * say so once, here, rather than per route.
+ */
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store, must-revalidate')
+  next()
+})
+
 app.get('/api/health', (_req, res) => {
   const counts = db
     .prepare(

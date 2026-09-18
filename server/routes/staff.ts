@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { db } from '../db.ts'
+import { db, WRITES_ARE_TEMPORARY } from '../db.ts'
 import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
 import { publish } from '../events.ts'
@@ -277,6 +277,10 @@ staffRouter.get('/menu', (req, res) => {
       hours: restaurant.hours,
       isListed: countLiveItems(restaurantId) > 0,
     },
+    // Whether an edit made here will still be here tomorrow. Said out loud,
+    // because the alternative is a restaurant spending an evening on its menu
+    // and finding it reverted with no explanation offered.
+    writesAreTemporary: WRITES_ARE_TEMPORARY,
     categories: categories.map((c) => ({
       id: c.id,
       name: c.name,

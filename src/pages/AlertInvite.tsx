@@ -21,7 +21,16 @@ export default function AlertInvite() {
    * each other: in the link, or typed in off the other phone's screen. Six
    * characters can also be read out across a counter, which a link cannot.
    */
-  const [typed, setTyped] = useState('')
+  const [typed, setTyped] = useState(() => {
+    // Adding to the Home Screen opens the app at its start page, not back here,
+    // so without this the code has to be typed a second time — after a detour
+    // taken precisely because the first attempt did not work.
+    try {
+      return localStorage.getItem('khapee.alertCode') ?? ''
+    } catch {
+      return ''
+    }
+  })
   const token = fromLink || typed
   const toast = useToast()
   const [invite, setInvite] = useState<{
@@ -35,6 +44,10 @@ export default function AlertInvite() {
   const [done, setDone] = useState(false)
 
   useEffect(() => {
+    if (fromLink) remember(fromLink.trim().toUpperCase())
+  }, [fromLink])
+
+  useEffect(() => {
     if (!fromLink) return
     api<{ restaurant: string; everywhere?: boolean; available: boolean; publicKey: string }>(
       `/alerts/invite/${fromLink}`,
@@ -43,10 +56,19 @@ export default function AlertInvite() {
       .catch((e: ApiError) => setError(e.message))
   }, [fromLink])
 
+  const remember = (code: string) => {
+    try {
+      localStorage.setItem('khapee.alertCode', code)
+    } catch {
+      /* a private window forgets it; the code can be typed again */
+    }
+  }
+
   const check = async () => {
     setBusy(true)
     setError('')
     try {
+      remember(typed.trim().toUpperCase())
       setInvite(
         await api<{ restaurant: string; everywhere?: boolean; available: boolean; publicKey: string }>(
           `/alerts/invite/${typed.trim().toUpperCase()}`,
@@ -76,6 +98,11 @@ export default function AlertInvite() {
         applicationServerKey: bytes as BufferSource,
       })
       await api(`/alerts/invite/${token}`, { body: { subscription: sub.toJSON() } })
+      try {
+        localStorage.removeItem('khapee.alertCode')
+      } catch {
+        /* nothing to tidy */
+      }
       setDone(true)
       toast('This phone will ring for every new order.', 'good')
     } catch (e) {
@@ -181,17 +208,25 @@ export default function AlertInvite() {
           )}
 
           {!done && !pushSupported() && needsHomeScreen() && (
-            <ol className="alert-steps">
-              <li>
-                Tap the <strong>Share</strong> button below — the square with an arrow coming out of it.
-              </li>
-              <li>
-                Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
-              </li>
-              <li>
-                Open Khapee from the new icon, come back to this link, and the button will be here.
-              </li>
-            </ol>
+            <>
+              <p className="tiny muted">
+                Safari only allows alerts once Khapee is on your Home Screen. Three taps, and it
+                installs nothing:
+              </p>
+              <ol className="alert-steps">
+                <li>
+                  At the bottom of Safari, tap <strong>•••</strong> — or the <strong>Share</strong>{' '}
+                  icon, the square with an arrow coming out of it, if your bar shows one.
+                </li>
+                <li>
+                  Tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
+                </li>
+                <li>
+                  Open Khapee from the new icon. This page will be waiting with your code already
+                  filled in — just tap the button.
+                </li>
+              </ol>
+            </>
           )}
 
           {!done && !pushSupported() && !needsHomeScreen() && (

@@ -52,6 +52,20 @@ export default function Home() {
       return false
     }
   })
+  /**
+   * Somebody part-way through switching alerts on.
+   *
+   * Adding Khapee to the Home Screen opens the app here rather than back where
+   * they were, so this line is the way back — and says so, because "work here?"
+   * is not what somebody who is already half done needs to read.
+   */
+  const [halfDone] = useState(() => {
+    try {
+      return !!localStorage.getItem('khapee.alertCode')
+    } catch {
+      return false
+    }
+  })
   const [restaurants, setRestaurants] = useState<RestaurantCard[] | null>(null)
   const [tiles, setTiles] = useState<CuisineTile[]>([])
   const [error, setError] = useState('')
@@ -147,7 +161,9 @@ export default function Home() {
           people it is not for pay almost nothing for it. */}
       {!staffStripGone && (
         <div className="staff-strip">
-          <Link to="/alerts">🔔 Work here? Turn on order alerts →</Link>
+          <Link to="/alerts">
+            🔔 {halfDone ? 'Finish turning on order alerts' : 'Work here? Turn on order alerts'} →
+          </Link>
           <button
             aria-label="Hide this"
             onClick={() => {

@@ -10,7 +10,7 @@ import { api } from './api'
  */
 export type AlertState = {
   push: { available: boolean; publicKey: string; devices: number; reason: string }
-  email: { available: boolean; to: string }
+  email: { available: boolean; to: string; own: string }
 }
 
 export function pushSupported(): boolean {

@@ -2468,6 +2468,35 @@ async function runTests() {
       state.body.email,
     )
 
+    // A one-person café is fine with the owner's own address; a kitchen with a
+    // shared inbox is not, so it is a field rather than an assumption.
+    const ownerAddress = state.body.email.to
+    const badAddress = await call('/staff/alerts/email', {
+      token: roadToken,
+      method: 'PATCH',
+      body: { email: 'not-an-address' },
+    })
+    ok('a mistyped alert address is refused', badAddress.status === 400, badAddress.body)
+
+    const named = await call('/staff/alerts/email', {
+      token: roadToken,
+      method: 'PATCH',
+      body: { email: 'kitchen@roadside.test' },
+    })
+    ok('a restaurant can name its own inbox', named.body.to === 'kitchen@roadside.test', named.body)
+
+    const cleared = await call('/staff/alerts/email', {
+      token: roadToken,
+      method: 'PATCH',
+      body: { email: '' },
+    })
+    ok('and clearing it falls back to the owner', cleared.body.to === ownerAddress, cleared.body)
+
+    ok(
+      'a test email says so plainly when Khapee cannot send any',
+      (await call('/staff/alerts/test-email', { token: roadToken, body: {} })).status === 503,
+    )
+
     const junk = await call('/staff/alerts/subscribe', {
       token: roadToken,
       body: { subscription: { endpoint: 'https://push.example/x' } },

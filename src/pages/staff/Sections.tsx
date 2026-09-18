@@ -110,6 +110,7 @@ export function SettingsSection() {
       blurb="Set these up once: who you are, where people sit, and how they get in."
       tabs={[
         { to: '/staff/settings', label: 'Restaurant', end: true },
+        { to: '/staff/settings/alerts', label: 'Notifications' },
         { to: '/staff/settings/tables', label: 'Tables & QR codes' },
         { to: '/staff/settings/codes', label: 'Access codes' },
         { to: '/staff/settings/zones', label: 'Kerbside' },

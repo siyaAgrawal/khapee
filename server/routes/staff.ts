@@ -11,7 +11,7 @@ import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
 import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, saveSubscription, subscriptionCount } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
-import { mailConfigured } from '../mail.ts'
+import { mailConfigured, sendMail } from '../mail.ts'
 import {
   audit,
   finaliseInvoice,
@@ -696,6 +696,7 @@ staffRouter.post('/switch', (req: any, res) => {
  */
 staffRouter.get('/alerts', (req: any, res) => {
   const restaurantId = myRestaurant(req)
+  const own = db.prepare('SELECT order_email FROM restaurants WHERE id = ?').get(restaurantId) as any
   res.json({
     push: {
       available: pushConfigured(),
@@ -703,8 +704,72 @@ staffRouter.get('/alerts', (req: any, res) => {
       devices: subscriptionCount(restaurantId),
       reason: pushReason(),
     },
-    email: { available: mailConfigured(), to: alertEmailFor(restaurantId) },
+    email: {
+      available: mailConfigured(),
+      // What is actually used, and what was typed — they differ when the
+      // restaurant has named nothing and is falling back to the owner's own
+      // address, which is worth showing as the answer rather than a blank box.
+      to: alertEmailFor(restaurantId),
+      own: String(own?.order_email ?? ''),
+    },
   })
+})
+
+/**
+ * The address order alerts go to.
+ *
+ * Blank means whoever signed up, which is right for a one-person café and
+ * wrong for a kitchen with a shared inbox or a printer that takes email — so
+ * it is a field rather than an assumption.
+ */
+staffRouter.patch('/alerts/email', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const raw = String(req.body?.email ?? '').trim().slice(0, 120)
+  if (raw && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw)) {
+    return res.status(400).json({ error: "That doesn't look like an email address." })
+  }
+  db.prepare('UPDATE restaurants SET order_email = ? WHERE id = ?').run(raw, restaurantId)
+  audit(restaurantId, actorOf(req), 'alerts.email', 'restaurant', restaurantId, { email: raw })
+  res.json({ ok: true, to: alertEmailFor(restaurantId), own: raw })
+})
+
+/**
+ * Sends one real email to that address.
+ *
+ * Not a simulation: an address with a typo in it, a spam filter, a mailbox
+ * nobody opens — all of those look identical to working until somebody
+ * actually looks in the inbox.
+ */
+staffRouter.post('/alerts/test-email', async (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const to = alertEmailFor(restaurantId)
+  if (!to) return res.status(400).json({ error: 'Add an address first.' })
+  if (!mailConfigured()) {
+    return res.status(503).json({ error: 'Khapee cannot send email yet. Ask whoever set Khapee up to switch it on.' })
+  }
+  const name = (db.prepare('SELECT name FROM restaurants WHERE id = ?').get(restaurantId) as any)?.name ?? ''
+  const result = await sendMail({
+    to,
+    subject: `Khapee order alerts are working — ${name}`,
+    text: [
+      'This is what a new order will look like.',
+      '',
+      'Order   #A123',
+      'Where   Table 4',
+      'Name    Siya',
+      'Phone   98765 43210',
+      'Total   ₹470 (unpaid)',
+      '',
+      '2 × Cold Coffee',
+      '1 × Veggie Wrap',
+      '',
+      'Open the board: https://khapee.com/staff/orders',
+    ].join('\n'),
+  })
+  if (result !== 'sent') {
+    return res.status(502).json({ error: 'The mail server would not take it. Check the address and try again.' })
+  }
+  res.json({ ok: true, to })
 })
 
 /** This device would like to be told. */

@@ -30,6 +30,7 @@ import GroupSession from './pages/GroupSession'
 import StaffLayout from './pages/staff/StaffLayout'
 import StaffOrders from './pages/staff/StaffOrders'
 import StaffProfile from './pages/staff/StaffProfile'
+import StaffAlerts from './pages/staff/StaffAlerts'
 import StaffPayments from './pages/staff/StaffPayments'
 import StaffPhotos from './pages/staff/StaffPhotos'
 import StaffTable from './pages/staff/StaffTable'
@@ -105,6 +106,7 @@ export default function App() {
         </Route>
         <Route path="settings" element={<SettingsSection />}>
           <Route index element={<StaffProfile />} />
+          <Route path="alerts" element={<StaffAlerts />} />
           <Route path="tables" element={<StaffTables />} />
           <Route path="codes" element={<StaffCodes />} />
           <Route path="zones" element={<StaffZones />} />

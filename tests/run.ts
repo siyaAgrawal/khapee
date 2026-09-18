@@ -2832,13 +2832,13 @@ async function runTests() {
     })
     ok(
       'the message greets the customer by name and names the restaurant',
-      written === 'Hi Siya, Thanks for ordering from Revery today! We hope you enjoyed your food. 🍕',
+      written === 'Hi Siya, Thanks for ordering from Revery today! We hope you enjoy your food. 🍕',
       written,
     )
     ok(
       'and the template registered with Meta is the same sentence',
       WHATSAPP_TEMPLATE_BODY ===
-        'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoyed your food. 🍕',
+        'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoy your food. 🍕',
       WHATSAPP_TEMPLATE_BODY,
     )
     ok('but the attempt is written down', !!row, row)

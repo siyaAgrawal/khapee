@@ -75,7 +75,7 @@ export function orderMessageText(m: OrderMessage): string {
  * sendOrderConfirmation.
  */
 export const WHATSAPP_TEMPLATE_BODY =
-  'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoyed your food. 🍕'
+  'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoy your food. 🍕'
 
 function record(orderId: number | null, to: string, status: string, detail: string) {
   try {

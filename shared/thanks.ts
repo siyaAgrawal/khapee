@@ -6,7 +6,7 @@
  * is ever switched on — and three copies of a sentence drift apart.
  */
 export function thanksText(customerName: string, restaurantName: string): string {
-  return `Hi ${customerName}, Thanks for ordering from ${restaurantName} today! We hope you enjoyed your food. 🍕`
+  return `Hi ${customerName}, Thanks for ordering from ${restaurantName} today! We hope you enjoy your food. 🍕`
 }
 
 /**

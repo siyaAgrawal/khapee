@@ -12,8 +12,9 @@
  *
  *   - the ones worth looking up for: the kitchen said yes, or the food is
  *     ready, or it is on its way;
- *   - the thank-you, once, when the order is actually finished — which is
- *     when "we hope you enjoyed your food" is a true sentence.
+ *   - the thank-you, once the kitchen has said yes, which is the moment the
+ *     restaurant knows the order is really happening and has a reason to
+ *     write to the customer.
  */
 import { thanksText, waLink } from '../shared/thanks.ts'
 import { isTerminal, type OrderStatus, type ServiceType } from '../shared/orders.ts'
@@ -48,6 +49,28 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
     .get(orderId) as any
   if (!row) return
 
+  // The kitchen has said yes: the order is really happening, so this is when
+  // the restaurant has something worth saying to the customer.
+  if (status === 'ACCEPTED') {
+    // The free way to reach a customer who never allowed notifications.
+    // WhatsApp charges a business for messaging somebody who has not messaged
+    // them first, and charges nothing for one person messaging another — so
+    // the app does not send it. It taps the restaurant on the shoulder and
+    // they send it, in one tap, from the phone already in their hand.
+    const link = waLink(
+      row.contact_phone || row.delivery_phone || '',
+      thanksText(row.customer_name || 'there', row.restaurant),
+    )
+    if (link) {
+      void pushToRestaurant(row.restaurant_id, {
+        title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
+        body: `#${row.order_number} accepted. Tap to send it — it opens WhatsApp with the message written.`,
+        url: link,
+        tag: `khapee-thank-${orderId}`,
+      }).catch(() => {})
+    }
+  }
+
   const done = isTerminal((row.service_mode ?? 'pickup') as ServiceType, status) && status !== 'DECLINED'
   if (done) {
     // Once per order, even if a terminal status is set twice by a mis-tap.
@@ -62,27 +85,6 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
       url: `/order/${row.order_number}`,
       tag: `khapee-thanks-${orderId}`,
     }).catch(() => {})
-
-    // And the restaurant's own phone, with the message already written.
-    //
-    // This is the free way to reach a customer who never allowed
-    // notifications: WhatsApp charges a business for messaging somebody who
-    // has not messaged them first, but charges nothing for one person
-    // messaging another. So the app does not send it — it taps the restaurant
-    // on the shoulder and the restaurant sends it, in one tap, from the phone
-    // already in their hand.
-    const link = waLink(
-      row.contact_phone || row.delivery_phone || '',
-      thanksText(row.customer_name || 'there', row.restaurant),
-    )
-    if (link) {
-      void pushToRestaurant(row.restaurant_id, {
-        title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
-        body: `#${row.order_number} is done. Tap to send it — it opens WhatsApp with the message written.`,
-        url: link,
-        tag: `khapee-thank-${orderId}`,
-      }).catch(() => {})
-    }
     return
   }
 

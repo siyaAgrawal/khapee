@@ -77,6 +77,17 @@ export default function Home() {
   const [alertsOn, setAlertsOn] = useState(false)
   useEffect(() => {
     if (!pushSupported()) return
+    // A subscription in the browser is not proof the server still has it — the
+    // two part company every time the server restarts, and a phone in that
+    // state is the one that most needs this line. The saved code is what lets
+    // it put itself back, so only a phone holding both is really set up.
+    let grant = ''
+    try {
+      grant = localStorage.getItem('khapee.alertGrant') ?? localStorage.getItem('khapee.alertCode') ?? ''
+    } catch {
+      grant = ''
+    }
+    if (!grant) return
     void currentEndpoint().then((e) => setAlertsOn(!!e))
   }, [])
   const [restaurants, setRestaurants] = useState<RestaurantCard[] | null>(null)

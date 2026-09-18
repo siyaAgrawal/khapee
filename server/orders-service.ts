@@ -5,6 +5,7 @@ import { money, type OrderStatus, type OrderType, type ServiceType } from '../sh
 import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
+import { alertRestaurant } from './alerts.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -388,6 +389,21 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     orderNumber,
     total: money(totalCents),
     trackUrl: `${(process.env.KHAPEE_ORIGIN || 'https://khapee.com').replace(/\/$/, '')}/order/${orderNumber}`,
+  })
+
+  // And the restaurant, on whatever it has — a phone with the dashboard shut,
+  // an inbox, or nothing at all, in which case the board is still the board.
+  alertRestaurant({
+    restaurantId: input.restaurantId,
+    restaurantName: order.restaurantName ?? restaurant.name,
+    orderNumber,
+    where: order.whereLabel || (input.type === 'pickup' ? 'Pickup order' : (tableLabel ?? 'Takeaway')),
+    customerName,
+    customerPhone: phone,
+    total: money(totalCents),
+    items: priced.map((l) => `${l.quantity} × ${l.item.name}`).join('\n'),
+    needsAccepting: !input.paymentClaim,
+    paid: !!input.paymentClaim,
   })
 
   publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })

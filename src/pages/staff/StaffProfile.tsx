@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AlertsCard from '../../components/AlertsCard'
 import { api, ApiError, setToken } from '../../lib/api'
 import ImagePicker from '../../components/ImagePicker'
 import LiveStrip from '../../components/LiveStrip'
@@ -452,6 +453,8 @@ export default function StaffProfile() {
               </div>
             )}
           </section>
+
+          <AlertsCard />
 
           <SignIn />
 

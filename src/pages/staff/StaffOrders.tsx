@@ -3,6 +3,7 @@ import { api, ApiError, openStream } from '../../lib/api'
 import { EmptyState, LoadingBlock, money, timeAgo, useToast, clockTime } from '../../components/ui'
 import { Link } from 'react-router-dom'
 import { announceOrder, askToNotify, notifyPermission } from '../../lib/notify'
+import { currentEndpoint, enablePush, pushSupported, type AlertState } from '../../lib/push'
 import {
   nextStatus,
   SERVICE_LABEL,
@@ -69,8 +70,17 @@ export default function StaffOrders() {
   const [query, setQuery] = useState('')
   const [focus, setFocus] = useState<string | null>(null)
   const [alerts, setAlerts] = useState(notifyPermission())
+  /** Whether this browser is already signed up for alerts with the tab shut. */
+  const [pushedHere, setPushedHere] = useState(true)
   const knownIds = useRef<Set<number>>(new Set())
   const firstLoad = useRef(true)
+
+  // Start as "already on" so the button never flashes in for a second on a
+  // device that has had alerts for weeks.
+  useEffect(() => {
+    if (!pushSupported()) return
+    void currentEndpoint().then((e) => setPushedHere(!!e))
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -272,10 +282,27 @@ export default function StaffOrders() {
         >
           {scope === 'active' ? 'Show history' : 'Active only'}
         </button>
-        {alerts !== 'granted' && alerts !== 'unsupported' && (
+        {/* One tap does both: the in-page chime, and the push subscription
+            that keeps ringing after this tab is closed. The board is where
+            somebody realises they want alerting, so it is where it is asked. */}
+        {!pushedHere && alerts !== 'unsupported' && (
           <button
             className="btn btn-secondary btn-sm"
-            onClick={async () => setAlerts((await askToNotify()) ? 'granted' : notifyPermission())}
+            onClick={async () => {
+              setAlerts((await askToNotify()) ? 'granted' : notifyPermission())
+              try {
+                const s = await api<AlertState>('/staff/alerts')
+                if (s.push.available) {
+                  const r = await enablePush(s.push.publicKey)
+                  if (r.ok) {
+                    setPushedHere(true)
+                    toast('This device will ring for every new order.', 'good')
+                  } else if (r.error) toast(r.error, 'info')
+                }
+              } catch {
+                /* the in-page chime still works without it */
+              }
+            }}
           >
             🔔 <span className="hide-phone">Alert me</span>
           </button>

@@ -183,6 +183,22 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read
 -- that were never sent because the integration is switched off. Outbound
 -- messaging fails quietly and at someone else's end; without a log the only
 -- answer to "did my customer get it?" is a shrug.
+-- Devices that have asked to be told when an order arrives. One row per
+-- browser, not per person: the endpoint IS the device, which is why it is
+-- unique and why re-subscribing moves it to whoever is signed in now.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  endpoint      TEXT    NOT NULL UNIQUE,
+  p256dh        TEXT    NOT NULL,
+  auth          TEXT    NOT NULL,
+  failures      INTEGER NOT NULL DEFAULT 0,
+  last_ok_at    TEXT,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_push_restaurant ON push_subscriptions(restaurant_id);
+
 CREATE TABLE IF NOT EXISTS whatsapp_messages (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id   INTEGER REFERENCES orders(id) ON DELETE CASCADE,
@@ -230,6 +246,9 @@ addColumn('restaurants', 'accepts_groups', 'INTEGER NOT NULL DEFAULT 1')
 // transfer; this app never touches the money, it only shows the request.
 addColumn('restaurants', 'upi_vpa', "TEXT NOT NULL DEFAULT ''")
 addColumn('restaurants', 'upi_name', "TEXT NOT NULL DEFAULT ''")
+
+// Where order alerts are emailed. Blank means the owner's own address.
+addColumn('restaurants', 'order_email', "TEXT NOT NULL DEFAULT ''")
 
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because

@@ -16,3 +16,6 @@ api/_bundle.mjs
 
 # The key that signs login tokens. Never committed.
 data/.session-secret
+# The push keypair. A subscription is bound to the public half, so this must
+# survive restarts — but it is a private key and never belongs in the repo.
+data/.vapid.json

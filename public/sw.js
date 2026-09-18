@@ -64,3 +64,52 @@ self.addEventListener('fetch', (event) => {
     ),
   )
 })
+
+/**
+ * Order alerts, on a phone that is not looking at the dashboard.
+ *
+ * This is the whole point of the service worker existing on the staff side: a
+ * page can only raise a notification while it is open, and the person who needs
+ * telling is in the kitchen with the tab closed. The payload is written by the
+ * server in server/push.ts.
+ */
+self.addEventListener('push', (event) => {
+  let note = { title: 'New order', body: 'Open Khapee to see it.', url: '/staff/orders' }
+  try {
+    if (event.data) note = { ...note, ...event.data.json() }
+  } catch {
+    /* a push with no readable body still deserves to ring */
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(note.title, {
+      body: note.body,
+      tag: note.tag || 'khapee-order',
+      icon: '/icon-192.png',
+      badge: '/favicon-32.png',
+      // Orders are the one thing worth interrupting for: without this the
+      // notification is cleared by the next one and a quiet minute of four
+      // orders looks like one.
+      renotify: true,
+      requireInteraction: true,
+      data: { url: note.url || '/staff/orders' },
+    }),
+  )
+})
+
+/** Tapping it opens the board — or focuses the tab that is already on it. */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const target = new URL(event.notification.data?.url || '/staff/orders', self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      for (const client of windows) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          client.navigate?.(target)
+          return client.focus()
+        }
+      }
+      return self.clients.openWindow(target)
+    }),
+  )
+})

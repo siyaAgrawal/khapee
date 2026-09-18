@@ -5083,3 +5083,35 @@ button.nav-link {
   text-transform: uppercase;
   font-size: 10.5px;
 }
+
+/* One route by which a restaurant can be told an order arrived: what it is,
+   whether it is on, and the switch, on one line. */
+.alert-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.alert-row strong {
+  font-size: 14.5px;
+}
+.alert-row p {
+  margin: 2px 0 0;
+  max-width: 46ch;
+}
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

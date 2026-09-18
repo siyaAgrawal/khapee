@@ -2368,7 +2368,7 @@ async function runTests() {
       }),
     })
     ok('an order without a phone number is refused', noNumber.status === 400, noNumber.status)
-    const why = await noNumber.json()
+    const why = (await noNumber.json()) as any
     ok('and says what to add', /10-digit mobile/i.test(why.error ?? ''), why)
 
     const tooShort = await fetch(`${BASE}/orders`, {
@@ -2401,6 +2401,61 @@ async function runTests() {
       body: { items: [{ menuItemId: croissant.id, quantity: 1 }], customerName: 'Walk-in' },
     })
     ok('but the till never asks for one', counter.status === 200 || counter.status === 201, counter.body)
+  }
+
+  group('TELLING THE RESTAURANT, WITH THE BOARD SHUT')
+  {
+    // Silence is how an alerting system fails, so the dashboard has to be able
+    // to say what is actually switched on rather than promise.
+    const state = await call('/staff/alerts', { token: roadToken })
+    ok('the dashboard can read what its alerts can do', state.status === 200, state.body)
+    ok('including the key a browser subscribes with', typeof state.body.push?.publicKey === 'string', state.body)
+    ok('and where the email would go', typeof state.body.email?.to === 'string', state.body)
+    ok(
+      'which is the owner of this restaurant',
+      String(state.body.email.to).includes('@'),
+      state.body.email,
+    )
+
+    const junk = await call('/staff/alerts/subscribe', {
+      token: roadToken,
+      body: { subscription: { endpoint: 'https://push.example/x' } },
+    })
+    ok('a subscription with no keys is refused', junk.status === 400, junk.body)
+
+    const good = await call('/staff/alerts/subscribe', {
+      token: roadToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/real-device',
+          keys: { p256dh: 'BDpUB9' + 'x'.repeat(80), auth: 'abcdefghijklmnop' },
+        },
+      },
+    })
+    ok('a complete one is kept', good.status === 200 && good.body.devices >= 1, good.body)
+
+    // The endpoint is the device: subscribing twice is the same phone, not two.
+    const again = await call('/staff/alerts/subscribe', {
+      token: roadToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/real-device',
+          keys: { p256dh: 'BDpUB9' + 'y'.repeat(80), auth: 'ponmlkjihgfedcba' },
+        },
+      },
+    })
+    ok('the same device does not count twice', again.body.devices === good.body.devices, again.body)
+
+    const off = await call('/staff/alerts/unsubscribe', {
+      token: roadToken,
+      body: { endpoint: 'https://push.example/real-device' },
+    })
+    ok('and it can stop being told', off.body.devices === good.body.devices - 1, off.body)
+
+    ok(
+      'none of this is anybody else\u2019s to read',
+      (await call('/staff/alerts')).status === 401,
+    )
   }
 
   group('THE THANK-YOU ON WHATSAPP')

@@ -9,6 +9,9 @@ import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orde
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
+import { dropSubscription, pushConfigured, pushPublicKey, pushToRestaurant, saveSubscription, subscriptionCount } from '../push.ts'
+import { alertEmailFor } from '../alerts.ts'
+import { mailConfigured } from '../mail.ts'
 import {
   audit,
   finaliseInvoice,
@@ -623,6 +626,62 @@ staffRouter.post('/switch', (req: any, res) => {
     return res.status(403).json({ error: 'You do not run that restaurant.' })
   }
   res.json({ user: userFromToken(String(req.headers.authorization ?? '').replace('Bearer ', '')) })
+})
+
+// --- Order alerts on a device that is not looking at the dashboard ----------
+
+/**
+ * What this restaurant's alerts can currently do.
+ *
+ * The dashboard needs all of it in one call: the key to subscribe with, how
+ * many devices are already signed up, and whether email is switched on at all
+ * — so it can say "two phones and siya@…" rather than an optimistic promise.
+ */
+staffRouter.get('/alerts', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  res.json({
+    push: {
+      available: pushConfigured(),
+      publicKey: pushPublicKey(),
+      devices: subscriptionCount(restaurantId),
+    },
+    email: { available: mailConfigured(), to: alertEmailFor(restaurantId) },
+  })
+})
+
+/** This device would like to be told. */
+staffRouter.post('/alerts/subscribe', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  if (!pushConfigured()) {
+    return res.status(503).json({ error: 'Push alerts are not switched on for this server yet.' })
+  }
+  const result = saveSubscription(req.user.id, restaurantId, req.body?.subscription ?? req.body)
+  if (!result.ok) return res.status(400).json({ error: result.error })
+  audit(restaurantId, actorOf(req), 'alerts.subscribe', 'restaurant', restaurantId, {})
+  res.json({ ok: true, devices: subscriptionCount(restaurantId) })
+})
+
+/** And this one would like to stop. */
+staffRouter.post('/alerts/unsubscribe', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  dropSubscription(String(req.body?.endpoint ?? ''))
+  res.json({ ok: true, devices: subscriptionCount(restaurantId) })
+})
+
+/**
+ * Proves it out loud.
+ *
+ * Silence is the failure mode of every alerting system, and there is no way to
+ * tell "no orders yet" from "this never worked" without asking it to ring.
+ */
+staffRouter.post('/alerts/test', async (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const sent = await pushToRestaurant(restaurantId, {
+    title: 'Khapee alerts are working',
+    body: 'This is what a new order will look like.',
+    tag: 'khapee-test',
+  })
+  res.json({ ok: true, sent })
 })
 
 staffRouter.get('/summary', (req, res) => {

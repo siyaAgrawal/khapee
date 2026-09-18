@@ -8,7 +8,7 @@
  * they always go to the network, because a cached menu price or order status
  * would be worse than a slow one.
  */
-const SHELL = 'ordro-assets-v3'
+const SHELL = 'ordro-assets-v4'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

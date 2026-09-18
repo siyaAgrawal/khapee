@@ -21,8 +21,43 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Keep the app up to date on its own.
+      //
+      // A phone that has Khapee installed will otherwise sit on the copy it
+      // first downloaded: the worker script is read from the browser's own
+      // cache, so a new one is never noticed, and the page it controls keeps
+      // loading the build it was made against. The effect is a feature that
+      // shipped days ago being invisible on exactly the device it was meant
+      // for, with nothing anywhere to explain it.
+      //
+      // updateViaCache: 'none' makes the browser fetch the worker itself
+      // rather than remember it; the check on load and on returning to the tab
+      // catches a deploy that happened while the app was closed; and reloading
+      // once when a new worker takes over is what actually puts the new code on
+      // screen without anybody being told to clear anything.
       if ('serviceWorker' in navigator) {
-        addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
+        addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { updateViaCache: 'none' })
+            .then((reg) => {
+              reg.update().catch(() => {})
+              addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') reg.update().catch(() => {})
+              })
+            })
+            .catch(() => {})
+
+          // Only when one worker replaces another. On a first visit there is
+          // no controller and this fires anyway, which would reload the page
+          // out from under somebody who had just arrived.
+          var hadOne = !!navigator.serviceWorker.controller
+          var reloading = false
+          navigator.serviceWorker.addEventListener('controllerchange', function () {
+            if (!hadOne || reloading) return
+            reloading = true
+            location.reload()
+          })
+        })
       }
     </script>
   </body>

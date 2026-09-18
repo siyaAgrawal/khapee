@@ -9,6 +9,7 @@ import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orde
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
+import { tellCustomer } from '../customer-notify.ts'
 import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, saveSubscription, subscriptionCount } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { mailConfigured, sendMail } from '../mail.ts'
@@ -96,6 +97,8 @@ staffRouter.post('/orders/:id/status', (req, res) => {
   })()
 
   const order = getOrder(id)
+  // The customer's own phone, for nothing — see server/customer-notify.ts.
+  tellCustomer(id, to as OrderStatus)
   publish('order:update', { restaurantId, userId: row.user_id, orderId: id, order })
   res.json({ order })
 })

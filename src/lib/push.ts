@@ -116,3 +116,43 @@ export async function disablePush(): Promise<void> {
     /* nothing subscribed is the state we wanted anyway */
   }
 }
+
+/**
+ * The customer's own phone, asking to hear about their own order.
+ *
+ * The same browser push the restaurant's dashboard uses, pointed the other
+ * way. It costs nothing to send — which is the whole reason it exists beside
+ * a WhatsApp message a business is billed for.
+ */
+export async function followOrder(
+  orderNumber: string,
+  token: string,
+  publicKey: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!pushSupported()) {
+    return {
+      ok: false,
+      error: needsHomeScreen()
+        ? 'On iPhone, add Khapee to your Home Screen first — Safari only allows updates to an installed app.'
+        : 'This browser cannot show updates when Khapee is closed.',
+    }
+  }
+  if (!publicKey) return { ok: false, error: 'Updates are not switched on for this server yet.' }
+
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') return { ok: false, error: 'Updates were blocked in your browser settings.' }
+
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const existing = await reg.pushManager.getSubscription()
+    if (existing) await existing.unsubscribe().catch(() => {})
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: toBytes(publicKey) as BufferSource,
+    })
+    await api(`/orders/${orderNumber}/notify`, { body: { token, subscription: sub.toJSON() } })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error)?.message || 'The browser refused to subscribe.' }
+  }
+}

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
+import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
 import { requireAuth } from '../auth.ts'
 import { checkAccessCode, createOrder, getOrder, shapeOrder } from '../orders-service.ts'
 import { normalizeCode } from '../ids.ts'
@@ -139,6 +140,11 @@ ordersRouter.get('/mine', requireAuth, (req, res) => {
   res.json({ orders: rows.map(shapeOrder) })
 })
 
+/** The half of the keypair a customer's browser needs in order to subscribe. */
+ordersRouter.get('/notify-key', (_req, res) => {
+  res.json({ available: pushConfigured(), publicKey: pushPublicKey() })
+})
+
 /**
  * Order lookup for the receipt / tracking screen.
  * Guests pass the verify token they were handed at checkout; owners are matched by session.
@@ -155,4 +161,34 @@ ordersRouter.get('/:orderNumber', (req, res) => {
     return res.status(403).json({ error: 'That order belongs to someone else.' })
   }
   res.json({ order: getOrder(row.id) })
+})
+
+/**
+ * The customer's phone asking to be told about their own order.
+ *
+ * Proved the same way the order page itself is: the receipt token they were
+ * handed at checkout, or being signed in as whoever placed it. No account
+ * needed, because almost nobody ordering a coffee makes one.
+ *
+ * This is the free channel. A WhatsApp message to somebody who has not
+ * messaged you first is billed per order by Meta; a push notification costs
+ * nothing, now or ever, and goes through the browser the customer already has.
+ */
+ordersRouter.post('/:orderNumber/notify', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db
+    .prepare('SELECT id, user_id, verify_token FROM orders WHERE order_number = ?')
+    .get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+
+  const token = String(req.body?.token ?? req.query.token ?? '')
+  const isOwner = req.user && row.user_id === req.user.id
+  if (!isOwner && token !== row.verify_token) {
+    return res.status(403).json({ error: 'That order belongs to someone else.' })
+  }
+  if (!pushConfigured()) return res.status(503).json({ error: pushReason() })
+
+  const saved = saveCustomerSubscription(row.id, req.body?.subscription ?? req.body)
+  if (!saved.ok) return res.status(400).json({ error: saved.error })
+  res.json({ ok: true })
 })

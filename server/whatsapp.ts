@@ -23,6 +23,7 @@
  * shapes — and why the sentence has to be registered before it can be sent,
  * even though it is the app's own sentence.
  */
+import { thanksText, waNumber } from '../shared/thanks.ts'
 import { db } from './db.ts'
 
 const API = process.env.WHATSAPP_API || 'https://graph.facebook.com/v21.0'
@@ -39,12 +40,7 @@ export function whatsappConfigured(): boolean {
  * cannot be a real number rather than guessing.
  */
 export function toWhatsAppNumber(raw: string): string {
-  const digits = String(raw ?? '').replace(/\D/g, '')
-  if (!digits) return ''
-  const cc = (process.env.WHATSAPP_COUNTRY || '91').replace(/\D/g, '')
-  if (digits.length === 10) return cc + digits
-  if (digits.length > 10 && digits.length <= 15) return digits.replace(/^0+/, '')
-  return ''
+  return waNumber(raw, (process.env.WHATSAPP_COUNTRY || '91').replace(/\D/g, ''))
 }
 
 export type OrderMessage = {
@@ -66,7 +62,7 @@ export type OrderMessage = {
  * written from here.
  */
 export function orderMessageText(m: OrderMessage): string {
-  return `Hi ${m.customerName}, Thanks for ordering from ${m.restaurantName} today! We hope you enjoyed your food. 🍕`
+  return thanksText(m.customerName, m.restaurantName)
 }
 
 /**

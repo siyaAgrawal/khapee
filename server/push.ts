@@ -208,6 +208,67 @@ export function subscriptionCount(restaurantId: number): number {
 export type PushNote = { title: string; body: string; url?: string; tag?: string }
 
 /**
+ * Signs the customer's own phone up to hear about this one order.
+ *
+ * Against the order, not an account: almost nobody ordering a coffee makes an
+ * account, and the receipt token they are already holding is proof enough that
+ * the order is theirs. It costs nothing to send, forever — which is the whole
+ * reason it exists beside a WhatsApp message that costs money per order.
+ */
+export function saveCustomerSubscription(orderId: number, sub: Subscription): { ok: boolean; error?: string } {
+  const endpoint = String(sub?.endpoint ?? '').trim()
+  const p256dh = String(sub?.keys?.p256dh ?? '').trim()
+  const auth = String(sub?.keys?.auth ?? '').trim()
+  if (!endpoint || !p256dh || !auth) return { ok: false, error: 'That subscription is incomplete.' }
+  db.prepare(
+    `INSERT INTO customer_push (order_id, endpoint, p256dh, auth)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(endpoint) DO UPDATE SET
+       order_id = excluded.order_id,
+       p256dh = excluded.p256dh,
+       auth = excluded.auth,
+       failures = 0`,
+  ).run(orderId, endpoint, p256dh, auth)
+  return { ok: true }
+}
+
+/** Tells whoever is waiting on this order, and never throws. */
+export async function pushToCustomer(orderId: number, note: PushNote): Promise<number> {
+  if (!KEYS) return 0
+  const rows = db.prepare('SELECT * FROM customer_push WHERE order_id = ?').all(orderId) as any[]
+  if (!rows.length) return 0
+
+  const payload = JSON.stringify({
+    title: note.title,
+    body: note.body,
+    url: note.url ?? '/orders',
+    tag: note.tag ?? `khapee-order-${orderId}`,
+  })
+
+  let sent = 0
+  await Promise.all(
+    rows.map(async (row) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
+          payload,
+          { TTL: 60 * 60 },
+        )
+        sent++
+      } catch (e: any) {
+        const status = Number(e?.statusCode)
+        if (status === 404 || status === 410) {
+          db.prepare('DELETE FROM customer_push WHERE endpoint = ?').run(row.endpoint)
+        } else {
+          db.prepare('UPDATE customer_push SET failures = failures + 1 WHERE id = ?').run(row.id)
+        }
+      }
+    }),
+  )
+  return sent
+}
+
+/**
  * Sends to every device signed into this restaurant, and never throws.
  *
  * A push service answers 404 or 410 for a subscription that is gone — an

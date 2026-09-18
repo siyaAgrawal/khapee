@@ -211,6 +211,21 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 CREATE INDEX IF NOT EXISTS idx_push_restaurant ON push_subscriptions(restaurant_id);
 
+-- The customer's own device, signed up from their order page. Kept against the
+-- order rather than an account, because most people ordering never make one —
+-- the receipt token they already hold is the proof it is theirs.
+CREATE TABLE IF NOT EXISTS customer_push (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id     INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  endpoint     TEXT    NOT NULL UNIQUE,
+  p256dh       TEXT    NOT NULL,
+  auth         TEXT    NOT NULL,
+  thanked_at   TEXT,
+  failures     INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_customer_push_order ON customer_push(order_id);
+
 CREATE TABLE IF NOT EXISTS whatsapp_messages (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id   INTEGER REFERENCES orders(id) ON DELETE CASCADE,

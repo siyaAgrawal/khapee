@@ -4,6 +4,7 @@ import { EmptyState, LoadingBlock, money, timeAgo, useToast, clockTime } from '.
 import { Link } from 'react-router-dom'
 import { announceOrder, askToNotify, notifyPermission } from '../../lib/notify'
 import { currentEndpoint, enablePush, pushSupported, type AlertState } from '../../lib/push'
+import { thanksText, waLink } from '../../../shared/thanks'
 import {
   nextStatus,
   SERVICE_LABEL,
@@ -522,6 +523,24 @@ export default function StaffOrders() {
                             <Link className="btn btn-secondary btn-sm" to={`/staff/table/${o.id}`}>
                               Open bill
                             </Link>
+                            {/* From the restaurant's own WhatsApp, which is
+                                free and unlimited — Meta only charges a
+                                business for messaging somebody who has not
+                                messaged them. One tap, already written. */}
+                            {!!waLink(o.customerPhone ?? '', '') && (
+                              <a
+                                className="btn btn-ghost btn-sm"
+                                href={waLink(
+                                  o.customerPhone,
+                                  thanksText(o.customerName || 'there', o.restaurantName ?? ''),
+                                )}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={`Thank ${o.customerName || 'them'} on WhatsApp`}
+                              >
+                                Thank on WhatsApp
+                              </a>
+                            )}
                             <span className="spacer" />
                             {!['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'].includes(o.status) && (
                               <button

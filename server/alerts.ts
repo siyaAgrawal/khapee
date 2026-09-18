@@ -96,5 +96,15 @@ export function alertRestaurant(a: OrderAlert): void {
       '',
       'Open the board: https://khapee.com/staff/orders',
     ].join('\n'),
-  }).catch(() => {})
+  })
+    .then((result) => {
+      // Said out loud in the host's log, because an email that never arrives
+      // looks exactly like a quiet evening. The dashboard's "send me a test"
+      // is the other half of this: one proves the setup, this catches the
+      // night it stops working.
+      if (result !== 'sent') {
+        console.warn(`[alerts] order #${a.orderNumber}: email to ${to} ${result}`)
+      }
+    })
+    .catch((e) => console.warn(`[alerts] order #${a.orderNumber}: email threw`, e))
 }

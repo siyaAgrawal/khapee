@@ -14,6 +14,7 @@ import { groupsRouter } from './routes/groups.ts'
 import { sessionsRouter } from './routes/sessions.ts'
 import { ensureSeed } from './seed.ts'
 import { injectMeta, metaFor, robotsTxt, sitemapXml, structuredData } from './seo.ts'
+import { thankPage } from './thank-page.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // In development this is deliberately not `PORT` — dev harnesses set that for
@@ -121,6 +122,22 @@ app.get('/api/stream', (req, res) => {
 })
 
 setInterval(heartbeat, 25_000).unref?.()
+
+/**
+ * The one page that is not the app.
+ *
+ * Tapping "thank them" used to open a route inside the SPA, so the phone had to
+ * fetch and start the whole application before it could read the address bar
+ * and hand over to WhatsApp — seconds, on a host waking from sleep, staring at
+ * nothing. This answers in one round trip with a document that redirects while
+ * it is still being parsed. Deliberately above the static and shell handlers so
+ * it wins, and outside the built-app check so it behaves the same in dev.
+ */
+app.get('/thank', (req, res) => {
+  const q = req.query as Record<string, string | undefined>
+  res.set('Cache-Control', 'no-store')
+  res.type('html').send(thankPage(q.to ?? '', q.who ?? 'them', q.text ?? ''))
+})
 
 // Serve the built SPA when it exists (npm run build), otherwise Vite serves it in dev.
 const dist = process.env.VERCEL

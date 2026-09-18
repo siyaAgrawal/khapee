@@ -2552,6 +2552,37 @@ async function runTests() {
     ok('nothing to send to means no link', waAppLink('', message) === '', waAppLink('', message))
     ok('and a number too short to be real is refused', waNumber('98765') === '', waNumber('98765'))
     ok('while one already carrying +91 is left alone', waNumber('+91 98765 43210') === '919876543210', '')
+
+    // The page the notification lands on, which exists to be passed through.
+    //
+    // It is served by the server rather than being a route in the app, and the
+    // difference is the whole point: a route in the app means downloading the
+    // app first, which on a host waking from sleep is several seconds of white
+    // screen before anything can even try to open WhatsApp. This is one
+    // document that redirects while it is still being parsed, so what is
+    // checked here is that it answers at all, that the jump is written above
+    // the content, and that it carries a button for the phone that asks first.
+    const landed = await fetch(`http://localhost:${PORT}/thank?to=919876543210&who=Aarav&text=${encodeURIComponent(message)}`)
+    const html = await landed.text()
+    ok('the notification lands on a page that answers', landed.status === 200, landed.status)
+    ok('served as a page, not the app', /text\/html/.test(landed.headers.get('content-type') ?? ''), '')
+    ok('never cached, because the message differs every time', landed.headers.get('cache-control') === 'no-store', '')
+    ok('the jump is written before the page it replaces', html.indexOf('location.replace') < html.indexOf('<body'), '')
+    ok('it hands over to the app, not to a page about the app', html.includes('whatsapp://send?phone=919876543210'), '')
+    ok('and a button is there for a phone that asks first', html.includes('>Open WhatsApp<'), '')
+    ok('with the thank-you carried through', html.includes('Thanks for ordering through Khapee'), '')
+
+    // A name is somebody else's text on its way back into markup.
+    const nasty = await fetch(`http://localhost:${PORT}/thank?to=919876543210&who=${encodeURIComponent('<script>x</script>')}&text=hi`)
+    const nastyHtml = await nasty.text()
+    ok('a customer cannot write markup into it', !nastyHtml.includes('<script>x</script>'), '')
+
+    // No number means no button: one that opens WhatsApp on an empty chat is
+    // worse than being told plainly there is nobody to write to.
+    const nobody = await fetch(`http://localhost:${PORT}/thank?to=&who=nobody&text=hi`)
+    const nobodyHtml = await nobody.text()
+    ok('an order with no number says so instead', nobodyHtml.includes('No number on this order'), '')
+    ok('and offers no link to nowhere', !nobodyHtml.includes('whatsapp://'), '')
   }
 
   group('A NUMBER THEY CAN RING')

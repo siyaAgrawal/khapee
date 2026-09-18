@@ -16,7 +16,7 @@
  *     restaurant knows the order is really happening and has a reason to
  *     write to the customer.
  */
-import { thanksText, waLink } from '../shared/thanks.ts'
+import { thanksText, waNumber } from '../shared/thanks.ts'
 import { isTerminal, type OrderStatus, type ServiceType } from '../shared/orders.ts'
 import { db } from './db.ts'
 import { pushToCustomer, pushToRestaurant } from './push.ts'
@@ -57,15 +57,22 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
     // them first, and charges nothing for one person messaging another — so
     // the app does not send it. It taps the restaurant on the shoulder and
     // they send it, in one tap, from the phone already in their hand.
-    const link = waLink(
-      row.contact_phone || row.delivery_phone || '',
-      thanksText(row.customer_name || 'there', row.restaurant),
-    )
-    if (link) {
+    const to = waNumber(row.contact_phone || row.delivery_phone || '')
+    if (to) {
+      // Pointed at a page of ours rather than straight at WhatsApp. An app
+      // installed on an iPhone Home Screen runs in its own scope, and a service
+      // worker asking it to open somebody else's site is declined quietly — a
+      // notification that does nothing when tapped. Our own page is always
+      // allowed, and from there WhatsApp is an ordinary navigation.
+      const message = thanksText(row.customer_name || 'there', row.restaurant)
+      const url =
+        `/thank?to=${to}` +
+        `&who=${encodeURIComponent(row.customer_name || 'them')}` +
+        `&text=${encodeURIComponent(message)}`
       void pushToRestaurant(row.restaurant_id, {
         title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
         body: `#${row.order_number} accepted. Tap to send it — it opens WhatsApp with the message written.`,
-        url: link,
+        url,
         tag: `khapee-thank-${orderId}`,
       }).catch(() => {})
     }

@@ -2486,6 +2486,42 @@ async function runTests() {
     ok('undoing puts the claim back', undone.body.order.paymentState === 'sent', undone.body.order)
   }
 
+  group('SAYING YES, AND SAYING NO')
+  {
+    // An order waiting on a yes has exactly three answers, and the board has
+    // to offer all of them.
+    const waiting = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Waiting on a yes',
+      },
+    })
+    ok('an unpaid order waits', waiting.body.order.status === 'REQUESTED', waiting.body.order)
+
+    const yes = await call(`/staff/orders/${waiting.body.order.id}/status`, {
+      token: roadToken,
+      body: { status: 'ACCEPTED' },
+    })
+    ok('yes is one tap from the board', yes.body.order.status === 'ACCEPTED', yes.body)
+
+    const another = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Turned away',
+      },
+    })
+    const no = await call(`/staff/orders/${another.body.order.id}/decline`, {
+      token: roadToken,
+      body: { reason: 'Kitchen is closing' },
+    })
+    ok('and no is one tap with a reason', no.body.order.status === 'DECLINED', no.body)
+    ok('which the customer can read', no.body.order.declinedReason === 'Kitchen is closing', no.body.order)
+  }
+
   group('A NUMBER THEY CAN RING')
   {
     // The two calls a kitchen actually makes are "we are out of that" and "we

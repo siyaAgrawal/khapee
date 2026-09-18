@@ -53,7 +53,16 @@ export default function Checkout() {
   const [tableLabel, setTableLabel] = useState<string | null>(
     dining?.tableLabel ?? scannedTable?.tableLabel ?? null,
   )
-  const [name, setName] = useState(user?.name ?? '')
+  /**
+   * Whoever runs this restaurant is not the customer ordering from it.
+   *
+   * The name is prefilled from the account as a convenience, and the account
+   * that runs Revery is called Revery — so every order placed while signed in
+   * to it arrived for a customer named after the restaurant. A restaurant's
+   * own account gets an empty box, like anybody else standing at the counter.
+   */
+  const ownsThis = !!user?.restaurants?.some((r) => r.id === restaurantId)
+  const [name, setName] = useState(ownsThis ? '' : (user?.name ?? ''))
   /** How the restaurant reaches this order. Not optional — see needsPhone. */
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [note, setNote] = useState('')
@@ -115,7 +124,7 @@ export default function Checkout() {
   }, [restaurantId])
 
   useEffect(() => {
-    if (user?.name && !name) setName(user.name)
+    if (user?.name && !name && !ownsThis) setName(user.name)
     if (user?.phone && !phone) setPhone(user.phone)
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 

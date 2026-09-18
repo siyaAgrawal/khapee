@@ -63,6 +63,19 @@ const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
  * glance as an unpaid order — so a table that had already paid looked exactly
  * like one about to walk out without paying.
  */
+/**
+ * What the button that moves an order along should say.
+ *
+ * Every other step is named after the state it reaches — Preparing, Ready —
+ * and reads as an instruction because that is where the order is going. The
+ * first one does not: an order waiting on a yes needs a button that says yes,
+ * and "Accepted" on a thing that has not been accepted reads as a label
+ * somebody forgot to make into a button.
+ */
+function goLabel(o: Order, next: OrderStatus): string {
+  return o.status === 'REQUESTED' && next === 'ACCEPTED' ? 'Accept' : STATUS_LABEL[next]
+}
+
 function payLook(o: Order): { cls: string; label: string; hint: string } {
   if (o.paymentState === 'paid') return { cls: 'badge-open', label: 'PAID', hint: 'Confirmed. Tap to undo.' }
   if (o.paymentState === 'sent')
@@ -496,7 +509,7 @@ export default function StaffOrders() {
                           disabled={busyId === o.id}
                           onClick={() => advance(o, next)}
                         >
-                          {STATUS_LABEL[next]}
+                          {goLabel(o, next)}
                         </button>
                       )}
 
@@ -669,7 +682,7 @@ export default function StaffOrders() {
                               disabled={busyId === o.id}
                               onClick={() => advance(o, next)}
                             >
-                              {STATUS_LABEL[next]}
+                              {goLabel(o, next)}
                             </button>
                           ) : (
                             <span className="badge badge-open">{STATUS_LABEL[o.status as OrderStatus]}</span>

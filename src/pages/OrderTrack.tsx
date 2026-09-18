@@ -5,6 +5,8 @@ import { api, ApiError, openStream } from '../lib/api'
 import { Art, ErrorState, LoadingBlock, clockTime, money } from '../components/ui'
 import { QRCanvas } from '../lib/qr'
 import { receiptToken } from '../lib/table-context'
+import { currentEndpoint, followOrder, needsHomeScreen, pushSupported } from '../lib/push'
+import { useToast } from '../components/ui'
 import { readGroup } from '../lib/group'
 import { flowFor, STATUS_LABEL, type OrderStatus } from '../../shared/orders'
 
@@ -12,6 +14,28 @@ export default function OrderTrack() {
   const { orderNumber = '' } = useParams()
   const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState('')
+  const toast = useToast()
+
+  /**
+   * Being told when it is ready, without anybody paying per message.
+   *
+   * WhatsApp bills a business for messaging somebody who has not messaged them
+   * first, and there is no free allowance for it. A push notification through
+   * the browser this page is already open in costs nothing, now or ever, and
+   * lands on the same locked screen — so it is offered here, once, on the
+   * screen somebody is looking at while they wait.
+   */
+  const [followKey, setFollowKey] = useState<{ available: boolean; publicKey: string } | null>(null)
+  const [following, setFollowing] = useState(false)
+  const [followBusy, setFollowBusy] = useState(false)
+
+  useEffect(() => {
+    if (!pushSupported()) return
+    api<{ available: boolean; publicKey: string }>('/orders/notify-key')
+      .then(setFollowKey)
+      .catch(() => setFollowKey(null))
+    void currentEndpoint().then((e) => setFollowing(!!e))
+  }, [])
 
   /**
    * The moment the order lands.
@@ -131,6 +155,17 @@ export default function OrderTrack() {
 
   const eventAt = (status: string) => order.events.find((e: any) => e.status === status)?.at
 
+  const follow = async () => {
+    setFollowBusy(true)
+    const r = await followOrder(orderNumber.toUpperCase(), receiptToken(orderNumber.toUpperCase()) ?? '', followKey?.publicKey ?? '')
+    setFollowBusy(false)
+    if (!r.ok) return toast(r.error ?? 'Could not switch updates on.', 'bad')
+    setFollowing(true)
+    toast(`We'll tell you when ${order.restaurantName} has it ready.`, 'good')
+  }
+
+  const canFollow = pushSupported() && !!followKey?.available && !done && !cancelled
+
   return (
     <div className="app">
       <Header />
@@ -182,6 +217,33 @@ export default function OrderTrack() {
           </p>
 
         </div>
+
+        {/* Free, and the only free way to reach somebody who has closed the
+            page. Offered while there is still something to be told about. */}
+        {canFollow && !following && (
+          <button className="follow" onClick={follow} disabled={followBusy}>
+            <span className="follow-bell" aria-hidden>
+              🔔
+            </span>
+            <span>
+              <strong>Tell me when it&rsquo;s ready</strong>
+              <span className="tiny">
+                On this phone, even with Khapee closed. Free — no number needed.
+              </span>
+            </span>
+          </button>
+        )}
+        {canFollow && following && (
+          <p className="tiny muted center follow-on">
+            🔔 You&rsquo;ll be told on this phone when it&rsquo;s ready.
+          </p>
+        )}
+        {pushSupported() === false && needsHomeScreen() && !done && (
+          <p className="tiny muted center follow-on">
+            To be told when it&rsquo;s ready: tap Share, then Add to Home Screen, and open Khapee from
+            there.
+          </p>
+        )}
 
         <div className="card card-pad mt-3">
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 14 }}>

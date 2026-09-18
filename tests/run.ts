@@ -2541,6 +2541,47 @@ async function runTests() {
     ok('but the till never asks for one', counter.status === 200 || counter.status === 201, counter.body)
   }
 
+  group('TELLING THE CUSTOMER, FOR NOTHING')
+  {
+    // WhatsApp bills a business per order for messaging somebody who has not
+    // messaged them first. This costs nothing and reaches the same locked
+    // screen, so it is the one that runs by default.
+    const mine = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Wants telling',
+      },
+    })
+    const o = mine.body.order
+
+    const key = await call('/orders/notify-key')
+    ok('a browser can fetch the key it subscribes with', typeof key.body.publicKey === 'string', key.body)
+
+    const device = {
+      endpoint: 'https://push.example/customer-phone',
+      keys: { p256dh: 'BDpUB9' + 'q'.repeat(80), auth: 'abcdefghijklmnop' },
+    }
+    const signedUp = await call(`/orders/${o.orderNumber}/notify`, {
+      body: { token: o.verifyToken, subscription: device },
+    })
+    ok('the receipt token is proof enough — no account needed', signedUp.status === 200, signedUp.body)
+
+    const stranger = await call(`/orders/${o.orderNumber}/notify`, {
+      body: { token: 'not-this-order', subscription: device },
+    })
+    ok('somebody else cannot follow your order', stranger.status === 403, stranger.body)
+
+    const junk = await call(`/orders/${o.orderNumber}/notify`, {
+      body: { token: o.verifyToken, subscription: { endpoint: 'https://push.example/x' } },
+    })
+    ok('an incomplete subscription is refused', junk.status === 400, junk.body)
+
+    const missing = await call('/orders/ZZZZ/notify', { body: { token: 'x', subscription: device } })
+    ok('and an order that does not exist is a 404', missing.status === 404, missing.body)
+  }
+
   group('TELLING THE RESTAURANT, WITH THE BOARD SHUT')
   {
     // Silence is how an alerting system fails, so the dashboard has to be able

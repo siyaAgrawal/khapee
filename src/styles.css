@@ -5132,3 +5132,43 @@ button.nav-link {
   text-underline-offset: 2px;
   white-space: nowrap;
 }
+
+/* "Tell me when it's ready" — the free alternative to a paid WhatsApp
+   message, offered on the screen somebody is already looking at while they
+   wait, and only while there is still something to be told about. */
+.follow {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.follow:hover {
+  border-color: var(--accent);
+  background: var(--bg-tint);
+}
+.follow:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.follow-bell {
+  font-size: 20px;
+}
+.follow strong {
+  display: block;
+  font-size: 15px;
+}
+.follow .tiny {
+  color: var(--muted);
+}
+.follow-on {
+  margin-top: 14px;
+}

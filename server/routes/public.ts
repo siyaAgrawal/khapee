@@ -187,7 +187,7 @@ publicRouter.get('/alerts/invite/:token', (req, res) => {
          JOIN restaurants r ON r.id = ai.restaurant_id
         WHERE ai.token = ?`,
     )
-    .get(String(req.params.token)) as any
+    .get(String(req.params.token).trim().toUpperCase()) as any
   if (!row) return res.status(404).json({ error: 'That link is not valid.' })
   if (row.revoked_at) return res.status(410).json({ error: 'That link was cancelled.' })
   if (row.used_at) return res.status(410).json({ error: 'That link has already been used on a phone.' })
@@ -199,7 +199,9 @@ publicRouter.get('/alerts/invite/:token', (req, res) => {
 })
 
 publicRouter.post('/alerts/invite/:token', (req, res) => {
-  const row = db.prepare('SELECT * FROM alert_invites WHERE token = ?').get(String(req.params.token)) as any
+  const row = db
+    .prepare('SELECT * FROM alert_invites WHERE token = ?')
+    .get(String(req.params.token).trim().toUpperCase()) as any
   if (!row) return res.status(404).json({ error: 'That link is not valid.' })
   if (row.used_at || row.revoked_at) return res.status(410).json({ error: 'That link has already been used.' })
   const expired = db.prepare(`SELECT (? <= datetime('now')) AS gone`).get(row.expires_at) as any

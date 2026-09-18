@@ -25,7 +25,7 @@ import {
   voidInvoice,
 } from '../billing.ts'
 import { shapeDiningSession, startCarSession } from '../dining.ts'
-import { randomToken } from '../ids.ts'
+import { generateAlertCode, randomToken } from '../ids.ts'
 
 export const staffRouter = Router()
 staffRouter.use(requireStaff)
@@ -748,7 +748,13 @@ staffRouter.get('/alerts', (req: any, res) => {
             AND expires_at > datetime('now') ORDER BY id DESC`,
       )
       .all(restaurantId)
-      .map((i: any) => ({ id: i.id, path: `/alerts/${i.token}`, since: i.created_at, until: i.expires_at })),
+      .map((i: any) => ({
+        id: i.id,
+        code: i.token,
+        path: `/alerts/${i.token}`,
+        since: i.created_at,
+        until: i.expires_at,
+      })),
     email: {
       available: mailConfigured(),
       // What is actually used, and what was typed — they differ when the
@@ -848,13 +854,13 @@ staffRouter.post('/alerts/unsubscribe', (req: any, res) => {
 staffRouter.post('/alerts/invite', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   if (!pushConfigured()) return res.status(503).json({ error: pushReason() })
-  const token = randomToken(18)
+  const token = generateAlertCode()
   db.prepare(
     `INSERT INTO alert_invites (restaurant_id, created_by, token, expires_at)
      VALUES (?, ?, ?, datetime('now', '+2 days'))`,
   ).run(restaurantId, req.user.id, token)
   audit(restaurantId, actorOf(req), 'alerts.invite', 'restaurant', restaurantId, {})
-  res.status(201).json({ token, path: `/alerts/${token}` })
+  res.status(201).json({ token, code: token, path: `/alerts/${token}` })
 })
 
 staffRouter.post('/alerts/invite/:id/revoke', (req: any, res) => {

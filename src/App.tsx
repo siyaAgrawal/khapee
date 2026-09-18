@@ -72,6 +72,7 @@ export default function App() {
       <Route path="/g/:code" element={<GroupJoin />} />
       <Route path="/profile" element={<Profile />} />
       {/* One phone, one capability, no account. See src/pages/AlertInvite.tsx */}
+      <Route path="/alerts" element={<AlertInvite />} />
       <Route path="/alerts/:token" element={<AlertInvite />} />
       <Route path="/group" element={<GroupSession />} />
       <Route path="/cart" element={<Cart />} />

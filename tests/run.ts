@@ -2698,6 +2698,15 @@ async function runTests() {
     // A link instead of the password: it grants one capability to one device.
     const invite = await call('/staff/alerts/invite', { token: roadToken, body: {} })
     ok('an owner can make an invite link', invite.status === 201 && !!invite.body.token, invite.body)
+    ok(
+      'and it is six characters somebody can type off another screen',
+      /^[A-Z0-9]{6}$/.test(invite.body.code),
+      invite.body,
+    )
+    ok(
+      'typed in any case, it still works',
+      (await call(`/alerts/invite/${String(invite.body.code).toLowerCase()}`)).status === 200,
+    )
 
     const opened = await call(`/alerts/invite/${invite.body.token}`)
     ok(

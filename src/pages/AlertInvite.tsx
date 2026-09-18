@@ -15,7 +15,14 @@ import { needsHomeScreen, pushSupported } from '../lib/push'
  * moment that device takes it.
  */
 export default function AlertInvite() {
-  const { token = '' } = useParams()
+  const { token: fromLink = '' } = useParams()
+  /**
+   * The code can arrive two ways, because two phones cannot always message
+   * each other: in the link, or typed in off the other phone's screen. Six
+   * characters can also be read out across a counter, which a link cannot.
+   */
+  const [typed, setTyped] = useState('')
+  const token = fromLink || typed
   const toast = useToast()
   const [invite, setInvite] = useState<{ restaurant: string; available: boolean; publicKey: string } | null>(
     null,
@@ -25,10 +32,27 @@ export default function AlertInvite() {
   const [done, setDone] = useState(false)
 
   useEffect(() => {
-    api<{ restaurant: string; available: boolean; publicKey: string }>(`/alerts/invite/${token}`)
+    if (!fromLink) return
+    api<{ restaurant: string; available: boolean; publicKey: string }>(`/alerts/invite/${fromLink}`)
       .then(setInvite)
       .catch((e: ApiError) => setError(e.message))
-  }, [token])
+  }, [fromLink])
+
+  const check = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      setInvite(
+        await api<{ restaurant: string; available: boolean; publicKey: string }>(
+          `/alerts/invite/${typed.trim().toUpperCase()}`,
+        ),
+      )
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const accept = async () => {
     setBusy(true)
@@ -72,12 +96,50 @@ export default function AlertInvite() {
     )
   }
 
+  // No code in the link: ask for one.
   if (!invite) {
+    if (fromLink) {
+      return (
+        <div className="app">
+          <Header />
+          <main className="page page-narrow">
+            <LoadingBlock />
+          </main>
+        </div>
+      )
+    }
     return (
       <div className="app">
         <Header />
         <main className="page page-narrow">
-          <LoadingBlock />
+          <div className="card card-pad invite">
+            <span className="invite-bell" aria-hidden>
+              🔔
+            </span>
+            <h1>Turn on order alerts</h1>
+            <p className="muted">
+              Type the six-character code from the dashboard — Settings, then Notifications. This phone
+              will then ring for every new order.
+            </p>
+            <input
+              className="input code-in"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+              placeholder="K7X92P"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="text"
+              aria-label="Alert code"
+            />
+            <button
+              className="btn btn-accent btn-lg btn-block"
+              disabled={busy || typed.length < 6}
+              onClick={check}
+            >
+              {busy ? <Spinner /> : 'Continue'}
+            </button>
+          </div>
         </main>
       </div>
     )

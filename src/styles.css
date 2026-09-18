@@ -5236,3 +5236,16 @@ button.nav-link {
   max-width: 34ch;
   margin: 0 auto;
 }
+
+/* The code, big enough to read off one phone while typing it into another. */
+.invite-code {
+  font-size: 22px;
+  letter-spacing: 0.16em;
+}
+.code-in {
+  margin-bottom: 14px;
+  text-align: center;
+  font-size: 30px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}

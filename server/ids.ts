@@ -22,6 +22,22 @@ export function generateAccessCode(): string {
   throw new Error('Could not generate a unique access code')
 }
 
+/**
+ * Six characters somebody can read off one phone and type into another.
+ *
+ * A link is fine when the two phones can message each other and awkward when
+ * they cannot — and a code can be said out loud across a counter, which a
+ * forty-character URL cannot.
+ */
+export function generateAlertCode(): string {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const code = pick(CODE_ALPHABET, 6)
+    const clash = db.prepare('SELECT 1 FROM alert_invites WHERE token = ?').get(code)
+    if (!clash) return code
+  }
+  throw new Error('Could not generate a unique alert code')
+}
+
 /** Order number like #A482 — stored without the leading hash. */
 export function generateOrderNumber(): string {
   for (let attempt = 0; attempt < 200; attempt++) {

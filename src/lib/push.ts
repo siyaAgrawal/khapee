@@ -20,7 +20,7 @@ export type AlertState = {
     list: { id: number; who: string; whose: string; since: string; lastOk: string | null; failing: boolean }[]
   }
   /** Links handed out and not yet used. */
-  invites: { id: number; path: string; since: string; until: string }[]
+  invites: { id: number; code: string; path: string; since: string; until: string }[]
   email: { available: boolean; to: string; own: string }
 }
 

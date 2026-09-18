@@ -124,9 +124,9 @@ export default function StaffAlerts() {
   const makeInvite = async () => {
     setBusy('invite')
     try {
-      const r = await api<{ path: string }>('/staff/alerts/invite', { body: {} })
-      await copy(origin + r.path)
+      const r = await api<{ code: string; path: string }>('/staff/alerts/invite', { body: {} })
       void load()
+      toast(`Code ${r.code} — type it at khapee.com/alerts on the other phone.`, 'good')
     } catch (e) {
       toast((e as ApiError).message, 'bad')
     } finally {
@@ -255,12 +255,12 @@ export default function StaffAlerts() {
             and every customer's number — and cannot be taken back without
             changing it for everyone. */}
         <div className="invite-row">
-          <button className="btn btn-secondary btn-sm" disabled={busy === 'invite'} onClick={makeInvite}>
-            {busy === 'invite' ? <Spinner /> : 'Invite another phone'}
+          <button className="btn btn-accent btn-sm" disabled={busy === 'invite'} onClick={makeInvite}>
+            {busy === 'invite' ? <Spinner /> : 'Add another phone'}
           </button>
           <span className="tiny muted">
-            Sends a one-time link. The phone that opens it gets alerts and nothing else — no sign-in,
-            no password.
+            Gives a six-character code. Open <strong>khapee.com/alerts</strong> on the other phone, type
+            it in, and that phone gets alerts — no sign-in, no password.
           </span>
         </div>
 
@@ -269,12 +269,15 @@ export default function StaffAlerts() {
             {state.invites.map((i) => (
               <li key={i.id}>
                 <div>
-                  <strong className="mono tiny">{origin + i.path}</strong>
-                  <p className="tiny muted">Not used yet · expires {new Date(i.until + 'Z').toLocaleString()}</p>
+                  <strong className="invite-code mono">{i.code}</strong>
+                  <p className="tiny muted">
+                    Type it at khapee.com/alerts · unused · expires{' '}
+                    {new Date(i.until + 'Z').toLocaleString()}
+                  </p>
                 </div>
                 <span className="row" style={{ gap: 10 }}>
                   <button className="link-btn" onClick={() => copy(origin + i.path)}>
-                    Copy
+                    Copy link
                   </button>
                   <button className="link-btn" onClick={() => revoke(i.id)} disabled={busy === 'revoke'}>
                     Cancel

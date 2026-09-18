@@ -221,7 +221,11 @@ export async function followOrder(
 export async function keepAlertsAlive(): Promise<void> {
   let grant = ''
   try {
-    grant = localStorage.getItem('khapee.alertGrant') ?? ''
+    // Either key. A phone set up before the grant was being kept still has the
+    // code it typed, and that is the same thing by another name — without this
+    // it could never put itself back and would go quiet at the first restart,
+    // with nothing on screen to say so.
+    grant = localStorage.getItem('khapee.alertGrant') ?? localStorage.getItem('khapee.alertCode') ?? ''
   } catch {
     return
   }
@@ -232,6 +236,11 @@ export async function keepAlertsAlive(): Promise<void> {
     const sub = await reg.pushManager.getSubscription()
     if (!sub) return
     await api(`/alerts/invite/${grant}`, { body: { subscription: sub.toJSON() } })
+    try {
+      localStorage.setItem('khapee.alertGrant', grant)
+    } catch {
+      /* nothing to tidy */
+    }
   } catch {
     /* already registered, or the invite is spent for good: nothing to do */
   }

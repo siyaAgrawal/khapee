@@ -170,16 +170,18 @@ if (!block) {
   // asked for, letterboxed inside its own white.
   const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 130" width="130" height="130">
   <rect width="130" height="130" fill="#ffffff"/>
-  <g fill="none" stroke="${line}" stroke-linecap="round" stroke-linejoin="round">
-    <g stroke-width="5">
-      <path d="M45 58 L40 22"/>
-      <path d="M58 58 L56 12"/>
-      <path d="M72 58 L77 14"/>
-      <path d="M85 58 L92 26"/>
-    </g>
-    <g stroke-width="4">
-      <path d="M24 58 H106 L88 122 H42 Z"/>
-      <path d="M31 80 H99"/>
+  <g stroke="${line}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- An ice cream cone, and not the fries that were here before: thin
+         strokes rising out of a tapered tub read as a plant in a pot no matter
+         how they are drawn, and an icon you have to explain is the wrong icon.
+         A cone's silhouette cannot be mistaken for anything else. -->
+    <circle cx="65" cy="40" r="26" fill="#ffffff"/>
+    <path d="M41 58 L89 58 L65 124 Z" fill="#ffffff"/>
+    <g stroke-width="2.6">
+      <path d="M50 70 L74 100"/>
+      <path d="M63 68 L82 90"/>
+      <path d="M79 70 L56 100"/>
+      <path d="M66 68 L49 88"/>
     </g>
   </g>
 </svg>

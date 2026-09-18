@@ -94,30 +94,6 @@ export default function OrderTrack() {
             {order.type === 'pickup' ? 'Show at the counter' : 'Show if asked'}
           </p>
 
-          {/*
-            The thank-you, on WhatsApp.
-
-            Khapee sends this itself when the WhatsApp Business credentials are
-            in the environment — see server/whatsapp.ts. Until they are, and for
-            anyone who gave no number, this button is the whole of it: it opens
-            WhatsApp with the message already written, so it goes from the
-            customer's own number to whoever they like — themselves, to keep the
-            order, or whoever is joining them.
-          */}
-          <a
-            className="btn btn-secondary btn-sm wa-share"
-            href={`https://wa.me/?text=${encodeURIComponent(
-              `Thanks for ordering through Khapee 🎉\n\n` +
-                `${order.restaurantName}\n` +
-                `Order #${order.orderNumber} · ${money(order.totalCents)}\n` +
-                (order.tableLabel ? `${order.tableLabel}\n` : '') +
-                `\nFollow it here: ${window.location.origin}/order/${order.orderNumber}`,
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Send on WhatsApp
-          </a>
         </div>
 
         <div className="card card-pad mt-3">

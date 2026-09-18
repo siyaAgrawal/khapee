@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { QRCanvas } from '../lib/qr'
+import { appLink, IOS_UPI_APPS, isIOS, isMobile } from '../lib/upi-apps'
 import { money, Spinner } from './ui'
 
 /**
@@ -43,14 +44,43 @@ export default function PayPanel({
       <div className="pay-qr">
         <QRCanvas value={upiLink} size={190} />
       </div>
-
-      <a className="btn btn-accent btn-block" href={upiLink}>
-        Open UPI app
-      </a>
-      <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
-        Scan with any UPI app, or tap the button on your phone. The money goes straight to the
-        restaurant.
+      <p className="tiny muted center" style={{ margin: '4px 0 14px' }}>
+        Scan this with <strong>any</strong> UPI app — Google Pay, PhonePe, Paytm, FamApp, CRED,
+        BHIM, your bank&rsquo;s own. The money goes straight to the restaurant.
       </p>
+
+      {/* On the same phone the QR is on, there is nothing to point a camera at,
+          so the app has to be opened directly. Android does that from one
+          intent and draws its own picker; iOS registers no handler for upi://
+          at all, which is a button that does nothing and says nothing, so
+          there the apps are named one by one. */}
+      {isMobile() &&
+        (isIOS() ? (
+          <>
+            <p className="tiny muted center" style={{ margin: '0 0 8px' }}>
+              Paying on this phone? Open your app:
+            </p>
+            <div className="upi-apps">
+              {IOS_UPI_APPS.map((app) => (
+                <a key={app.id} className="upi-app" href={appLink(app, upiLink)}>
+                  {app.name}
+                </a>
+              ))}
+            </div>
+            <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
+              Not there? Screenshot the QR above and scan it from inside your app.
+            </p>
+          </>
+        ) : (
+          <>
+            <a className="btn btn-accent btn-block" href={upiLink}>
+              Open a UPI app on this phone
+            </a>
+            <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
+              Your phone will offer every UPI app you have installed.
+            </p>
+          </>
+        ))}
 
       <div className="field">
         <label htmlFor="upi-ref">UPI reference number (optional)</label>

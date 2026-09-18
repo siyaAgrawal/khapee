@@ -232,6 +232,29 @@ publicRouter.post('/alerts/invite/:token', (req, res) => {
   res.json({ ok: true })
 })
 
+/**
+ * Whether the server is actually holding this phone's registration.
+ *
+ * The app decided whether to show "turn on order alerts" from what the phone
+ * itself remembered — a push subscription in the browser and a code in local
+ * storage. Neither is evidence. The device registrations live in a database
+ * that is rebuilt from the published copy every time the service restarts, so
+ * a phone can hold a perfectly good subscription for a server that has never
+ * heard of it, and that phone — the one that will not ring — is the one the
+ * line was hiding from. Silence read as success.
+ *
+ * So the phone asks. No authentication, because there is nothing here to
+ * protect: an endpoint is a secret only the phone that owns it knows, and the
+ * answer is whether the thing you are holding is known, which you learn anyway
+ * the first time an order does not arrive.
+ */
+publicRouter.post('/alerts/registered', (req, res) => {
+  const endpoint = String(req.body?.endpoint ?? '')
+  if (!endpoint) return res.json({ registered: false })
+  const row = db.prepare('SELECT 1 FROM push_subscriptions WHERE endpoint = ?').get(endpoint)
+  res.json({ registered: !!row })
+})
+
 /** Not a real category row — the specials section is assembled per request. */
 const SPECIALS_SECTION_ID = -1
 

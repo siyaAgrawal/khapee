@@ -2869,6 +2869,27 @@ async function runTests() {
     })
     ok('and still reads as valid afterwards', (await call('/alerts/invite/KEEPME')).status === 200)
 
+    // Whether a phone will actually ring is a question only the server can
+    // answer. The app used to answer it from the phone's own memory — a
+    // subscription in the browser, a code in local storage — and both survive
+    // a restart that empties the device list, so the phone that had stopped
+    // ringing was the one being told it was fine, with the line back to the
+    // code hidden from it.
+    const known = await call('/alerts/registered', { body: { endpoint: 'https://push.example/kept-one' } })
+    ok('a registered phone is told it is registered', known.body.registered === true, known.body)
+    const stranger = await call('/alerts/registered', { body: { endpoint: 'https://push.example/never-seen' } })
+    ok('one the server has never heard of is told so', stranger.body.registered === false, stranger.body)
+    const empty = await call('/alerts/registered', { body: {} })
+    ok('and asking about nothing is not an error', empty.status === 200 && empty.body.registered === false, empty.body)
+
+    // Forgetting a phone has to show up here too, or "off" could never be
+    // reported and the line could never come back.
+    const forgot = new Database(DB_PATH)
+    forgot.prepare("DELETE FROM push_subscriptions WHERE endpoint = 'https://push.example/kept-two'").run()
+    forgot.close()
+    const dropped = await call('/alerts/registered', { body: { endpoint: 'https://push.example/kept-two' } })
+    ok('a phone the server has forgotten reads as off', dropped.body.registered === false, dropped.body)
+
     const withInvited = (await call('/staff/alerts', { token: roadToken })).body.push.list as any[]
     ok(
       'the invited phone is on the list, marked as invited',

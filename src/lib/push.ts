@@ -205,6 +205,32 @@ export async function followOrder(
 }
 
 /**
+ * Whether this phone will actually ring — asked of the server, not the phone.
+ *
+ * A subscription in the browser proves the browser is willing, and a code in
+ * local storage proves somebody typed one once. Neither proves the server is
+ * holding this device, and the two part company at every restart. Reading the
+ * phone's own memory meant the app looked set up precisely when it was not.
+ *
+ * It heals first and asks afterwards, so a phone that can put itself back is
+ * never bothered about it, and one that cannot is told plainly.
+ */
+export async function alertsLive(): Promise<boolean> {
+  if (!pushSupported()) return false
+  try {
+    await keepAlertsAlive()
+    const endpoint = await currentEndpoint()
+    if (!endpoint) return false
+    const r = await api<{ registered: boolean }>('/alerts/registered', { body: { endpoint } })
+    return !!r?.registered
+  } catch {
+    // Unreachable server, most likely one still waking up. Claiming alerts are
+    // off on that basis would put the line back on somebody who is fine.
+    return true
+  }
+}
+
+/**
  * Puts this phone's alerts back after the server has forgotten them.
  *
  * The database is rebuilt from the published copy whenever the service

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { useVegMode } from '../lib/veg'
-import { currentEndpoint, pushSupported } from '../lib/push'
+import { alertsLive, pushSupported } from '../lib/push'
 import { cuisineBackground, cuisineEmoji } from '../lib/cuisine-art'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 
@@ -74,21 +74,24 @@ export default function Home() {
    * instruction to do something already done — and it sat above the menu on
    * the phone of the one person who had followed it.
    */
-  const [alertsOn, setAlertsOn] = useState(false)
+  const [alertsOn, setAlertsOn] = useState(true)
   useEffect(() => {
-    if (!pushSupported()) return
-    // A subscription in the browser is not proof the server still has it — the
-    // two part company every time the server restarts, and a phone in that
-    // state is the one that most needs this line. The saved code is what lets
-    // it put itself back, so only a phone holding both is really set up.
-    let grant = ''
-    try {
-      grant = localStorage.getItem('khapee.alertGrant') ?? localStorage.getItem('khapee.alertCode') ?? ''
-    } catch {
-      grant = ''
-    }
-    if (!grant) return
-    void currentEndpoint().then((e) => setAlertsOn(!!e))
+    if (!pushSupported()) return setAlertsOn(true)
+    /**
+     * Asked of the server, because the phone is not a witness to this.
+     *
+     * This used to be answered locally: a push subscription in the browser and
+     * a code in local storage, and if both were there the line was hidden. But
+     * device registrations live in a database rebuilt from the published copy
+     * at every restart, so a phone holding both can be entirely unknown to the
+     * server — and that phone, the one that will not ring for anything, was
+     * exactly the phone being told everything was fine. There was then no way
+     * back to the code, because the only way there was the line now hidden.
+     *
+     * alertsLive heals first and asks after, so a phone able to put itself
+     * back never sees this, and one that cannot is asked for its code again.
+     */
+    void alertsLive().then(setAlertsOn)
   }, [])
   const [restaurants, setRestaurants] = useState<RestaurantCard[] | null>(null)
   const [tiles, setTiles] = useState<CuisineTile[]>([])
@@ -183,10 +186,15 @@ export default function Home() {
           no account, and this is the page that phone opens. It is one line, it
           is above everything, and it goes away for good when dismissed, so the
           people it is not for pay almost nothing for it. */}
-      {!staffStripGone && !alertsOn && (
+      {/* Dismissal is honoured for the people it was aimed at and overridden
+          for the one person it is now urgent for: somebody who has typed a
+          code on this phone before — so they work somewhere — and whose alerts
+          the server is not holding. Hiding it from them is hiding the only way
+          back to the code, on the one phone that has stopped ringing. */}
+      {(!staffStripGone || halfDone) && !alertsOn && (
         <div className="staff-strip">
           <Link to="/alerts">
-            🔔 {halfDone ? 'Finish turning on order alerts' : 'Work here? Turn on order alerts'} →
+            🔔 {halfDone ? 'Order alerts are off — turn them back on' : 'Work here? Turn on order alerts'} →
           </Link>
           <button
             aria-label="Hide this"

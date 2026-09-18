@@ -1974,6 +1974,8 @@ textarea {
 .qrow-go {
   grid-column: 2;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 .qrow-body {
   grid-column: 1 / -1;

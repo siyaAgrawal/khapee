@@ -2522,6 +2522,38 @@ async function runTests() {
     ok('which the customer can read', no.body.order.declinedReason === 'Kitchen is closing', no.body.order)
   }
 
+  group('THE TAP THAT REACHES WHATSAPP')
+  {
+    // Every route to the thank-you ends at one of these two strings, so they
+    // are worth pinning: a scheme that opens the app rather than a web page
+    // about the app, and a number with the country code WhatsApp insists on.
+    const { thanksText, waAppLink, waLink, waNumber } = await import('../shared/thanks.ts')
+
+    const message = thanksText('Aarav')
+    ok(
+      'the thank-you names the customer and Khapee',
+      message === 'Hi Aarav, Thanks for ordering through Khapee today! We hope you enjoy your food. 🍕',
+      message,
+    )
+
+    // wa.me is a website: on a phone it loads Safari, shows a "Continue to
+    // Chat" page, and inside an installed app that detour dead-ends. This is
+    // the address of the app itself.
+    const app = waAppLink('98765 43210', message)
+    ok('the button opens WhatsApp itself, not a page about it', app.startsWith('whatsapp://send?'), app)
+    ok('addressed with the country code on the front', app.includes('phone=919876543210'), app)
+    ok('and the message already written', app.includes(encodeURIComponent(message)), app)
+
+    // Kept as the way out for a computer, or a phone without the app.
+    ok('the web address stays as the fallback', waLink('9876543210', message).startsWith('https://wa.me/'), '')
+
+    // A number nobody can be reached on must produce no link at all: a button
+    // that opens WhatsApp on an empty chat is worse than no button.
+    ok('nothing to send to means no link', waAppLink('', message) === '', waAppLink('', message))
+    ok('and a number too short to be real is refused', waNumber('98765') === '', waNumber('98765'))
+    ok('while one already carrying +91 is left alone', waNumber('+91 98765 43210') === '919876543210', '')
+  }
+
   group('A NUMBER THEY CAN RING')
   {
     // The two calls a kitchen actually makes are "we are out of that" and "we

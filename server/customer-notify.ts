@@ -16,7 +16,7 @@
  *     restaurant knows the order is really happening and has a reason to
  *     write to the customer.
  */
-import { thanksText, waNumber } from '../shared/thanks.ts'
+import { thanksText, waAppLink, waNumber } from '../shared/thanks.ts'
 import { isTerminal, type OrderStatus, type ServiceType } from '../shared/orders.ts'
 import { db } from './db.ts'
 import { pushToCustomer, pushToRestaurant } from './push.ts'
@@ -73,6 +73,10 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
         title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
         body: `#${row.order_number} accepted. Tap to send it — it opens WhatsApp with the message written.`,
         url,
+        // Tried first by the service worker. Most browsers will not open a
+        // non-web address from a notification and the page above is what
+        // actually carries it; on the ones that will, this is the whole journey.
+        wa: waAppLink(to, message),
         tag: `khapee-thank-${orderId}`,
       }).catch(() => {})
     }

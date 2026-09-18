@@ -8,7 +8,7 @@
  * they always go to the network, because a cached menu price or order status
  * would be worse than a slow one.
  */
-const SHELL = 'ordro-assets-v5'
+const SHELL = 'ordro-assets-v6'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -92,7 +92,7 @@ self.addEventListener('push', (event) => {
       // orders looks like one.
       renotify: true,
       requireInteraction: true,
-      data: { url: note.url || '/staff/orders' },
+      data: { url: note.url || '/staff/orders', wa: note.wa || '' },
     }),
   )
 })
@@ -109,11 +109,27 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const wanted = event.notification.data?.url || '/staff/orders'
+  const wa = event.notification.data?.wa || ''
   const target = new URL(wanted, self.location.origin).href
   const ours = target.startsWith(self.location.origin)
 
   event.waitUntil(
     (async () => {
+      // Straight into WhatsApp, where the phone allows it.
+      //
+      // openWindow is specified to reject anything that is not http or https,
+      // and most browsers do reject whatsapp:// — so this is tried rather than
+      // relied on, and the page below is what actually carries it everywhere
+      // else. Where it does work it saves a screen nobody wanted to see.
+      if (wa) {
+        try {
+          const win = await self.clients.openWindow(wa)
+          if (win) return win
+        } catch {
+          /* not allowed here; the page below does it with one tap */
+        }
+      }
+
       // Somebody else's site — WhatsApp — always gets its own window. Asking
       // the app's own window to go there is declined.
       if (!ours) return self.clients.openWindow(target)

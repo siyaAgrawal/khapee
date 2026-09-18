@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { waAppLink, waLink } from '../../shared/thanks'
@@ -27,14 +28,33 @@ export default function Thank() {
   const link = waLink(to, text)
 
   /**
-   * No automatic redirect, on purpose.
+   * Tries WhatsApp by itself, once, and keeps the button either way.
    *
-   * A page cannot hand you over to another app unless you asked it to: iOS
-   * refuses a navigation into WhatsApp that nobody tapped, silently, and what
-   * is left on screen is this page looking like the notification did nothing.
-   * A button is the ask. It costs one tap and it works every time, which is
-   * the better trade.
+   * Opening this page was itself a tap — on the notification — and on most
+   * phones that is gesture enough for the jump to be allowed, which makes the
+   * whole thing one tap instead of two. Where it is not allowed it is refused
+   * silently and nothing at all happens, which is why the button below is not
+   * an alternative to this but the thing that is always there: this is an
+   * attempt, not the plan.
+   *
+   * Once, and marked as done, because coming back from WhatsApp lands on this
+   * page again and a page that bounces you out every time you return to it is
+   * a page you cannot leave.
    */
+  useEffect(() => {
+    if (!appLink) return
+    const once = `khapee.sent.${to}.${text}`
+    try {
+      if (sessionStorage.getItem(once)) return
+      sessionStorage.setItem(once, '1')
+    } catch {
+      return // a private window would loop; the button still works
+    }
+    const go = setTimeout(() => {
+      window.location.href = appLink
+    }, 120)
+    return () => clearTimeout(go)
+  }, [appLink, to, text])
 
   return (
     <div className="app">

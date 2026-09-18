@@ -242,7 +242,20 @@ export function removeSubscription(restaurantId: number, id: number): boolean {
   return true
 }
 
-export type PushNote = { title: string; body: string; url?: string; tag?: string }
+export type PushNote = {
+  title: string
+  body: string
+  url?: string
+  tag?: string
+  /**
+   * A whatsapp:// address to try before the page at `url`.
+   *
+   * Most browsers refuse to open a non-web address from a notification, so this
+   * is an attempt and `url` is the answer; where it is allowed, it saves the
+   * person a screen they had no interest in reading.
+   */
+  wa?: string
+}
 
 /**
  * Signs the customer's own phone up to hear about this one order.
@@ -323,6 +336,7 @@ export async function pushToRestaurant(restaurantId: number, note: PushNote): Pr
     body: note.body,
     url: note.url ?? '/staff/orders',
     tag: note.tag ?? 'khapee-order',
+    wa: note.wa ?? '',
   })
 
   let sent = 0

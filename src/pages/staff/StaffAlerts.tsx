@@ -215,16 +215,20 @@ export default function StaffAlerts() {
           </ol>
         )}
 
+        {/* Always offered, never hidden.
+            It used to appear only once a device was signed up, which is exactly
+            backwards: the moment somebody needs to press it is the moment
+            nothing is ringing, and hiding it then leaves them with a page that
+            says nothing and no way to ask. Pressed with nothing signed up it
+            says so, which is the answer they came for. */}
         <p className="tiny muted alert-foot">
           Turn it on once on every phone that should ring — the one behind the counter, and yours.{' '}
           {state.push.devices
             ? `${state.push.devices} signed up so far.`
             : 'None signed up yet.'}{' '}
-          {!!state.push.devices && (
-            <button className="link-btn" onClick={ring} disabled={busy === 'ring'}>
-              Ring them now
-            </button>
-          )}
+          <button className="link-btn" onClick={ring} disabled={busy === 'ring'}>
+            {busy === 'ring' ? 'Ringing…' : 'Ring them now'}
+          </button>
         </p>
 
         {/* The account is the key here, not the device: anybody who can sign in

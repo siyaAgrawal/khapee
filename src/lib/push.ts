@@ -232,9 +232,29 @@ export async function keepAlertsAlive(): Promise<void> {
   if (!grant || !pushSupported()) return
 
   try {
-    const reg = await navigator.serviceWorker.ready
-    const sub = await reg.pushManager.getSubscription()
-    if (!sub) return
+    const reg = await workerReady()
+    let sub = await reg.pushManager.getSubscription()
+
+    // No subscription left on the phone at all.
+    //
+    // This used to give up here, and giving up here is how a phone goes silent
+    // for good: iOS drops a push subscription on its own — a long spell
+    // unopened, a storage sweep, an OS update — and once it is gone nothing
+    // above ever put it back, because everything that could was written as
+    // "re-present the subscription you have". So it makes a new one. Permission
+    // was granted once and is remembered, so this raises no prompt and needs
+    // nobody's attention; if permission is genuinely gone there is nothing to
+    // be done from here and it stops quietly.
+    if (!sub) {
+      if (Notification.permission !== 'granted') return
+      const invite = await api<{ publicKey: string }>(`/alerts/invite/${grant}`)
+      if (!invite?.publicKey) return
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: toBytes(invite.publicKey) as BufferSource,
+      })
+    }
+
     await api(`/alerts/invite/${grant}`, { body: { subscription: sub.toJSON() } })
     try {
       localStorage.setItem('khapee.alertGrant', grant)

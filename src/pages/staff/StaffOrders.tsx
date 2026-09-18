@@ -76,6 +76,66 @@ function goLabel(o: Order, next: OrderStatus): string {
   return o.status === 'REQUESTED' && next === 'ACCEPTED' ? 'Accept' : STATUS_LABEL[next]
 }
 
+/** A phone, where whatsapp:// reaches an app rather than nothing at all. */
+function onPhone(): boolean {
+  return typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0
+}
+
+/** The written thank-you for this order, or '' if there is no number for it. */
+function thankHref(o: Order): string {
+  return waAppLink(o.customerPhone ?? '', thanksText(o.customerName || 'there'))
+}
+
+/**
+ * Accepting an order and thanking the customer, in one tap.
+ *
+ * The thank-you was reached through a notification: accept here, the server
+ * pushes "thank them", you tap that, a page opens, you tap again, WhatsApp
+ * opens. Four steps, three of which are a phone deciding whether to cooperate —
+ * and a notification tapped from a locked screen frequently lands on the
+ * dashboard instead, because moving an already-open installed app to another
+ * page is something Safari will not do.
+ *
+ * None of that is needed when the person is already holding the order. A link
+ * is a link: the tap that accepts is a real gesture on an anchor pointing at
+ * WhatsApp, so the phone switches apps the way it does for any other link, with
+ * nothing to permit and nothing to deliver. The status change goes off
+ * alongside it and is not waited for — the navigation is already leaving, and
+ * an accept that took an extra half-second is not worth holding it up for.
+ */
+function AcceptAndThank({
+  order,
+  next,
+  busy,
+  accept,
+}: {
+  order: Order
+  next: OrderStatus
+  busy: boolean
+  accept: () => void
+  }) {
+  const href = thankHref(order)
+  const wired = goLabel(order, next) === 'Accept' && !!href && onPhone()
+
+  if (!wired) {
+    return (
+      <button className="btn btn-accent btn-sm" disabled={busy} onClick={accept}>
+        {goLabel(order, next)}
+      </button>
+    )
+  }
+  return (
+    <a
+      className="btn btn-accent btn-sm"
+      href={href}
+      onClick={accept}
+      title={`Accept #${order.orderNumber} and open WhatsApp with the thank-you written`}
+    >
+      Accept &amp; thank
+    </a>
+  )
+}
+
 function payLook(o: Order): { cls: string; label: string; hint: string } {
   if (o.paymentState === 'paid') return { cls: 'badge-open', label: 'PAID', hint: 'Confirmed. Tap to undo.' }
   if (o.paymentState === 'sent')
@@ -504,13 +564,14 @@ export default function StaffOrders() {
                       </button>
 
                       {next && (
-                        <button
-                          className="btn btn-accent btn-sm qrow-go"
-                          disabled={busyId === o.id}
-                          onClick={() => advance(o, next)}
-                        >
-                          {goLabel(o, next)}
-                        </button>
+                        <span className="qrow-go">
+                          <AcceptAndThank
+                            order={o}
+                            next={next}
+                            busy={busyId === o.id}
+                            accept={() => void advance(o, next)}
+                          />
+                        </span>
                       )}
 
                       {open && (
@@ -677,13 +738,12 @@ export default function StaffOrders() {
 
                         <div className="o-foot">
                           {next ? (
-                            <button
-                              className="btn btn-accent btn-sm"
-                              disabled={busyId === o.id}
-                              onClick={() => advance(o, next)}
-                            >
-                              {goLabel(o, next)}
-                            </button>
+                            <AcceptAndThank
+                              order={o}
+                              next={next}
+                              busy={busyId === o.id}
+                              accept={() => void advance(o, next)}
+                            />
                           ) : (
                             <span className="badge badge-open">{STATUS_LABEL[o.status as OrderStatus]}</span>
                           )}

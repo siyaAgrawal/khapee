@@ -9,7 +9,7 @@ import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orde
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
-import { tellCustomer } from '../customer-notify.ts'
+import { tellCustomer, thankNudge } from '../customer-notify.ts'
 import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
@@ -58,7 +58,7 @@ staffRouter.get('/orders', (req, res) => {
   res.json({ orders: rows.map(shapeOrder) })
 })
 
-staffRouter.post('/orders/:id/status', (req, res) => {
+staffRouter.post('/orders/:id/status', async (req, res) => {
   const restaurantId = myRestaurant(req)
   const id = Number(req.params.id)
   const row = db.prepare('SELECT * FROM orders WHERE id = ?').get(id) as any
@@ -101,7 +101,11 @@ staffRouter.post('/orders/:id/status', (req, res) => {
   // The customer's own phone, for nothing — see server/customer-notify.ts.
   tellCustomer(id, to as OrderStatus)
   publish('order:update', { restaurantId, userId: row.user_id, orderId: id, order })
-  res.json({ order })
+  // Said back, rather than left to be inferred from a notification that may
+  // never come. Accepting an order with no number on it sends no thank-you —
+  // there is nowhere to send one — and from the kitchen that looked exactly
+  // like the whole thing being broken.
+  res.json({ order, thanked: to === 'ACCEPTED' ? await thankNudge(id) : undefined })
 })
 
 staffRouter.post('/orders/:id/payment', (req, res) => {
@@ -1705,7 +1709,7 @@ staffRouter.post('/pos/sale', (req: any, res) => {
 // A small kitchen with no room says no when it is full, and the app has to be
 // able to say no too — with a reason the customer actually reads.
 
-staffRouter.post('/orders/:id/accept', (req: any, res) => {
+staffRouter.post('/orders/:id/accept', async (req: any, res) => {
   const restaurantId = myRestaurant(req)
   const order = db
     .prepare('SELECT * FROM orders WHERE id = ? AND restaurant_id = ?')
@@ -1724,9 +1728,10 @@ staffRouter.post('/orders/:id/accept', (req: any, res) => {
   // sending the customer's update and the WhatsApp nudge, so whether anybody
   // heard about an order depended on which screen it was accepted from.
   tellCustomer(order.id, 'ACCEPTED')
+  const thanked = await thankNudge(order.id)
   publish('orders', { restaurantId })
   publish('ops', { restaurantId })
-  res.json({ order: getOrder(order.id) })
+  res.json({ order: getOrder(order.id), thanked })
 })
 
 staffRouter.post('/orders/:id/decline', (req: any, res) => {

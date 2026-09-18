@@ -77,6 +77,31 @@ function goLabel(o: Order, next: OrderStatus): string {
 }
 
 
+/** What the server managed when it tried to nudge somebody to say thank you. */
+type Thanked = { to: string; sent: number; devices: number; why: string }
+
+/**
+ * Accepting an order, said out loud.
+ *
+ * The thank-you arrives as a notification, and a notification that does not
+ * arrive is indistinguishable from one that was never sent — which is how a
+ * working system and a broken one came to look identical from behind the
+ * counter. Three different things can happen and they need three different
+ * answers: it went, there is nobody to send it to, or no phone is listening.
+ */
+function thankWord(t: Thanked): [string, 'good' | 'bad' | 'info'] {
+  if (!t.to) {
+    return ['Accepted. This order has no phone number on it, so there is nobody to message.', 'info']
+  }
+  if (t.sent) {
+    return ['Accepted. Tap the “Thank …” notification just sent to you — it opens WhatsApp.', 'good']
+  }
+  if (!t.devices) {
+    return ['Accepted — but no phone is signed up for alerts, so nothing was sent. Settings → Notifications.', 'bad']
+  }
+  return [`Accepted, but the notification could not be delivered${t.why ? `: ${t.why}` : '.'}`, 'bad']
+}
+
 function payLook(o: Order): { cls: string; label: string; hint: string } {
   if (o.paymentState === 'paid') return { cls: 'badge-open', label: 'PAID', hint: 'Confirmed. Tap to undo.' }
   if (o.paymentState === 'sent')
@@ -180,8 +205,21 @@ export default function StaffOrders() {
   const advance = async (order: Order, to: OrderStatus) => {
     setBusyId(order.id)
     try {
-      const r = await api<{ order: Order }>(`/staff/orders/${order.id}/status`, { body: { status: to } })
+      const r = await api<{ order: Order; thanked?: Thanked }>(`/staff/orders/${order.id}/status`, {
+        body: { status: to },
+      })
       setOrders((prev) => prev?.map((o) => (o.id === r.order.id ? r.order : o)) ?? null)
+      /**
+       * Saying out loud what accepting just did.
+       *
+       * The thank-you goes out as a notification, and a notification that does
+       * not arrive looks the same as one that was never sent — so an order
+       * with no phone number on it, which correctly sends nothing because
+       * there is nowhere to send it, was indistinguishable from the whole
+       * system being broken. One line on screen at the moment of the tap is
+       * the difference between knowing and guessing.
+       */
+      if (to === 'ACCEPTED' && r.thanked) toast(...thankWord(r.thanked))
       load()
     } catch (e) {
       toast((e as ApiError).message, 'bad')

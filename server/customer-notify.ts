@@ -32,6 +32,84 @@ const WORTH_A_BUZZ: Partial<Record<OrderStatus, (restaurant: string) => string>>
 }
 
 /**
+ * The number the thank-you would go to, or '' when there is none.
+ *
+ * Asked before anything is sent, so the board can say what just happened
+ * instead of leaving it to be inferred from a notification that may never
+ * arrive. An order with no number produces no thank-you — correctly, there is
+ * nowhere to send one — but it produced no explanation either, and from the
+ * kitchen that is indistinguishable from the whole system being broken. It is
+ * the difference between "this order has no phone number on it" and a silence
+ * that has already cost hours.
+ */
+export function thankNumber(orderId: number): string {
+  const row = db
+    .prepare('SELECT contact_phone, delivery_phone FROM orders WHERE id = ?')
+    .get(orderId) as any
+  if (!row) return ''
+  return waNumber(row.contact_phone || row.delivery_phone || '')
+}
+
+/** What the thank-you nudge managed, in enough detail to say it out loud. */
+export type ThankResult = { to: string; sent: number; devices: number; why: string }
+
+/**
+ * Taps the restaurant on the shoulder to thank the customer, and reports back.
+ *
+ * WhatsApp charges a business for messaging somebody who has not messaged them
+ * first, and charges nothing for one person messaging another — so the app
+ * does not send it. It sends the restaurant a notification, and they send the
+ * message, in one tap, from the phone already in their hand.
+ *
+ * Awaited by the routes that accept an order, which is a departure: everything
+ * else here is fired and forgotten, because whether a push service answered
+ * has nothing to do with whether the kitchen moved the order along. This one
+ * is waited for because the answer is the only evidence anybody gets. A
+ * notification that does not arrive looks exactly like one that was never
+ * sent, and telling those apart has taken days.
+ */
+export async function thankNudge(orderId: number): Promise<ThankResult> {
+  const row = db
+    .prepare(
+      `SELECT order_number, customer_name, contact_phone, delivery_phone, restaurant_id
+         FROM orders WHERE id = ?`,
+    )
+    .get(orderId) as any
+  const empty = { to: '', sent: 0, devices: 0, why: '' }
+  if (!row) return empty
+
+  const to = waNumber(row.contact_phone || row.delivery_phone || '')
+  if (!to) return empty
+
+  // Pointed at a page of ours rather than straight at WhatsApp. An app
+  // installed on an iPhone Home Screen runs in its own scope, and a service
+  // worker asking it to open somebody else's site is declined quietly — a
+  // notification that does nothing when tapped. Our own page is always
+  // allowed, and from there WhatsApp is an ordinary navigation.
+  const message = thanksText(row.customer_name || 'there')
+  const url =
+    `/thank?to=${to}` +
+    `&who=${encodeURIComponent(row.customer_name || 'them')}` +
+    `&text=${encodeURIComponent(message)}`
+
+  try {
+    const r = await pushToRestaurant(row.restaurant_id, {
+      title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
+      body: `#${row.order_number} accepted. Tap to send it — it opens WhatsApp with the message written.`,
+      url,
+      // Tried first by the service worker. Most browsers will not open a
+      // non-web address from a notification and the page above is what
+      // actually carries it; on the ones that will, this is the whole journey.
+      wa: waAppLink(to, message),
+      tag: `khapee-thank-${orderId}`,
+    })
+    return { to, sent: r.sent, devices: r.devices, why: r.why }
+  } catch (e) {
+    return { to, sent: 0, devices: 0, why: (e as Error)?.message ?? 'could not be sent' }
+  }
+}
+
+/**
  * Fires whatever this status is worth, and never throws.
  *
  * Deliberately not awaited by the route that changes the status: whether a
@@ -48,39 +126,6 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
     )
     .get(orderId) as any
   if (!row) return
-
-  // The kitchen has said yes: the order is really happening, so this is when
-  // the restaurant has something worth saying to the customer.
-  if (status === 'ACCEPTED') {
-    // The free way to reach a customer who never allowed notifications.
-    // WhatsApp charges a business for messaging somebody who has not messaged
-    // them first, and charges nothing for one person messaging another — so
-    // the app does not send it. It taps the restaurant on the shoulder and
-    // they send it, in one tap, from the phone already in their hand.
-    const to = waNumber(row.contact_phone || row.delivery_phone || '')
-    if (to) {
-      // Pointed at a page of ours rather than straight at WhatsApp. An app
-      // installed on an iPhone Home Screen runs in its own scope, and a service
-      // worker asking it to open somebody else's site is declined quietly — a
-      // notification that does nothing when tapped. Our own page is always
-      // allowed, and from there WhatsApp is an ordinary navigation.
-      const message = thanksText(row.customer_name || 'there')
-      const url =
-        `/thank?to=${to}` +
-        `&who=${encodeURIComponent(row.customer_name || 'them')}` +
-        `&text=${encodeURIComponent(message)}`
-      void pushToRestaurant(row.restaurant_id, {
-        title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
-        body: `#${row.order_number} accepted. Tap to send it — it opens WhatsApp with the message written.`,
-        url,
-        // Tried first by the service worker. Most browsers will not open a
-        // non-web address from a notification and the page above is what
-        // actually carries it; on the ones that will, this is the whole journey.
-        wa: waAppLink(to, message),
-        tag: `khapee-thank-${orderId}`,
-      }).catch(() => {})
-    }
-  }
 
   const done = isTerminal((row.service_mode ?? 'pickup') as ServiceType, status) && status !== 'DECLINED'
   if (done) {

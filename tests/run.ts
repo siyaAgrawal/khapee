@@ -2532,6 +2532,56 @@ async function runTests() {
     })
     ok('and no is one tap with a reason', no.body.order.status === 'DECLINED', no.body)
     ok('which the customer can read', no.body.order.declinedReason === 'Kitchen is closing', no.body.order)
+
+    // Accepting says whether there is anybody to thank.
+    //
+    // The thank-you goes out as a notification, and one that never arrives
+    // looks exactly like one that was never sent — so an order carrying no
+    // number, which correctly sends nothing, was indistinguishable from the
+    // whole system being broken. It cost hours. The board is told at the
+    // moment of the tap instead.
+    const noNumber = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Left no number',
+        contactPhone: '',
+      },
+    })
+    ok(
+      'an order the kitchen could never ring is refused at the door',
+      noNumber.status === 400,
+      noNumber.body,
+    )
+
+    const reachable2 = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Left a number',
+        contactPhone: '98765 43210',
+      },
+    })
+    const loud = await call(`/staff/orders/${reachable2.body.order.id}/status`, {
+      token: roadToken,
+      body: { status: 'ACCEPTED' },
+    })
+    ok('accepting reports who the thank-you is for', loud.body.thanked?.to === '919876543210', loud.body)
+    ok(
+      'and how far it got, so silence is never the only answer',
+      typeof loud.body.thanked?.sent === 'number' && typeof loud.body.thanked?.devices === 'number',
+      loud.body.thanked,
+    )
+
+    // Only on the step that sends it — every other move along the board has
+    // nothing to say about WhatsApp.
+    const onward = await call(`/staff/orders/${reachable2.body.order.id}/status`, {
+      token: roadToken,
+      body: { status: 'PREPARING' },
+    })
+    ok('later steps say nothing about it', onward.body.thanked === undefined, onward.body)
   }
 
   group('THE TAP THAT REACHES WHATSAPP')

@@ -97,19 +97,30 @@ self.addEventListener('push', (event) => {
   )
 })
 
-/** Tapping it opens the board — or focuses the tab that is already on it. */
+/**
+ * Tapping it opens the board — or focuses the tab that is already on it.
+ *
+ * Unless the notification points somewhere else entirely, which one of them
+ * does: the one that offers to thank a customer opens WhatsApp with the
+ * message already written. That has to be a new window, because navigating the
+ * dashboard to WhatsApp would take the board away from whoever is working it.
+ */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = new URL(event.notification.data?.url || '/staff/orders', self.location.origin).href
+  const wanted = event.notification.data?.url || '/staff/orders'
+  const target = new URL(wanted, self.location.origin).href
+  const ours = target.startsWith(self.location.origin)
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-      for (const client of windows) {
-        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-          client.navigate?.(target)
-          return client.focus()
-        }
-      }
-      return self.clients.openWindow(target)
-    }),
+    ours
+      ? self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+          for (const client of windows) {
+            if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+              client.navigate?.(target)
+              return client.focus()
+            }
+          }
+          return self.clients.openWindow(target)
+        })
+      : self.clients.openWindow(target),
   )
 })

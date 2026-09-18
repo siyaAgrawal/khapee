@@ -15,10 +15,10 @@
  *   - the thank-you, once, when the order is actually finished — which is
  *     when "we hope you enjoyed your food" is a true sentence.
  */
-import { thanksText } from '../shared/thanks.ts'
+import { thanksText, waLink } from '../shared/thanks.ts'
 import { isTerminal, type OrderStatus, type ServiceType } from '../shared/orders.ts'
 import { db } from './db.ts'
-import { pushToCustomer } from './push.ts'
+import { pushToCustomer, pushToRestaurant } from './push.ts'
 
 /** What a customer would actually want their phone to light up for. */
 const WORTH_A_BUZZ: Partial<Record<OrderStatus, (restaurant: string) => string>> = {
@@ -40,7 +40,8 @@ const WORTH_A_BUZZ: Partial<Record<OrderStatus, (restaurant: string) => string>>
 export function tellCustomer(orderId: number, status: OrderStatus): void {
   const row = db
     .prepare(
-      `SELECT o.order_number, o.customer_name, o.service_mode, r.name AS restaurant
+      `SELECT o.order_number, o.customer_name, o.service_mode, o.contact_phone, o.delivery_phone,
+              o.restaurant_id, r.name AS restaurant
          FROM orders o JOIN restaurants r ON r.id = o.restaurant_id
         WHERE o.id = ?`,
     )
@@ -61,6 +62,27 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
       url: `/order/${row.order_number}`,
       tag: `khapee-thanks-${orderId}`,
     }).catch(() => {})
+
+    // And the restaurant's own phone, with the message already written.
+    //
+    // This is the free way to reach a customer who never allowed
+    // notifications: WhatsApp charges a business for messaging somebody who
+    // has not messaged them first, but charges nothing for one person
+    // messaging another. So the app does not send it — it taps the restaurant
+    // on the shoulder and the restaurant sends it, in one tap, from the phone
+    // already in their hand.
+    const link = waLink(
+      row.contact_phone || row.delivery_phone || '',
+      thanksText(row.customer_name || 'there', row.restaurant),
+    )
+    if (link) {
+      void pushToRestaurant(row.restaurant_id, {
+        title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
+        body: `#${row.order_number} is done. Tap to send it — it opens WhatsApp with the message written.`,
+        url: link,
+        tag: `khapee-thank-${orderId}`,
+      }).catch(() => {})
+    }
     return
   }
 

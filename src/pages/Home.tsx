@@ -74,9 +74,13 @@ export default function Home() {
    * instruction to do something already done — and it sat above the menu on
    * the phone of the one person who had followed it.
    */
-  const [alertsOn, setAlertsOn] = useState(true)
+  const [alertsOn, setAlertsOn] = useState(false)
   useEffect(() => {
-    if (!pushSupported()) return setAlertsOn(true)
+    // A browser that cannot do push at all is not proof that alerts are on —
+    // it is an iPhone whose owner has not added Khapee to the Home Screen yet,
+    // which is the one person the line has instructions for. Starting this
+    // "on" to stop it flashing in for a moment hid it from them entirely.
+    if (!pushSupported()) return
     /**
      * Asked of the server, because the phone is not a witness to this.
      *
@@ -364,6 +368,19 @@ export default function Home() {
             ))}
           </div>
         )}
+
+        {/* The way in that does not depend on being guessed right.
+            The line at the top of this page appears only when the app works
+            out that alerts are off, and every way of working that out has been
+            wrong at least once — a dismissal remembered too well, storage
+            cleared, a browser that cannot do push read as a browser that does
+            not need to. Each time, the effect was the same: the one person who
+            needed the code page could not reach it, on the one phone that had
+            stopped ringing. This is small, it is at the bottom, and it is
+            always here. */}
+        <footer className="home-foot">
+          <Link to="/alerts">🔔 Work here? Turn on order alerts</Link>
+        </footer>
       </main>
     </div>
   )

@@ -41,13 +41,21 @@ async function call<T = any>(
   path: string,
   opts: { method?: string; body?: unknown; token?: string } = {},
 ): Promise<Res<T>> {
+  // Placing an order needs a number the restaurant can ring. Every test below
+  // is about something else, so one is filled in here rather than in fifty
+  // bodies; the requirement itself is checked in "A NUMBER THEY CAN RING".
+  const payload =
+    path === '/orders' && opts.body && typeof opts.body === 'object'
+      ? { contactPhone: '98765 43210', ...(opts.body as Record<string, unknown>) }
+      : opts.body
+
   const res = await fetch(BASE + path, {
-    method: opts.method ?? (opts.body ? 'POST' : 'GET'),
+    method: opts.method ?? (payload ? 'POST' : 'GET'),
     headers: {
-      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(payload ? { 'Content-Type': 'application/json' } : {}),
       ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
     },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    body: payload ? JSON.stringify(payload) : undefined,
   })
   const text = await res.text()
   let body: any = {}
@@ -2345,6 +2353,56 @@ async function runTests() {
     ok('with the reason on it', no.body.order.declinedReason === 'Out of croissants')
   }
 
+  group('A NUMBER THEY CAN RING')
+  {
+    // The two calls a kitchen actually makes are "we are out of that" and "we
+    // cannot find you". Neither works on a customer who only left a name.
+    const noNumber = await fetch(`${BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'No phone',
+      }),
+    })
+    ok('an order without a phone number is refused', noNumber.status === 400, noNumber.status)
+    const why = await noNumber.json()
+    ok('and says what to add', /10-digit mobile/i.test(why.error ?? ''), why)
+
+    const tooShort = await fetch(`${BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Typo',
+        contactPhone: '9876',
+      }),
+    })
+    ok('so is half a number', tooShort.status === 400, tooShort.status)
+
+    const good = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Reachable',
+        contactPhone: '+91 98765 43210',
+      },
+    })
+    ok('a real one goes through', good.status === 201, good.body)
+
+    // A counter sale is the exception: that customer is standing at the till.
+    const counter = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { items: [{ menuItemId: croissant.id, quantity: 1 }], customerName: 'Walk-in' },
+    })
+    ok('but the till never asks for one', counter.status === 200 || counter.status === 201, counter.body)
+  }
+
   group('THE THANK-YOU ON WHATSAPP')
   {
     // Sending it needs Meta's Cloud API — a token, an account, a charge per
@@ -2371,20 +2429,36 @@ async function runTests() {
     // A ten-digit Indian number is what people type; WhatsApp wants the code.
     ok('with the number in the form WhatsApp wants', row?.phone === '919876543210', row)
 
-    const noNumber = await call('/orders', {
+    // An account's own number stands in when the form is left alone — the
+    // customer is reachable either way, which is the only thing that matters.
+    const reachable = await call('/auth/register', {
+      body: { name: 'Has A Phone', email: 'has.phone@tablo.test', password: 'hunter22' },
+    })
+    await call('/auth/me', {
+      method: 'PATCH',
+      token: reachable.body.token,
+      body: { name: 'Has A Phone', phone: '90000 00001' },
+    })
+
+    const account = await call('/orders', {
+      token: reachable.body.token,
       body: {
         restaurantId: mornington.id,
         type: 'pickup',
         items: [{ menuItemId: croissant.id, quantity: 1 }],
-        customerName: 'Unreachable',
+        customerName: 'Signed in',
+        contactPhone: '',
       },
     })
     const log2 = new Database(DB_PATH)
     const row2 = log2
       .prepare('SELECT * FROM whatsapp_messages WHERE order_id = ?')
-      .get(noNumber.body.order.id) as any
+      .get(account.body.order?.id) as any
     log2.close()
-    ok('and a guest who gave no number is recorded as such', row2?.status === 'no-number', row2)
+    ok('an order from an account falls back to the number on it', !!row2 && row2.status === 'off', {
+      status: account.status,
+      row2,
+    })
   }
 
   group('A PRECINCT — ordering from wherever you are standing')

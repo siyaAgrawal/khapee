@@ -55,7 +55,7 @@ export default function Checkout() {
     dining?.tableLabel ?? scannedTable?.tableLabel ?? null,
   )
   const [name, setName] = useState(user?.name ?? '')
-  /** Where the Khapee confirmation goes, when the session has no number of its own. */
+  /** How the restaurant reaches this order. Not optional — see needsPhone. */
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [note, setNote] = useState('')
   const [payNow, setPayNow] = useState(false)
@@ -165,7 +165,14 @@ export default function Checkout() {
   const needsTable = where === 'here' && !seated && !placeDecided
   const needsProof = where !== 'later' && !verified && !payNow
   const needsName = name.trim().length < 2
-  const ready = !needsTable && !needsProof && !needsName
+  /**
+   * A kitchen that cannot ring you has no way to say "we are out of that" or
+   * "we cannot find you" — and those are the two calls that actually happen.
+   * Delivery and the precinct already collected a number on the way in, so
+   * they are not asked twice.
+   */
+  const needsPhone = !isNearby && !isDelivery && phone.replace(/\D/g, '').length < 10
+  const ready = !needsTable && !needsProof && !needsName && !needsPhone
 
   const startPayment = async () => {
     setPlacing(true)
@@ -369,12 +376,11 @@ export default function Checkout() {
             />
           </div>
 
-          {/* Somewhere to send the confirmation. A delivery or a spot in the
-              area has already given a number and been asked why; at a table
-              nobody has, so it is optional and says what it is for. */}
-          {!isNearby && (
+          {/* How the restaurant reaches this order. A delivery or a spot in
+              the area gave a number on the way in and is not asked twice. */}
+          {!isNearby && !isDelivery && (
             <div className="field">
-              <label htmlFor="co-phone">WhatsApp number (optional)</label>
+              <label htmlFor="co-phone">Mobile number</label>
               <input
                 id="co-phone"
                 className="input"
@@ -384,7 +390,9 @@ export default function Checkout() {
                 inputMode="tel"
                 autoComplete="tel"
               />
-              <span className="hint">We'll send your order confirmation here.</span>
+              <span className="hint">
+                Your confirmation comes here, and it is how the restaurant reaches you.
+              </span>
             </div>
           )}
 
@@ -509,6 +517,11 @@ export default function Checkout() {
                 toast('Add a name so the kitchen knows whose order it is.', 'info')
                 return
               }
+              if (needsPhone) {
+                document.getElementById('co-phone')?.focus()
+                toast('Add your mobile number so the restaurant can reach you.', 'info')
+                return
+              }
               if (needsTable) {
                 document.querySelector('.table-grid')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 toast('Tap your table number.', 'info')
@@ -543,7 +556,9 @@ export default function Checkout() {
             <p className="tiny muted center" style={{ marginTop: 10 }}>
               {needsName
                 ? 'We just need a name for the order.'
-                : needsTable
+                : needsPhone
+                  ? 'Add your mobile number — the restaurant may need to ring.'
+                  : needsTable
                   ? 'Tap your table number above.'
                   : "Tap above and we'll ask for the code — or switch to paying in the app."}
             </p>

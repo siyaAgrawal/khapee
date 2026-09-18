@@ -44,8 +44,14 @@ export type CreateOrderInput = {
   type: OrderType
   items: CartLine[]
   customerName: string
-  /** Where to send the Khapee confirmation, when the customer offers a number. */
+  /** Where the order updates go. Required on the customer's own path. */
   contactPhone?: string
+  /**
+   * Whether the order is refused without a reachable number. True for orders
+   * a customer places themselves; false at the counter, where the person is
+   * standing in front of the till and the till is the way to reach them.
+   */
+  requirePhone?: boolean
   userId: number | null
   note?: string
   paymentMethod?: 'counter' | 'app'
@@ -63,19 +69,26 @@ export type CreateOrderInput = {
 export type CreateOrderResult = { ok: true; order: any } | { ok: false; status: number; error: string }
 
 /**
- * The number to send the thank-you to.
+ * The number the order can be reached on.
  *
- * Delivery and the precinct ask for one outright, because somebody has to be
- * able to ring. Everyone else is only reachable if they have an account with a
- * number on it — a guest ordering at a table has given us nothing but a name,
- * and there is nowhere to send anything.
+ * Three places it can come from, in the order they are worth trusting: what
+ * the customer just typed, what the session already collected (delivery and
+ * the precinct both ask outright, because somebody has to be able to ring),
+ * and the number on the account. A phone is how a kitchen says "we are out of
+ * that" or "we cannot find you" — every other channel in the app assumes the
+ * customer is still looking at their screen, and mostly they are not.
  */
-function customerPhone(given: string | undefined, userId: number | null, order: any): string {
+function customerPhone(given: string | undefined, userId: number | null, sessionPhone: string): string {
   if (given && given.trim()) return given.trim()
-  if (order?.deliveryPhone) return String(order.deliveryPhone)
+  if (sessionPhone) return String(sessionPhone)
   if (!userId) return ''
   const row = db.prepare('SELECT phone FROM users WHERE id = ?').get(userId) as any
   return String(row?.phone ?? '')
+}
+
+/** Ten digits is a mobile number in India; anything shorter is a typo. */
+function looksLikePhone(value: string): boolean {
+  return value.replace(/\D/g, '').length >= 10
 }
 
 export function createOrder(input: CreateOrderInput): CreateOrderResult {
@@ -221,6 +234,11 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   }
   const totalCents = subtotalCents + deliveryFeeCents
 
+  const phone = customerPhone(input.contactPhone, input.userId, liveSession?.phone ?? '')
+  if (input.requirePhone && !looksLikePhone(phone)) {
+    return { ok: false, status: 400, error: 'Add a 10-digit mobile number so the restaurant can reach you.' }
+  }
+
   const orderNumber = generateOrderNumber()
   const verifyToken = randomToken(10)
   const paymentMethod = input.paymentMethod === 'app' ? 'app' : 'counter'
@@ -364,7 +382,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   // The thank-you, from Khapee. Not awaited and unable to throw: whether Meta
   // answers has nothing to do with whether the kitchen has an order.
   void sendOrderConfirmation(orderId, {
-    phone: customerPhone(input.contactPhone, input.userId, order),
+    phone,
     customerName: customerName,
     restaurantName: order.restaurantName ?? '',
     orderNumber,

@@ -109,6 +109,9 @@ ordersRouter.post('/', (req, res) => {
     items: Array.isArray(body.items) ? body.items : [],
     customerName: String(body.customerName ?? req.user?.name ?? '').trim(),
     contactPhone: String(body.contactPhone ?? '').trim(),
+    // A customer ordering for themselves has to be reachable; a counter sale
+    // does not, which is why this is set here and not inside createOrder.
+    requirePhone: true,
     userId: req.user?.id ?? null,
     note: body.note,
     paymentMethod: body.paymentMethod,

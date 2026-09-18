@@ -2726,6 +2726,38 @@ async function runTests() {
     const reused = await call(`/alerts/invite/${invite.body.token}`, { body: { subscription: invitedDevice } })
     ok('and is spent — a second phone cannot use it', reused.status === 410, reused.body)
 
+    // Unless it was meant to be kept: the owner's own phones have to be put
+    // back every time the server forgets them, and a spent code cannot do it.
+    const keep = new Database(DB_PATH)
+    keep
+      .prepare(
+        `INSERT INTO alert_invites (restaurant_id, token, expires_at, reusable)
+         VALUES (?, 'KEEPME', datetime('now', '+1 day'), 1)`,
+      )
+      .run(mornington.id)
+    keep.close()
+    const first = await call('/alerts/invite/KEEPME', {
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/kept-one',
+          keys: { p256dh: 'BDpUB9' + 'k'.repeat(80), auth: 'aaaaaaaaaaaaaaaa' },
+        },
+      },
+    })
+    const second = await call('/alerts/invite/KEEPME', {
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/kept-two',
+          keys: { p256dh: 'BDpUB9' + 'm'.repeat(80), auth: 'bbbbbbbbbbbbbbbb' },
+        },
+      },
+    })
+    ok('a code kept on purpose works twice', first.status === 200 && second.status === 200, {
+      first: first.body,
+      second: second.body,
+    })
+    ok('and still reads as valid afterwards', (await call('/alerts/invite/KEEPME')).status === 200)
+
     const withInvited = (await call('/staff/alerts', { token: roadToken })).body.push.list as any[]
     ok(
       'the invited phone is on the list, marked as invited',

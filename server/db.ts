@@ -304,6 +304,13 @@ addColumn('restaurants', 'order_email', "TEXT NOT NULL DEFAULT ''")
 addColumn('push_subscriptions', 'all_restaurants', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('alert_invites', 'all_restaurants', 'INTEGER NOT NULL DEFAULT 0')
 
+// A code that can be used more than once, for the handful of phones a
+// restaurant sets up itself. Spending a code on first use is right for one
+// handed to somebody else; it is wrong for the owner's own phones, which have
+// to be put back every time the server forgets them — and it is what stopped a
+// phone repairing itself quietly, because the code it held was already spent.
+addColumn('alert_invites', 'reusable', 'INTEGER NOT NULL DEFAULT 0')
+
 // How a device came to be on the alert list — signed in, or handed a one-time
 // invite — so an owner reading the list can tell one from the other.
 addColumn('push_subscriptions', 'label', "TEXT NOT NULL DEFAULT ''")

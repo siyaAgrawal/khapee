@@ -190,7 +190,9 @@ publicRouter.get('/alerts/invite/:token', (req, res) => {
     .get(String(req.params.token).trim().toUpperCase()) as any
   if (!row) return res.status(404).json({ error: 'That link is not valid.' })
   if (row.revoked_at) return res.status(410).json({ error: 'That link was cancelled.' })
-  if (row.used_at) return res.status(410).json({ error: 'That link has already been used on a phone.' })
+  if (row.used_at && !row.reusable) {
+    return res.status(410).json({ error: 'That link has already been used on a phone.' })
+  }
   const expired = db
     .prepare(`SELECT (? <= datetime('now')) AS gone`)
     .get(row.expires_at) as any
@@ -208,7 +210,10 @@ publicRouter.post('/alerts/invite/:token', (req, res) => {
     .prepare('SELECT * FROM alert_invites WHERE token = ?')
     .get(String(req.params.token).trim().toUpperCase()) as any
   if (!row) return res.status(404).json({ error: 'That link is not valid.' })
-  if (row.used_at || row.revoked_at) return res.status(410).json({ error: 'That link has already been used.' })
+  if (row.revoked_at) return res.status(410).json({ error: 'That link was cancelled.' })
+  if (row.used_at && !row.reusable) {
+    return res.status(410).json({ error: 'That link has already been used.' })
+  }
   const expired = db.prepare(`SELECT (? <= datetime('now')) AS gone`).get(row.expires_at) as any
   if (expired?.gone) return res.status(410).json({ error: 'That link has expired.' })
 

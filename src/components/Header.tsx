@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from '../lib/session'
 import { useCart } from '../lib/cart'
 import JoinRoom from './JoinRoom'
@@ -9,9 +9,25 @@ export default function Header() {
   const { count } = useCart()
   const navigate = useNavigate()
   const [joining, setJoining] = useState(false)
+  const { pathname } = useLocation()
+
+  /**
+   * Installed on a Home Screen there is no browser chrome, so there is no back
+   * button anywhere — tap into a restaurant and the only way out is to close
+   * the app. The browser has its own and does not need this one.
+   */
+  const installed =
+    typeof window !== 'undefined' &&
+    ((navigator as any).standalone === true ||
+      window.matchMedia?.('(display-mode: standalone)')?.matches === true)
 
   return (
     <header className="header">
+      {installed && pathname !== '/' && (
+        <button className="back-btn" onClick={() => navigate(-1)} aria-label="Back">
+          ‹
+        </button>
+      )}
       <Link to="/" className="brand">
         <span className="brand-mark">◗</span>
         Khapee

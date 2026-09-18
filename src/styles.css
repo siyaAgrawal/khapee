@@ -437,15 +437,22 @@ textarea {
 }
 
 /* ================================================================ header */
+/* Installed on a Home Screen there is no browser chrome, so the page starts at
+   the very top of the glass and the phone's clock and battery sit on top of
+   the logo — which is also the only way back to the front page. Reserving the
+   inset is what makes the header tappable again; on the web it is zero and
+   nothing changes. */
 .header {
   position: sticky;
   top: 0;
   z-index: 40;
-  height: var(--header-h);
+  height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 0 18px;
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
   background: var(--bg);
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: saturate(180%) blur(14px);
@@ -1139,7 +1146,7 @@ textarea {
 
 .menu-nav {
   position: sticky;
-  top: var(--header-h);
+  top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
   z-index: 20;
   display: flex;
   gap: 8px;
@@ -4666,7 +4673,7 @@ button.nav-link {
 
 .pos-panel {
   position: sticky;
-  top: calc(var(--header-h) + 14px);
+  top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 14px);
   padding: 16px;
   border-radius: 16px;
   border: 1px solid var(--line);
@@ -5285,4 +5292,22 @@ button.nav-link {
 .staff-strip button:hover {
   background: var(--surface);
   color: var(--ink);
+}
+
+/* The way out, for an app with no browser chrome around it. */
+.back-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.back-btn:hover {
+  background: var(--bg-tint);
 }

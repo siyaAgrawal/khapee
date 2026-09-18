@@ -9,7 +9,7 @@ import { api } from './api'
  * or locked, in an apron pocket — still rings.
  */
 export type AlertState = {
-  push: { available: boolean; publicKey: string; devices: number }
+  push: { available: boolean; publicKey: string; devices: number; reason: string }
   email: { available: boolean; to: string }
 }
 

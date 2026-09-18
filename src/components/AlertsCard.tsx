@@ -80,7 +80,7 @@ export default function AlertsCard() {
                 ? 'Add Khapee to your Home Screen first — on iPhone, Safari only alerts an installed app.'
                 : 'This browser cannot do background alerts.'
               : !state?.push.available
-                ? 'Not switched on for this server yet.'
+                ? state?.push.reason || 'Not switched on for this server yet.'
                 : onThisDevice
                   ? 'On. It rings with Khapee closed.'
                   : 'Off. Turn it on and it rings with Khapee closed.'}

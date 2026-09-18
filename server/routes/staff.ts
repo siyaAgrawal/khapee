@@ -9,7 +9,7 @@ import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orde
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
-import { dropSubscription, pushConfigured, pushPublicKey, pushToRestaurant, saveSubscription, subscriptionCount } from '../push.ts'
+import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, saveSubscription, subscriptionCount } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { mailConfigured } from '../mail.ts'
 import {
@@ -644,6 +644,7 @@ staffRouter.get('/alerts', (req: any, res) => {
       available: pushConfigured(),
       publicKey: pushPublicKey(),
       devices: subscriptionCount(restaurantId),
+      reason: pushReason(),
     },
     email: { available: mailConfigured(), to: alertEmailFor(restaurantId) },
   })
@@ -653,7 +654,7 @@ staffRouter.get('/alerts', (req: any, res) => {
 staffRouter.post('/alerts/subscribe', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   if (!pushConfigured()) {
-    return res.status(503).json({ error: 'Push alerts are not switched on for this server yet.' })
+    return res.status(503).json({ error: pushReason() })
   }
   const result = saveSubscription(req.user.id, restaurantId, req.body?.subscription ?? req.body)
   if (!result.ok) return res.status(400).json({ error: result.error })

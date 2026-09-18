@@ -26,12 +26,32 @@ import { db } from './db.ts'
 
 const KEY_FILE = path.resolve(import.meta.dirname, '..', 'data', '.vapid.json')
 
+/**
+ * Whether this host keeps its disk between deploys.
+ *
+ * It does not on the free plan — the database itself is rebuilt from the
+ * committed snapshot on every boot, which is what ORDRO_SEED means. A keypair
+ * written to a disk like that is a new keypair every deploy, and every device
+ * that had subscribed is silently unsubscribed with nothing to show for it.
+ * Better to say push is not configured than to let it rot that way.
+ */
+const DISK_IS_TEMPORARY = !!process.env.VERCEL || process.env.ORDRO_SEED === 'snapshot'
+
+/** Why push is off, when it is. Empty when it is on. */
+let reason = ''
+
 function loadKeys(): { publicKey: string; privateKey: string } | null {
   const fromEnv = {
     publicKey: String(process.env.VAPID_PUBLIC ?? '').trim(),
     privateKey: String(process.env.VAPID_PRIVATE ?? '').trim(),
   }
   if (fromEnv.publicKey && fromEnv.privateKey) return fromEnv
+
+  if (DISK_IS_TEMPORARY) {
+    reason =
+      'Set VAPID_PUBLIC and VAPID_PRIVATE in the environment — this host rebuilds its disk on every deploy, so a key kept in a file would unsubscribe every device each time.'
+    return null
+  }
 
   try {
     if (fs.existsSync(KEY_FILE)) {
@@ -47,6 +67,7 @@ function loadKeys(): { publicKey: string; privateKey: string } | null {
     fs.writeFileSync(KEY_FILE, JSON.stringify(made, null, 2), { mode: 0o600 })
     return made
   } catch {
+    reason = 'No push keypair, and none could be written.'
     return null
   }
 }
@@ -62,6 +83,11 @@ if (KEYS) {
 
 export function pushConfigured(): boolean {
   return !!KEYS
+}
+
+/** What to tell somebody who switched alerts on and heard nothing. */
+export function pushReason(): string {
+  return KEYS ? '' : reason || 'Push alerts are not switched on for this server.'
 }
 
 /** The half of the pair a browser needs in order to subscribe. */

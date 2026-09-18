@@ -149,6 +149,16 @@ if (fs.existsSync(path.join(dist, 'index.html'))) {
     let html = injectMeta(shell, meta, origin)
     const ld = structuredData(req.path, origin)
     if (ld) html = html.replace('</head>', `  <script type="application/ld+json">${ld}</script>\n  </head>`)
+    // Ask every time.
+    //
+    // This page names the build it belongs to — the asset filenames are
+    // content-hashed — and it carried an ETag with nothing said about
+    // freshness, which does not mean "do not cache": a browser is then free to
+    // guess a lifetime and keep serving the copy it already has. The effect is
+    // a phone that is still running last week's app and cannot be told
+    // otherwise, with no error anywhere to explain it. The ETag still saves
+    // the bytes when nothing has changed.
+    res.set('Cache-Control', 'no-cache')
     res.type('html').send(html)
   })
 }

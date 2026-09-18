@@ -120,6 +120,8 @@ export default function StaffOrders() {
   const [filter, setFilter] = useState<'all' | 'dine_in' | 'pickup'>('all')
   const [scope, setScope] = useState<'active' | 'all'>('active')
   const [busyId, setBusyId] = useState<number | null>(null)
+  /** Work that belongs to the board rather than to one order on it. */
+  const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   // A board needs five columns of width. On a phone it had one, so the queue
   // is what opens there; anything wide enough for the board gets the board.
@@ -251,6 +253,48 @@ export default function StaffOrders() {
     }
   }
 
+  /**
+   * Emptying the board, with the number said out loud first.
+   *
+   * Two round trips on purpose. The board only holds what its current scope
+   * asked for, so it cannot say how much history is behind it — and agreeing
+   * to delete "everything" without being told what everything is, is not
+   * agreeing to anything. The first call counts and changes nothing; the
+   * confirmation is written from what it found, including how many orders are
+   * still in progress, because those go too.
+   */
+  const clearHistory = async () => {
+    setBusy('clear')
+    try {
+      const look = await api<{ total: number; active: number }>('/staff/orders/clear', {
+        body: { dryRun: true },
+      })
+      if (!look.total) {
+        toast('There is no order history to clear.', 'info')
+        return
+      }
+      const warning = look.active
+        ? `\n\n${look.active} of them ${look.active === 1 ? 'is' : 'are'} still in progress and will be deleted too.`
+        : ''
+      if (
+        !window.confirm(
+          `Delete all ${look.total} order${look.total === 1 ? '' : 's'} for this restaurant?${warning}` +
+            '\n\nThis cannot be undone. Invoices are kept.',
+        )
+      ) {
+        return
+      }
+      const r = await api<{ cleared: number }>('/staff/orders/clear', { body: {} })
+      toast(`Cleared ${r.cleared} order${r.cleared === 1 ? '' : 's'}.`, 'good')
+      knownIds.current = new Set()
+      load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
   const togglePaid = async (order: Order) => {
     setBusyId(order.id)
     try {
@@ -356,6 +400,13 @@ export default function StaffOrders() {
         >
           {scope === 'active' ? 'Show history' : 'Active only'}
         </button>
+        {/* Next to the button that shows the history, because that is where
+            somebody is standing when they decide there is too much of it. */}
+        {scope === 'all' && (
+          <button className="btn btn-ghost btn-sm" disabled={busy === 'clear'} onClick={clearHistory}>
+            {busy === 'clear' ? 'Clearing…' : 'Clear history'}
+          </button>
+        )}
         {/* One tap does both: the in-page chime, and the push subscription
             that keeps ringing after this tab is closed. The board is where
             somebody realises they want alerting, so it is where it is asked. */}

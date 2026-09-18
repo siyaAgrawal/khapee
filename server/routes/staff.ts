@@ -58,6 +58,53 @@ staffRouter.get('/orders', (req, res) => {
   res.json({ orders: rows.map(shapeOrder) })
 })
 
+/**
+ * Emptying the order history for one restaurant.
+ *
+ * A board that opens on weeks of finished tickets — and, while a place is
+ * being set up, on dozens of test orders nobody placed — makes the two or
+ * three that matter harder to find, and there was no way to clear any of it.
+ *
+ * Deliberately not limited to finished orders. Anything in progress is deleted
+ * too, because the state this is mostly for is a restaurant that has been
+ * testing and wants to start clean, and orders stuck half way through are
+ * exactly what it has most of. That is real destruction, so it is counted
+ * first: a caller asking with `dryRun` is told what would go and nothing
+ * happens, which is what the confirmation on the board is written from. Nobody
+ * is asked to agree to a number they have not been shown.
+ *
+ * Invoices survive. Their link to the order is ON DELETE SET NULL rather than
+ * a cascade, and that is not an accident — a tax invoice is a record of
+ * something that happened, and tidying a screen is not a reason to destroy it.
+ * Everything else about an order goes with it.
+ */
+staffRouter.post('/orders/clear', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const counts = db
+    .prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status NOT IN ('COMPLETED','PICKED_UP','DELIVERED','CANCELLED','DECLINED')
+                       THEN 1 ELSE 0 END) AS active
+         FROM orders WHERE restaurant_id = ?`,
+    )
+    .get(restaurantId) as any
+  const total = Number(counts?.total ?? 0)
+  const active = Number(counts?.active ?? 0)
+
+  if (req.body?.dryRun) return res.json({ dryRun: true, total, active })
+  if (!total) return res.json({ cleared: 0, active: 0 })
+
+  // One transaction: a half-cleared board is worse than an uncleared one.
+  db.transaction(() => {
+    db.prepare('DELETE FROM orders WHERE restaurant_id = ?').run(restaurantId)
+  })()
+
+  audit(restaurantId, actorOf(req), 'orders.clear', 'restaurant', restaurantId, { total, active })
+  publish('orders', { restaurantId })
+  publish('ops', { restaurantId })
+  res.json({ cleared: total, active })
+})
+
 staffRouter.post('/orders/:id/status', async (req, res) => {
   const restaurantId = myRestaurant(req)
   const id = Number(req.params.id)

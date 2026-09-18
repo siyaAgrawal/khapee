@@ -2584,6 +2584,58 @@ async function runTests() {
     ok('later steps say nothing about it', onward.body.thanked === undefined, onward.body)
   }
 
+  group('CLEARING THE BOARD')
+  {
+    // A board that opens on weeks of finished tickets — or, while a place is
+    // being set up, on dozens of test orders nobody placed — buries the two
+    // that matter, and there was no way to clear any of it.
+    const counted = await call('/staff/orders/clear', { token: roadToken, body: { dryRun: true } })
+    ok('it can be asked what it would delete', counted.status === 200 && counted.body.dryRun === true, counted.body)
+    ok('and there is something there to delete', counted.body.total > 0, counted.body)
+    ok('counting changes nothing', (await call('/staff/orders', { token: roadToken })).body.orders.length > 0)
+
+    // Nobody agrees to "everything" without being told what everything is,
+    // and orders still in progress go too — so they are counted separately.
+    ok('in-progress orders are counted apart', typeof counted.body.active === 'number', counted.body)
+
+    // An invoice is a record of something that happened. Tidying a screen is
+    // not a reason to destroy it, so the link is severed and the invoice kept.
+    const books = new Database(DB_PATH)
+    const anyOrder = books.prepare('SELECT id FROM orders WHERE restaurant_id = ? LIMIT 1').get(mornington.id) as any
+    books
+      .prepare(
+        `INSERT INTO invoices (restaurant_id, order_id, number, fy, seq, total_cents)
+         VALUES (?, ?, 'TEST-1', '2026-27', 1, 1000)`,
+      )
+      .run(mornington.id, anyOrder.id)
+    books.close()
+
+    const cleared = await call('/staff/orders/clear', { token: roadToken, body: {} })
+    ok('clearing reports how many it took', cleared.body.cleared === counted.body.total, {
+      cleared: cleared.body,
+      counted: counted.body,
+    })
+    ok('the board is empty afterwards', (await call('/staff/orders?scope=all', { token: roadToken })).body.orders.length === 0)
+
+    const after = new Database(DB_PATH)
+    const invoice = after.prepare("SELECT order_id FROM invoices WHERE number = 'TEST-1'").get() as any
+    const orphans = after.prepare('SELECT COUNT(*) n FROM order_items WHERE order_id NOT IN (SELECT id FROM orders)').get() as any
+    after.close()
+    ok('the invoice survives it', !!invoice, invoice)
+    ok('with its link to the order severed, not dangling', invoice?.order_id === null, invoice)
+    ok('and nothing is left pointing at an order that is gone', orphans.n === 0, orphans)
+
+    // Emptying an empty board is not an error, and does not pretend to work.
+    const again = await call('/staff/orders/clear', { token: roadToken, body: {} })
+    ok('clearing nothing clears nothing', again.status === 200 && again.body.cleared === 0, again.body)
+
+    ok('a stranger cannot empty somebody\'s board', (await call('/staff/orders/clear', { body: {} })).status === 401)
+    ok(
+      'and neither can a customer account',
+      (await call('/staff/orders/clear', { token: customerToken, body: {} })).status === 403,
+    )
+  }
+
   group('THE TAP THAT REACHES WHATSAPP')
   {
     // Every route to the thank-you ends at one of these two strings, so they

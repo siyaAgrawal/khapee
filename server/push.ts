@@ -19,6 +19,7 @@
  * On iPhone the dashboard has to be added to the Home Screen first — Safari
  * only allows push to an installed web app. Android and desktop need nothing.
  */
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import webpush from 'web-push'
@@ -40,6 +41,44 @@ const DISK_IS_TEMPORARY = !!process.env.VERCEL || process.env.ORDRO_SEED === 'sn
 /** Why push is off, when it is. Empty when it is on. */
 let reason = ''
 
+/**
+ * A keypair worked out from the server's own secret, rather than stored.
+ *
+ * The problem this solves is that a subscription is bound to the public key
+ * that made it, so the pair has to be identical on every boot — and the host
+ * this runs on keeps no disk. The usual answer is two more environment
+ * variables somebody has to remember to set, and alerts that silently never
+ * arrive until they do.
+ *
+ * But there is already a secret here that Render generates once and keeps
+ * across every deploy, because login tokens depend on it: KHAPEE_SECRET. A
+ * P-256 private key is only a number below the curve order, so one can be
+ * derived from that secret and will be the same number every time. Nothing to
+ * configure, nothing extra to keep safe, and no private key in the repository.
+ *
+ * The cost is that changing KHAPEE_SECRET unsubscribes every device — but that
+ * already signs everybody out, so it is not a surprise hidden inside a working
+ * system.
+ */
+const CURVE_ORDER = BigInt('0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551')
+
+function deriveKeys(secret: string): { publicKey: string; privateKey: string } | null {
+  // HKDF gives 32 bytes that are almost certainly a valid scalar; the counter
+  // is for the vanishing case where they are not, so this never returns an
+  // invalid key rather than working out of a million.
+  for (let i = 0; i < 256; i++) {
+    const bytes = Buffer.from(
+      crypto.hkdfSync('sha256', Buffer.from(secret, 'utf8'), Buffer.alloc(0), Buffer.from(`khapee-vapid-v1:${i}`), 32),
+    )
+    const scalar = BigInt('0x' + bytes.toString('hex'))
+    if (scalar <= 0n || scalar >= CURVE_ORDER) continue
+    const ec = crypto.createECDH('prime256v1')
+    ec.setPrivateKey(bytes)
+    return { privateKey: bytes.toString('base64url'), publicKey: ec.getPublicKey().toString('base64url') }
+  }
+  return null
+}
+
 function loadKeys(): { publicKey: string; privateKey: string } | null {
   const fromEnv = {
     publicKey: String(process.env.VAPID_PUBLIC ?? '').trim(),
@@ -47,7 +86,13 @@ function loadKeys(): { publicKey: string; privateKey: string } | null {
   }
   if (fromEnv.publicKey && fromEnv.privateKey) return fromEnv
 
+  // A host with no disk, but with the session secret that outlives its deploys.
+  const secret = String(process.env.KHAPEE_SECRET ?? '').trim()
   if (DISK_IS_TEMPORARY) {
+    if (secret.length >= 16) {
+      const derived = deriveKeys(secret)
+      if (derived) return derived
+    }
     reason =
       'Set VAPID_PUBLIC and VAPID_PRIVATE in the environment — this host rebuilds its disk on every deploy, so a key kept in a file would unsubscribe every device each time.'
     return null

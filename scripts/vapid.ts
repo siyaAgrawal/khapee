@@ -8,11 +8,15 @@
  * here, and the browser's own push service delivers it. Nothing is billed and
  * nobody issues us a key.
  *
- * The pair has to stay the same between restarts. A subscription is bound to
- * the public half, so minting a new pair silently unsubscribes every device
- * that had signed up — which looks exactly like alerts quietly not working.
- * On a host with a disk the pair lives in data/.vapid.json; on one without,
- * put it in the environment as VAPID_PUBLIC and VAPID_PRIVATE.
+ * You almost certainly do not need this. A host with a disk keeps its pair in
+ * data/.vapid.json, and one without works it out from KHAPEE_SECRET, which
+ * outlives its deploys — both give the same pair on every boot, which is the
+ * only thing push actually requires. This is for moving to a key of your own.
+ *
+ * Whatever the source, the pair has to stay the same between restarts: a
+ * subscription is bound to the public half, so a new pair silently
+ * unsubscribes every device that had signed up — which looks exactly like
+ * alerts quietly not working.
  */
 import webpush from 'web-push'
 

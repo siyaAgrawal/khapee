@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { useVegMode } from '../lib/veg'
+import { currentEndpoint, pushSupported } from '../lib/push'
 import { cuisineBackground, cuisineEmoji } from '../lib/cuisine-art'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 
@@ -66,6 +67,18 @@ export default function Home() {
       return false
     }
   })
+  /**
+   * Whether this device is already getting alerts.
+   *
+   * The line exists to get them switched on, so once they are it is an
+   * instruction to do something already done — and it sat above the menu on
+   * the phone of the one person who had followed it.
+   */
+  const [alertsOn, setAlertsOn] = useState(false)
+  useEffect(() => {
+    if (!pushSupported()) return
+    void currentEndpoint().then((e) => setAlertsOn(!!e))
+  }, [])
   const [restaurants, setRestaurants] = useState<RestaurantCard[] | null>(null)
   const [tiles, setTiles] = useState<CuisineTile[]>([])
   const [error, setError] = useState('')
@@ -159,7 +172,7 @@ export default function Home() {
           no account, and this is the page that phone opens. It is one line, it
           is above everything, and it goes away for good when dismissed, so the
           people it is not for pay almost nothing for it. */}
-      {!staffStripGone && (
+      {!staffStripGone && !alertsOn && (
         <div className="staff-strip">
           <Link to="/alerts">
             🔔 {halfDone ? 'Finish turning on order alerts' : 'Work here? Turn on order alerts'} →

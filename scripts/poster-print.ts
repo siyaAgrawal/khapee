@@ -27,10 +27,44 @@ import jsQR from 'jsqr'
 import { PNG } from 'pngjs'
 import QRCode from 'qrcode'
 
+/**
+ * The photograph from the original artwork, if it is there to take.
+ *
+ * Everything else on this page is drawn and therefore sharp at any size. A
+ * photograph cannot be — it has the resolution it was captured at — so it is
+ * the one element enlarged rather than redrawn, and it is put in the corner
+ * where it bleeds off two edges, which is where softness is least visible.
+ */
+function pastaFromOriginal(file: string): { href: string; ratio: number } | null {
+  if (!fs.existsSync(file)) return null
+  const art = PNG.sync.read(fs.readFileSync(file))
+  // Under the last line of type, to the right: the bowl and nothing else.
+  const x0 = Math.round(art.width * 0.407)
+  const y0 = Math.round(art.height * 0.9)
+  const w = art.width - x0
+  const h = art.height - y0
+  if (w < 40 || h < 40) return null
+  const crop = new PNG({ width: w, height: h })
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const from = ((y + y0) * art.width + (x + x0)) * 4
+      const to = (y * w + x) * 4
+      crop.data[to] = art.data[from]
+      crop.data[to + 1] = art.data[from + 1]
+      crop.data[to + 2] = art.data[from + 2]
+      crop.data[to + 3] = 255
+    }
+  return {
+    href: `data:image/png;base64,${PNG.sync.write(crop).toString('base64')}`,
+    ratio: w / h,
+  }
+}
+
 const feetWide = Number(process.argv[2] ?? 3)
 const feetTall = Number(process.argv[3] ?? 6)
 const dpi = Number(process.argv[4] ?? 150)
 const target = process.env.KHAPEE_SITE ?? 'https://khapee.com'
+const photoFrom = process.env.KHAPEE_ARTWORK ?? 'data/qr/khapee-poster.png'
 const host = target.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
 // One unit is a thousandth of the width, so the layout below reads the same
@@ -152,7 +186,16 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"
   <path d="M${mid - W * 0.1} ${qrTop + qrBox + H * 0.191} q${W * 0.1} ${H * 0.009} ${W * 0.2} -${H * 0.003}"
         fill="none" stroke="${LINE}" stroke-width="${W * 0.006}" stroke-linecap="round"/>
 
-  ${line(host, H * 0.955, W * 0.045, W * 0.3, { track: W * 0.004 })}
+  ${line(host, H * 0.9, W * 0.045, W * 0.3, { track: W * 0.004 })}
+  ${(() => {
+    const pasta = pastaFromOriginal(photoFrom)
+    if (!pasta) return ''
+    const w = W * 0.88
+    const h = w / pasta.ratio
+    // Bleeding off the right and bottom edges, the way it does on the original.
+    return `<image href="${pasta.href}" x="${W - w + W * 0.08}" y="${H - h + H * 0.012}"
+                   width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>`
+  })()}
 
   <!-- the line at the top corner -->
   ${['GOOD', 'FOOD', 'LESS', 'WAIT']
@@ -164,11 +207,13 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"
     .join('\n  ')}
   <path d="M${W * 0.87} ${H * 0.107} H${W * 0.93}" stroke="${LINE}" stroke-width="${W * 0.003}"/>
 
-  ${mark('pizza', [W * 0.13, H * 0.1], W * 0.13, -14)}
-  ${mark('burger', [W * 0.88, H * 0.225], W * 0.14, 0)}
-  ${mark('coffee', [W * 0.11, H * 0.4], W * 0.15, -6)}
-  ${mark('noodles', [W * 0.89, H * 0.57], W * 0.15, 0)}
-  ${mark('cone', [W * 0.1, H * 0.715], W * 0.12, -8)}
+  <!-- Down the margins, clear of the type. The burger sat at the wordmark's
+       own height and the last "e" of Khapee ran into it. -->
+  ${mark('pizza', [W * 0.12, H * 0.105], W * 0.13, -14)}
+  ${mark('burger', [W * 0.89, H * 0.3], W * 0.14, 0)}
+  ${mark('coffee', [W * 0.1, H * 0.4], W * 0.15, -6)}
+  ${mark('noodles', [W * 0.91, H * 0.6], W * 0.15, 0)}
+  ${mark('cone', [W * 0.095, H * 0.775], W * 0.12, -8)}
 
   <!-- the little marks either side of the code -->
   <g stroke="${LINE}" stroke-width="${W * 0.007}" stroke-linecap="round">

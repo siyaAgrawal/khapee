@@ -44,6 +44,14 @@ export type CuisineTile = { name: string; count: number }
 
 export default function Home() {
   const [veg, setVeg] = useVegMode()
+  /** Hidden for good once dismissed — it is for staff, and only needed once. */
+  const [staffStripGone, setStaffStripGone] = useState(() => {
+    try {
+      return localStorage.getItem('khapee.staffStrip') === 'hidden'
+    } catch {
+      return false
+    }
+  })
   const [restaurants, setRestaurants] = useState<RestaurantCard[] | null>(null)
   const [tiles, setTiles] = useState<CuisineTile[]>([])
   const [error, setError] = useState('')
@@ -131,6 +139,30 @@ export default function Home() {
   return (
     <div className="app">
       <Header />
+      {/* The one line a restaurant needs and a customer does not.
+          Somebody setting up a second phone should not have to find their way
+          into the dashboard to do it — the code is typed on the phone that has
+          no account, and this is the page that phone opens. It is one line, it
+          is above everything, and it goes away for good when dismissed, so the
+          people it is not for pay almost nothing for it. */}
+      {!staffStripGone && (
+        <div className="staff-strip">
+          <Link to="/alerts">🔔 Work here? Turn on order alerts →</Link>
+          <button
+            aria-label="Hide this"
+            onClick={() => {
+              try {
+                localStorage.setItem('khapee.staffStrip', 'hidden')
+              } catch {
+                /* a private window forgets it; one line is not worth failing over */
+              }
+              setStaffStripGone(true)
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <main className="page">
         {/* The name says it: kha-pee, eat and drink. The line under it stays in
             plain English so the page still explains itself to someone who does

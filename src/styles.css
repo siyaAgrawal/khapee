@@ -5249,3 +5249,40 @@ button.nav-link {
   letter-spacing: 0.3em;
   text-transform: uppercase;
 }
+
+/* The one line a restaurant needs at the top of a page meant for customers.
+   Slim, above everything, and gone for good the moment it is dismissed. */
+.staff-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-tint);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.staff-strip a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+.staff-strip a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+.staff-strip button {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.staff-strip button:hover {
+  background: var(--surface);
+  color: var(--ink);
+}

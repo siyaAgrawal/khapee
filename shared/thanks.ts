@@ -24,7 +24,23 @@ export function waNumber(raw: string, countryCode = '91'): string {
   return ''
 }
 
-/** wa.me opens WhatsApp on a phone and web.whatsapp.com on a computer. */
+/**
+ * WhatsApp's own address, which opens the app rather than a web page about it.
+ *
+ * wa.me is a website. On a phone it loads Safari, shows a "Continue to Chat"
+ * page and offers to hand over — and inside an app installed on a Home Screen
+ * that detour frequently dead-ends, which is what made "open WhatsApp" look
+ * broken. whatsapp:// is the app itself and opens straight into the chat.
+ *
+ * It fails silently when WhatsApp is not installed, which is why waLink below
+ * still exists and is offered underneath.
+ */
+export function waAppLink(phone: string, message: string): string {
+  const to = waNumber(phone)
+  return to ? `whatsapp://send?phone=${to}&text=${encodeURIComponent(message)}` : ''
+}
+
+/** The web address, for a computer or a phone without the app. */
 export function waLink(phone: string, message: string): string {
   const to = waNumber(phone)
   return to ? `https://wa.me/${to}?text=${encodeURIComponent(message)}` : ''

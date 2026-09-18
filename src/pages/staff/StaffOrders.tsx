@@ -4,7 +4,7 @@ import { EmptyState, LoadingBlock, money, timeAgo, useToast, clockTime } from '.
 import { Link } from 'react-router-dom'
 import { announceOrder, askToNotify, notifyPermission } from '../../lib/notify'
 import { currentEndpoint, enablePush, pushSupported, type AlertState } from '../../lib/push'
-import { thanksText, waLink } from '../../../shared/thanks'
+import { thanksText, waAppLink, waLink } from '../../../shared/thanks'
 import {
   nextStatus,
   SERVICE_LABEL,
@@ -543,7 +543,7 @@ export default function StaffOrders() {
                             {!!waLink(o.customerPhone ?? '', '') && (
                               <a
                                 className="btn btn-ghost btn-sm"
-                                href={waLink(
+                                href={waAppLink(
                                   o.customerPhone,
                                   thanksText(o.customerName || 'there'),
                                 )}

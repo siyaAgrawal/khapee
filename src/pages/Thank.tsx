@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
+import { waAppLink, waLink } from '../../shared/thanks'
 
 /**
  * The step between tapping "thank them" and WhatsApp opening.
@@ -21,7 +22,9 @@ export default function Thank() {
   const text = params.get('text') ?? ''
   const who = params.get('who') ?? 'them'
 
-  const link = to ? `https://wa.me/${to}?text=${encodeURIComponent(text)}` : ''
+  // The app first, the website only if the app is not there.
+  const appLink = waAppLink(to, text)
+  const link = waLink(to, text)
 
   /**
    * No automatic redirect, on purpose.
@@ -42,12 +45,18 @@ export default function Thank() {
             <>
               <p className="thank-kicker">Send to {who}</p>
               <p className="thank-message">{text}</p>
-              <a className="btn btn-accent btn-lg btn-block thank-go" href={link}>
+              <a className="btn btn-accent btn-lg btn-block thank-go" href={appLink}>
                 Open WhatsApp
               </a>
               <p className="tiny muted">
-                It opens the chat with {to.replace(/^91/, '+91 ')} and the message already written.
-                You press send.
+                Opens the chat with {to.replace(/^91/, '+91 ')}, message already written. You press
+                send.
+              </p>
+              <p className="tiny muted" style={{ marginTop: 10 }}>
+                Nothing happened?{' '}
+                <a href={link} target="_blank" rel="noreferrer">
+                  Try it through the browser
+                </a>
               </p>
             </>
           ) : (

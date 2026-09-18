@@ -8,7 +8,7 @@
  * they always go to the network, because a cached menu price or order status
  * would be worse than a slow one.
  */
-const SHELL = 'ordro-assets-v4'
+const SHELL = 'ordro-assets-v5'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -100,27 +100,43 @@ self.addEventListener('push', (event) => {
 /**
  * Tapping it opens the board — or focuses the tab that is already on it.
  *
- * Unless the notification points somewhere else entirely, which one of them
- * does: the one that offers to thank a customer opens WhatsApp with the
- * message already written. That has to be a new window, because navigating the
- * dashboard to WhatsApp would take the board away from whoever is working it.
+ * Two of them point elsewhere: the board, and the page that hands a thank-you
+ * to WhatsApp. Getting an already-open window to either needs client.navigate,
+ * which Safari does not implement — so where it is missing a new window is
+ * opened rather than the existing one merely being focused, which is what made
+ * "thank them" land on the board.
  */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const wanted = event.notification.data?.url || '/staff/orders'
   const target = new URL(wanted, self.location.origin).href
   const ours = target.startsWith(self.location.origin)
+
   event.waitUntil(
-    ours
-      ? self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-          for (const client of windows) {
-            if (client.url.startsWith(self.location.origin) && 'focus' in client) {
-              client.navigate?.(target)
-              return client.focus()
-            }
-          }
-          return self.clients.openWindow(target)
-        })
-      : self.clients.openWindow(target),
+    (async () => {
+      // Somebody else's site — WhatsApp — always gets its own window. Asking
+      // the app's own window to go there is declined.
+      if (!ours) return self.clients.openWindow(target)
+
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      const open = windows.find((c) => c.url.startsWith(self.location.origin))
+
+      // Moving an already-open window to another page needs client.navigate,
+      // which Safari does not implement — it was simply skipped, so tapping
+      // "thank them" focused whatever was already on screen, usually the
+      // board, and looked like the wrong notification had been sent. Where it
+      // is missing, a new window goes to the right place instead.
+      if (open && typeof open.navigate === 'function') {
+        try {
+          const moved = await open.navigate(target)
+          return (moved || open).focus()
+        } catch {
+          /* fall through and open one */
+        }
+      }
+      // Already on the page it wants: just come to the front.
+      if (open && open.url === target) return open.focus()
+      return self.clients.openWindow(target)
+    })(),
   )
 })

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
+import PaySheet from '../components/PaySheet'
 import VerifyModal from '../components/VerifyModal'
 import { api, ApiError } from '../lib/api'
 import { useCart } from '../lib/cart'
@@ -484,51 +485,20 @@ export default function Checkout() {
             one case where paying up front is most obviously the point had no
             way to do it.
           */}
-          <div className={`pay-row ${payOpen ? 'open' : ''}`}>
-            <button
-              type="button"
-              className="pay-pick"
-              onClick={() => canPayInApp && setPayOpen(!payOpen)}
-              aria-expanded={payOpen}
-              disabled={!canPayInApp}
-            >
-              <span className="pay-kicker">Pay using</span>
-              <strong>{payNow ? 'UPI, now' : payLaterLabel}</strong>
-              <span className="pay-sub">{paySub}</span>
-              {canPayInApp && (
-                <span className="pay-caret" aria-hidden>
-                  {payOpen ? '▴' : '▾'}
-                </span>
-              )}
-            </button>
-
-            {payOpen && canPayInApp && (
-              <div className="pay-choices">
-                <button
-                  type="button"
-                  className={!payNow ? 'on' : ''}
-                  onClick={() => {
-                    setPayNow(false)
-                    setPayOpen(false)
-                  }}
-                >
-                  <strong>{payLaterLabel}</strong>
-                  <span>Cash or UPI, when you get it</span>
-                </button>
-                <button
-                  type="button"
-                  className={payNow ? 'on' : ''}
-                  onClick={() => {
-                    setPayNow(true)
-                    setPayOpen(false)
-                  }}
-                >
-                  <strong>UPI, now</strong>
-                  <span>Straight into {cart.restaurantName}&rsquo;s account</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            className={`pay-row ${payOpen ? 'open' : ''}`}
+            onClick={() => setPayOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={payOpen}
+          >
+            <span className="pay-kicker">Pay using</span>
+            <strong>{payNow ? 'Any UPI app' : payLaterLabel}</strong>
+            <span className="pay-sub">{paySub}</span>
+            <span className="pay-change" aria-hidden>
+              Change
+            </span>
+          </button>
 
           <button
             className="btn btn-accent btn-lg btn-block"
@@ -579,6 +549,33 @@ export default function Checkout() {
             </p>
           )}
         </section>
+
+        <PaySheet
+          open={payOpen}
+          onClose={() => setPayOpen(false)}
+          value={payNow ? 'now' : 'later'}
+          onPick={(choice) => setPayNow(choice === 'now')}
+          amountCents={payableCents}
+          restaurantName={cart.restaurantName}
+          laterLabel={payLaterLabel}
+          laterSub={
+            isDelivery
+              ? 'Cash or UPI when it reaches you'
+              : isCar
+                ? 'Cash or UPI at the car'
+                : isNearby
+                  ? 'Cash or UPI when they hand it over'
+                  : 'Cash or UPI at the counter'
+          }
+          canPayNow={canPayInApp}
+          nowSub={`GPay, PhonePe, Paytm — straight into ${cart.restaurantName}\u2019s account`}
+          unavailableReason={`${cart.restaurantName} has not added a UPI ID to Khapee yet`}
+          footNote={
+            payNow && canPayInApp
+              ? 'Paid orders go straight to the kitchen.'
+              : `${cart.restaurantName} accepts the order before it is made — you pay when you get it.`
+          }
+        />
 
         <VerifyModal
           open={verifyOpen}

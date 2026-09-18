@@ -4801,32 +4801,28 @@ button.nav-link {
 /* ------------------------------------------------- how this is being paid for
    Sits directly above the button that places the order: the last thing read
    before committing. Always present, whatever way the order is going out. */
+/* How you are paying, sitting on top of the button that does it. The whole
+   row is the control — it opens the sheet whether or not there is a second
+   option, because a tap that does nothing reads as a broken app. */
 .pay-row {
-  margin-bottom: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  overflow: hidden;
-}
-.pay-row.open {
-  border-color: var(--line-strong);
-}
-.pay-pick {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 2px 10px;
   width: 100%;
+  margin-bottom: 12px;
   padding: 12px 14px;
-  background: none;
-  border: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
-.pay-pick:disabled {
-  cursor: default;
+.pay-row:hover,
+.pay-row.open {
+  border-color: var(--line-strong);
 }
 .pay-kicker {
   grid-column: 1;
@@ -4836,7 +4832,7 @@ button.nav-link {
   text-transform: uppercase;
   color: var(--muted);
 }
-.pay-pick strong {
+.pay-row strong {
   grid-column: 1;
   font-size: 16px;
   letter-spacing: -0.01em;
@@ -4846,47 +4842,150 @@ button.nav-link {
   font-size: 12px;
   color: var(--muted);
 }
-.pay-caret {
+.pay-change {
   grid-column: 2;
   grid-row: 1 / span 3;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent, var(--ink));
+}
+
+/* A sheet up from the bottom edge, where a thumb already is. */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 11, 9, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fade 0.2s var(--ease) both;
+}
+.sheet {
+  width: min(100%, 460px);
+  max-height: 88dvh;
+  overflow: auto;
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--shadow-lg);
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  animation: sheet-up 0.26s var(--ease) both;
+}
+@media (min-width: 560px) {
+  .sheet-backdrop {
+    align-items: center;
+    padding: 18px;
+  }
+  .sheet {
+    border-radius: var(--r-xl);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.sheet-grip {
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 99px;
+  background: var(--line-strong);
+}
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px 4px;
+}
+.sheet-head h2 {
+  font-size: 19px;
+  letter-spacing: -0.015em;
+}
+.sheet-body {
+  padding: 6px 16px 4px;
+}
+.sheet-group {
+  margin: 14px 0 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--muted);
 }
-.pay-choices {
+
+/* One way to pay: mark, name, what it means, and where the choice shows. */
+.pay-opt {
   display: grid;
-  border-top: 1px solid var(--line);
-}
-.pay-choices button {
-  display: grid;
-  gap: 2px;
-  padding: 11px 14px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 2px 12px;
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   background: none;
-  border: 0;
-  border-bottom: 1px solid var(--line);
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
 }
-.pay-choices button:last-child {
-  border-bottom: 0;
+.pay-opt + .pay-opt {
+  margin-top: 8px;
 }
-.pay-choices button:hover {
+.pay-opt:hover {
+  border-color: var(--line-strong);
+}
+.pay-opt.on {
+  border-color: var(--ink);
   background: var(--bg-tint);
 }
-.pay-choices button.on {
-  background: var(--bg-tint);
+.pay-opt.off {
+  cursor: default;
+  opacity: 0.55;
 }
-.pay-choices button.on strong::after {
-  content: ' ✓';
-  color: var(--ink);
+.pay-opt-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  font-size: 19px;
 }
-.pay-choices strong {
-  font-size: 14.5px;
+.pay-opt strong {
+  grid-column: 2;
+  font-size: 15px;
 }
-.pay-choices span {
+.pay-opt-sub {
+  grid-column: 2;
   font-size: 12px;
   color: var(--muted);
+}
+.pay-opt-dot {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+}
+.pay-opt.on .pay-opt-dot {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 3.5px var(--surface);
+  background: var(--ink);
+}
+.pay-opt.off .pay-opt-dot {
+  display: none;
+}
+.sheet-foot {
+  margin: 14px 0 0;
 }
 
 /* The thank-you the customer can send themselves, from their own number. */

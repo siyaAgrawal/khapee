@@ -694,6 +694,57 @@ async function runTests() {
   })
   ok('staff can edit a dish', editedDish.body.item.priceCents === 15550, editedDish.body)
 
+  // --- Putting the menu in the order it should be read in -------------------
+  //
+  // Sections arrive in the order somebody thought of them, which is rarely the
+  // order a customer should meet them in.
+  const second = await call('/staff/categories', { token: ownerToken, body: { name: 'Food' } })
+  const secondId = second.body.category.id
+  const namesNow = async () =>
+    ((await call('/staff/menu', { token: ownerToken })).body.categories as any[]).map((c) => c.name)
+  ok('a new section goes to the bottom', (await namesNow()).slice(-2).join() === 'Coffee,Food', await namesNow())
+
+  const up = await call(`/staff/categories/${secondId}/move`, { token: ownerToken, body: { direction: 'up' } })
+  ok('a section can be moved up', up.body.moved === true, up.body)
+  ok('and the menu reads in the new order', (await namesNow()).slice(-2).join() === 'Food,Coffee', await namesNow())
+
+  const offTheTop = await call(`/staff/categories/${secondId}/move`, {
+    token: ownerToken,
+    body: { direction: 'up' },
+  })
+  ok('moving past the top does nothing, quietly', offTheTop.body.moved === false, offTheTop.body)
+
+  // Dishes move within their own section.
+  const dishIds = async () =>
+    (
+      ((await call('/staff/menu', { token: ownerToken })).body.categories as any[]).find(
+        (c) => c.id === sectionId,
+      )?.items ?? []
+    ).map((i: any) => i.name)
+  await call('/staff/menu', {
+    token: ownerToken,
+    body: { categoryId: sectionId, name: 'Filter Coffee', price: '90' },
+  })
+  const orderBefore = await dishIds()
+  ok('the section has more than one dish to reorder', orderBefore.length >= 2, orderBefore)
+  const dishDown = await call(`/staff/menu/${dishId}/move`, { token: ownerToken, body: { direction: 'down' } })
+  ok('a dish can be moved down', dishDown.body.moved === true, dishDown.body)
+  const orderAfter = await dishIds()
+  ok('and it lands one place lower', orderAfter[0] === orderBefore[1] && orderAfter[1] === orderBefore[0], {
+    orderBefore,
+    orderAfter,
+  })
+
+  const notYours = await call(`/staff/categories/${sectionId}/move`, {
+    token: basilToken,
+    body: { direction: 'up' },
+  })
+  ok('somebody else\u2019s section cannot be reordered', notYours.status === 404, notYours)
+
+  // Put it back so the tests that follow see the menu they expect.
+  await call(`/staff/menu/${dishId}/move`, { token: ownerToken, body: { direction: 'up' } })
+  await call(`/staff/categories/${secondId}`, { token: ownerToken, method: 'DELETE' })
+
   await call('/staff/restaurant/open', { token: ownerToken, body: { isOpen: true } })
   const orderFromNew = await call('/orders', {
     body: {

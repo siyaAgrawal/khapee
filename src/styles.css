@@ -1092,6 +1092,51 @@ textarea {
   margin-bottom: 6px;
 }
 
+/* Finding one dish on a menu too long to scroll. Sits above the section
+   chips: someone who already knows what they want should not have to read the
+   chips to discover it is not on the menu. */
+.menu-find {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 14px;
+}
+.menu-find-mark {
+  position: absolute;
+  left: 13px;
+  font-size: 17px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.menu-find-input {
+  padding-left: 34px;
+  padding-right: 38px;
+}
+/* Safari draws its own clear button on type=search, which lands on top of ours. */
+.menu-find-input::-webkit-search-decoration,
+.menu-find-input::-webkit-search-cancel-button {
+  appearance: none;
+}
+.menu-find-clear {
+  position: absolute;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.menu-find-clear:hover {
+  background: var(--bg-tint);
+  color: var(--ink);
+}
+.menu-find-count {
+  margin: 8px 2px 0;
+}
+
 .menu-nav {
   position: sticky;
   top: var(--header-h);

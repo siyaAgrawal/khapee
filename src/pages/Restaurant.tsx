@@ -73,6 +73,17 @@ export default function Restaurant() {
    * easier to use than any of the dressed-up ones.
    */
   const noPhotos = theme === 'plain'
+
+  /**
+   * Finding one dish on a long menu.
+   *
+   * Nineteen sections and eighty dishes is four screens of scrolling to answer
+   * "do they do a cold coffee". The section chips help someone browsing; they
+   * are no help at all to someone who already knows what they want. Matching
+   * the description as well as the name is deliberate — people search for
+   * "paneer" and the paneer is often only in the description.
+   */
+  const [query, setQuery] = useState('')
   /** Themed restaurants share the menu and page shell, dressed differently. */
   const themed = noir || hut || revery
   const noirPage = themed
@@ -84,6 +95,23 @@ export default function Restaurant() {
    * out so the rest of the app goes back to whatever the device asked for.
    */
   useEffect(() => applyTheme(theme), [theme])
+
+  /** The menu as it should read right now: every section, minus what was typed out. */
+  const needle = query.trim().toLowerCase()
+  const shown = !needle
+    ? (data?.menu ?? [])
+    : (data?.menu ?? [])
+        .map((c) => ({
+          ...c,
+          items: c.items.filter(
+            (i) =>
+              i.name.toLowerCase().includes(needle) ||
+              i.description.toLowerCase().includes(needle) ||
+              c.name.toLowerCase().includes(needle),
+          ),
+        }))
+        .filter((c) => c.items.length > 0)
+  const foundCount = shown.reduce((n, c) => n + c.items.length, 0)
 
   const onAdd = (item: MenuItem) => {
     if (!data) return
@@ -302,6 +330,33 @@ export default function Restaurant() {
               />
             ) : (
               <>
+            {/* Above the section chips, because someone who knows what they
+                want should not have to read the chips to find out it is not
+                there. */}
+            <div className="menu-find">
+              <span className="menu-find-mark" aria-hidden>
+                ⌕
+              </span>
+              <input
+                className="input menu-find-input"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${data.restaurant.name}\u2019s menu`}
+                aria-label="Search the menu"
+                type="search"
+              />
+              {!!needle && (
+                <button className="menu-find-clear" onClick={() => setQuery('')} aria-label="Clear search">
+                  ✕
+                </button>
+              )}
+            </div>
+            {!!needle && (
+              <p className="tiny muted menu-find-count">
+                {foundCount} {foundCount === 1 ? 'dish' : 'dishes'} matching &ldquo;{query.trim()}&rdquo;
+              </p>
+            )}
+
             <nav className="menu-nav">
               <button
                 className={`veg-toggle veg-toggle-sm ${veg ? 'on' : ''}`}
@@ -312,14 +367,28 @@ export default function Restaurant() {
                 <span className="veg-mark" aria-hidden />
                 Veg
               </button>
-              {data.menu.map((c) => (
+              {shown.map((c) => (
                 <a key={c.id} href={`#cat-${c.id}`} className="chip">
                   {c.name}
                 </a>
               ))}
             </nav>
 
-            {data.menu.every((c) => c.items.length === 0) &&
+            {!!needle && foundCount === 0 && (
+              <EmptyState
+                emoji="🔍"
+                title={`Nothing matching \u201c${query.trim()}\u201d`}
+                body={veg ? 'Try another word, or turn off Veg only.' : 'Try another word.'}
+                action={
+                  <button className="btn btn-secondary" onClick={() => setQuery('')}>
+                    Show the whole menu
+                  </button>
+                }
+              />
+            )}
+
+            {!needle &&
+              data.menu.every((c) => c.items.length === 0) &&
               (veg ? (
                 <EmptyState
                   emoji="🥬"
@@ -334,7 +403,7 @@ export default function Restaurant() {
                 <EmptyState emoji="📋" title="No dishes yet" body="This restaurant hasn't published a menu." />
               ))}
 
-            {data.menu.map((category) => (
+            {shown.map((category) => (
               <section key={category.id} id={`cat-${category.id}`} className="menu-section">
                 <h2>{category.name}</h2>
                 <div className="item-grid">

@@ -59,6 +59,8 @@ export default function StaffMenu() {
   const [formError, setFormError] = useState('')
   const [newSection, setNewSection] = useState('')
   const [addingSection, setAddingSection] = useState(false)
+  /** Eighty dishes in nineteen sections is not a list anybody scrolls twice. */
+  const [find, setFind] = useState('')
 
   const load = useCallback(() => {
     api<{ restaurant: any; categories: Category[] }>('/staff/menu')
@@ -141,6 +143,22 @@ export default function StaffMenu() {
     }
   }
 
+  /**
+   * Moving a section or a dish one place.
+   *
+   * Up and down rather than dragging: the menu is edited on a phone behind a
+   * counter as often as on a laptop, and a drag target on a list eighty rows
+   * long is a miss waiting to happen.
+   */
+  const move = async (what: 'categories' | 'menu', id: number, direction: 'up' | 'down') => {
+    try {
+      await api(`/staff/${what}/${id}/move`, { body: { direction } })
+      load()
+    } catch (err) {
+      toast((err as ApiError).message, 'bad')
+    }
+  }
+
   const deleteItem = async (item: Item) => {
     if (!window.confirm(`Remove "${item.name}" from the menu?`)) return
     try {
@@ -191,6 +209,24 @@ export default function StaffMenu() {
 
   const itemCount = data.categories.reduce((n, c) => n + c.items.length, 0)
 
+  // What is on screen while something is typed in the find box. Sections stay
+  // whole so a match is still shown in the section it belongs to — a dish out
+  // of context is not enough to decide whether it is the right one.
+  const needle = find.trim().toLowerCase()
+  const sections = !needle
+    ? data.categories
+    : data.categories
+        .map((c) => ({
+          ...c,
+          items: c.items.filter(
+            (i) =>
+              i.name.toLowerCase().includes(needle) ||
+              i.description.toLowerCase().includes(needle),
+          ),
+        }))
+        .filter((c) => c.items.length > 0 || c.name.toLowerCase().includes(needle))
+  const foundCount = sections.reduce((n, c) => n + c.items.length, 0)
+
   return (
     <>
       <div className="staff-head">
@@ -240,10 +276,20 @@ export default function StaffMenu() {
               + Add dish
             </button>
           )}
+          <input
+            className="input"
+            style={{ maxWidth: 220 }}
+            type="search"
+            placeholder="Find a dish…"
+            value={find}
+            onChange={(e) => setFind(e.target.value)}
+            aria-label="Find a dish on the menu"
+          />
           <span className="spacer" style={{ flex: 1 }} />
           <span className="tiny muted">
-            {itemCount} dish{itemCount === 1 ? '' : 'es'} in {data.categories.length} section
-            {data.categories.length === 1 ? '' : 's'}
+            {needle
+              ? `${foundCount} of ${itemCount} dish${itemCount === 1 ? '' : 'es'}`
+              : `${itemCount} dish${itemCount === 1 ? '' : 'es'} in ${data.categories.length} section${data.categories.length === 1 ? '' : 's'}`}
           </span>
         </div>
       </form>
@@ -256,11 +302,49 @@ export default function StaffMenu() {
         />
       )}
 
-      {data.categories.map((c) => (
+      {!!needle && sections.length === 0 && (
+        <EmptyState
+          emoji="🔍"
+          title={`Nothing matching \u201c${find.trim()}\u201d`}
+          body="Try another word, or clear the search to see the whole menu."
+          action={
+            <button className="btn btn-secondary" onClick={() => setFind('')}>
+              Show everything
+            </button>
+          }
+        />
+      )}
+
+      {sections.map((c, ci) => (
         <section key={c.id} className="card card-pad mt-3">
           <div className="row" style={{ marginBottom: 6 }}>
             <h2>{c.name}</h2>
             <span className="spacer" style={{ flex: 1 }} />
+            {/* Hidden while a search is on: the arrows move a section within
+                the whole menu, and next to a filtered list they would look
+                like they move it within the results. */}
+            {!needle && (
+              <>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => move('categories', c.id, 'up')}
+                  disabled={ci === 0}
+                  aria-label={`Move ${c.name} up`}
+                  title="Move up"
+                >
+                  ↑
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => move('categories', c.id, 'down')}
+                  disabled={ci === sections.length - 1}
+                  aria-label={`Move ${c.name} down`}
+                  title="Move down"
+                >
+                  ↓
+                </button>
+              </>
+            )}
             <button className="btn btn-ghost btn-sm" onClick={() => renameSection(c)}>
               Rename
             </button>
@@ -283,7 +367,7 @@ export default function StaffMenu() {
               Nothing in this section yet.
             </p>
           ) : (
-            c.items.map((item) => (
+            c.items.map((item, ii) => (
               <div key={item.id} className="list-row">
                 <Art
                   emoji={item.emoji}
@@ -301,6 +385,28 @@ export default function StaffMenu() {
                   <p className="tiny muted">{money(item.priceCents)}</p>
                 </div>
                 <span className="spacer" />
+                {!needle && (
+                  <>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => move('menu', item.id, 'up')}
+                      disabled={ii === 0}
+                      aria-label={`Move ${item.name} up`}
+                      title="Move up"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => move('menu', item.id, 'down')}
+                      disabled={ii === c.items.length - 1}
+                      aria-label={`Move ${item.name} down`}
+                      title="Move down"
+                    >
+                      ↓
+                    </button>
+                  </>
+                )}
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={() => {

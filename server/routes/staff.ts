@@ -341,6 +341,37 @@ staffRouter.patch('/categories/:id', (req, res) => {
   res.json({ ok: true, name })
 })
 
+/**
+ * Moves a section up or down the menu.
+ *
+ * The order sections were typed in is rarely the order they should be read in
+ * — desserts get added first because that is what the owner was thinking
+ * about, and end up above the food. Swapping with the neighbour keeps every
+ * other position untouched, so a menu cannot be scrambled by a mis-tap.
+ */
+staffRouter.post('/categories/:id/move', (req, res) => {
+  const restaurantId = myRestaurant(req)
+  const row = ownCategory(req, Number(req.params.id))
+  if (!row) return res.status(404).json({ error: 'Section not found.' })
+  const up = String(req.body?.direction ?? 'up') === 'up'
+
+  const ordered = db
+    .prepare('SELECT id FROM menu_categories WHERE restaurant_id = ? ORDER BY sort_order, id')
+    .all(restaurantId) as any[]
+  const at = ordered.findIndex((c) => c.id === row.id)
+  const to = up ? at - 1 : at + 1
+  if (at === -1 || to < 0 || to >= ordered.length) return res.json({ ok: true, moved: false })
+
+  // Rewritten from scratch rather than swapped, because a menu imported from a
+  // PDF can arrive with every sort_order at 0 — and swapping two zeroes moves
+  // nothing while reporting success.
+  const rewrite = db.prepare('UPDATE menu_categories SET sort_order = ? WHERE id = ?')
+  const next = ordered.map((c) => c.id)
+  ;[next[at], next[to]] = [next[to], next[at]]
+  db.transaction(() => next.forEach((id, i) => rewrite.run(i, id)))()
+  res.json({ ok: true, moved: true })
+})
+
 staffRouter.delete('/categories/:id', (req, res) => {
   const row = ownCategory(req, Number(req.params.id))
   if (!row) return res.status(404).json({ error: 'Section not found.' })
@@ -351,6 +382,8 @@ staffRouter.delete('/categories/:id', (req, res) => {
 })
 
 // --- Menu items -------------------------------------------------------------
+
+
 
 function parsePrice(input: unknown): number | null {
   const value = Number(String(input ?? '').replace(/[^0-9.]/g, ''))
@@ -436,6 +469,26 @@ staffRouter.delete('/menu/:id', (req, res) => {
   db.prepare('DELETE FROM menu_items WHERE id = ?').run(row.id)
   deleteUpload(row.image_path)
   res.json({ ok: true })
+})
+
+/** Moves a dish up or down within its own section. Same rules as a section. */
+staffRouter.post('/menu/:id/move', (req, res) => {
+  const row = ownItem(req, Number(req.params.id))
+  if (!row) return res.status(404).json({ error: 'Item not found.' })
+  const up = String(req.body?.direction ?? 'up') === 'up'
+
+  const ordered = db
+    .prepare('SELECT id FROM menu_items WHERE category_id = ? ORDER BY sort_order, id')
+    .all(row.category_id) as any[]
+  const at = ordered.findIndex((i) => i.id === row.id)
+  const to = up ? at - 1 : at + 1
+  if (at === -1 || to < 0 || to >= ordered.length) return res.json({ ok: true, moved: false })
+
+  const rewrite = db.prepare('UPDATE menu_items SET sort_order = ? WHERE id = ?')
+  const next = ordered.map((i) => i.id)
+  ;[next[at], next[to]] = [next[to], next[at]]
+  db.transaction(() => next.forEach((id, i) => rewrite.run(i, id)))()
+  res.json({ ok: true, moved: true })
 })
 
 staffRouter.post('/menu/:id/image', (req, res) => {

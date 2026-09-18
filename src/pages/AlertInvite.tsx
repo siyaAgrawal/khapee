@@ -43,6 +43,43 @@ export default function AlertInvite() {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [trouble, setTrouble] = useState('')
+  /** Where the WhatsApp test should go — this phone's own number, usually. */
+  const [testPhone, setTestPhone] = useState('')
+  /** What the last test did, kept on the page rather than in a passing toast. */
+  const [tried, setTried] = useState('')
+
+  /**
+   * Makes this phone buzz, now, with no order involved.
+   *
+   * With a number it sends the thank-you notification instead of a plain one,
+   * so the WhatsApp step can be checked from the same screen — it is the last
+   * link in the chain and the only one whose failure looks like nothing at all.
+   */
+  const tryIt = async (phone: string) => {
+    setBusy(true)
+    setTried('')
+    try {
+      const r = await api<{ sent: number; devices: number; why: string }>(
+        `/alerts/invite/${token.trim().toUpperCase()}/test`,
+        { body: phone ? { phone } : {} },
+      )
+      if (r.sent) {
+        setTried(
+          phone
+            ? 'Sent. Tap that notification — WhatsApp should open with the message written.'
+            : 'Sent. This phone should be buzzing.',
+        )
+      } else if (!r.devices) {
+        setTried('The server is not holding any phone for this code. Try turning it on again above.')
+      } else {
+        setTried(`Signed up, but the push service refused it${r.why ? `: ${r.why}` : '.'}`)
+      }
+    } catch (e) {
+      setTried((e as ApiError).message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (fromLink) remember(fromLink.trim().toUpperCase())
@@ -204,10 +241,45 @@ export default function AlertInvite() {
             {invite.everywhere ? 'Order alerts for every restaurant' : `Order alerts for ${invite.restaurant}`}
           </h1>
           {done ? (
-            <p className="muted">
-              Done. This phone will ring for every new order, even with Khapee closed. Nothing else to
-              set up, and this link will not work again.
-            </p>
+            <>
+              <p className="muted">
+                Done. This phone will ring for every new order, even with Khapee closed.
+              </p>
+              {/* Proved here, rather than left to the first real order.
+                  Somebody setting this up with a code has no dashboard to
+                  check, so without this the only way to find out was to put
+                  the phone down and hope — and a missed first order is an
+                  expensive way to learn it never worked. */}
+              <div className="wa-test">
+                <button className="btn btn-secondary btn-block" disabled={busy} onClick={() => tryIt('')}>
+                  {busy ? <Spinner /> : 'Ring this phone now'}
+                </button>
+                <p className="tiny muted" style={{ marginTop: 14 }}>
+                  And the WhatsApp step — put your own number in and this sends you the exact
+                  notification an accepted order sends. Tap it and WhatsApp should open with the
+                  message written. Nothing reaches anybody until you press send.
+                </p>
+                <div className="row" style={{ gap: 10, marginTop: 8 }}>
+                  <input
+                    className="input input-sm"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    placeholder="Your own mobile number"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    aria-label="Your own mobile number"
+                  />
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    disabled={busy || !testPhone.trim()}
+                    onClick={() => tryIt(testPhone.trim())}
+                  >
+                    Test WhatsApp
+                  </button>
+                </div>
+                {!!tried && <p className="tiny muted" style={{ marginTop: 10 }}>{tried}</p>}
+              </div>
+            </>
           ) : (
             <p className="muted">
               Turn this on and this phone rings whenever an order comes in

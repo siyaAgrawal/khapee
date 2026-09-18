@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
-import { pushConfigured, pushPublicKey, saveSubscription } from '../push.ts'
+import { pushConfigured, pushPublicKey, pushToRestaurant, saveSubscription } from '../push.ts'
+import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
 import { normalizeCode } from '../ids.ts'
 import { checkAccessCode } from '../orders-service.ts'
 import { imageUrl } from '../uploads.ts'
@@ -230,6 +231,47 @@ publicRouter.post('/alerts/invite/:token', (req, res) => {
   if (!saved.ok) return res.status(400).json({ error: saved.error })
   db.prepare("UPDATE alert_invites SET used_at = datetime('now') WHERE id = ?").run(row.id)
   res.json({ ok: true })
+})
+
+/**
+ * Proving it works, on the phone that just switched it on.
+ *
+ * Somebody who sets this up with a code has no account and no dashboard, so
+ * everything that could reassure them lived somewhere they cannot reach. They
+ * were left to put the phone down and hope — and the first real order is a bad
+ * time to find out. A code already buys alerts for this restaurant; being able
+ * to make your own phone buzz with it is strictly less than that.
+ *
+ * With a number it sends the thank-you notification instead of a plain one, so
+ * the WhatsApp step — the last link, and the one that has been hard to see —
+ * can be tried here too, without waiting for an order to accept.
+ */
+publicRouter.post('/alerts/invite/:token/test', async (req, res) => {
+  const row = db
+    .prepare('SELECT * FROM alert_invites WHERE token = ?')
+    .get(String(req.params.token).trim().toUpperCase()) as any
+  if (!row) return res.status(404).json({ error: 'That code is not valid.' })
+  if (row.revoked_at) return res.status(410).json({ error: 'That code was cancelled.' })
+
+  const to = waNumber(String(req.body?.phone ?? ''))
+  if (to) {
+    const message = thanksText('Aarav')
+    const result = await pushToRestaurant(row.restaurant_id, {
+      title: 'Thank Aarav on WhatsApp',
+      body: 'This is the test. Tap it — WhatsApp should open with the message written.',
+      url: `/thank?to=${to}&who=Aarav&text=${encodeURIComponent(message)}`,
+      wa: waAppLink(to, message),
+      tag: 'khapee-thank-test',
+    })
+    return res.json({ ok: true, ...result, to })
+  }
+
+  const result = await pushToRestaurant(row.restaurant_id, {
+    title: 'Khapee alerts are working',
+    body: 'This is what a new order will look like.',
+    tag: 'khapee-test',
+  })
+  res.json({ ok: true, ...result })
 })
 
 /**

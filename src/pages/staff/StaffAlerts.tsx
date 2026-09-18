@@ -26,6 +26,9 @@ import {
  * go and configure something somewhere else — where a thing genuinely is not
  * switched on, it says who to ask rather than how to do it.
  */
+/** What the server reports after trying to reach every signed-up phone. */
+type PushOutcome = { sent: number; failed: number; devices: number; why: string }
+
 export default function StaffAlerts() {
   const toast = useToast()
   const [state, setState] = useState<AlertState | null>(null)
@@ -75,14 +78,32 @@ export default function StaffAlerts() {
     void load()
   }
 
+  /**
+   * What a send actually did, in words.
+   *
+   * "Sent to 0 devices" and "no device is signed up" used to be the same
+   * sentence, and they are opposite problems: one is nobody has switched this
+   * on, the other is phones are switched on and the push service is turning us
+   * away. Somebody reading "no device is signed up yet" while looking at their
+   * own device on the list below it goes looking in the wrong place, and the
+   * thing the push service said — which names the fault — was thrown away.
+   */
+  const saidIt = (r: PushOutcome): [string, 'good' | 'bad' | 'info'] => {
+    if (r.sent) return [`Sent to ${r.sent} device${r.sent === 1 ? '' : 's'}. It should buzz now.`, 'good']
+    if (!r.devices) return ['No phone is signed up yet — turn it on above, or use a code.', 'info']
+    return [
+      `${r.devices} phone${r.devices === 1 ? ' is' : 's are'} signed up, but the push service refused it` +
+        (r.why ? `: ${r.why}` : '.'),
+      'bad',
+    ]
+  }
+
   const ring = async () => {
     setBusy('ring')
     try {
-      const r = await api<{ sent: number }>('/staff/alerts/test', { body: {} })
-      toast(
-        r.sent ? `Sent to ${r.sent} device${r.sent === 1 ? '' : 's'}.` : 'No device is signed up yet.',
-        r.sent ? 'good' : 'info',
-      )
+      const [said, tone] = saidIt(await api<PushOutcome>('/staff/alerts/test', { body: {} }))
+      toast(said, tone)
+      void load()
     } catch (e) {
       toast((e as ApiError).message, 'bad')
     } finally {
@@ -99,15 +120,15 @@ export default function StaffAlerts() {
   const testWhatsApp = async () => {
     setBusy('wa')
     try {
-      const r = await api<{ sent: number; to: string }>('/staff/alerts/test-whatsapp', {
+      const r = await api<PushOutcome & { to: string }>('/staff/alerts/test-whatsapp', {
         body: { phone: testPhone.trim() },
       })
-      toast(
-        r.sent
-          ? 'Sent. Tap that notification — WhatsApp should open with the message written.'
-          : 'No phone is signed up to send it to. Turn alerts on above first.',
-        r.sent ? 'good' : 'info',
-      )
+      if (r.sent) {
+        toast('Sent. Tap that notification — WhatsApp should open with the message written.', 'good')
+      } else {
+        const [said, tone] = saidIt(r)
+        toast(said, tone)
+      }
     } catch (e) {
       toast((e as ApiError).message, 'bad')
     } finally {

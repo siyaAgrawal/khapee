@@ -2907,6 +2907,29 @@ async function runTests() {
     )
     ok('the test needs an account', (await call('/staff/alerts/test-whatsapp', { body: {} })).status === 401)
 
+    // The same two proofs on the page somebody with a code actually sees.
+    // They have no dashboard, so without this the only way to find out whether
+    // it worked was to put the phone down and wait for a real order.
+    const codeRing = await call('/alerts/invite/KEEPME/test', { body: {} })
+    ok('a code can make its own phone buzz', codeRing.status === 200, codeRing.body)
+    ok('and says how many phones it reached for', codeRing.body.devices >= 1, codeRing.body)
+    const codeWa = await call('/alerts/invite/KEEPME/test', { body: { phone: '98765 43210' } })
+    ok('and can send the WhatsApp one too', codeWa.status === 200 && codeWa.body.to === '919876543210', codeWa.body)
+    ok(
+      'a code nobody issued cannot ring anything',
+      (await call('/alerts/invite/NOSUCH/test', { body: {} })).status === 404,
+    )
+
+    // A count could never tell "nobody signed up" from "the push service is
+    // refusing us", and they are opposite problems. Both are reported now.
+    ok(
+      'a send says what it found as well as what it managed',
+      typeof codeRing.body.sent === 'number' &&
+        typeof codeRing.body.failed === 'number' &&
+        typeof codeRing.body.devices === 'number',
+      codeRing.body,
+    )
+
     const withInvited = (await call('/staff/alerts', { token: roadToken })).body.push.list as any[]
     ok(
       'the invited phone is on the list, marked as invited',

@@ -893,12 +893,12 @@ staffRouter.post('/alerts/devices/:id/remove', (req: any, res) => {
  */
 staffRouter.post('/alerts/test', async (req: any, res) => {
   const restaurantId = myRestaurant(req)
-  const sent = await pushToRestaurant(restaurantId, {
+  const r = await pushToRestaurant(restaurantId, {
     title: 'Khapee alerts are working',
     body: 'This is what a new order will look like.',
     tag: 'khapee-test',
   })
-  res.json({ ok: true, sent })
+  res.json({ ok: true, ...r })
 })
 
 /**
@@ -928,14 +928,14 @@ staffRouter.post('/alerts/test-whatsapp', async (req: any, res) => {
 
   const message = thanksText('Aarav')
   const url = `/thank?to=${to}&who=Aarav&text=${encodeURIComponent(message)}`
-  const sent = await pushToRestaurant(restaurantId, {
+  const r = await pushToRestaurant(restaurantId, {
     title: 'Thank Aarav on WhatsApp',
     body: 'This is the test. Tap it — WhatsApp should open with the message written.',
     url,
     wa: waAppLink(to, message),
     tag: 'khapee-thank-test',
   })
-  res.json({ ok: true, sent, to })
+  res.json({ ok: true, ...r, to })
 })
 
 staffRouter.get('/summary', (req, res) => {

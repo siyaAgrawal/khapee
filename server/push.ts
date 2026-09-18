@@ -326,10 +326,30 @@ export async function pushToCustomer(orderId: number, note: PushNote): Promise<n
  * deleted rather than retried: the whole point is that nobody is watching, so
  * there is nobody to notice a queue of dead endpoints building up.
  */
-export async function pushToRestaurant(restaurantId: number, note: PushNote): Promise<number> {
-  if (!KEYS) return 0
+/**
+ * What happened, rather than only how many got through.
+ *
+ * This used to return a count, and a count cannot tell apart the two things
+ * somebody most needs to tell apart: nobody has signed a phone up, and phones
+ * are signed up but the push service is refusing us. Both came back as 0, and
+ * the screen said "no device is signed up yet" to somebody looking at their
+ * own device on the list above it — which sent everybody looking in the one
+ * place the fault was not.
+ */
+export type PushResult = {
+  sent: number
+  /** Devices that were tried and refused. */
+  failed: number
+  /** Devices held for this restaurant, before anything was attempted. */
+  devices: number
+  /** What the push service said, in as many words as it gave. */
+  why: string
+}
+
+export async function pushToRestaurant(restaurantId: number, note: PushNote): Promise<PushResult> {
+  if (!KEYS) return { sent: 0, failed: 0, devices: 0, why: pushReason() }
   const rows = db.prepare(DEVICES_FOR).all(restaurantId, restaurantId) as any[]
-  if (!rows.length) return 0
+  if (!rows.length) return { sent: 0, failed: 0, devices: 0, why: '' }
 
   const payload = JSON.stringify({
     title: note.title,
@@ -340,6 +360,8 @@ export async function pushToRestaurant(restaurantId: number, note: PushNote): Pr
   })
 
   let sent = 0
+  let failed = 0
+  const complaints: string[] = []
   await Promise.all(
     rows.map(async (row) => {
       try {
@@ -353,11 +375,18 @@ export async function pushToRestaurant(restaurantId: number, note: PushNote): Pr
           row.id,
         )
       } catch (e: any) {
+        failed++
         const status = Number(e?.statusCode)
+        // Kept rather than swallowed. A push service that is refusing us says
+        // why — a stale key, a subject it will not accept, a payload too big —
+        // and every one of those was being discarded, leaving a screen that
+        // could only report silence and a person with nothing to act on.
+        const said = String(e?.body || e?.message || '').trim().slice(0, 200)
+        complaints.push(status ? `${status}${said ? ` · ${said}` : ''}` : said || 'no answer')
         if (status === 404 || status === 410) dropSubscription(row.endpoint)
         else db.prepare('UPDATE push_subscriptions SET failures = failures + 1 WHERE id = ?').run(row.id)
       }
     }),
   )
-  return sent
+  return { sent, failed, devices: rows.length, why: [...new Set(complaints)].join('; ') }
 }

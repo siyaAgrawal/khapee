@@ -54,6 +54,8 @@ export default function Checkout() {
     dining?.tableLabel ?? scannedTable?.tableLabel ?? null,
   )
   const [name, setName] = useState(user?.name ?? '')
+  /** Where the Khapee confirmation goes, when the session has no number of its own. */
+  const [phone, setPhone] = useState(user?.phone ?? '')
   const [note, setNote] = useState('')
   const [payNow, setPayNow] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
@@ -115,6 +117,7 @@ export default function Checkout() {
 
   useEffect(() => {
     if (user?.name && !name) setName(user.name)
+    if (user?.phone && !phone) setPhone(user.phone)
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!restaurantId || count === 0) {
@@ -197,6 +200,7 @@ export default function Checkout() {
           takeaway: where === 'takeaway',
           items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
           customerName: name.trim(),
+          contactPhone: phone.trim(),
           note,
           paymentMethod: paymentClaim ? 'app' : 'counter',
           tableId: seated,
@@ -363,6 +367,25 @@ export default function Checkout() {
               autoComplete="name"
             />
           </div>
+
+          {/* Somewhere to send the confirmation. A delivery or a spot in the
+              area has already given a number and been asked why; at a table
+              nobody has, so it is optional and says what it is for. */}
+          {!isNearby && (
+            <div className="field">
+              <label htmlFor="co-phone">WhatsApp number (optional)</label>
+              <input
+                id="co-phone"
+                className="input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9+ ]/g, '').slice(0, 20))}
+                placeholder="98765 43210"
+                inputMode="tel"
+                autoComplete="tel"
+              />
+              <span className="hint">We'll send your order confirmation here.</span>
+            </div>
+          )}
 
           <div className="field">
             <label htmlFor="co-note">Anything we should know? (optional)</label>

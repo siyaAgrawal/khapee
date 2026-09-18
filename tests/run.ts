@@ -213,7 +213,8 @@ async function runTests() {
   ok('order gets a unique order number', /^[A-Z]\d{3}$/.test(o1.orderNumber), o1?.orderNumber)
   ok('order records the table', o1.tableLabel === tables[3].label)
   ok('order total is priced server-side', o1.totalCents === coldCoffee.priceCents * 2 + croissant.priceCents)
-  ok('order starts as NEW and UNPAID', o1.status === 'NEW' && o1.paymentStatus === 'UNPAID')
+  // Nobody has paid, so the kitchen is being asked rather than told.
+  ok('an unpaid order waits to be accepted', o1.status === 'REQUESTED' && o1.paymentStatus === 'UNPAID', o1)
   ok('order carries a verification token for its QR', typeof o1.verifyToken === 'string' && o1.verifyToken.length >= 10)
 
   const board = await call('/staff/orders', { token: staffToken })
@@ -2240,7 +2241,7 @@ async function runTests() {
     },
   })
   ok('but collecting later needs nothing at all', fromAway.status === 201, fromAway.body)
-  ok('and it is a real order the restaurant can see', fromAway.body.order.status === 'NEW')
+  ok('and it is a real order the restaurant can see', fromAway.body.order.status === 'REQUESTED')
 
   group('ROADSIDE WITHOUT ZONES — a place with one stretch of kerb')
   // Some places have several stretches of road and need to know which one you
@@ -2283,6 +2284,108 @@ async function runTests() {
     bareRuns.body.groups.some((g: any) => g.zone === 'Outside'),
     bareRuns.body.groups.map((g: any) => g.zone),
   )
+
+  group('PAYING DECIDES WHO WAITS')
+  {
+    // A restaurant that has been paid can start cooking. One that has not is
+    // being asked to make food on the promise that somebody turns up, and that
+    // is a decision it has to be able to refuse — whatever way the order came.
+    const unpaid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Owes money',
+      },
+    })
+    ok('an unpaid order waits on the kitchen', unpaid.body.order.status === 'REQUESTED', unpaid.body.order)
+
+    const prepaid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Already paid',
+        paymentClaim: { upiRef: '402312345679' },
+      },
+    })
+    ok('one paid in the app goes straight in', prepaid.body.order.status === 'NEW', prepaid.body.order)
+
+    // The same is true of eating in, which used to skip the question entirely.
+    const table = await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })
+    const atTable = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'At a table',
+        sessionToken: table.body.session.token,
+      },
+    })
+    ok('so does an unpaid order at a table', atTable.body.order.status === 'REQUESTED', atTable.body.order)
+
+    // And saying yes drops it into that mode's own flow, not delivery's.
+    const yes = await call(`/staff/orders/${atTable.body.order.id}/accept`, { token: roadToken, method: 'POST' })
+    ok('accepting puts it in the kitchen', yes.body.order.status === 'ACCEPTED', yes.body)
+    for (const st of ['PREPARING', 'READY', 'COMPLETED']) {
+      const r = await call(`/staff/orders/${atTable.body.order.id}/status`, { token: roadToken, body: { status: st } })
+      ok(`and it finishes the dine-in way through ${st.toLowerCase()}`, r.status === 200, r.body)
+    }
+
+    ok(
+      'refusing one needs a reason the customer can read',
+      (await call(`/staff/orders/${unpaid.body.order.id}/decline`, { token: roadToken, body: { reason: '' } }))
+        .status === 400,
+    )
+    const no = await call(`/staff/orders/${unpaid.body.order.id}/decline`, {
+      token: roadToken,
+      body: { reason: 'Out of croissants' },
+    })
+    ok('and it can be refused', no.body.order.status === 'DECLINED', no.body)
+    ok('with the reason on it', no.body.order.declinedReason === 'Out of croissants')
+  }
+
+  group('THE THANK-YOU ON WHATSAPP')
+  {
+    // Sending it needs Meta's Cloud API — a token, an account, a charge per
+    // message. With none of that set nothing must leave the server, and above
+    // all the order must not care: the kitchen has a ticket either way.
+    const withNumber = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Reachable',
+        contactPhone: '98765 43210',
+      },
+    })
+    ok('an order still goes through with nothing configured', withNumber.status === 201, withNumber.body)
+
+    const log = new Database(DB_PATH)
+    const row = log
+      .prepare('SELECT * FROM whatsapp_messages WHERE order_id = ?')
+      .get(withNumber.body.order.id) as any
+    log.close()
+    ok('but the attempt is written down', !!row, row)
+    ok('saying it is switched off, not broken', row?.status === 'off', row)
+    // A ten-digit Indian number is what people type; WhatsApp wants the code.
+    ok('with the number in the form WhatsApp wants', row?.phone === '919876543210', row)
+
+    const noNumber = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Unreachable',
+      },
+    })
+    const log2 = new Database(DB_PATH)
+    const row2 = log2
+      .prepare('SELECT * FROM whatsapp_messages WHERE order_id = ?')
+      .get(noNumber.body.order.id) as any
+    log2.close()
+    ok('and a guest who gave no number is recorded as such', row2?.status === 'no-number', row2)
+  }
 
   group('A PRECINCT — ordering from wherever you are standing')
   {

@@ -53,7 +53,16 @@ export const SERVICE_LABEL: Record<ServiceType, string> = {
   precinct: 'Nearby',
 }
 
+/**
+ * An order nobody has paid for yet waits at REQUESTED whatever the mode.
+ *
+ * Money is the reason. A restaurant that has been paid can start cooking; one
+ * that has not is being asked to make food on the promise that somebody turns
+ * up with cash, and that is a decision, not a formality. Saying yes drops it
+ * into its own mode's flow at ACCEPTED, so nothing downstream changes.
+ */
 export function nextStatus(type: OrderType | ServiceType, current: OrderStatus): OrderStatus | null {
+  if (current === 'REQUESTED') return 'ACCEPTED'
   const flow = flowFor(type)
   const i = flow.indexOf(current)
   if (i === -1 || i === flow.length - 1) return null
@@ -70,6 +79,8 @@ export function canTransition(type: OrderType | ServiceType, from: OrderStatus, 
   // Declining is only ever an answer to a request that is still waiting.
   if (to === 'DECLINED') return from === 'REQUESTED'
   if (to === 'CANCELLED') return !isTerminal(type, from)
+  // Waiting on a yes or no: the only answers are yes, no, and never mind.
+  if (from === 'REQUESTED') return to === 'ACCEPTED'
   const flow = flowFor(type)
   const a = flow.indexOf(from)
   const b = flow.indexOf(to)

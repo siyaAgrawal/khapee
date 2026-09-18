@@ -97,12 +97,12 @@ export default function OrderTrack() {
           {/*
             The thank-you, on WhatsApp.
 
-            Khapee cannot send anyone a WhatsApp message by itself: that needs
-            the WhatsApp Business API, which means a provider, an account with
-            them, a key and a charge per message — a third party in the middle
-            of every order. This opens WhatsApp with the message already
-            written, so it goes from the customer's own number to whoever they
-            like: themselves, to keep the order, or whoever is joining them.
+            Khapee sends this itself when the WhatsApp Business credentials are
+            in the environment — see server/whatsapp.ts. Until they are, and for
+            anyone who gave no number, this button is the whole of it: it opens
+            WhatsApp with the message already written, so it goes from the
+            customer's own number to whoever they like — themselves, to keep the
+            order, or whoever is joining them.
           */}
           <a
             className="btn btn-secondary btn-sm wa-share"

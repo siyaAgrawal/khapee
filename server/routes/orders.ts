@@ -108,6 +108,7 @@ ordersRouter.post('/', (req, res) => {
     type: body.type === 'pickup' ? 'pickup' : 'dine_in',
     items: Array.isArray(body.items) ? body.items : [],
     customerName: String(body.customerName ?? req.user?.name ?? '').trim(),
+    contactPhone: String(body.contactPhone ?? '').trim(),
     userId: req.user?.id ?? null,
     note: body.note,
     paymentMethod: body.paymentMethod,

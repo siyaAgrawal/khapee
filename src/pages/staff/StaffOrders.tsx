@@ -42,11 +42,13 @@ function isToday(createdAt: string): boolean {
 }
 
 const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
-  { key: 'new', title: 'New', statuses: ['NEW'] },
+  // Everything nobody has answered yet, plus anything already paid for and
+  // therefore straight into the kitchen.
+  { key: 'new', title: 'To accept', statuses: ['REQUESTED', 'NEW'] },
   { key: 'accepted', title: 'Accepted', statuses: ['ACCEPTED'] },
   { key: 'preparing', title: 'Preparing', statuses: ['PREPARING'] },
   { key: 'ready', title: 'Ready', statuses: ['READY', 'READY_FOR_PICKUP'] },
-  { key: 'done', title: 'Completed', statuses: ['COMPLETED', 'PICKED_UP', 'CANCELLED'] },
+  { key: 'done', title: 'Completed', statuses: ['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'] },
 ]
 
 export default function StaffOrders() {
@@ -77,14 +79,16 @@ export default function StaffOrders() {
         api<{ summary: any }>('/staff/summary'),
       ])
       if (!firstLoad.current) {
-        const fresh = o.orders.filter((x) => x.status === 'NEW' && !knownIds.current.has(x.id))
+        const fresh = o.orders.filter(
+          (x) => (x.status === 'REQUESTED' || x.status === 'NEW') && !knownIds.current.has(x.id),
+        )
         if (fresh.length === 1) toast(`New order #${fresh[0].orderNumber}`, 'good')
         else if (fresh.length > 1) toast(`${fresh.length} new orders came in`, 'good')
         for (const order of fresh) {
-          const where = order.serviceType === 'dine_in' ? order.tableLabel : 'Counter'
           announceOrder(
             order.orderNumber,
-            `${where} · ${order.customerName} · ${order.items.reduce((n: number, i: any) => n + i.quantity, 0)} items · ${money(order.totalCents)}`,
+            `${placeOf(order)} · ${order.customerName} · ${order.items.reduce((n: number, i: any) => n + i.quantity, 0)} items · ${money(order.totalCents)}` +
+              (order.status === 'REQUESTED' ? ' · needs your yes' : ''),
           )
         }
       }
@@ -140,6 +144,29 @@ export default function StaffOrders() {
     }
   }
 
+  /**
+   * Refusing an order, which needs a reason: the customer is told it, and
+   * "could not be taken" on its own leaves somebody waiting for food wondering
+   * whether to order again or go somewhere else.
+   */
+  const decline = async (order: Order) => {
+    const reason = window.prompt(
+      `Why can't you take #${order.orderNumber}? The customer sees this.`,
+      'Kitchen is full right now',
+    )
+    if (!reason?.trim()) return
+    setBusyId(order.id)
+    try {
+      await api(`/staff/orders/${order.id}/decline`, { body: { reason: reason.trim() } })
+      toast(`#${order.orderNumber} turned down`, 'info')
+      load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const togglePaid = async (order: Order) => {
     setBusyId(order.id)
     try {
@@ -161,10 +188,10 @@ export default function StaffOrders() {
    * those orders, and says so in a line you can dismiss.
    */
   const FOCUS: Record<string, { label: string; match: (o: Order) => boolean; asList?: boolean }> = {
-    new: { label: 'New orders', match: (o) => o.status === 'NEW' },
+    new: { label: 'Waiting on you', match: (o) => o.status === 'REQUESTED' || o.status === 'NEW' },
     active: {
       label: 'Orders in progress',
-      match: (o) => !['COMPLETED', 'PICKED_UP', 'CANCELLED'].includes(o.status),
+      match: (o) => !['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'].includes(o.status),
     },
     today: { label: "Today's orders", match: (o) => isToday(o.createdAt), asList: true },
     paid: {
@@ -447,13 +474,15 @@ export default function StaffOrders() {
                               Open bill
                             </Link>
                             <span className="spacer" />
-                            {!['COMPLETED', 'PICKED_UP', 'CANCELLED'].includes(o.status) && (
+                            {!['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'].includes(o.status) && (
                               <button
                                 className="btn btn-danger btn-sm"
                                 disabled={busyId === o.id}
-                                onClick={() => advance(o, 'CANCELLED')}
+                                onClick={() =>
+                                  o.status === 'REQUESTED' ? decline(o) : advance(o, 'CANCELLED')
+                                }
                               >
-                                Cancel
+                                {o.status === 'REQUESTED' ? 'Can’t take it' : 'Cancel'}
                               </button>
                             )}
                           </div>
@@ -569,13 +598,13 @@ export default function StaffOrders() {
                             <span className="badge badge-open">{STATUS_LABEL[o.status as OrderStatus]}</span>
                           )}
                           <span className="spacer" />
-                          {o.status !== 'CANCELLED' && !['COMPLETED', 'PICKED_UP'].includes(o.status) && (
+                          {!['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'].includes(o.status) && (
                             <button
                               className="btn btn-danger btn-sm"
                               disabled={busyId === o.id}
-                              onClick={() => advance(o, 'CANCELLED')}
+                              onClick={() => (o.status === 'REQUESTED' ? decline(o) : advance(o, 'CANCELLED'))}
                             >
-                              Cancel
+                              {o.status === 'REQUESTED' ? 'Can’t take it' : 'Cancel'}
                             </button>
                           )}
                         </div>

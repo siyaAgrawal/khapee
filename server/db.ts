@@ -179,6 +179,19 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, read_at);
 
+-- Every attempt to send the Khapee thank-you on WhatsApp, including the ones
+-- that were never sent because the integration is switched off. Outbound
+-- messaging fails quietly and at someone else's end; without a log the only
+-- answer to "did my customer get it?" is a shrug.
+CREATE TABLE IF NOT EXISTS whatsapp_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id   INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+  phone      TEXT    NOT NULL DEFAULT '',
+  status     TEXT    NOT NULL,
+  detail     TEXT    NOT NULL DEFAULT '',
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS sessions (
   token      TEXT    PRIMARY KEY,
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

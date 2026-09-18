@@ -4,6 +4,7 @@ import { publish } from './events.ts'
 import { money, type OrderStatus, type OrderType, type ServiceType } from '../shared/orders.ts'
 import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
+import { sendOrderConfirmation } from './whatsapp.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -43,6 +44,8 @@ export type CreateOrderInput = {
   type: OrderType
   items: CartLine[]
   customerName: string
+  /** Where to send the Khapee confirmation, when the customer offers a number. */
+  contactPhone?: string
   userId: number | null
   note?: string
   paymentMethod?: 'counter' | 'app'
@@ -58,6 +61,22 @@ export type CreateOrderInput = {
 }
 
 export type CreateOrderResult = { ok: true; order: any } | { ok: false; status: number; error: string }
+
+/**
+ * The number to send the thank-you to.
+ *
+ * Delivery and the precinct ask for one outright, because somebody has to be
+ * able to ring. Everyone else is only reachable if they have an account with a
+ * number on it — a guest ordering at a table has given us nothing but a name,
+ * and there is nowhere to send anything.
+ */
+function customerPhone(given: string | undefined, userId: number | null, order: any): string {
+  if (given && given.trim()) return given.trim()
+  if (order?.deliveryPhone) return String(order.deliveryPhone)
+  if (!userId) return ''
+  const row = db.prepare('SELECT phone FROM users WHERE id = ?').get(userId) as any
+  return String(row?.phone ?? '')
+}
 
 export function createOrder(input: CreateOrderInput): CreateOrderResult {
   const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(input.restaurantId) as any
@@ -224,10 +243,12 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         input.type,
         tableId,
         tableLabel,
-        // Delivery waits to be accepted; everything else is already happening.
-        liveSession?.service_mode === 'delivery' || liveSession?.service_mode === 'precinct'
-          ? 'REQUESTED'
-          : 'NEW',
+        // Whether the kitchen has to agree before it starts, and the answer is
+        // about money. Paid through the app, it is already happening: the
+        // restaurant has the cash and the customer has committed. Not paid, it
+        // is a request to cook on the promise that somebody turns up — which a
+        // kitchen has to be able to refuse, whatever way the order came in.
+        input.paymentClaim ? 'NEW' : 'REQUESTED',
         paymentMethod,
         totalCents,
         String(input.note ?? '').slice(0, 300),
@@ -303,8 +324,10 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     ).run(
       input.restaurantId,
       orderId,
-      `New order #${orderNumber}`,
-      `${where} · ${customerName} · ${money(totalCents)}`,
+      // The title is the thing a glance has to answer: does this need me?
+      input.paymentClaim ? `Paid order #${orderNumber}` : `#${orderNumber} needs your yes`,
+      `${where} · ${customerName} · ${money(totalCents)}` +
+        (input.paymentClaim ? ' · paid in the app' : ' · unpaid until you accept'),
     )
 
     return orderId
@@ -338,6 +361,17 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     })
     order.sessionToken = opened.token
   }
+  // The thank-you, from Khapee. Not awaited and unable to throw: whether Meta
+  // answers has nothing to do with whether the kitchen has an order.
+  void sendOrderConfirmation(orderId, {
+    phone: customerPhone(input.contactPhone, input.userId, order),
+    customerName: customerName,
+    restaurantName: order.restaurantName ?? '',
+    orderNumber,
+    total: money(totalCents),
+    trackUrl: `${(process.env.KHAPEE_ORIGIN || 'https://khapee.com').replace(/\/$/, '')}/order/${orderNumber}`,
+  })
+
   publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
   return { ok: true, order }
 }

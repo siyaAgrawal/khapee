@@ -742,6 +742,17 @@ textarea {
     );
   }
 }
+/* A restaurant that has chosen to be dark stays dark on a phone set to light.
+   Without this the tiles keep their pale daytime gradient and the page reads as
+   a dark screen with a row of cream squares cut out of it. */
+:root[data-theme='dark'] .art {
+  background: linear-gradient(
+    145deg,
+    hsl(var(--art-hue) 42% 34%) 0%,
+    hsl(calc(var(--art-hue) + 18) 38% 26%) 55%,
+    hsl(calc(var(--art-hue) - 12) 34% 20%) 100%
+  );
+}
 
 .art-photo img {
   width: 100%;
@@ -4665,7 +4676,10 @@ button.nav-link {
    a deep planted green with the light of those bulbs as its accent, rather than
    the charcoal of La Tavola or the roadside amber of Lotus Hut. */
 
-:root[data-theme='revery'] {
+/* A restaurant that wants the app's ordinary layout but always dark, and no
+   photographs — because bad photographs of food are worse than none. */
+:root[data-theme='revery'],
+:root[data-theme='dark'] {
   --bg: #0f1712;
   --bg-tint: #15201a;
   --surface: #16211b;

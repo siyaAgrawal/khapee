@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | 'revery' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | 'dark' | ''
 
 /** How one section of a themed menu presents itself. */
 export type SectionVoice = {

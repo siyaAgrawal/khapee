@@ -172,24 +172,19 @@ if (!block) {
   <rect width="130" height="130" fill="#ffffff"/>
   <!-- Leaning a few degrees, like the pizza slice and the coffee cup do. Upright
        among them looks like it was dropped in rather than drawn with them. -->
-  <g transform="rotate(-8 65 74)" stroke="${line}" stroke-linecap="round" stroke-linejoin="round">
-    <!-- What stops this reading as a plant in a pot, which an earlier version
-         did: the fries are cut flat at the top rather than rounded, they are
-         thick and packed rather than thin and spaced, and the carton has a
-         back panel standing up behind them instead of a rim across the front.
-         A tapered tub with a horizontal band is a flowerpot whatever is
-         sticking out of it. -->
-    <g fill="none" stroke-width="9" stroke-linecap="butt">
-      <path d="M32 78 L26 34"/>
-      <path d="M46 78 L41 18"/>
-      <path d="M60 78 L59 10"/>
-      <path d="M74 78 L78 14"/>
-      <path d="M88 78 L94 24"/>
-      <path d="M101 78 L107 40"/>
+  <g transform="rotate(-8 65 74)" stroke="${line}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- An ice cream cone. Fries were tried here twice and read as a plant in
+         a pot both times — thin strokes rising out of a tapered tub is a
+         flowerpot however they are drawn, and an icon you have to explain is
+         the wrong icon. A cone cannot be mistaken for anything else. -->
+    <circle cx="65" cy="40" r="26" fill="#ffffff"/>
+    <path d="M41 58 L89 58 L65 124 Z" fill="#ffffff"/>
+    <g stroke-width="2.6">
+      <path d="M50 70 L74 100"/>
+      <path d="M63 68 L82 90"/>
+      <path d="M79 70 L56 100"/>
+      <path d="M66 68 L49 88"/>
     </g>
-    <!-- Slanted across the top and no band across the middle. A symmetrical tub
-         with a horizontal rim is a flowerpot; the slant is what says carton. -->
-    <path d="M18 58 L110 72 L94 124 L36 124 Z" fill="#ffffff" stroke-width="4"/>
   </g>
 </svg>
 `

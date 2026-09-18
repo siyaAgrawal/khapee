@@ -225,8 +225,15 @@ export default function AlertInvite() {
           {!done && !pushSupported() && needsHomeScreen() && (
             <>
               <p className="tiny muted">
-                Safari only allows alerts once Khapee is on your Home Screen. Three taps, and it
-                installs nothing:
+                Safari only allows alerts once Khapee is on your Home Screen — this page, in a Safari
+                tab, cannot do it however many times it is opened.
+              </p>
+              {/* The trap this page exists to get somebody out of: they add the
+                  icon, carry on in the tab they already had open, and see the
+                  same instructions again. */}
+              <p className="tiny muted">
+                <strong>Already added it?</strong> Then this is the wrong window — close Safari and
+                open Khapee from the icon on your Home Screen instead. Otherwise:
               </p>
               <ol className="alert-steps">
                 <li>

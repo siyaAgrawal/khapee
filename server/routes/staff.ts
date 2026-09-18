@@ -1681,6 +1681,11 @@ staffRouter.post('/orders/:id/accept', (req: any, res) => {
   ).run(order.id)
   db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'ACCEPTED', 'staff')").run(order.id)
   notifyCustomer(order, 'Order accepted', `${order.order_number} is being made now.`)
+  // The same phones the board's own Accept tells. There are two ways to accept
+  // an order — this one and the status route — and only one of them was
+  // sending the customer's update and the WhatsApp nudge, so whether anybody
+  // heard about an order depended on which screen it was accepted from.
+  tellCustomer(order.id, 'ACCEPTED')
   publish('orders', { restaurantId })
   publish('ops', { restaurantId })
   res.json({ order: getOrder(order.id) })

@@ -20,7 +20,8 @@
  *
  * Meta only allows plain text to someone who messaged the business in the last
  * day; for a first message it has to be an approved template. Hence the two
- * shapes.
+ * shapes — and why the sentence has to be registered before it can be sent,
+ * even though it is the app's own sentence.
  */
 import { db } from './db.ts'
 
@@ -55,15 +56,30 @@ export type OrderMessage = {
   trackUrl: string
 }
 
-/** The words, in one place, so the template and the plain text agree. */
+/**
+ * The message, word for word, in one place.
+ *
+ * The two names are the whole point of it: the customer's own, and the
+ * restaurant they actually ordered from. Meta needs the same sentence
+ * registered as a template with the names as {{1}} and {{2}} — see
+ * WHATSAPP_TEMPLATE_BODY below — and the two have to match, so both are
+ * written from here.
+ */
 export function orderMessageText(m: OrderMessage): string {
-  return (
-    `Thanks for ordering through Khapee 🎉\n\n` +
-    `${m.restaurantName}\n` +
-    `Order #${m.orderNumber} · ${m.total}\n\n` +
-    `Follow it here: ${m.trackUrl}`
-  )
+  return `Hi ${m.customerName}, Thanks for ordering from ${m.restaurantName} today! We hope you enjoyed your food. 🍕`
 }
+
+/**
+ * What to register with Meta, exactly.
+ *
+ * A business cannot message somebody out of the blue on WhatsApp in its own
+ * words: the sentence has to be approved in advance, with the variable parts
+ * numbered. Submit this, with the name `order_confirmation`, under Message
+ * Templates, category Utility. The numbers are filled in per order by
+ * sendOrderConfirmation.
+ */
+export const WHATSAPP_TEMPLATE_BODY =
+  'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoyed your food. 🍕'
 
 function record(orderId: number | null, to: string, status: string, detail: string) {
   try {
@@ -110,12 +126,8 @@ export async function sendOrderConfirmation(
           components: [
             {
               type: 'body',
-              parameters: [
-                m.customerName,
-                m.restaurantName,
-                m.orderNumber,
-                m.total,
-              ].map((text) => ({ type: 'text', text })),
+              // {{1}} and {{2}} of the approved template, in that order.
+              parameters: [m.customerName, m.restaurantName].map((text) => ({ type: 'text', text })),
             },
           ],
         },

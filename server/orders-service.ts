@@ -266,8 +266,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
            status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
            service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone,
-           delivery_fee_cents, precinct_id, spot_id, look_for)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           delivery_fee_cents, precinct_id, spot_id, look_for, contact_phone)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -316,6 +316,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         liveSession?.service_mode === 'precinct' ? (liveSession.precinct_id ?? null) : null,
         liveSession?.service_mode === 'precinct' ? (liveSession.spot_id ?? null) : null,
         liveSession?.service_mode === 'precinct' ? (liveSession.look_for ?? '') : '',
+        phone,
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -482,6 +483,8 @@ export function shapeOrder(row: any) {
     serviceMode: (row.service_mode ?? 'dine_in') as ServiceType,
     deliveryAddress: row.delivery_address ?? '',
     deliveryPhone: row.delivery_phone ?? '',
+    /** How to reach whoever placed this, whatever way they ordered. */
+    customerPhone: row.contact_phone || row.delivery_phone || '',
     deliveryArea: row.delivery_area_id
       ? ((db.prepare('SELECT name FROM delivery_areas WHERE id = ?').get(row.delivery_area_id) as any)?.name ?? null)
       : null,

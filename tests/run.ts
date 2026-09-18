@@ -2527,6 +2527,11 @@ async function runTests() {
       },
     })
     ok('a real one goes through', good.status === 201, good.body)
+    ok(
+      'and it is kept on the order, so the kitchen can ring back',
+      good.body.order.customerPhone === '+91 98765 43210',
+      good.body.order.customerPhone,
+    )
 
     // A counter sale is the exception: that customer is standing at the till.
     const counter = await call('/staff/pos/sale', {
@@ -2675,6 +2680,28 @@ async function runTests() {
       .prepare('SELECT * FROM whatsapp_messages WHERE order_id = ?')
       .get(withNumber.body.order.id) as any
     log.close()
+
+    // The words, exactly. The two names are the whole point of the message.
+    const { orderMessageText, WHATSAPP_TEMPLATE_BODY } = await import('../server/whatsapp.ts')
+    const written = orderMessageText({
+      phone: '9876543210',
+      customerName: 'Siya',
+      restaurantName: 'Revery',
+      orderNumber: 'A123',
+      total: '₹470',
+      trackUrl: 'https://khapee.com/order/A123',
+    })
+    ok(
+      'the message greets the customer by name and names the restaurant',
+      written === 'Hi Siya, Thanks for ordering from Revery today! We hope you enjoyed your food. 🍕',
+      written,
+    )
+    ok(
+      'and the template registered with Meta is the same sentence',
+      WHATSAPP_TEMPLATE_BODY ===
+        'Hi {{1}}, Thanks for ordering from {{2}} today! We hope you enjoyed your food. 🍕',
+      WHATSAPP_TEMPLATE_BODY,
+    )
     ok('but the attempt is written down', !!row, row)
     ok('saying it is switched off, not broken', row?.status === 'off', row)
     // A ten-digit Indian number is what people type; WhatsApp wants the code.

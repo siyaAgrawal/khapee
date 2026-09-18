@@ -259,6 +259,12 @@ addColumn('restaurants', 'accepts_groups', 'INTEGER NOT NULL DEFAULT 1')
 addColumn('restaurants', 'upi_vpa', "TEXT NOT NULL DEFAULT ''")
 addColumn('restaurants', 'upi_name', "TEXT NOT NULL DEFAULT ''")
 
+// The number the customer gave when ordering. delivery_phone only ever
+// existed for the two modes that ask for an address, so a table or a pickup
+// order carried no way to reach whoever placed it — and the WhatsApp message
+// sent to that number could not be looked up afterwards or sent again.
+addColumn('orders', 'contact_phone', "TEXT NOT NULL DEFAULT ''")
+
 // Where order alerts are emailed. Blank means the owner's own address.
 addColumn('restaurants', 'order_email', "TEXT NOT NULL DEFAULT ''")
 

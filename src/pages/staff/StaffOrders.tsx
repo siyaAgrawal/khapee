@@ -407,7 +407,10 @@ export default function StaffOrders() {
                   <td>
                     {o.serviceType === 'dine_in' ? o.tableLabel : SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]}
                   </td>
-                  <td>{o.customerName}</td>
+                  <td>
+                    {o.customerName}
+                    {o.customerPhone && <div className="tiny muted">{o.customerPhone}</div>}
+                  </td>
                   <td className="ledger-items">
                     {groupByPerson(o.items).map((person) => (
                       <div key={person.name}>
@@ -582,6 +585,17 @@ export default function StaffOrders() {
                         </div>
                         <div className="o-name">
                           {o.customerName} · {clockTime(o.createdAt)}
+                          {/* Tappable, because the two calls a kitchen makes
+                              are "we are out of that" and "we cannot find
+                              you", and both start with finding the number. */}
+                          {o.customerPhone && (
+                            <>
+                              {' · '}
+                              <a className="o-phone" href={`tel:${o.customerPhone.replace(/[^0-9+]/g, '')}`}>
+                                {o.customerPhone}
+                              </a>
+                            </>
+                          )}
                         </div>
 
                         <div className="o-items">

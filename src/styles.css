@@ -5124,3 +5124,11 @@ button.nav-link {
     animation-duration: 3s;
   }
 }
+
+/* The customer's number on the order, as something you can ring. */
+.o-phone {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}

@@ -18,6 +18,8 @@
  * the same result Meta charges for, arrived at from the other side.
  */
 
+import { waNumber } from '../shared/thanks.ts'
+
 /**
  * vCard escaping, which is its own small dialect.
  *
@@ -71,7 +73,19 @@ export type ContactCard = {
  * phones that care are the ones that fail silently.
  */
 export function contactCard(card: ContactCard): string {
-  const digits = String(card.phone ?? '').replace(/[^\d+]/g, '')
+  /**
+   * Written in full, with the country code.
+   *
+   * A contact only does its job if the phone can match it against the number
+   * a message arrives from, and WhatsApp works in full international numbers.
+   * Ten digits saved on an Indian handset usually still match, because the
+   * phone fills in its own country code — but "usually" is the wrong standard
+   * for something whose entire purpose is that the name shows up, and whose
+   * failure is invisible: the contact saves, looks right in the address book,
+   * and the chat is still titled with digits.
+   */
+  const national = waNumber(String(card.phone ?? ''))
+  const digits = national ? `+${national}` : String(card.phone ?? '').replace(/[^\d+]/g, '')
   const name = `Khapee · ${card.restaurant}`.trim()
   const lines = [
     'BEGIN:VCARD',

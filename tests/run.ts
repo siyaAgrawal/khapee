@@ -2661,7 +2661,11 @@ async function runTests() {
     // an address book, and the restaurant's own name because that is the one
     // the customer will recognise.
     ok('named for Khapee and the restaurant', vcf.includes(`FN:Khapee · ${mornington.name}`), vcf)
-    ok('carrying the number the message will come from', vcf.includes('TEL;TYPE=CELL,VOICE:9826057888'), vcf)
+    // In full, with the country code: a contact only works if the phone can
+    // match it against the number a message arrives from, and the failure is
+    // invisible — the contact saves, looks right, and the chat still shows
+    // digits.
+    ok('carrying the number in full, country code and all', vcf.includes('TEL;TYPE=CELL,VOICE:+919826057888'), vcf)
     // CRLF is what the format says, and the phones that care fail silently.
     ok('with the line endings the format requires', vcf.includes('\r\n'), JSON.stringify(vcf.slice(0, 30)))
 

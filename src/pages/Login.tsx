@@ -21,19 +21,19 @@ export default function Login() {
       const user = await login(email.trim(), password)
       const from = location.state?.from as string | undefined
       /**
-       * Where somebody lands is decided by what they run, not by how they
-       * first signed up.
+       * Everybody lands on Khapee, including the people who run a restaurant.
        *
-       * `role` is written once, at registration, and never changes: an address
-       * that ordered a coffee before it took over a restaurant is 'customer'
-       * for good. Reading that here dropped the owner of two cafés onto the
-       * customer home page every time they signed in, with the board they were
-       * signing in for nowhere in sight. Membership is the thing that is true
-       * now, and it is what requireStaff on the server already goes by.
+       * Sending an owner straight to their board assumed that running a place
+       * is the only reason they ever sign in, and it is not: the same account
+       * orders lunch, checks another restaurant's menu, and looks at the app
+       * the way a customer sees it — which is the one view somebody building
+       * this needs most and the one that was hardest to reach, because signing
+       * in took it away. The board is a tap from here and never went anywhere.
+       *
+       * Where somebody was heading before they were asked to sign in still
+       * wins, staff pages included.
        */
-      const runsSomewhere = !!user.restaurantId || user.restaurants?.length > 0
-      if (runsSomewhere) navigate(from?.startsWith('/staff') ? from : '/staff/orders', { replace: true })
-      else navigate(from && !from.startsWith('/staff') ? from : '/', { replace: true })
+      navigate(from || '/', { replace: true })
     } catch (err) {
       setError((err as ApiError).message)
       setBusy(false)

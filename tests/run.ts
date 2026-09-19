@@ -279,16 +279,47 @@ async function runTests() {
   const revoked = await call('/orders/verify-code', { body: { restaurantId: mornington.id, code: revokable.body.code.code } })
   ok('a cancelled code is rejected', revoked.status === 400 && revoked.body.reason === 'revoked')
 
-  const noProof = await call('/orders', {
+  // Naming the table is the proof now. It is chosen from this restaurant's own
+  // list and checked against it, and the food is carried to it — an order to
+  // table 4 from somebody not at table 4 arrives at table 4, where nobody
+  // wants it. Demanding a scan on top of that asked somebody sitting in the
+  // room to establish that they were in the room.
+  const atATable = await call('/orders', {
     body: {
       restaurantId: mornington.id,
       type: 'dine_in',
       items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
-      customerName: 'Sneaky',
+      customerName: 'Sitting down',
+      contactPhone: '98765 43210',
       tableId: tables[0].id,
     },
   })
-  ok('dine-in without code or table QR is refused', noProof.status === 400, noProof.body)
+  ok('picking a table is enough to order to it', atATable.status === 201, atATable.body)
+  ok('and the order knows which table', atATable.body.order?.tableLabel === tables[0].label, atATable.body.order)
+
+  // A table nobody offered is still refused: the list is the check.
+  const notATable = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Nowhere',
+      contactPhone: '98765 43210',
+      tableId: 999999,
+    },
+  })
+  ok('a table this restaurant does not have is refused', notATable.status === 400, notATable.body)
+
+  const noTable = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Nowhere',
+      contactPhone: '98765 43210',
+    },
+  })
+  ok('and so is naming no table at all', noTable.status === 400, noTable.body)
 
   const foreignCodeRevoke = await call(`/staff/codes/${gen2.body.code.id}/revoke`, { token: basilToken, method: 'POST' })
   ok('staff cannot revoke another restaurant\'s code', foreignCodeRevoke.status === 404)
@@ -1287,16 +1318,24 @@ async function runTests() {
       },
     })).status === 201,
   )
-  const stillNoProof = await call('/orders', {
+  // Takeaway is the one that still has to be proved. There is no table to
+  // carry it to, so nothing about the order says where the person is, and the
+  // kitchen starts cooking either way.
+  const takeawayNoProof = await call('/orders', {
     body: {
       restaurantId: mornington.id,
       type: 'dine_in',
+      takeaway: true,
       items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
       customerName: 'Chancer',
-      tableId: payFirstTable.id,
+      contactPhone: '98765 43210',
     },
   })
-  ok('ordering with neither code, session nor payment is still refused', stillNoProof.status === 400, stillNoProof.body)
+  ok(
+    'takeaway with neither code, session nor payment is still refused',
+    takeawayNoProof.status === 400,
+    takeawayNoProof.body,
+  )
 
   const groupFromSession = await call('/sessions', { body: { value: `ORDRO:TABLE:${tableRow.token}` } })
   const groupViaSession = await call('/groups', {
@@ -1763,6 +1802,19 @@ async function runTests() {
   ok(
     'and customers can see where it delivers, with the fee',
     (await call(`/restaurants/${mornington.id}/delivery-areas`)).body.areas[0].feeCents === 3000,
+  )
+  // Named on the restaurant's own card too, so the offer can say where it
+  // delivers rather than "nearby" — which is true of everywhere that delivers
+  // at all, and leaves somebody to open another page to learn nothing.
+  ok(
+    'the areas are named on the restaurant itself',
+    (await call(`/restaurants/${mornington.id}`)).body.restaurant.deliveryAreas?.includes('Saket'),
+    (await call(`/restaurants/${mornington.id}`)).body.restaurant.deliveryAreas,
+  )
+  ok(
+    'a restaurant that delivers nowhere names nothing',
+    (await call(`/restaurants/${basil.id}`)).body.restaurant.deliveryAreas?.length === 0,
+    (await call(`/restaurants/${basil.id}`)).body.restaurant.deliveryAreas,
   )
 
   ok(

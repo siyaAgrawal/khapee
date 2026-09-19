@@ -140,13 +140,25 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     if (session?.access_code_id) accessCodeId = session.access_code_id
     if (hasSession) liveSession = session
 
-    if (!code && !tableToken && !hasSession && !paidUpFront) {
+    /**
+     * Takeaway has to be proved. Eating in proves itself.
+     *
+     * Both used to demand a scanned QR, a staff code or payment up front, and
+     * for a table that was asking somebody sitting in the room to establish
+     * that they were in the room. Naming the table is the answer: it is
+     * chosen from this restaurant's own list, it is checked against it below,
+     * and the food is carried to it — an order to table 4 from somebody who
+     * is not at table 4 arrives at table 4, where nobody wants it. The
+     * constraint enforces itself.
+     *
+     * Takeaway keeps the gate, because nothing about a takeaway order says
+     * where the person is, and the kitchen starts cooking either way.
+     */
+    if (takeaway && !code && !tableToken && !hasSession && !paidUpFront) {
       return {
         ok: false,
         status: 400,
-        error: takeaway
-          ? 'Enter the restaurant access code, or pay through the app, to order for takeaway.'
-          : 'Scan the table QR, enter the access code, or pay through the app to order at the table.',
+        error: 'Enter the restaurant access code, or pay through the app, to order for takeaway.',
       }
     }
 

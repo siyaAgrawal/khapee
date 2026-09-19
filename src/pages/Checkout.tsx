@@ -33,18 +33,16 @@ export default function Checkout() {
   /**
    * Opens on something the customer can actually finish.
    *
-   * Eating in and takeaway both need proof you are at the restaurant — a table
-   * QR, a staff code, or paying up front — because the kitchen starts on them
-   * straight away. Collecting later needs none of that. Defaulting everyone to
-   * "at a table" sent anyone ordering from home into the one path that cannot
-   * complete, and answered them with an instruction to scan a QR they are
-   * nowhere near.
+   * Eating in is what most people are doing, so it is what opens.
+   *
+   * This used to guess — "at a table" only if a QR had been scanned or a
+   * session was already open, and "collect later" otherwise — because eating
+   * in demanded a code or a scan, and sending somebody ordering from home into
+   * a path that could not complete was worse than opening on the wrong tab.
+   * That demand is gone: choosing the table is now the whole of it. So the
+   * guess is gone too, and the common case opens first.
    */
-  const [where, setWhere] = useState<Where>(() => {
-    const session = restaurantId ? readDining(restaurantId) : null
-    const atTheRestaurant = !!session || !!(restaurantId && readTableContext(restaurantId))
-    return atTheRestaurant ? 'here' : 'later'
-  })
+  const [where, setWhere] = useState<Where>('here')
   const [tables, setTables] = useState<Table[] | null>(null)
   // A scanned table QR already answered "which table", so start on its answer
   // rather than an empty grid.
@@ -104,7 +102,8 @@ export default function Checkout() {
           : 'Pay at the restaurant'
 
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
-  const needsPresence = where === 'here' || where === 'takeaway'
+  /** Takeaway alone, now that picking a table is proof enough of being at one. */
+  const needsPresence = where === 'takeaway'
   const hasPresence = !!dining || !!(restaurantId && readTableContext(restaurantId))
 
   const [verifyOpen, setVerifyOpen] = useState(false)
@@ -170,7 +169,20 @@ export default function Checkout() {
 
   // What still stands between the customer and their food.
   const needsTable = where === 'here' && !seated && !placeDecided
-  const needsProof = where !== 'later' && !verified && !payNow
+  /**
+   * Takeaway still has to be proved; eating in no longer does.
+   *
+   * Ordering to a table used to demand a scanned QR, a staff code, or paying
+   * up front, and it was asked of somebody already sitting in the room being
+   * asked about. Saying which table you are at is the answer to the question
+   * that gate was asking — the table is picked from this restaurant's own
+   * list, and the food is carried to it — so the gate was two hoops to reach
+   * an answer already given.
+   *
+   * Takeaway keeps it. There is no table to carry anything to, so nothing
+   * about that order says the person is on the premises.
+   */
+  const needsProof = where === 'takeaway' && !verified && !payNow
   const needsName = name.trim().length < 2
   /**
    * A kitchen that cannot ring you has no way to say "we are out of that" or
@@ -336,8 +348,8 @@ export default function Checkout() {
 
         {!placeDecided && needsPresence && !hasPresence && (
           <p className="tiny muted" style={{ marginTop: 8 }}>
-            {where === 'here' ? 'Eating in' : 'Takeaway'} needs the table QR or a staff code — you order it at the
-            restaurant. To order from here, choose <strong>Collect later</strong>.
+            Takeaway needs the table QR or a staff code — you order it at the restaurant. To order from
+            here, choose <strong>Collect later</strong>.
           </p>
         )}
 

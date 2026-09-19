@@ -37,6 +37,8 @@ export type RestaurantCard = {
   precincts?: { id: number; slug: string; name: string }[]
   /** Whether this restaurant delivers to nearby areas it has named. */
   acceptsDelivery?: boolean
+  /** Those areas, by name, so the offer can say where rather than "nearby". */
+  deliveryAreas?: string[]
   /** A restaurant with its own look on its page. Empty is the standard one. */
   theme?: string
 }

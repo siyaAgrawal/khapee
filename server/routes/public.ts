@@ -38,6 +38,21 @@ function shapeRestaurant(row: any) {
     acceptsUpi: !!String(row.upi_vpa ?? '').trim(),
     acceptsCar: !!row.accepts_car,
     acceptsDelivery: !!row.accepts_delivery,
+    /**
+     * The areas this kitchen delivers to, by name.
+     *
+     * So the offer on the restaurant's page can say where it delivers rather
+     * than "nearby", which is true of everywhere and therefore says nothing —
+     * and which a customer cannot act on without opening the delivery page to
+     * find out whether their own area is on the list.
+     */
+    deliveryAreas: (
+      db
+        .prepare(
+          'SELECT name FROM delivery_areas WHERE restaurant_id = ? AND is_active = 1 ORDER BY sort_order, name',
+        )
+        .all(row.id) as { name: string }[]
+    ).map((a) => a.name),
     // The areas this kitchen will carry an order out into, so its own page can
     // offer that alongside eating in, takeaway and the kerb.
     precincts: db

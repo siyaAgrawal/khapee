@@ -15,6 +15,7 @@ import { sessionsRouter } from './routes/sessions.ts'
 import { ensureSeed } from './seed.ts'
 import { injectMeta, metaFor, robotsTxt, sitemapXml, structuredData } from './seo.ts'
 import { thankPage } from './thank-page.ts'
+import { contactCard } from './vcard.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // In development this is deliberately not `PORT` — dev harnesses set that for
@@ -122,6 +123,31 @@ app.get('/api/stream', (req, res) => {
 })
 
 setInterval(heartbeat, 25_000).unref?.()
+
+/**
+ * The restaurant's number as a contact card the phone can save in one tap.
+ *
+ * Served outside the API and outside the app for the same reason /thank is:
+ * it has to be an ordinary link that a phone recognises by its content type,
+ * not something a bundle has to boot before it can respond. See server/vcard.ts
+ * for why this exists at all.
+ */
+app.get('/r/:id/khapee.vcf', (req, res) => {
+  const row = db
+    .prepare('SELECT name, phone FROM restaurants WHERE id = ?')
+    .get(Number(req.params.id)) as any
+  if (!row) return res.status(404).type('text/plain').send('No such restaurant.')
+  const digits = String(row.phone ?? '').replace(/\D/g, '')
+  // Offering a card with no number in it would save an entry that can do
+  // nothing, which is worse than not offering one.
+  if (digits.length < 10) return res.status(404).type('text/plain').send('No number to save.')
+
+  res.set('Cache-Control', 'no-store')
+  res.set('Content-Disposition', 'attachment; filename="khapee.vcf"')
+  res.type('text/vcard; charset=utf-8').send(
+    contactCard({ restaurant: row.name, phone: row.phone, website: `${req.protocol}://${req.get('host')}` }),
+  )
+})
 
 /**
  * The one page that is not the app.

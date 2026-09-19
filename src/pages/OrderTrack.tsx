@@ -238,6 +238,30 @@ export default function OrderTrack() {
             🔔 You&rsquo;ll be told on this phone when it&rsquo;s ready.
           </p>
         )}
+
+        {/* Saving the number, as one tap.
+            The thank-you arrives on WhatsApp from eleven digits nobody
+            recognises, and "Thanks for ordering" from an unknown number reads
+            like the opening of a scam. WhatsApp shows a business name instead
+            of its number only on Meta's paid platform, after verification and
+            a display-name review — but a contact somebody has saved beats all
+            of that, for nothing, forever. The obstacle was never permission;
+            it was that saving a number by hand is four fiddly steps. This is
+            the same four, already done. */}
+        {order.restaurantHasPhone && (
+          <a className="follow save-us" href={`/r/${order.restaurantId}/khapee.vcf`}>
+            <span className="follow-bell" aria-hidden>
+              💬
+            </span>
+            <span>
+              <strong>Save {order.restaurantName} to your contacts</strong>
+              <span className="tiny">
+                So our WhatsApp message shows a name and not a strange number. One tap — your phone
+                fills it in.
+              </span>
+            </span>
+          </a>
+        )}
         {pushSupported() === false && needsHomeScreen() && !done && (
           <p className="tiny muted center follow-on">
             To be told when it&rsquo;s ready: tap Share, then Add to Home Screen, and open Khapee from

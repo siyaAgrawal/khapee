@@ -5408,3 +5408,10 @@ button.nav-link {
   color: var(--text);
   text-decoration: underline;
 }
+
+/* The contact-card offer, which is the bell's twin: same shape, quieter, and
+   about the message rather than the food. */
+.save-us {
+  text-decoration: none;
+  color: inherit;
+}

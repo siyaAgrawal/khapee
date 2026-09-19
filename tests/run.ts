@@ -2636,6 +2636,70 @@ async function runTests() {
     ok('later steps say nothing about it', onward.body.thanked === undefined, onward.body)
   }
 
+  group('A NAME INSTEAD OF A NUMBER')
+  {
+    // WhatsApp shows a business name in place of its number only on Meta's
+    // paid platform, after verification and a display-name review. A contact
+    // the customer has saved beats all of it, for nothing — the obstacle was
+    // never permission, it was that saving a number by hand is four fiddly
+    // steps. The card is those four steps, already done.
+    const withPhone = new Database(DB_PATH)
+    withPhone.prepare('UPDATE restaurants SET phone = ? WHERE id = ?').run('98260 57888', mornington.id)
+    withPhone.prepare("UPDATE restaurants SET phone = '' WHERE id = ?").run(basil.id)
+    withPhone.close()
+
+    const card = await fetch(`http://localhost:${PORT}/r/${mornington.id}/khapee.vcf`)
+    const vcf = await card.text()
+    ok('a restaurant with a number offers a contact card', card.status === 200, card.status)
+    ok(
+      'served as a contact card, so the phone opens it rather than showing it',
+      /text\/vcard/.test(card.headers.get('content-type') ?? ''),
+      card.headers.get('content-type'),
+    )
+    ok('it is a vCard', vcf.startsWith('BEGIN:VCARD') && vcf.trimEnd().endsWith('END:VCARD'), vcf.slice(0, 40))
+    // Khapee first so every restaurant ordered through it files together in
+    // an address book, and the restaurant's own name because that is the one
+    // the customer will recognise.
+    ok('named for Khapee and the restaurant', vcf.includes(`FN:Khapee · ${mornington.name}`), vcf)
+    ok('carrying the number the message will come from', vcf.includes('TEL;TYPE=CELL,VOICE:9826057888'), vcf)
+    // CRLF is what the format says, and the phones that care fail silently.
+    ok('with the line endings the format requires', vcf.includes('\r\n'), JSON.stringify(vcf.slice(0, 30)))
+
+    // A card with no number in it saves an entry that can do nothing, which
+    // is worse than offering nothing at all.
+    ok(
+      'a restaurant with no number offers none',
+      (await fetch(`http://localhost:${PORT}/r/${basil.id}/khapee.vcf`)).status === 404,
+    )
+    ok(
+      'and neither does a restaurant that does not exist',
+      (await fetch(`http://localhost:${PORT}/r/999999/khapee.vcf`)).status === 404,
+    )
+
+    // The receipt decides whether to offer it, so it needs to know — but only
+    // whether, not what.
+    const order = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Saver',
+        contactPhone: '98765 43210',
+      },
+    })
+    ok('the receipt is told there is a number worth saving', order.body.order.restaurantHasPhone === true, order.body.order)
+    ok(
+      'and is not given the number itself',
+      !JSON.stringify(order.body.order).includes('9826057888'),
+      'restaurant phone leaked into the order payload',
+    )
+
+    // Separators are fields in this format: a comma in a name breaks the card.
+    const { contactCard } = await import('../server/vcard.ts')
+    const awkward = contactCard({ restaurant: 'Bread, Butter & Co; Ltd', phone: '9876543210' })
+    ok('a comma in the name does not split the card', awkward.includes('Bread\\, Butter & Co\\; Ltd'), awkward)
+  }
+
   group('CLEARING THE BOARD')
   {
     // A board that opens on weeks of finished tickets — or, while a place is

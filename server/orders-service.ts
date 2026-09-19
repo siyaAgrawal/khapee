@@ -448,7 +448,7 @@ export function getOrder(orderId: number) {
   const row = db
     .prepare(
       `SELECT o.*, r.name AS restaurant_name, r.slug AS restaurant_slug, r.emoji AS restaurant_emoji,
-              r.hue AS restaurant_hue, r.prep_minutes
+              r.hue AS restaurant_hue, r.prep_minutes, r.phone AS restaurant_phone
        FROM orders o JOIN restaurants r ON r.id = o.restaurant_id WHERE o.id = ?`,
     )
     .get(orderId) as any
@@ -478,6 +478,16 @@ export function shapeOrder(row: any) {
     restaurantName: row.restaurant_name,
     restaurantEmoji: row.restaurant_emoji,
     restaurantHue: row.restaurant_hue,
+    /**
+     * Whether there is a number worth offering to save.
+     *
+     * Only whether, not what: the receipt page uses it to decide if the
+     * "save us as Khapee" card is worth showing, and the number itself is
+     * served by the contact card at /r/:id/khapee.vcf. A restaurant's own
+     * number is not a secret, but there is no reason to put it in every
+     * order payload to answer a yes-or-no question.
+     */
+    restaurantHasPhone: String(row.restaurant_phone ?? '').replace(/\D/g, '').length >= 10,
     prepMinutes: row.prep_minutes,
     customerName: row.customer_name,
     type: row.order_type as OrderType,

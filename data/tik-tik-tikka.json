@@ -1,0 +1,141 @@
+[
+  {
+    "name": "Tik Tik Tikka",
+    "description": "Proudly veg. Paneer and mushroom tikka, soya chaap, rolls and biryani.",
+    "address": "Indore",
+    "categories": ["Tikka", "North Indian", "Rolls"],
+    "emoji": "🍢",
+    "hue": 18,
+    "prepMinutes": 20,
+    "menu": [
+      {
+        "category": "Tikka",
+        "items": [
+          { "name": "Paneer Tikka", "price": 170, "veg": true },
+          { "name": "Paneer Achari Tikka", "price": 170, "veg": true },
+          { "name": "Paneer Haryali Tikka", "price": 170, "veg": true },
+          { "name": "Paneer Malai Tikka", "price": 180, "veg": true },
+          { "name": "Paneer Amritsari Tikka", "price": 180, "veg": true },
+          { "name": "Paneer Pahadi Tikka", "price": 180, "veg": true },
+          { "name": "Paneer Peshawari Tikka", "price": 180, "veg": true },
+          { "name": "Paneer Kalimirch Tikka", "price": 190, "veg": true },
+          { "name": "Mushroom Tikka", "price": 170, "veg": true },
+          { "name": "Mushroom Achari Tikka", "price": 170, "veg": true },
+          { "name": "Mushroom Haryali Tikka", "price": 170, "veg": true },
+          { "name": "Mushroom Kurkure", "price": 180, "veg": true },
+          { "name": "Mushroom Malai Tikka", "price": 180, "veg": true },
+          { "name": "Mushroom Kandhari", "price": 190, "veg": true },
+          { "name": "Mushroom Stuffed Cheese Tikka", "price": 200, "veg": true }
+        ]
+      },
+      {
+        "category": "Chaap & Kebab",
+        "items": [
+          { "name": "Soya Afgani Chaap", "description": "Chef's special.", "price": 200, "veg": true },
+          { "name": "Fish Fry", "description": "Chef's special. Soya, not fish — the kitchen is pure veg.", "price": 180, "veg": true },
+          { "name": "Veg Soya Boti Kebab", "description": "Chef's special.", "price": 180, "veg": true },
+          { "name": "Veg Soya Fish Tikka", "description": "Chef's special. Soya, not fish — the kitchen is pure veg.", "price": 180, "veg": true },
+          { "name": "Soya Amritsari Chaap", "description": "Chef's special.", "price": 150, "veg": true },
+          { "name": "Soya Malai Chaap", "price": 130, "veg": true },
+          { "name": "Soya Achari Chaap", "price": 130, "veg": true },
+          { "name": "Soya Haryali Chaap", "price": 130, "veg": true },
+          { "name": "Veg Soya Tangdi Kebab", "price": 190, "veg": true },
+          { "name": "Veg Soya Pahadi Kebab", "price": 170, "veg": true },
+          { "name": "Veg Soya Peshawari Kebab", "price": 180, "veg": true },
+          { "name": "Veg Soya Tikka", "price": 180, "veg": true }
+        ]
+      },
+      {
+        "category": "Tikka Rolls",
+        "items": [
+          { "name": "Butter Paneer Masala Roll", "description": "Chef's special.", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Amritsari Tikka Roll", "description": "Chef's special.", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Tikka Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Haryali Tikka Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Achari Tikka Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Pahadi Tikka Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Kalimirch Tikka Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Peshawari Tikka Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Paneer Malai Tikka Roll", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Mushroom Tikka Roll", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Mushroom Achari Tikka Roll", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Mushroom Malai Tikka Roll", "price": 140, "veg": true, "group": "Rumali roll" },
+          { "name": "Mushroom Kandhari Roll", "price": 140, "veg": true, "group": "Rumali roll" },
+
+          { "name": "Butter Paneer Masala Roll — grilled", "description": "Chef's special.", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Amritsari Tikka Roll — grilled", "description": "Chef's special.", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Tikka Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Haryali Tikka Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Achari Tikka Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Pahadi Tikka Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Kalimirch Tikka Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Peshawari Tikka Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Paneer Malai Tikka Roll — grilled", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Mushroom Tikka Roll — grilled", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Mushroom Achari Tikka Roll — grilled", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Mushroom Malai Tikka Roll — grilled", "price": 150, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Mushroom Kandhari Roll — grilled", "price": 150, "veg": true, "group": "Grilled rumali roll" }
+        ]
+      },
+      {
+        "category": "Chaap & Kebab Rolls",
+        "items": [
+          { "name": "Soya Masala Chaap Roll", "description": "Chef's special.", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Veg Soya Boti Kebab Roll", "description": "Chef's special.", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Veg Soya Tangdi Kebab Roll", "description": "Chef's special.", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Soya Malai Chaap Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Soya Achari Chaap Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Soya Afgani Chaap Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Soya Haryali Chaap Roll", "price": 120, "veg": true, "group": "Rumali roll" },
+          { "name": "Veg Soya Pahadi Kebab Roll", "price": 130, "veg": true, "group": "Rumali roll" },
+          { "name": "Veg Soya Tikka Roll", "price": 130, "veg": true, "group": "Rumali roll" },
+
+          { "name": "Soya Masala Chaap Roll — grilled", "description": "Chef's special.", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Veg Soya Boti Kebab Roll — grilled", "description": "Chef's special.", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Veg Soya Tangdi Kebab Roll — grilled", "description": "Chef's special.", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Soya Malai Chaap Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Soya Achari Chaap Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Soya Afgani Chaap Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Soya Haryali Chaap Roll — grilled", "price": 130, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Veg Soya Pahadi Kebab Roll — grilled", "price": 140, "veg": true, "group": "Grilled rumali roll" },
+          { "name": "Veg Soya Tikka Roll — grilled", "price": 140, "veg": true, "group": "Grilled rumali roll" }
+        ]
+      },
+      {
+        "category": "Biryani",
+        "items": [
+          { "name": "Hyderabad Biryani", "description": "Served with onion raita.", "price": 200, "veg": true },
+          { "name": "Soya Biryani", "description": "Served with onion raita.", "price": 220, "veg": true }
+        ]
+      },
+      {
+        "category": "Combos",
+        "items": [
+          { "name": "Kadai Paneer Combo", "description": "Served with 2 butter roti, butter naan or laccha paratha.", "price": 180, "veg": true },
+          { "name": "Butter Paneer Masala Combo", "description": "Served with 2 butter roti, butter naan or laccha paratha.", "price": 180, "veg": true },
+          { "name": "Keema Kaleji Combo", "description": "Served with 2 butter roti, butter naan or laccha paratha.", "price": 180, "veg": true }
+        ]
+      },
+      {
+        "category": "Beverages",
+        "items": [
+          { "name": "Ice Tea", "description": "Lemon, blueberry, litchi, peach or mint lemon.", "price": 60, "veg": true },
+          { "name": "Mojito", "description": "Mint or blueberry.", "price": 80, "veg": true },
+          { "name": "Cold Coffee", "price": 60, "veg": true },
+          { "name": "Strawberry Shake", "price": 80, "veg": true },
+          { "name": "Black Currant Shake", "price": 80, "veg": true },
+          { "name": "Chocolate Shake", "price": 80, "veg": true },
+          { "name": "Oreo Shake", "price": 100, "veg": true },
+          { "name": "Kit Kat Shake", "price": 120, "veg": true }
+        ]
+      },
+      {
+        "category": "Add On",
+        "items": [
+          { "name": "Cheese", "price": 20, "veg": true },
+          { "name": "Mayonnaise", "price": 20, "veg": true }
+        ]
+      }
+    ]
+  }
+]

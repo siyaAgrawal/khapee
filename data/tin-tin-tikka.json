@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Tin Tin Tikka",
+    "description": "Tikka and grills in Indore.",
+    "address": "Indore",
+    "categories": ["Tikka", "Grill", "Fast Food"],
+    "emoji": "🍢",
+    "hue": 12,
+    "prepMinutes": 20,
+    "tables": 6,
+    "isOpen": false
+  }
+]

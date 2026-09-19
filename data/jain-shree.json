@@ -1,0 +1,83 @@
+[
+  {
+    "name": "Jain Shree",
+    "description": "Kulfi and faluda in Indore since 1970. Pure milk, RO water ice.",
+    "address": "Nandlalpura · M.G. Road · Palasia, Indore",
+    "categories": ["Desserts", "Kulfi", "Ice Cream"],
+    "emoji": "🍦",
+    "hue": 45,
+    "prepMinutes": 10,
+    "tables": 6,
+    "menu": [
+      {
+        "category": "Kulfi",
+        "items": [
+          { "name": "Jamun Kulfi", "description": "Made with pure jamun and RO water.", "price": 50, "veg": true },
+          { "name": "Malai Kulfi", "price": 40, "veg": true },
+          { "name": "Kesar Pista Kulfi", "price": 60, "veg": true },
+          { "name": "Mango Kulfi", "price": 60, "veg": true },
+          { "name": "Butter Scotch Kulfi", "price": 60, "veg": true },
+          { "name": "Strawberry Kulfi", "price": 60, "veg": true },
+          { "name": "Coconut Kulfi", "price": 60, "veg": true },
+          { "name": "Sitafal Kulfi", "price": 60, "veg": true },
+          { "name": "Fresh Amrud Kulfi", "price": 60, "veg": true },
+          { "name": "Chocolate Dip Kulfi", "price": 60, "veg": true }
+        ]
+      },
+      {
+        "category": "Premium Kulfi",
+        "items": [
+          { "name": "Kaju Kewda Kulfi", "price": 70, "veg": true },
+          { "name": "Kaju Anjeer Kulfi", "price": 70, "veg": true },
+          { "name": "Pan Kulfi", "price": 70, "veg": true },
+          { "name": "Sugar Free Kulfi", "price": 70, "veg": true },
+          { "name": "Gulkand Kulfi", "price": 70, "veg": true }
+        ]
+      },
+      {
+        "category": "Faluda",
+        "items": [
+          {
+            "name": "Shahi Kulfi Faluda",
+            "description": "Kulfi, faluda, rabdi, ice cream, ice and basil seeds.",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Shahi Kulfi Faluda (Mini)",
+            "description": "Kulfi, faluda, rabdi, ice cream, ice and basil seeds.",
+            "price": 90,
+            "veg": true
+          },
+          {
+            "name": "Shahi Kulfi Faluda (Family Size)",
+            "description": "Kulfi, faluda, rabdi, ice cream, ice and basil seeds.",
+            "price": 280,
+            "veg": true
+          },
+          { "name": "Mango Faluda", "description": "Season special.", "price": 180, "veg": true },
+          {
+            "name": "Dryfruit Kulfi Faluda",
+            "description": "Mixed dryfruit, kulfi, faluda, rabdi, ice cream, ice and basil seeds.",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Chocolate Faluda",
+            "description": "Chocolate, faluda, ice cream, ice and basil seeds.",
+            "price": 160,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Platter",
+        "items": [
+          { "name": "Kulfi Plate", "description": "Cutting of kesar pista kulfi.", "price": 80, "veg": true },
+          { "name": "Mix Kulfi Plate", "description": "Cutting of five exotic kulfi flavours.", "price": 180, "veg": true },
+          { "name": "Rabdi Ice Plate", "price": 80, "veg": true }
+        ]
+      }
+    ]
+  }
+]

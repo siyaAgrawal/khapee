@@ -1,0 +1,115 @@
+[
+  {
+    "name": "Ice Balls",
+    "description": "Sandwiches every way Indore makes them — kacha, grilled, Indori and club.",
+    "address": "Indore",
+    "categories": ["Sandwiches", "Fast Food", "Snacks"],
+    "emoji": "🥪",
+    "hue": 355,
+    "prepMinutes": 15,
+    "tables": 6,
+    "menu": [
+      {
+        "category": "Regular Sandwiches",
+        "items": [
+          { "name": "Royal Masala Sandwich", "price": 50, "veg": true },
+          { "name": "Veg Sandwich", "price": 50, "veg": true },
+          { "name": "Cheese Masala Sandwich", "price": 80, "veg": true },
+          { "name": "Veg Cheese Sandwich", "price": 80, "veg": true }
+        ]
+      },
+      {
+        "category": "Cheese & Mayo Sandwiches",
+        "items": [
+          { "name": "Cheese Chutney Sandwich", "price": 80, "veg": true },
+          { "name": "Garlic Cheese Chutney Sandwich", "price": 90, "veg": true },
+          { "name": "Pizza Sandwich", "price": 110, "veg": true },
+          { "name": "Cheese Shimla Pyaz Sandwich", "price": 120, "veg": true },
+          { "name": "Double Cheese Chutney Sandwich", "price": 120, "veg": true },
+          { "name": "Italian Sandwich", "price": 110, "veg": true },
+          { "name": "Cheese Corn Sandwich", "price": 110, "veg": true },
+          { "name": "Spinach Corn Sandwich", "price": 120, "veg": true },
+          { "name": "Bombay Masala Cheese Sandwich", "price": 120, "veg": true },
+          { "name": "Veg Mayo Sandwich", "price": 120, "veg": true },
+          { "name": "Makhani Cheese Sandwich", "price": 130, "veg": true }
+        ]
+      },
+      {
+        "category": "Spicy Sandwiches",
+        "items": [
+          { "name": "Cheese Chilli Sandwich", "price": 100, "veg": true },
+          { "name": "Hot Chilli Sandwich", "price": 110, "veg": true },
+          { "name": "Schezwan Chilli Cheese Sandwich", "price": 120, "veg": true },
+          { "name": "Schezwan Veg Cheese Sandwich", "price": 120, "veg": true }
+        ]
+      },
+      {
+        "category": "Kacha Sandwiches",
+        "items": [
+          { "name": "Bombay Kacha", "price": 50, "veg": true },
+          { "name": "Veg Cheese Kacha", "price": 80, "veg": true },
+          { "name": "Italian Kacha", "price": 100, "veg": true },
+          { "name": "Veg Mayo Kacha", "price": 110, "veg": true }
+        ]
+      },
+      {
+        "category": "Indori Sandwiches",
+        "items": [
+          { "name": "Indori Kacha", "price": 60, "veg": true },
+          { "name": "Indori Veg Sandwich", "price": 80, "veg": true },
+          { "name": "Indori Jhatka", "price": 80, "veg": true },
+          { "name": "Indori Veg Cheese Sandwich", "price": 110, "veg": true },
+          { "name": "Indori Yummy Sandwich", "price": 150, "veg": true }
+        ]
+      },
+      {
+        "category": "Jain Sandwiches",
+        "items": [
+          { "name": "Jain Kacha", "price": 50, "veg": true },
+          { "name": "Jain Veg Sandwich", "price": 50, "veg": true },
+          { "name": "Jain Veg Cheese Kacha", "price": 80, "veg": true },
+          { "name": "Jain Cheese Chutney Sandwich", "price": 80, "veg": true },
+          { "name": "Jain Veg Cheese Sandwich", "price": 80, "veg": true },
+          { "name": "Jain Chilli Cheese Sandwich", "price": 100, "veg": true },
+          { "name": "Jain Spinach Corn Sandwich", "price": 120, "veg": true },
+          { "name": "Jain Veg Grilled Club", "price": 130, "veg": true },
+          { "name": "Jain Veg Cheese Grilled Club", "price": 170, "veg": true }
+        ]
+      },
+      {
+        "category": "Club Sandwiches",
+        "items": [
+          { "name": "Veg Grilled Club", "price": 130, "veg": true },
+          { "name": "Indori Jumbo Club", "price": 160, "veg": true },
+          { "name": "Veg Cheese Grilled Club", "price": 170, "veg": true },
+          { "name": "Paneer Pizza Club", "price": 180, "veg": true },
+          { "name": "Schezwan Veg Cheese Club", "price": 180, "veg": true },
+          { "name": "Tandoori Malai Paneer Club", "price": 180, "veg": true },
+          { "name": "Tandoori Paneer Club", "price": 180, "veg": true },
+          { "name": "Cheese Chutney Club", "price": 200, "veg": true },
+          { "name": "Veg Cheese Loaded Club", "price": 210, "veg": true },
+          { "name": "Indori Cheese Jumbo Club", "price": 210, "veg": true },
+          { "name": "Tandoori Mayo Paneer Club", "price": 210, "veg": true },
+          { "name": "Indori Bite Club", "price": 220, "veg": true },
+          { "name": "Labalab Club", "price": 230, "veg": true }
+        ]
+      },
+      {
+        "category": "Kids Sandwiches",
+        "items": [
+          { "name": "Jam Butter Kacha", "price": 40, "veg": true },
+          { "name": "Jam Butter Sandwich", "price": 60, "veg": true },
+          { "name": "Cheese Butter Sandwich", "price": 80, "veg": true },
+          { "name": "Jam Cheese Sandwich", "price": 90, "veg": true }
+        ]
+      },
+      {
+        "category": "Sweet Sandwiches",
+        "items": [
+          { "name": "Raspberry Sandwich", "price": 80, "veg": true },
+          { "name": "Nutella Chocolate Sandwich", "price": 120, "veg": true }
+        ]
+      }
+    ]
+  }
+]

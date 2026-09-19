@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Shyam Sandwich",
+    "description": "Toast, grilled and club sandwiches, and Maggi, made to order.",
+    "address": "Indore",
+    "categories": ["Sandwiches", "Fast Food", "Snacks"],
+    "emoji": "🥪",
+    "hue": 28,
+    "prepMinutes": 15,
+    "tables": 6,
+    "menu": [
+      {
+        "category": "Toast Sandwich",
+        "items": [
+          { "name": "Masala Toast", "price": 50, "veg": true },
+          { "name": "Vegetable Toast", "price": 60, "veg": true },
+          { "name": "Cheese Chutney Toast", "price": 60, "veg": true },
+          { "name": "Butter Cheese Toast", "price": 60, "veg": true },
+          { "name": "Butter Jam Toast", "price": 60, "veg": true },
+          { "name": "Bombay Kacha", "price": 70, "veg": true },
+          { "name": "Veg Mayo Kacha", "price": 80, "veg": true },
+          { "name": "Mayo Masala Toast", "price": 90, "veg": true },
+          { "name": "Pizza Cheese Toast", "price": 80, "veg": true },
+          { "name": "Veg Ghee Toast", "price": 80, "veg": true },
+          { "name": "Tandoori Corn Toast", "price": 100, "veg": true },
+          { "name": "Mayo Corn Toast", "price": 100, "veg": true },
+          { "name": "Cheese Corn Toast", "price": 100, "veg": true },
+          { "name": "Mayo Shimla Corn Toast", "price": 100, "veg": true },
+          { "name": "Albela Paneer Toast", "price": 100, "veg": true },
+          { "name": "Sev Tamatar Toast", "price": 100, "veg": true },
+          { "name": "Paneer Garlic Toast", "price": 100, "veg": true },
+          { "name": "Malai Paneer Jain Toast", "price": 100, "veg": true },
+          { "name": "Chilli Cheese Toast", "price": 120, "veg": true },
+          { "name": "Bombay Kacha Cheese", "price": 120, "veg": true },
+          { "name": "Mini Club Toast", "price": 150, "veg": true },
+          { "name": "Chocolate Nutella Toast", "price": 200, "veg": true },
+          { "name": "Italian Club Toast", "price": 200, "veg": true },
+          { "name": "Jain Club Toast", "price": 200, "veg": true }
+        ]
+      },
+      {
+        "category": "Grilled Sandwich",
+        "items": [
+          { "name": "Raspberry Grilled", "price": 60, "veg": true },
+          { "name": "Chocolate Raspberry Grilled", "price": 80, "veg": true },
+          { "name": "Caramel Raspberry Grilled", "price": 80, "veg": true },
+          { "name": "Nutella Raspberry Grilled", "price": 100, "veg": true },
+          { "name": "Vegetable Grilled", "price": 80, "veg": true },
+          { "name": "Jain Grilled", "price": 80, "veg": true },
+          { "name": "Tandoori Masala Grilled", "price": 100, "veg": true },
+          { "name": "Pizza Cheese Grilled", "price": 150, "veg": true },
+          { "name": "Veg Cheese Grilled", "price": 150, "veg": true },
+          { "name": "Paneer Chatpata Grilled", "price": 150, "veg": true },
+          { "name": "Paneer Tikka Grilled", "price": 150, "veg": true },
+          { "name": "Tandoori Paneer Masala Grilled", "price": 150, "veg": true },
+          { "name": "Shimla Pyaz Cheese Grilled", "price": 150, "veg": true },
+          { "name": "Shyam Special Grilled", "price": 200, "veg": true },
+          { "name": "Club Special Grilled", "price": 350, "veg": true },
+          { "name": "And Shand Grilled", "price": 400, "veg": true }
+        ]
+      },
+      {
+        "category": "Maggi",
+        "items": [
+          { "name": "Masala Maggi", "price": 50, "veg": true },
+          { "name": "Veg Maggi", "price": 60, "veg": true },
+          { "name": "Double Masala Maggi", "price": 60, "veg": true },
+          { "name": "Cheese Maggi", "price": 80, "veg": true },
+          { "name": "Tandoori Maggi", "price": 100, "veg": true }
+        ]
+      }
+    ]
+  }
+]

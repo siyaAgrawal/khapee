@@ -118,7 +118,21 @@ export default function Checkout() {
     if (!restaurantId) return
     api<any>(`/orders/payment-options/${restaurantId}`).then(setOptions).catch(() => setOptions(null))
     api<{ tables: Table[] }>(`/orders/tables/${restaurantId}`)
-      .then((r) => setTables(r.tables))
+      .then((r) => {
+        setTables(r.tables)
+        /**
+         * A counter with no tables cannot be ordered to a table.
+         *
+         * Opening on "At a table" is right for a restaurant that has some,
+         * and a dead end for one that has none: the grid is empty, there is
+         * nothing to pick, and the order cannot be placed from the tab it
+         * opened on. Every place on Khapee has tables today, so this never
+         * fires — but the next one added might not, and the failure would be
+         * a checkout that simply refuses to continue with nothing on screen
+         * explaining why.
+         */
+        if (!r.tables.length) setWhere((w) => (w === 'here' ? 'later' : w))
+      })
       .catch(() => setTables([]))
   }, [restaurantId])
 

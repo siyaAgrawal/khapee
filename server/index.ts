@@ -10,6 +10,7 @@ import { authRouter } from './routes/auth.ts'
 import { publicRouter } from './routes/public.ts'
 import { ordersRouter } from './routes/orders.ts'
 import { staffRouter } from './routes/staff.ts'
+import { orderFeedRouter } from './routes/order-feed.ts'
 import { groupsRouter } from './routes/groups.ts'
 import { sessionsRouter } from './routes/sessions.ts'
 import { ensureSeed } from './seed.ts'
@@ -96,6 +97,8 @@ app.use('/api/orders', ordersRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/groups', groupsRouter)
 app.use('/api/staff', staffRouter)
+// Authenticated by a billing key rather than a session — see routes/billing.ts.
+app.use('/api/billing', orderFeedRouter)
 
 /** Server-sent events keep the staff board live without any polling loop. */
 app.get('/api/stream', (req, res) => {

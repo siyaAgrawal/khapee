@@ -111,6 +111,7 @@ export function SettingsSection() {
       tabs={[
         { to: '/staff/settings', label: 'Restaurant', end: true },
         { to: '/staff/settings/alerts', label: 'Notifications' },
+        { to: '/staff/settings/billing', label: 'Billing system' },
         { to: '/staff/settings/tables', label: 'Tables & QR codes' },
         { to: '/staff/settings/codes', label: 'Access codes' },
         { to: '/staff/settings/zones', label: 'Kerbside' },

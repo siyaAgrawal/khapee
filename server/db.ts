@@ -683,6 +683,62 @@ addColumn('dining_sessions', 'area_id', 'INTEGER')
 addColumn('dining_sessions', 'address', "TEXT NOT NULL DEFAULT ''")
 addColumn('dining_sessions', 'phone', "TEXT NOT NULL DEFAULT ''")
 
+/**
+ * Handing an order to whatever the restaurant already bills on.
+ *
+ * There is no standard for this. A kitchen in Indore might run Petpooja or
+ * POSist, a Windows billing program from 2011, a spreadsheet, or a notebook —
+ * and Khapee cannot integrate with each of them, nor should it try: an
+ * integration per product is a list that is never finished and is wrong the
+ * week a restaurant switches.
+ *
+ * So the order is published in the three shapes that between them reach
+ * anything. A webhook pushes each order to a URL as it happens, which is what
+ * a modern POS wants. A key lets a system that cannot receive a push pull
+ * instead, which is what an on-premises till wants. And a CSV covers the rest,
+ * including the notebook. The restaurant chooses; Khapee depends on none of
+ * them and nothing here is billed to anybody.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS pos_hooks (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL UNIQUE REFERENCES restaurants(id) ON DELETE CASCADE,
+  -- Where each order is POSTed. Empty means the push half is switched off,
+  -- which is the default and is a perfectly good state: the pull key and the
+  -- CSV still work.
+  url           TEXT    NOT NULL DEFAULT '',
+  -- Signs the body so the receiver can tell a real delivery from anybody who
+  -- has guessed the URL. Without this a webhook is an open endpoint that
+  -- accepts orders from strangers.
+  secret        TEXT    NOT NULL DEFAULT '',
+  -- For the other direction: a till that polls rather than listens.
+  api_key       TEXT    NOT NULL DEFAULT '',
+  active        INTEGER NOT NULL DEFAULT 1,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pos_key ON pos_hooks(api_key) WHERE api_key <> '';
+
+-- What was sent and what came back.
+--
+-- A webhook that stops arriving is silent at both ends: the kitchen believes
+-- the till has the order and the till never heard of it. This is the only
+-- place anybody can find out, so it records the refusals as well as the
+-- successes, and keeps the reason rather than the fact of failure.
+CREATE TABLE IF NOT EXISTS pos_deliveries (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  order_id      INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  order_number  TEXT    NOT NULL DEFAULT '',
+  event         TEXT    NOT NULL,
+  url           TEXT    NOT NULL DEFAULT '',
+  ok            INTEGER NOT NULL DEFAULT 0,
+  code          INTEGER,
+  error         TEXT    NOT NULL DEFAULT '',
+  attempts      INTEGER NOT NULL DEFAULT 1,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_pos_deliveries ON pos_deliveries(restaurant_id, id DESC);
+`)
 
 export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })

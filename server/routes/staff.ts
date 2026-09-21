@@ -10,6 +10,16 @@ import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPa
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
 import { tellCustomer, thankNudge } from '../customer-notify.ts'
+import {
+  billingHook,
+  checkWebhookUrl,
+  recentDeliveries,
+  rotateApiKey,
+  rotateSecret,
+  sendToBilling,
+  setBillingUrl,
+  tellBilling,
+} from '../order-feed.ts'
 import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
@@ -147,6 +157,7 @@ staffRouter.post('/orders/:id/status', async (req, res) => {
   const order = getOrder(id)
   // The customer's own phone, for nothing — see server/customer-notify.ts.
   tellCustomer(id, to as OrderStatus)
+  tellBilling(restaurantId, id, 'order.status')
   publish('order:update', { restaurantId, userId: row.user_id, orderId: id, order })
   // Said back, rather than left to be inferred from a notification that may
   // never come. Accepting an order with no number on it sends no thank-you —
@@ -183,6 +194,9 @@ staffRouter.post('/orders/:id/payment', (req, res) => {
     ).run(id)
   }
   const order = getOrder(id)
+  // Money changing hands is the event a billing system most wants, since it
+  // is the one it has to reconcile against its own day.
+  tellBilling(restaurantId, id, 'order.paid')
   publish('order:update', { restaurantId, userId: row.user_id, orderId: id, order })
   res.json({ order })
 })
@@ -987,6 +1001,109 @@ staffRouter.post('/alerts/test-whatsapp', async (req: any, res) => {
     tag: 'khapee-thank-test',
   })
   res.json({ ok: true, ...r, to })
+})
+
+// --- Sending orders to a billing system --------------------------------------
+
+/**
+ * What is set up, without handing any of it back.
+ *
+ * The secret and the key are shown once, when they are made, and never again.
+ * An endpoint that returns them turns every stolen session into a permanent,
+ * silent copy of the order feed — and unlike a password, nobody would ever
+ * notice it had been taken. So this reports only whether they exist.
+ */
+staffRouter.get('/billing', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const hook = billingHook(restaurantId)
+  res.json({
+    url: hook.url,
+    active: hook.active,
+    hasSecret: !!hook.secret,
+    hasKey: !!hook.apiKey,
+    deliveries: recentDeliveries(restaurantId, 20).map((d) => ({
+      id: d.id,
+      orderNumber: d.order_number,
+      event: d.event,
+      ok: !!d.ok,
+      code: d.code,
+      error: d.error,
+      attempts: d.attempts,
+      at: d.created_at,
+    })),
+  })
+})
+
+staffRouter.patch('/billing', async (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const url = String(req.body?.url ?? '').trim()
+  const active = req.body?.active === undefined ? true : !!req.body.active
+
+  // Checked before it is saved, not when the first order fails to arrive. A
+  // typo here is otherwise invisible until an order has already been missed.
+  if (url) {
+    const check = await checkWebhookUrl(url)
+    if (!check.ok) return res.status(400).json({ error: check.why })
+  }
+  setBillingUrl(restaurantId, url, active)
+  audit(restaurantId, actorOf(req), 'billing.url', 'restaurant', restaurantId, { url, active })
+  const hook = billingHook(restaurantId)
+  res.json({ url: hook.url, active: hook.active, hasSecret: !!hook.secret, hasKey: !!hook.apiKey })
+})
+
+/** Both are returned exactly once, here, and cannot be read back afterwards. */
+staffRouter.post('/billing/secret', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const secret = rotateSecret(restaurantId)
+  audit(restaurantId, actorOf(req), 'billing.secret', 'restaurant', restaurantId, '')
+  res.json({ secret })
+})
+
+staffRouter.post('/billing/key', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const key = rotateApiKey(restaurantId)
+  audit(restaurantId, actorOf(req), 'billing.key', 'restaurant', restaurantId, '')
+  res.json({ key })
+})
+
+/**
+ * A real delivery with invented contents.
+ *
+ * Shaped exactly like an order so the receiving end is tested rather than
+ * merely reached: the same headers, the same signature, the same JSON. A
+ * webhook that accepts a ping and chokes on an order has told you nothing.
+ */
+staffRouter.post('/billing/test', async (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const restaurant = db.prepare('SELECT id, name FROM restaurants WHERE id = ?').get(restaurantId) as any
+  const result = await sendToBilling(restaurantId, null, 'test', {
+    event: 'test',
+    sentAt: new Date().toISOString(),
+    restaurant: { id: restaurant.id, name: restaurant.name },
+    order: {
+      id: 0,
+      number: 'TEST1',
+      status: 'ACCEPTED',
+      placedAt: new Date().toISOString(),
+      service: 'dine_in',
+      table: 'Table 1',
+      deliveryAddress: null,
+      customer: { name: 'Test order', phone: '9876543210' },
+      note: 'This is a test from Khapee. Nothing was cooked.',
+      items: [
+        { name: 'Masala Toast', quantity: 2, unitPricePaise: 5000, unitPrice: '50.00', linePaise: 10000, line: '100.00' },
+      ],
+      currency: 'INR',
+      subtotalPaise: 10000,
+      subtotal: '100.00',
+      deliveryFeePaise: 0,
+      deliveryFee: '0.00',
+      totalPaise: 10000,
+      total: '100.00',
+      payment: { status: 'UNPAID', method: 'counter', state: 'unpaid', paidPaise: 0, paid: '0.00', upiReference: null },
+    },
+  })
+  res.json(result)
 })
 
 staffRouter.get('/summary', (req, res) => {

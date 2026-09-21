@@ -31,6 +31,7 @@ import StaffLayout from './pages/staff/StaffLayout'
 import StaffOrders from './pages/staff/StaffOrders'
 import StaffProfile from './pages/staff/StaffProfile'
 import StaffAlerts from './pages/staff/StaffAlerts'
+import StaffBilling from './pages/staff/StaffBilling'
 import AlertInvite from './pages/AlertInvite'
 import Thank from './pages/Thank'
 import StaffPayments from './pages/staff/StaffPayments'
@@ -114,6 +115,7 @@ export default function App() {
         <Route path="settings" element={<SettingsSection />}>
           <Route index element={<StaffProfile />} />
           <Route path="alerts" element={<StaffAlerts />} />
+          <Route path="billing" element={<StaffBilling />} />
           <Route path="tables" element={<StaffTables />} />
           <Route path="codes" element={<StaffCodes />} />
           <Route path="zones" element={<StaffZones />} />

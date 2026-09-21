@@ -6,6 +6,7 @@ import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
 import { alertRestaurant } from './alerts.ts'
+import { tellBilling } from './order-feed.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -439,6 +440,11 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     needsAccepting: !input.paymentClaim,
     paid: !!input.paymentClaim,
   })
+
+  // And whatever the restaurant bills on, if they have pointed Khapee at it.
+  // Not awaited: whether somebody else's till answered has nothing to do with
+  // whether this order exists. See server/billing.ts.
+  tellBilling(input.restaurantId, orderId, 'order.placed')
 
   publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
   return { ok: true, order }

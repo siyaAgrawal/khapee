@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import crypto from 'node:crypto'
 import Database from 'better-sqlite3'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -2702,6 +2703,180 @@ async function runTests() {
     const { contactCard } = await import('../server/vcard.ts')
     const awkward = contactCard({ restaurant: 'Bread, Butter & Co; Ltd', phone: '9876543210' })
     ok('a comma in the name does not split the card', awkward.includes('Bread\\, Butter & Co\\; Ltd'), awkward)
+  }
+
+  group('SENDING ORDERS TO A BILLING SYSTEM')
+  {
+    // Only the pure halves are imported. Anything touching the database has
+    // to be asked of the running server: a module imported here opens its own
+    // connection to whatever TABLO_DB says in *this* process, which is not the
+    // database the server under test is writing to.
+    const { checkWebhookUrl, sign } = await import('../server/order-feed.ts')
+
+    // The whole security question in this feature: the URL is typed by a
+    // restaurant and the server is what fetches it. Unchecked, the box is a
+    // polite way to ask Khapee's own server to make requests to anywhere its
+    // network reaches — another tenant, a cloud metadata endpoint holding
+    // credentials, something on localhost that trusts local callers.
+    for (const bad of [
+      'http://localhost:4399/api/health',
+      'http://127.0.0.1/',
+      'http://169.254.169.254/latest/meta-data/',
+      'http://10.0.0.5/orders',
+      'http://192.168.1.10/orders',
+      'http://172.16.4.4/orders',
+      'http://[::1]/orders',
+      'http://[::ffff:127.0.0.1]/orders',
+      'file:///etc/passwd',
+      'gopher://example.com/',
+    ]) {
+      const r = await checkWebhookUrl(bad)
+      ok(`refuses ${bad}`, r.ok === false, r)
+    }
+
+    // Credentials in the address end up in logs and in the deliveries list.
+    ok(
+      'refuses a password hidden in the address',
+      (await checkWebhookUrl('https://user:pass@example.com/hook')).ok === false,
+      '',
+    )
+    ok(
+      'and a name nothing answers to',
+      (await checkWebhookUrl('https://nx-does-not-exist.khapee.invalid/hook')).ok === false,
+      '',
+    )
+
+    // A public address is the one case that should pass.
+    ok('accepts an ordinary public address', (await checkWebhookUrl('https://example.com/orders')).ok === true, '')
+
+    // The signature is what separates a real delivery from anybody who has
+    // guessed the URL, so it has to be a real HMAC over the exact body.
+    const body = '{"hello":"world"}'
+    const expected = crypto.createHmac('sha256', 'shhh').update(body).digest('hex')
+    ok('signs the body with the secret', sign('shhh', body) === expected, sign('shhh', body))
+    ok('a different secret signs differently', sign('other', body) !== expected, '')
+
+    // Money twice: exact integer paise, and a rupee string. Never a float —
+    // a price that arrives as 790.0000000001 is a support call nobody can
+    // explain, and a bill nobody can reconcile.
+    const placed = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 3 }],
+        customerName: 'Feed test',
+        contactPhone: '98765 43210',
+      },
+    })
+    // The pull half. A till that cannot be reached from the internet asks
+    // instead, and authenticates with a key rather than a session.
+    ok('polling without a key is refused', (await call('/billing/orders')).status === 401)
+    ok('and with a made-up one', (await call('/billing/orders?key=khp_nope')).status === 401)
+
+    const made = await call('/staff/billing/key', { token: roadToken, body: {} })
+    const feedKey = made.body.key as string
+    ok('an owner can make a key', typeof feedKey === 'string' && feedKey.startsWith('khp_'), made.body)
+
+    const one = await fetch(`${BASE}/billing/orders/${placed.body.order.orderNumber}`, {
+      headers: { 'x-khapee-key': feedKey },
+    })
+    const payload = (await one.json()) as any
+    ok('an order can be read in the shape a till wants', one.status === 200, payload)
+    ok('paise stay integers', Number.isInteger(payload.order.totalPaise), payload.order.totalPaise)
+    ok('and rupees are a string with two places', /^\d+\.\d{2}$/.test(payload.order.total), payload.order.total)
+    ok(
+      'rupees and paise agree',
+      Math.round(parseFloat(payload.order.total) * 100) === payload.order.totalPaise,
+      { total: payload.order.total, paise: payload.order.totalPaise },
+    )
+    ok('the items come with it', payload.order.items.length === 1 && payload.order.items[0].quantity === 3, payload.order.items)
+    ok('and the customer', payload.order.customer.phone === '98765 43210', payload.order.customer)
+
+    // Large enough to reach the end in one go, so the cursor under test is
+    // the end of the feed rather than the middle of it.
+    const feed = await fetch(`${BASE}/billing/orders?limit=200`, { headers: { 'x-khapee-key': feedKey } })
+    const page = await feed.json()
+    ok('the key reads the orders', feed.status === 200 && Array.isArray(page.orders), page)
+    ok('and carries a cursor to carry on from', typeof page.cursor === 'number', page)
+    ok('and says when there is no more', page.more === false, page.more)
+
+    // Paged by id rather than time: a clock that disagrees by a few seconds
+    // between two machines would otherwise lose the order placed in the gap,
+    // silently and exactly once.
+    const empty = await fetch(`${BASE}/billing/orders?since=${page.cursor}`, {
+      headers: { 'x-khapee-key': feedKey },
+    })
+    const nothingNew = await empty.json()
+    ok('asking again from the cursor returns nothing new', nothingNew.orders.length === 0, nothingNew)
+    ok('and does not walk the cursor backwards', nothingNew.cursor === page.cursor, nothingNew)
+
+    // One restaurant's key must not read another's orders.
+    const basilOrder = await call('/orders', {
+      body: {
+        restaurantId: basil.id,
+        type: 'pickup',
+        items: [{ menuItemId: pasta.id, quantity: 1 }],
+        customerName: 'Somebody else',
+        contactPhone: '98765 43211',
+      },
+    })
+    const all = await (await fetch(`${BASE}/billing/orders?limit=200`, { headers: { 'x-khapee-key': feedKey } })).json()
+    ok(
+      'a key only ever sees its own restaurant',
+      !all.orders.some((o: any) => o.number === basilOrder.body.order.orderNumber),
+      all.orders.map((o: any) => o.number),
+    )
+    ok(
+      'and cannot fetch another restaurant’s order by number',
+      (await (await fetch(`${BASE}/billing/orders/${basilOrder.body.order.orderNumber}`, {
+        headers: { 'x-khapee-key': feedKey },
+      })).status) === 404,
+    )
+
+    // The file, for the spreadsheet and the notebook.
+    const csv = await fetch(`${BASE}/billing/orders.csv`, { headers: { 'x-khapee-key': feedKey } })
+    const text = await csv.text()
+    ok('a spreadsheet can be downloaded', csv.status === 200, csv.status)
+    ok('as CSV', /text\/csv/.test(csv.headers.get('content-type') ?? ''), csv.headers.get('content-type'))
+    ok('with a header row', text.includes('order_number,placed_at,status'), text.slice(0, 80))
+    // Excel reads a rupee symbol or a Hindi name as mojibake without this.
+    // Checked as bytes, not as text: Response.text() strips a leading BOM on
+    // the way out, so reading it back as a string can only ever say it is
+    // absent — whether or not it was sent.
+    const csvBytes = new Uint8Array(
+      await (await fetch(`${BASE}/billing/orders.csv`, { headers: { 'x-khapee-key': feedKey } })).arrayBuffer(),
+    )
+    ok(
+      'starting with a BOM so Excel reads rupees and Hindi as text',
+      csvBytes[0] === 0xef && csvBytes[1] === 0xbb && csvBytes[2] === 0xbf,
+      [...csvBytes.slice(0, 3)],
+    )
+    ok('and one row per dish', text.trim().split('\r\n').length >= 2, text.split('\r\n').length)
+
+    // The owner's own view never hands the secrets back: an endpoint that
+    // could turns any stolen session into a silent, permanent copy of the feed.
+    const view = await call('/staff/billing', { token: roadToken })
+    ok('the settings screen says a key exists', view.body.hasKey === true, view.body)
+    ok('but never returns it', !JSON.stringify(view.body).includes(feedKey), 'the key came back')
+    await call('/staff/billing/secret', { token: roadToken, body: {} })
+    const view2 = await call('/staff/billing', { token: roadToken })
+    ok('nor the signing secret', view2.body.hasSecret === true && !('secret' in view2.body), view2.body)
+
+    // A private address is refused when it is saved, not when an order fails
+    // to arrive — by which time one has already been missed.
+    const refused = await call('/staff/billing', {
+      token: roadToken,
+      method: 'PATCH',
+      body: { url: 'http://169.254.169.254/latest/meta-data/' },
+    })
+    ok('a private address cannot be saved at all', refused.status === 400, refused.body)
+    ok('and nothing was stored', (await call('/staff/billing', { token: roadToken })).body.url === '', '')
+
+    ok('the integration notes are readable', (await fetch(`${BASE}/billing/help`)).status === 200)
+    ok(
+      'setting a billing address needs an account',
+      (await call('/staff/billing', { method: 'PATCH', body: { url: 'https://example.com' } })).status === 401,
+    )
   }
 
   group('CLEARING THE BOARD')

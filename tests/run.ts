@@ -2795,7 +2795,7 @@ async function runTests() {
     // Large enough to reach the end in one go, so the cursor under test is
     // the end of the feed rather than the middle of it.
     const feed = await fetch(`${BASE}/billing/orders?limit=200`, { headers: { 'x-khapee-key': feedKey } })
-    const page = await feed.json()
+    const page = (await feed.json()) as any
     ok('the key reads the orders', feed.status === 200 && Array.isArray(page.orders), page)
     ok('and carries a cursor to carry on from', typeof page.cursor === 'number', page)
     ok('and says when there is no more', page.more === false, page.more)
@@ -2806,7 +2806,7 @@ async function runTests() {
     const empty = await fetch(`${BASE}/billing/orders?since=${page.cursor}`, {
       headers: { 'x-khapee-key': feedKey },
     })
-    const nothingNew = await empty.json()
+    const nothingNew = (await empty.json()) as any
     ok('asking again from the cursor returns nothing new', nothingNew.orders.length === 0, nothingNew)
     ok('and does not walk the cursor backwards', nothingNew.cursor === page.cursor, nothingNew)
 
@@ -2820,7 +2820,9 @@ async function runTests() {
         contactPhone: '98765 43211',
       },
     })
-    const all = await (await fetch(`${BASE}/billing/orders?limit=200`, { headers: { 'x-khapee-key': feedKey } })).json()
+    const all = (await (
+      await fetch(`${BASE}/billing/orders?limit=200`, { headers: { 'x-khapee-key': feedKey } })
+    ).json()) as any
     ok(
       'a key only ever sees its own restaurant',
       !all.orders.some((o: any) => o.number === basilOrder.body.order.orderNumber),

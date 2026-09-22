@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from '../lib/session'
 import { useCart } from '../lib/cart'
 import JoinRoom from './JoinRoom'
+import { useInstall } from '../lib/install'
 
 export default function Header() {
   const { user, logout } = useSession()
@@ -10,6 +11,7 @@ export default function Header() {
   const navigate = useNavigate()
   const [joining, setJoining] = useState(false)
   const { pathname } = useLocation()
+  const install = useInstall()
 
   /**
    * Installed on a Home Screen there is no browser chrome, so there is no back
@@ -44,6 +46,17 @@ export default function Header() {
           <NavLink to="/staff/orders" className="nav-link">
             Dashboard
           </NavLink>
+        )}
+        {/* Offered to anybody, signed in or not.
+            It used to live only in the dashboard's settings, which is behind a
+            password — and the person setting up a till installs the app before
+            they sign in to it, not after. The browser only raises the offer
+            when it can actually be taken, so this appears exactly when it
+            works and nowhere else. */}
+        {install.canInstall && (
+          <button className="nav-link nav-install" onClick={() => void install.install()}>
+            ⬇ Install
+          </button>
         )}
         <button className="nav-link" onClick={() => setJoining(true)}>
           Join

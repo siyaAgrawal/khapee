@@ -5675,3 +5675,12 @@ button.nav-link {
   font: inherit;
 }
 .side-install:hover { border-color: var(--accent); color: var(--accent); }
+
+/* The install offer in the header: a nav link that looks like the others, so
+   it reads as part of the bar rather than a banner asking for something. */
+.nav-install {
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  padding-inline: 12px;
+}
+.nav-install:hover { border-color: var(--accent); }

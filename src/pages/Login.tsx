@@ -3,8 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from '../lib/session'
 import { ApiError } from '../lib/api'
 import { Spinner } from '../components/ui'
+import { useInstall } from '../lib/install'
 
 export default function Login() {
+  const install = useInstall()
   const { login } = useSession()
   const navigate = useNavigate()
   const location = useLocation() as any
@@ -47,6 +49,20 @@ export default function Login() {
           <span className="brand-mark">◗</span> Khapee
         </Link>
         <h1>Welcome back</h1>
+
+        {/* The screen a till is set up on. Somebody standing at a billing
+            computer signs in here first and installs second, so the offer has
+            to be here too — the dashboard's own is behind this page. */}
+        {install.canInstall && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-block"
+            style={{ marginBottom: 14 }}
+            onClick={() => void install.install()}
+          >
+            ⬇ Install Khapee on this computer
+          </button>
+        )}
 
         {error && <div className="form-error">{error}</div>}
 

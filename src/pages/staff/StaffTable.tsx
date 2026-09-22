@@ -121,9 +121,6 @@ export default function StaffTable() {
         <span className="mono tiny muted">#{bill.orderNumber}</span>
         <div className="spacer" />
         {order && <span className="badge">{STATUS_LABEL[order.status as OrderStatus]}</span>}
-        <button className="btn btn-secondary btn-sm" onClick={() => window.print()}>
-          Print bill
-        </button>
         {next && (
           <button className="btn btn-accent btn-sm" disabled={busy} onClick={() => advance(next)}>
             {STATUS_LABEL[next]}
@@ -131,77 +128,6 @@ export default function StaffTable() {
         )}
       </div>
 
-      {/*
-        The bill as a customer receives it.
-      
-        Off screen until somebody prints, and then the only thing on the page.
-        Built here rather than opened in a new tab because a pop-up asking to
-        be allowed is one more thing to go wrong at a counter with a queue.
-
-        What it calls itself is decided by one thing: whether the restaurant is
-        registered for GST. A business that is not must not hand out a document
-        headed "Tax Invoice", must not print a GST number, and must not show a
-        tax line — most small cafes are under the threshold, and a bill that
-        implies registration is a worse problem than a plain one.
-      */}
-      <div className="bill-print" aria-hidden>
-        <h1>{bill.restaurant.name}</h1>
-        {bill.restaurant.taxEnabled && bill.restaurant.legalName && (
-          <p>{bill.restaurant.legalName}</p>
-        )}
-        {bill.restaurant.address && <p>{bill.restaurant.address}</p>}
-        {bill.restaurant.phone && <p>{bill.restaurant.phone}</p>}
-        {bill.restaurant.taxEnabled && bill.restaurant.gstin && (
-          <p>GSTIN: {bill.restaurant.gstin}</p>
-        )}
-
-        <h2>{bill.restaurant.taxEnabled ? 'Tax Invoice' : 'Bill'}</h2>
-
-        <div className="bill-print-meta">
-          <span>#{bill.orderNumber}</span>
-          <span>{new Date(String(bill.placedAt).replace(' ', 'T') + 'Z').toLocaleString()}</span>
-        </div>
-        <div className="bill-print-meta">
-          <span>{bill.tableLabel ?? 'Counter'}</span>
-          <span>{bill.customerName}</span>
-        </div>
-
-        <table>
-          <tbody>
-            {bill.items.map((i: any) => (
-              <tr key={i.id}>
-                <td>{i.quantity} × {i.name}</td>
-                <td className="bill-print-amt">{money(i.unitPriceCents * i.quantity)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {bill.deliveryFeeCents > 0 && (
-          <div className="bill-print-meta">
-            <span>Delivery</span>
-            <span>{money(bill.deliveryFeeCents)}</span>
-          </div>
-        )}
-        <div className="bill-print-total">
-          <span>Total</span>
-          <span>{money(bill.totalCents)}</span>
-        </div>
-        {bill.paidCents > 0 && (
-          <div className="bill-print-meta">
-            <span>Paid</span>
-            <span>{money(bill.paidCents)}</span>
-          </div>
-        )}
-        {bill.dueCents > 0 && (
-          <div className="bill-print-meta">
-            <span>Due</span>
-            <span>{money(bill.dueCents)}</span>
-          </div>
-        )}
-
-        <p className="bill-print-foot">Thank you — ordered through Khapee</p>
-      </div>
 
       <div className="edit-grid">
         <section className="card card-pad">
@@ -278,27 +204,77 @@ export default function StaffTable() {
             Print
           </button>
 
-          <div className="bill-print">
-            <h3>{bill.restaurant.name}</h3>
-            <p className="tiny">{bill.restaurant.address}</p>
-            <p className="tiny">
-              #{bill.orderNumber} · {bill.tableLabel ?? 'Counter'} · {clockTime(bill.placedAt)}
-            </p>
-            <table>
-              <tbody>
-                {bill.items.map((i: any) => (
-                  <tr key={i.id}>
-                    <td>{i.quantity}×</td>
-                    <td>{i.name}</td>
-                    <td>{money(i.unitPriceCents * i.quantity)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p>
-              <strong>Total {money(bill.totalCents)}</strong>
-            </p>
+        {/*
+          The bill as a customer receives it.
+      
+          Off screen until somebody prints, and then the only thing on the page.
+          Built here rather than opened in a new tab because a pop-up asking to
+          be allowed is one more thing to go wrong at a counter with a queue.
+
+          What it calls itself is decided by one thing: whether the restaurant is
+          registered for GST. A business that is not must not hand out a document
+          headed "Tax Invoice", must not print a GST number, and must not show a
+          tax line — most small cafes are under the threshold, and a bill that
+          implies registration is a worse problem than a plain one.
+        */}
+        <div className="bill-print" aria-hidden>
+          <h1>{bill.restaurant.name}</h1>
+          {bill.restaurant.taxEnabled && bill.restaurant.legalName && (
+            <p>{bill.restaurant.legalName}</p>
+          )}
+          {bill.restaurant.address && <p>{bill.restaurant.address}</p>}
+          {bill.restaurant.phone && <p>{bill.restaurant.phone}</p>}
+          {bill.restaurant.taxEnabled && bill.restaurant.gstin && (
+            <p>GSTIN: {bill.restaurant.gstin}</p>
+          )}
+
+          <h2>{bill.restaurant.taxEnabled ? 'Tax Invoice' : 'Bill'}</h2>
+
+          <div className="bill-print-meta">
+            <span>#{bill.orderNumber}</span>
+            <span>{new Date(String(bill.placedAt).replace(' ', 'T') + 'Z').toLocaleString()}</span>
           </div>
+          <div className="bill-print-meta">
+            <span>{bill.tableLabel ?? 'Counter'}</span>
+            <span>{bill.customerName}</span>
+          </div>
+
+          <table>
+            <tbody>
+              {bill.items.map((i: any) => (
+                <tr key={i.id}>
+                  <td>{i.quantity} × {i.name}</td>
+                  <td className="bill-print-amt">{money(i.unitPriceCents * i.quantity)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {bill.deliveryFeeCents > 0 && (
+            <div className="bill-print-meta">
+              <span>Delivery</span>
+              <span>{money(bill.deliveryFeeCents)}</span>
+            </div>
+          )}
+          <div className="bill-print-total">
+            <span>Total</span>
+            <span>{money(bill.totalCents)}</span>
+          </div>
+          {bill.paidCents > 0 && (
+            <div className="bill-print-meta">
+              <span>Paid</span>
+              <span>{money(bill.paidCents)}</span>
+            </div>
+          )}
+          {bill.dueCents > 0 && (
+            <div className="bill-print-meta">
+              <span>Due</span>
+              <span>{money(bill.dueCents)}</span>
+            </div>
+          )}
+
+          <p className="bill-print-foot">Thank you — ordered through Khapee</p>
+        </div>
         </section>
       </div>
 

@@ -2705,6 +2705,78 @@ async function runTests() {
     ok('a comma in the name does not split the card', awkward.includes('Bread\\, Butter & Co\\; Ltd'), awkward)
   }
 
+  group('A BILL A CAFE WITHOUT GST CAN HAND OVER')
+  {
+    // Most small cafes are under the registration threshold. A business that
+    // is not registered must not hand out a document headed "Tax Invoice",
+    // must not print a GST number, and must not show a tax line — a bill that
+    // implies registration is a worse problem than a plain one.
+    const order = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 2 }],
+        customerName: 'Paying at the counter',
+        contactPhone: '98765 43210',
+      },
+    })
+    // An earlier group registers this restaurant for GST, so the state is set
+    // here rather than inherited — a test that only passes in a particular
+    // order is a test that will fail for a reason nobody can find.
+    const before = new Database(DB_PATH)
+    const was = before
+      .prepare('SELECT tax_enabled, gstin, legal_name FROM restaurants WHERE id = ?')
+      .get(mornington.id) as any
+    before.prepare("UPDATE restaurants SET tax_enabled = 0, gstin = '', legal_name = '' WHERE id = ?").run(mornington.id)
+    before.close()
+
+    const plain = await call(`/staff/bill/${order.body.order.id}`, { token: roadToken })
+    ok('a bill can be read for any order', plain.status === 200, plain.body)
+    ok(
+      'and says this restaurant is not registered',
+      plain.body.bill.restaurant.taxEnabled === false,
+      plain.body.bill.restaurant,
+    )
+    ok('so it carries no GST number', plain.body.bill.restaurant.gstin === '', plain.body.bill.restaurant)
+    ok('the total is the sum of the dishes', plain.body.bill.totalCents === order.body.order.totalCents, {
+      bill: plain.body.bill.totalCents,
+      order: order.body.order.totalCents,
+    })
+
+    // And the other way: once a restaurant is registered, the bill has to
+    // carry the number, because then it is a tax invoice.
+    const reg = new Database(DB_PATH)
+    reg
+      .prepare("UPDATE restaurants SET tax_enabled = 1, gstin = '23ABCDE1234F1Z5', legal_name = 'Mornington Ltd' WHERE id = ?")
+      .run(mornington.id)
+    reg.close()
+    const registered = await call(`/staff/bill/${order.body.order.id}`, { token: roadToken })
+    ok('a registered restaurant says so', registered.body.bill.restaurant.taxEnabled === true, registered.body.bill.restaurant)
+    ok(
+      'and its number is on the bill',
+      registered.body.bill.restaurant.gstin === '23ABCDE1234F1Z5',
+      registered.body.bill.restaurant,
+    )
+    ok(
+      'under the name it is registered as',
+      registered.body.bill.restaurant.legalName === 'Mornington Ltd',
+      registered.body.bill.restaurant,
+    )
+
+    // Put back exactly as it was, so nothing after this group inherits a
+    // registration it did not set, or loses one it did.
+    const undo = new Database(DB_PATH)
+    undo
+      .prepare('UPDATE restaurants SET tax_enabled = ?, gstin = ?, legal_name = ? WHERE id = ?')
+      .run(was.tax_enabled, was.gstin, was.legal_name, mornington.id)
+    undo.close()
+
+    ok(
+      'another restaurant cannot read this bill',
+      (await call(`/staff/bill/${order.body.order.id}`, { token: basilToken })).status === 404,
+    )
+  }
+
   group('ONE DISH AT A TIME — accepting part of an order')
   {
     // What actually happens at eight in the evening is that one thing is off

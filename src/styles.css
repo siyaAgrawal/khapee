@@ -5628,3 +5628,54 @@ button.nav-link {
 }
 .qrow-items li,
 .o-item { display: flex; align-items: center; gap: 6px; }
+
+/* The printed bill.
+   Hidden on screen and the only thing on paper. Sized for a 80mm thermal roll,
+   which is what a counter actually has, and falling back sensibly on A4. */
+.bill-print { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  .bill-print,
+  .bill-print * { visibility: visible; }
+  .bill-print {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    padding: 4mm 2mm;
+    color: #000;
+    background: #fff;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .bill-print h1 { font-size: 15px; margin: 0 0 2px; text-align: center; }
+  .bill-print h2 {
+    font-size: 11px;
+    margin: 8px 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-top: 1px dashed #000;
+    border-bottom: 1px dashed #000;
+    padding: 3px 0;
+  }
+  .bill-print p { margin: 0; text-align: center; font-size: 10px; }
+  .bill-print table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+  .bill-print td { padding: 1px 0; vertical-align: top; }
+  .bill-print-amt { text-align: right; white-space: nowrap; padding-left: 6px; }
+  .bill-print-meta { display: flex; justify-content: space-between; font-size: 10px; }
+  .bill-print-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 13px;
+    border-top: 1px dashed #000;
+    margin-top: 5px;
+    padding-top: 4px;
+  }
+  .bill-print-foot { margin-top: 10px; font-size: 10px; }
+  @page { margin: 4mm; }
+}

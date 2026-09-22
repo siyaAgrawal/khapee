@@ -1432,6 +1432,18 @@ staffRouter.get('/bill/:id', (req, res) => {
         address: restaurant.address,
         phone: restaurant.phone,
         upiVpa: restaurant.upi_vpa,
+        /**
+         * Whether this restaurant is registered for GST, and its details if so.
+         *
+         * The printed bill turns on this and nothing else. A business that is
+         * not registered must not hand out a document headed "Tax Invoice" and
+         * must not show a GST number or a tax line — most small cafes are
+         * under the threshold and are not registered, and a bill that implies
+         * otherwise is a worse problem than a missing one.
+         */
+        taxEnabled: !!restaurant.tax_enabled,
+        gstin: restaurant.gstin || '',
+        legalName: restaurant.legal_name || '',
       },
       orderNumber: shaped.orderNumber,
       tableLabel: shaped.tableLabel,

@@ -22,6 +22,7 @@ import {
 } from '../order-feed.ts'
 import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
+import { faultsFor } from '../faults.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
 import { mailConfigured, sendMail } from '../mail.ts'
 import {
@@ -1154,6 +1155,18 @@ staffRouter.post('/billing/test', async (req: any, res) => {
     },
   })
   res.json(result)
+})
+
+/**
+ * What has broken lately, for the person it broke in front of.
+ *
+ * So a restaurant can read the fault rather than relay a code and wait. The
+ * exception's own words go to staff and never to a customer: they name the
+ * table and column that failed, which is exactly what is needed here and
+ * exactly what should not be on a public page.
+ */
+staffRouter.get('/faults', (req: any, res) => {
+  res.json({ faults: faultsFor(myRestaurant(req)) })
 })
 
 staffRouter.get('/summary', (req, res) => {

@@ -17,6 +17,7 @@ import { ensureSeed } from './seed.ts'
 import { injectMeta, metaFor, robotsTxt, sitemapXml, structuredData } from './seo.ts'
 import { thankPage } from './thank-page.ts'
 import { contactCard } from './vcard.ts'
+import { recordFault } from './faults.ts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // In development this is deliberately not `PORT` — dev harnesses set that for
@@ -229,10 +230,27 @@ app.use((req, res) => res.status(404).json({ error: `No route for ${req.method} 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: any, req: any, res: any, _next: any) => {
   const ref = Math.random().toString(36).slice(2, 8).toUpperCase()
-  console.error(`[khapee] ${ref} ${req?.method} ${req?.originalUrl}`, err)
-  res.status(500).json({
-    error: `Something went wrong on our side (reference ${ref}). Please try again, and quote that reference if it keeps happening.`,
+  const route = String(req?.originalUrl ?? '').split('?')[0]
+  console.error(`[khapee] ${ref} ${req?.method} ${route}`, err)
+
+  // Kept where the dashboard can show it, because a reference that can only
+  // be resolved by reading a log file on a host the restaurant cannot reach
+  // is most of a solution and none of an answer. See server/faults.ts.
+  recordFault({
     reference: ref,
+    at: new Date().toISOString(),
+    method: String(req?.method ?? ''),
+    route,
+    message: String(err?.message ?? err ?? 'unknown'),
+    restaurantId: req?.user?.restaurantId ?? null,
+  })
+
+  res.status(500).json({
+    // The route is named: it is not a secret, it is the first thing anybody
+    // debugging this asks for, and it saves a round trip of screenshots.
+    error: `Something went wrong on our side (reference ${ref}) doing ${route}. Please try again, and quote that reference.`,
+    reference: ref,
+    route,
   })
 })
 

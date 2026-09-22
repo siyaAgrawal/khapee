@@ -165,6 +165,56 @@ function SignIn() {
 }
 
 /**
+ * The last few things that went wrong here.
+ *
+ * A reference code turned "it is not working" into something quotable, and
+ * then left it to be quoted — down a phone, to somebody who then had to go
+ * and read a log on a host the restaurant cannot reach. This shows the fault
+ * itself, so whoever hit it can say what it was.
+ *
+ * Hidden entirely when nothing has broken, because a panel headed "Recent
+ * problems" on a screen where there are none invents a worry.
+ */
+function FaultPanel() {
+  const [faults, setFaults] = useState<
+    { reference: string; at: string; method: string; route: string; message: string }[]
+  >([])
+
+  useEffect(() => {
+    api<{ faults: typeof faults }>('/staff/faults')
+      .then((r) => setFaults(r.faults ?? []))
+      .catch(() => setFaults([]))
+  }, [])
+
+  if (!faults.length) return null
+
+  return (
+    <section className="card card-pad">
+      <h2 style={{ marginBottom: 6 }}>Recent problems</h2>
+      <p className="tiny muted mb-2">
+        Anything that failed on this restaurant since the app last restarted. If something is not
+        working, this says what — send it on rather than describing the screen.
+      </p>
+      <ul className="device-list">
+        {faults.map((f) => (
+          <li key={f.reference}>
+            <div>
+              <strong className="mono">{f.reference}</strong>{' '}
+              <span className="tiny muted">
+                {f.method} {f.route}
+              </span>
+              <p className="tiny muted">
+                {new Date(f.at).toLocaleString()} · {f.message}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/**
  * Putting Khapee on the machine that rings up the bills.
  *
  * Always says something, which is the point. The first version only rendered
@@ -447,6 +497,8 @@ export default function StaffProfile() {
         </form>
 
         <div className="stack">
+          <FaultPanel />
+
           <InstallPanel />
 
           <section className="card card-pad">

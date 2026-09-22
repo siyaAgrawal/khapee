@@ -1,33 +1,56 @@
 [
   {
     "name": "Cafe Vijay Bhaiya — Saket Wale",
-    "description": "Maggi, sandwiches and mojitos, the way Saket has them.",
-    "address": "Saket, Indore",
-    "categories": ["Cafe", "Fast Food", "Sandwiches", "Pizza"],
-    "emoji": "🍜",
-    "hue": 28,
-    "hours": "11:00 AM – 11:00 PM",
-    "prepMinutes": 15,
-    "tables": 6,
-    "staff": {
-      "name": "Cafe Vijay Bhaiya",
-      "email": "vijaybhaiya@khapee.com",
-      "password": "z1jyCL5j69yy",
-      "title": "Owner"
-    },
+    "phone": "77010 77727",
     "menu": [
       {
         "category": "Maggi",
         "items": [
-          { "name": "Masala Maggi", "price": 110, "veg": true, "emoji": "🍜", "hue": 28 },
-          { "name": "Peri Peri Maggi", "price": 120, "veg": true, "emoji": "🍜", "hue": 10 },
-          { "name": "Mayo Corn Maggi", "price": 120, "veg": true, "emoji": "🍜", "hue": 45 },
-          { "name": "Vegetable Maggi", "price": 130, "veg": true, "emoji": "🍜", "hue": 100 },
-          { "name": "Cheese Corn Maggi", "price": 130, "veg": true, "emoji": "🧀", "hue": 45 },
-          { "name": "White Sauce Maggi", "price": 140, "veg": true, "emoji": "🍜", "hue": 200 },
-          { "name": "Peri Peri Cheese Corn", "price": 140, "veg": true, "emoji": "🧀", "hue": 10 },
-          { "name": "Punjabi Tadka Cheese Maggi", "price": 150, "veg": true, "emoji": "🍜", "hue": 35 },
-          { "name": "Russian Maggi", "price": 175, "veg": true, "emoji": "🍜", "hue": 220 }
+          {
+            "name": "Masala Maggi",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Maggi",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Mayo Corn Maggi",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Vegetable Maggi",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Cheese Corn Maggi",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "White Sauce Maggi",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Cheese Corn Maggi",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Punjabi Tadka Cheese Maggi",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Russian Maggi",
+            "price": 160,
+            "veg": true
+          }
         ]
       },
       {
@@ -35,169 +58,526 @@
         "items": [
           {
             "name": "Ronit Maggi",
-            "description": "Maggi with mayo, peri-peri and schezwan sauce",
-            "price": 130,
+            "price": 120,
             "veg": true,
-            "emoji": "🍜",
-            "hue": 5
+            "description": "Maggi with mayo, peri-peri and schezwan sauce."
           },
           {
             "name": "Dhruv Maggi",
-            "description": "Double cheese, creamy maggi",
-            "price": 150,
+            "price": 140,
             "veg": true,
-            "emoji": "🧀",
-            "hue": 48
+            "description": "Double cheese creamy maggi."
           },
           {
             "name": "Hardik Maggi",
-            "description": "Maggi with corn, mayo, peri-peri, schezwan and cheese",
-            "price": 150,
+            "price": 140,
             "veg": true,
-            "emoji": "🍜",
-            "hue": 20
+            "description": "Maggi with corn, mayo, peri-peri, schezwan and cheese."
           }
         ]
       },
       {
         "category": "Sandwiches",
         "items": [
-          { "name": "Butter Cheese Toast", "price": 85, "veg": true, "emoji": "🥪", "hue": 45 },
           {
-            "name": "Vegetable Sandwich (K)",
-            "description": "As printed on the menu: K",
-            "price": 85,
-            "veg": true,
-            "emoji": "🥪",
-            "hue": 100
+            "name": "Butter Cheese Toast",
+            "price": 70,
+            "veg": true
           },
           {
-            "name": "Vegetable Sandwich (G)",
-            "description": "As printed on the menu: G",
-            "price": 95,
-            "veg": true,
-            "emoji": "🥪",
-            "hue": 110
+            "name": "Vegetable Sandwich (Kachha)",
+            "price": 70,
+            "veg": true
           },
           {
-            "name": "Vegetable Cheese Sandwich (K)",
-            "description": "As printed on the menu: K",
-            "price": 105,
-            "veg": true,
-            "emoji": "🧀",
-            "hue": 95
+            "name": "Vegetable Sandwich (Grilled)",
+            "price": 80,
+            "veg": true
           },
           {
-            "name": "Vegetable Cheese Sandwich (G)",
-            "description": "As printed on the menu: G",
-            "price": 115,
-            "veg": true,
-            "emoji": "🧀",
-            "hue": 105
+            "name": "Vegetable Cheese Sandwich (Kachha)",
+            "price": 90,
+            "veg": true
           },
-          { "name": "Aloo Masala", "price": 95, "veg": true, "emoji": "🥔", "hue": 35 },
-          { "name": "Cheese Chutney", "price": 95, "veg": true, "emoji": "🧀", "hue": 120 },
-          { "name": "Chilly Cheese Chutney", "price": 110, "veg": true, "emoji": "🌶️", "hue": 5 },
-          { "name": "Cheese Aloo Masala", "price": 120, "veg": true, "emoji": "🧀", "hue": 40 },
-          { "name": "Bambaiya", "price": 130, "veg": true, "emoji": "🥪", "hue": 15 },
-          { "name": "Special Bambaiya", "price": 140, "veg": true, "emoji": "🥪", "hue": 12 },
-          { "name": "Indori Sandwich", "price": 140, "veg": true, "emoji": "🥪", "hue": 30 },
-          { "name": "Mayo Corn", "price": 140, "veg": true, "emoji": "🌽", "hue": 48 },
-          { "name": "Mexican", "price": 155, "veg": true, "emoji": "🌮", "hue": 18 },
-          { "name": "Tandoori Mayo Paneer", "price": 140, "veg": true, "emoji": "🧆", "hue": 8 },
-          { "name": "Russian", "price": 175, "veg": true, "emoji": "🥪", "hue": 220 },
-          { "name": "Special Veg Club", "price": 200, "veg": true, "emoji": "🥪", "hue": 130 }
+          {
+            "name": "Vegetable Cheese Sandwich (Grilled)",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Aloo Masala Sandwich",
+            "price": 80,
+            "veg": true
+          },
+          {
+            "name": "Cheese Chutney Sandwich",
+            "price": 90,
+            "veg": true
+          },
+          {
+            "name": "Chilli Cheese Chutney Sandwich",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Cheese Aloo Masala Sandwich",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Mayo Corn Sandwich",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Bambaiya Sandwich",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Tandoori Mayo Paneer Sandwich",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Special Bambaiya Sandwich",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Indori Sandwich",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Mexican Sandwich",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Russian Sandwich",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Special Veg Club Sandwich",
+            "price": 200,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Customised Sandwiches",
         "items": [
-          { "name": "Surjeet S/W", "price": 155, "veg": true, "emoji": "🥪", "hue": 260 },
-          { "name": "Shankesh S/W", "price": 155, "veg": true, "emoji": "🥪", "hue": 280 },
-          { "name": "Boss S/W", "price": 155, "veg": true, "emoji": "🥪", "hue": 300 },
-          { "name": "Chotu S/W", "price": 190, "veg": true, "emoji": "🥪", "hue": 320 }
+          {
+            "name": "Shankesh Sandwich",
+            "price": 130,
+            "veg": true,
+            "description": "Mayo corn sandwich with double cheese."
+          },
+          {
+            "name": "Surjeet Sandwich",
+            "price": 140,
+            "veg": true,
+            "description": "Cheese chutney sandwich with onion and paneer."
+          },
+          {
+            "name": "Boss Sandwich",
+            "price": 140,
+            "veg": true,
+            "description": "Cheese chutney sandwich with capsicum and green chillies."
+          },
+          {
+            "name": "Chotu Sandwich",
+            "price": 180,
+            "veg": true,
+            "description": "Russian sandwich with aloo masala."
+          }
         ]
       },
       {
         "category": "Burgers",
         "items": [
-          { "name": "Classic Burger", "price": 110, "veg": true, "emoji": "🍔", "hue": 35 },
-          { "name": "Cheese Classic Burger", "price": 135, "veg": true, "emoji": "🍔", "hue": 45 },
-          { "name": "Cheese Corn Burger", "price": 155, "veg": true, "emoji": "🍔", "hue": 48 },
-          { "name": "Club King Burger", "price": 180, "veg": true, "emoji": "🍔", "hue": 25 }
+          {
+            "name": "Classic Burger",
+            "price": 90,
+            "veg": true
+          },
+          {
+            "name": "Cheese Classic Burger",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Cheese Corn Burger",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Club King Burger",
+            "price": 150,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Pizza",
         "items": [
-          { "name": "Margherita", "price": 195, "veg": true, "emoji": "🍕", "hue": 10 },
-          { "name": "Farm House", "price": 220, "veg": true, "emoji": "🍕", "hue": 110 },
-          { "name": "Italian", "price": 240, "veg": true, "emoji": "🍕", "hue": 20 },
-          { "name": "Four Cheese", "price": 240, "veg": true, "emoji": "🧀", "hue": 45 },
-          { "name": "Peppy Paneer", "price": 240, "veg": true, "emoji": "🍕", "hue": 5 },
-          { "name": "Veg Extravaganza", "price": 265, "veg": true, "emoji": "🍕", "hue": 130 }
+          {
+            "name": "Margherita Pizza",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Corn Pizza",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Farm House Pizza",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Italian Pizza",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Peppy Paneer Pizza",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Veg Extravaganza Pizza",
+            "price": 240,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Pasta",
         "items": [
-          { "name": "White Sauce Pasta", "price": 215, "veg": true, "emoji": "🍝", "hue": 200 },
-          { "name": "Red Sauce Pasta", "price": 215, "veg": true, "emoji": "🍝", "hue": 5 },
-          { "name": "Pink Sauce Pasta", "price": 240, "veg": true, "emoji": "🍝", "hue": 340 }
+          {
+            "name": "White Sauce Pasta",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Red Sauce Pasta",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Pink Sauce Pasta",
+            "price": 240,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Fries",
         "items": [
-          { "name": "Salted Fries", "price": 110, "veg": true, "emoji": "🍟", "hue": 45 },
-          { "name": "Peri Peri Fries", "price": 135, "veg": true, "emoji": "🍟", "hue": 10 },
-          { "name": "Loaded Fries", "price": 155, "veg": true, "emoji": "🍟", "hue": 30 },
-          { "name": "Peri Peri Jalapeno Cheesy Fries", "price": 170, "veg": true, "emoji": "🍟", "hue": 90 }
+          {
+            "name": "Salted Fries",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Fries",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Loaded Fries",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Jalapeno Cheesy Fries",
+            "price": 140,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Nachos",
+        "items": [
+          {
+            "name": "Classic Nachos & Dip",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Loaded Nachos",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Peri Peri Jalapeno Cheese Nachos",
+            "price": 200,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Shakes & Cold Coffee",
+        "items": [
+          {
+            "name": "Chocolate Shake",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Oreo Shake",
+            "price": 170,
+            "veg": true
+          },
+          {
+            "name": "Kitkat Shake",
+            "price": 170,
+            "veg": true
+          },
+          {
+            "name": "Nutella Shake",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Choco Brownie Shake",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Ferrero Rocher Shake",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Classic Cold Coffee",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Irish Cold Coffee",
+            "price": 140,
+            "veg": true
+          },
+          {
+            "name": "Hazelnut Cold Coffee",
+            "price": 150,
+            "veg": true
+          },
+          {
+            "name": "Nutella Cold Coffee",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Oreo Cold Coffee",
+            "price": 160,
+            "veg": true
+          },
+          {
+            "name": "Cold Coffee With Brownie",
+            "price": 200,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Hot Beverages",
+        "items": [
+          {
+            "name": "Espresso",
+            "price": 80,
+            "veg": true
+          },
+          {
+            "name": "Filter Coffee",
+            "price": 80,
+            "veg": true
+          },
+          {
+            "name": "Cappuccino",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Americano",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Cafe Latte",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Cafe Mocha",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Hot Chocolate",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Hot Choco Nutella",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Hot Choco Rocher",
+            "price": 120,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Mocktails & Iced Tea",
         "items": [
-          { "name": "Mint Mojito", "price": 120, "veg": true, "emoji": "🥤", "hue": 140, "group": "Mojitos" },
-          { "name": "Strawberry Mojito", "price": 120, "veg": true, "emoji": "🥤", "hue": 350, "group": "Mojitos" },
-          { "name": "Green Apple Mojito", "price": 120, "veg": true, "emoji": "🥤", "hue": 95, "group": "Mojitos" },
-          { "name": "Blue Curacao Mojito", "price": 145, "veg": true, "emoji": "🥤", "hue": 205, "group": "Mojitos" },
-          { "name": "Redbull Mojito", "price": 195, "veg": true, "emoji": "🥤", "hue": 220, "group": "Mojitos" },
-          { "name": "Lemon Iced Tea", "price": 120, "veg": true, "emoji": "🧋", "hue": 50, "group": "Iced tea" },
-          { "name": "Peach Iced Tea", "price": 120, "veg": true, "emoji": "🧋", "hue": 25, "group": "Iced tea" },
-          { "name": "Strawberry Iced Tea", "price": 120, "veg": true, "emoji": "🧋", "hue": 350, "group": "Iced tea" },
-          { "name": "Redbull Iced Tea", "price": 195, "veg": true, "emoji": "🧋", "hue": 220, "group": "Iced tea" }
+          {
+            "name": "Mint Mojito",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Strawberry Mojito",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Green Apple Mojito",
+            "price": 120,
+            "veg": true
+          },
+          {
+            "name": "Blue Curacao Mojito",
+            "price": 130,
+            "veg": true
+          },
+          {
+            "name": "Redbull Mojito",
+            "price": 180,
+            "veg": true
+          },
+          {
+            "name": "Lemon Iced Tea",
+            "price": 100,
+            "veg": true
+          },
+          {
+            "name": "Peach Iced Tea",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Strawberry Iced Tea",
+            "price": 110,
+            "veg": true
+          },
+          {
+            "name": "Redbull Iced Tea",
+            "price": 180,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Desserts",
         "items": [
-          { "name": "Jam Toast", "price": 85, "veg": true, "emoji": "🍞", "hue": 350 },
-          { "name": "Cheese Jam Toast", "price": 95, "veg": true, "emoji": "🍞", "hue": 340 },
-          { "name": "Nutella Sandwich", "price": 185, "veg": true, "emoji": "🍫", "hue": 25 },
-          { "name": "Nutella Cheese Sandwich", "price": 195, "veg": true, "emoji": "🍫", "hue": 30 },
-          { "name": "Oreo/KitKat Nutella", "price": 195, "veg": true, "emoji": "🍫", "hue": 20 },
-          { "name": "Nutella with Ice-Cream", "price": 230, "veg": true, "emoji": "🍨", "hue": 35 }
-        ]
-      },
-      {
-        "category": "Extras",
-        "items": [
-          { "name": "Ravita Sauce", "price": 50, "veg": true, "emoji": "🥣", "hue": 10, "group": "Dips" },
-          { "name": "Garlic Sauce", "price": 50, "veg": true, "emoji": "🧄", "hue": 45, "group": "Dips" },
-          { "name": "Schezwan Peri Peri", "price": 50, "veg": true, "emoji": "🌶️", "hue": 5, "group": "Dips" },
-          { "name": "Cheese Sauce", "price": 50, "veg": true, "emoji": "🧀", "hue": 48, "group": "Dips" },
-          { "name": "Peri-Peri", "price": 15, "veg": true, "emoji": "🌶️", "hue": 8, "group": "Add-ons" },
-          { "name": "Mayo", "price": 15, "veg": true, "emoji": "🥄", "hue": 48, "group": "Add-ons" },
-          { "name": "Chilli", "price": 15, "veg": true, "emoji": "🌶️", "hue": 0, "group": "Add-ons" },
-          { "name": "Cheese", "price": 25, "veg": true, "emoji": "🧀", "hue": 45, "group": "Add-ons" },
-          { "name": "Butter", "price": 25, "veg": true, "emoji": "🧈", "hue": 50, "group": "Add-ons" }
+          {
+            "name": "Jam Toast",
+            "price": 80,
+            "veg": true
+          },
+          {
+            "name": "Cheese Jam Toast",
+            "price": 90,
+            "veg": true
+          },
+          {
+            "name": "Nutella Sandwich",
+            "price": 200,
+            "veg": true
+          },
+          {
+            "name": "Nutella Cheese Sandwich",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Oreo / Kitkat Nutella",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Nutella With Ice Cream",
+            "price": 240,
+            "veg": true
+          }
         ]
       },
       {
         "category": "Packed",
         "items": [
-          { "name": "Redbull", "price": 150, "veg": true, "emoji": "🥫", "hue": 220 }
+          {
+            "name": "Redbull",
+            "price": 150,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Extras",
+        "items": [
+          {
+            "name": "Ravita Sauce Dip",
+            "price": 40,
+            "veg": true
+          },
+          {
+            "name": "Garlic Sauce Dip",
+            "price": 40,
+            "veg": true
+          },
+          {
+            "name": "Schezwan Peri Peri Dip",
+            "price": 40,
+            "veg": true
+          },
+          {
+            "name": "Cheese Sauce Dip",
+            "price": 40,
+            "veg": true
+          },
+          {
+            "name": "Peri-Peri Add-On",
+            "price": 10,
+            "veg": true
+          },
+          {
+            "name": "Mayo Add-On",
+            "price": 10,
+            "veg": true
+          },
+          {
+            "name": "Chilli Add-On",
+            "price": 10,
+            "veg": true
+          },
+          {
+            "name": "Cheese Add-On",
+            "price": 20,
+            "veg": true
+          },
+          {
+            "name": "Butter Add-On",
+            "price": 20,
+            "veg": true
+          }
         ]
       }
     ]

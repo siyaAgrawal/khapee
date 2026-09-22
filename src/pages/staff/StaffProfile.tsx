@@ -3,6 +3,7 @@ import { api, ApiError, setToken } from '../../lib/api'
 import ImagePicker from '../../components/ImagePicker'
 import LiveStrip from '../../components/LiveStrip'
 import { useSession } from '../../lib/session'
+import { useInstall } from '../../lib/install'
 import { Art, LoadingBlock, Spinner, useToast } from '../../components/ui'
 
 type Profile = {
@@ -158,6 +159,55 @@ function SignIn() {
             </button>
           </div>
         </form>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Putting Khapee on the machine that rings up the bills.
+ *
+ * Always says something, which is the point. The first version only rendered
+ * a button when the browser offered one, so on an iPhone — where Safari never
+ * makes the offer and the route is Share, then Add to Home Screen — there was
+ * nothing on screen at all, and "I cannot see the install option" is the only
+ * possible outcome. A screen that knows it cannot help should say which
+ * browser can.
+ */
+function InstallPanel() {
+  const install = useInstall()
+
+  return (
+    <section className="card card-pad">
+      <h2 style={{ marginBottom: 6 }}>Install Khapee here</h2>
+      <p className="tiny muted mb-2">
+        Its own icon and window, no address bar, and it can open when the computer starts. Nothing is
+        downloaded — it is the same Khapee, kept on this machine.
+      </p>
+
+      {install.installed ? (
+        <p className="tiny">✓ Already installed on this device. You are using it now.</p>
+      ) : install.canInstall ? (
+        <button className="btn btn-accent" onClick={() => void install.install()}>
+          Install Khapee
+        </button>
+      ) : install.iPhone ? (
+        <ol className="alert-steps">
+          <li>
+            At the bottom of Safari, tap the <strong>Share</strong> button — the square with an arrow
+            coming out of it.
+          </li>
+          <li>
+            Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.
+          </li>
+          <li>Open Khapee from the new icon. Safari has no other way to do this.</li>
+        </ol>
+      ) : (
+        <p className="tiny muted">
+          This browser cannot install it. On a computer use <strong>Chrome</strong> or{' '}
+          <strong>Edge</strong>, and on Android use Chrome — the button appears here once you do. On an
+          iPhone it is Share, then Add to Home Screen.
+        </p>
       )}
     </section>
   )
@@ -371,6 +421,8 @@ export default function StaffProfile() {
         </form>
 
         <div className="stack">
+          <InstallPanel />
+
           <section className="card card-pad">
             <h2 style={{ marginBottom: 12 }}>Cover photo</h2>
             <ImagePicker

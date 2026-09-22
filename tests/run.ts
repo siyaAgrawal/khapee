@@ -2777,6 +2777,43 @@ async function runTests() {
     )
   }
 
+  group('A TABLE YOU HAVE LEFT IS NOT A TABLE')
+  {
+    // The membership token is kept on the phone and was believed forever. A
+    // group session lives in the database, the database is rebuilt from the
+    // published copy on every restart, and on the free plan that is often —
+    // so a phone that had once shared a table was stuck in it by morning:
+    // the cart became a staging area for a session that no longer existed,
+    // and an ordinary order could not be placed at all.
+    //
+    // The app now asks before it believes. What it relies on is that an
+    // unknown token is refused rather than quietly accepted.
+    const unknown = await call('/groups/session/state?groupToken=dead-token-xyz')
+    ok('a token the server does not know is refused', unknown.status === 401, unknown.body)
+    ok('and says to join again', /join/i.test(unknown.body?.error ?? ''), unknown.body)
+
+    // A real one is recognised, or the check would throw everybody out.
+    const host = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Host',
+        contactPhone: '98765 43210',
+      },
+    })
+    const room = await call('/groups', {
+      body: { restaurantId: mornington.id, hostName: 'Host', ahead: true },
+    })
+    const token = room.body?.groupToken
+    ok('a real group hands out a token', typeof token === 'string' && token.length > 0, room.body)
+    if (token) {
+      const live = await call(`/groups/session/state?groupToken=${encodeURIComponent(token)}`)
+      ok('which the server recognises', live.status === 200 && !!live.body.session, live.body)
+      ok('and reports as open', live.body.session?.status !== 'CLOSED', live.body.session?.status)
+    }
+  }
+
   group('A PAYMENT OUTLIVES THE ORDER IT CAME FROM')
   {
     // An invoice is a record of something that happened and survives its

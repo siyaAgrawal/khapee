@@ -8,7 +8,7 @@ import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../c
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
 import { ownOrderOnly, readDining } from '../lib/dining'
-import { readGroup } from '../lib/group'
+import { useGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import NoirMenu from '../components/NoirMenu'
 import { applyTheme } from '../lib/themes'
@@ -69,7 +69,9 @@ export default function Restaurant() {
   const [error, setError] = useState('')
   const tableCtx = readTableContext(restaurantId)
   const dining = readDining(restaurantId)
-  const activeGroup = readGroup()
+  // Confirmed with the server before it is believed — see lib/group.ts. A
+  // remembered table that no longer exists used to make ordering impossible.
+  const { group: activeGroup } = useGroup()
   // Somebody in their car was being told "You're at table GSRCQ — add to it"
   // in the same breath as "In the car". The session they are actually in wins.
   const inThisGroup = activeGroup?.restaurantId === restaurantId && !ownOrderOnly(restaurantId)

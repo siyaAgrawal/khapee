@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import { useCart } from '../lib/cart'
 import { api, ApiError } from '../lib/api'
-import { readGroup, saveGroup } from '../lib/group'
+import { saveGroup, useGroup } from '../lib/group'
 import { ownOrderOnly, readDining } from '../lib/dining'
 import { readTableContext } from '../lib/table-context'
 import { useSession } from '../lib/session'
@@ -15,7 +15,7 @@ export default function Cart() {
   const navigate = useNavigate()
   const toast = useToast()
   const { user } = useSession()
-  const group = readGroup()
+  const { group, leave } = useGroup()
   // Waiting in a car or at home is this party's own order, whatever room they
   // were last in at this restaurant. Group ordering is untouched everywhere
   // else — see ownOrderOnly.
@@ -42,7 +42,21 @@ export default function Cart() {
       toast('Added to your table', 'good')
       navigate('/group', { replace: true })
     } catch (e) {
-      toast((e as ApiError).message, 'bad')
+      /**
+       * The table is gone, so stop being in it.
+       *
+       * A dead token fails here every time it is tried, and leaving the
+       * handle in place leaves somebody pressing a button that cannot work.
+       * Dropping out turns the cart back into an ordinary order they can
+       * actually place, which is what they were trying to do.
+       */
+      const err = e as ApiError
+      if (err.status === 401 || err.status === 404 || err.status === 409) {
+        leave()
+        toast('That table has closed — this is your own order now.', 'info')
+      } else {
+        toast(err.message, 'bad')
+      }
       setAdding(false)
     }
   }
@@ -165,6 +179,21 @@ export default function Cart() {
                 <span>{money(totalCents)}</span>
               </div>
             </div>
+
+            {/* A way out, said plainly.
+                Being in a group changes what this whole screen does — the
+                cart stops being an order and becomes a staging area for
+                somebody else's table — so anybody who is not actually at
+                that table has to be able to say so. Without this, a
+                remembered group was a trap with no visible door. */}
+            {inGroup && (
+              <p className="tiny muted center" style={{ marginBottom: 8 }}>
+                Ordering for table {group!.code}.{' '}
+                <button className="link-btn" onClick={leave}>
+                  Not with them? Order on your own
+                </button>
+              </p>
+            )}
 
             <div className="cart-bar">
               <div className="cart-bar-info">

@@ -211,10 +211,29 @@ if (fs.existsSync(path.join(dist, 'index.html'))) {
 
 app.use((req, res) => res.status(404).json({ error: `No route for ${req.method} ${req.path}` }))
 
+/**
+ * The last resort, with something to quote.
+ *
+ * "Something went wrong on our side" is true, sympathetic, and completely
+ * undiagnosable: it says the same thing for every fault on every route, so a
+ * restaurant reporting it hands over no more than the fact that something
+ * broke. The only way to find it afterwards is to guess what they were doing.
+ *
+ * Each failure now carries a short reference, printed beside the error and
+ * the route it came from in the log. Six characters somebody can read down a
+ * phone turns "it is not working" into a line in a file.
+ *
+ * The error itself is never sent back — a stack trace tells an attacker what
+ * the server is built from, and tells the person reading it nothing.
+ */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: any, _req: any, res: any, _next: any) => {
-  console.error('[tablo]', err)
-  res.status(500).json({ error: 'Something went wrong on our side. Please try again.' })
+app.use((err: any, req: any, res: any, _next: any) => {
+  const ref = Math.random().toString(36).slice(2, 8).toUpperCase()
+  console.error(`[khapee] ${ref} ${req?.method} ${req?.originalUrl}`, err)
+  res.status(500).json({
+    error: `Something went wrong on our side (reference ${ref}). Please try again, and quote that reference if it keeps happening.`,
+    reference: ref,
+  })
 })
 
 // On serverless the platform owns the listener; everywhere else we bind here.

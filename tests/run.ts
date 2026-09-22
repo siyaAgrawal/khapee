@@ -2705,6 +2705,59 @@ async function runTests() {
     ok('a comma in the name does not split the card', awkward.includes('Bread\\, Butter & Co\\; Ltd'), awkward)
   }
 
+  group('FINDING A DISH — every menu, not only the plain ones')
+  {
+    const { dishMatches, searchWords } = await import('../src/lib/menu-search.ts')
+    const find = (q: string) => searchWords(q)
+
+    // The section counts as part of the dish, which is what lets somebody
+    // type the words in the order they say them out loud.
+    ok(
+      'words may be spread across the name and the section',
+      dishMatches({ name: 'Peri-Peri Cheese' }, 'Maggi', find('peri peri cheese maggi')),
+      '',
+    )
+    ok('punctuation is flattened', dishMatches({ name: 'Peri-Peri Cheese' }, 'Maggi', find('peri peri')), '')
+    ok(
+      'a word matches from the start of another',
+      dishMatches({ name: 'Chocolate Shake' }, 'Shakes', find('choc')),
+      '',
+    )
+    ok(
+      'but not from the middle, or every dish matches everything',
+      !dishMatches({ name: 'Chocolate Shake' }, 'Shakes', find('late')),
+      '',
+    )
+    ok(
+      'the description counts too, because people search for what is in it',
+      dishMatches({ name: 'Avial With Appam', description: 'coconut curd gravy' }, 'Meals', find('coconut')),
+      '',
+    )
+    ok('every word has to appear', !dishMatches({ name: 'Masala Toast' }, 'Toast', find('masala paneer')), '')
+    ok('an empty search matches everything', dishMatches({ name: 'Anything' }, 'Any', find('   ')), '')
+
+    // The case this change is for: on 28 Paarroo "chocolate" is spread over
+    // Frappes, Shakes and Hot Chocolate, and a menu that shows one section at
+    // a time would hide two thirds of the answer behind a chip.
+    const shipped = new Database(path.join(root, 'data', 'snapshot.db'), { readonly: true })
+    const paarroo = shipped.prepare("SELECT id FROM restaurants WHERE name = '28 Paarroo'").get() as any
+    if (paarroo) {
+      const rows = shipped
+        .prepare(
+          `SELECT m.name, m.description, c.name AS section
+             FROM menu_items m JOIN menu_categories c ON c.id = m.category_id
+            WHERE m.restaurant_id = ?`,
+        )
+        .all(paarroo.id) as any[]
+      const words = find('chocolate')
+      const hits = rows.filter((r) => dishMatches(r, r.section, words))
+      const sections = new Set(hits.map((h) => h.section))
+      ok('a real search crosses sections', sections.size >= 3, [...sections])
+      ok('and finds more than one dish', hits.length > 10, hits.length)
+    }
+    shipped.close()
+  }
+
   group('WHAT SHIPS — the published catalogue, not the test seed')
   {
     // These assert the committed snapshot rather than the seeded test

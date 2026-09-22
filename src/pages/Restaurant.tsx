@@ -379,18 +379,25 @@ export default function Restaurant() {
             </div>
             )}
 
-            {themed ? (
-              <NoirMenu
-                theme={theme}
-                menu={data.menu}
-                isOpen={data.restaurant.isOpen}
-                quantityOf={quantityOf}
-                setQuantity={setQuantity}
-                onAdd={onAdd}
-                inThisCart={cart.restaurantId === data.restaurant.id}
+            {!!needle && foundCount === 0 && (
+              <EmptyState
+                emoji="🔍"
+                title={`Nothing matching \u201c${query.trim()}\u201d`}
+                body={veg ? 'Try another word, or turn off Veg only.' : 'Try another word.'}
+                action={
+                  <button className="btn btn-secondary" onClick={() => setQuery('')}>
+                    Show the whole menu
+                  </button>
+                }
               />
-            ) : (
-              <>
+            )}
+
+            {/* Every menu gets this, themed or not.
+                It used to live inside the plain branch only, which put it on
+                every short menu and on none of the long ones — the themed
+                restaurants are the ones with a hundred and fifty dishes
+                across sixteen sections, and they are exactly who cannot find
+                the cold coffee by scrolling. */}
             {/* Above the section chips, because someone who knows what they
                 want should not have to read the chips to find out it is not
                 there. */}
@@ -418,6 +425,25 @@ export default function Restaurant() {
               </p>
             )}
 
+            {themed ? (
+              <NoirMenu
+                theme={theme}
+                /* The filtered menu, not the whole one: searching has to
+                   narrow what is on screen or it is not searching. */
+                menu={shown}
+                /* And while something is typed, show every match at once
+                   rather than one section at a time — a search that hides
+                   results behind a section chip has answered the wrong
+                   question. */
+                forceAll={!!needle}
+                isOpen={data.restaurant.isOpen}
+                quantityOf={quantityOf}
+                setQuantity={setQuantity}
+                onAdd={onAdd}
+                inThisCart={cart.restaurantId === data.restaurant.id}
+              />
+            ) : (
+              <>
             <nav className="menu-nav">
               <button
                 className={`veg-toggle veg-toggle-sm ${veg ? 'on' : ''}`}
@@ -434,19 +460,6 @@ export default function Restaurant() {
                 </a>
               ))}
             </nav>
-
-            {!!needle && foundCount === 0 && (
-              <EmptyState
-                emoji="🔍"
-                title={`Nothing matching \u201c${query.trim()}\u201d`}
-                body={veg ? 'Try another word, or turn off Veg only.' : 'Try another word.'}
-                action={
-                  <button className="btn btn-secondary" onClick={() => setQuery('')}>
-                    Show the whole menu
-                  </button>
-                }
-              />
-            )}
 
             {!needle &&
               data.menu.every((c) => c.items.length === 0) &&

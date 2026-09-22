@@ -32,6 +32,15 @@ type Props = {
   /** Which restaurant's voice the sections speak in. */
   theme: ThemeName
   menu: Category[]
+  /**
+   * Show every section at once, overriding the chosen one.
+   *
+   * Set while a search is running. This menu normally shows one section at a
+   * time, which is right for browsing and wrong for a search — matches spread
+   * across four sections would leave three of them hidden behind a chip, and
+   * a search that hides results has answered the wrong question.
+   */
+  forceAll?: boolean
   isOpen: boolean
   quantityOf: (id: number) => number
   setQuantity: (id: number, qty: number) => void
@@ -48,11 +57,11 @@ type Props = {
  * Everything stays on charcoal throughout — the accent tints edges, rules and
  * prices, and never becomes a background. That is the whole point of the look.
  */
-export default function NoirMenu({ theme, menu, isOpen, quantityOf, setQuantity, onAdd, inThisCart }: Props) {
+export default function NoirMenu({ theme, menu, forceAll = false, isOpen, quantityOf, setQuantity, onAdd, inThisCart }: Props) {
   const sections = menu.filter((c) => c.items.length > 0)
   // -1 is the whole menu at once, for people who would rather read than click.
   const [active, setActive] = useState(-1)
-  const showingAll = active === -1
+  const showingAll = forceAll || active === -1
   const current = showingAll ? null : sections[Math.min(active, sections.length - 1)]
   const total = sections.reduce((n, c) => n + c.items.length, 0)
 

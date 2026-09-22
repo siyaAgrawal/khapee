@@ -1,7 +1,7 @@
 import { db } from './db.ts'
 import { generateOrderNumber, randomToken } from './ids.ts'
 import { publish } from './events.ts'
-import { money, type OrderStatus, type OrderType, type ServiceType } from '../shared/orders.ts'
+import { isTerminal, money, type OrderStatus, type OrderType, type ServiceType } from '../shared/orders.ts'
 import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
@@ -450,6 +450,80 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   return { ok: true, order }
 }
 
+/**
+ * What the order comes to once the kitchen has said what it can make.
+ *
+ * Anything declined stops counting. The delivery fee does not: it is charged
+ * for carrying the bag, and the bag is still being carried.
+ *
+ * Called after every decision rather than at the end, so the total on the
+ * board is the total at every moment — a figure that is only correct once
+ * somebody presses Accept is a figure that is wrong while it is being read.
+ */
+export function retotalOrder(orderId: number): number {
+  const row = db.prepare('SELECT delivery_fee_cents FROM orders WHERE id = ?').get(orderId) as any
+  if (!row) return 0
+  const sum = db
+    .prepare(
+      `SELECT COALESCE(SUM(unit_price_cents * quantity), 0) AS n
+         FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)`,
+    )
+    .get(orderId) as any
+  const total = Number(sum.n) + Number(row.delivery_fee_cents ?? 0)
+  db.prepare("UPDATE orders SET total_cents = ?, updated_at = datetime('now') WHERE id = ?").run(total, orderId)
+  return total
+}
+
+export type ItemDecision =
+  | { ok: true; order: any; allDeclined: boolean }
+  | { ok: false; status: number; error: string }
+
+/**
+ * The kitchen saying yes or no to one dish.
+ *
+ * Refused outright once the order has been paid for. Quietly lowering the
+ * total of an order somebody has already settled leaves the books saying one
+ * thing and the money saying another, and the customer is owed a refund that
+ * nothing in the app would ever raise. A refund is a decision with a paper
+ * trail; this would be the same decision with none.
+ */
+export function decideItem(orderId: number, itemId: number, accepted: boolean): ItemDecision {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any
+  if (!order) return { ok: false, status: 404, error: 'That order no longer exists.' }
+  if (isTerminal((order.service_mode ?? 'pickup') as ServiceType, order.status as OrderStatus)) {
+    return { ok: false, status: 409, error: 'That order is finished — nothing left to change on it.' }
+  }
+  if (order.payment_status === 'PAID') {
+    return {
+      ok: false,
+      status: 409,
+      error: 'This order is already paid for. Refund the item from the bill instead, so the money and the books agree.',
+    }
+  }
+
+  const item = db.prepare('SELECT * FROM order_items WHERE id = ? AND order_id = ?').get(itemId, orderId) as any
+  if (!item) return { ok: false, status: 404, error: 'That item is not on this order.' }
+
+  db.prepare('UPDATE order_items SET accepted = ? WHERE id = ?').run(accepted ? 1 : 0, itemId)
+  retotalOrder(orderId)
+
+  const left = db
+    .prepare('SELECT COUNT(*) n FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)')
+    .get(orderId) as any
+  return { ok: true, order: getOrder(orderId), allDeclined: Number(left.n) === 0 }
+}
+
+/**
+ * Everything nobody has ruled on is in.
+ *
+ * Run when the order is accepted, so that "Accept" means what it looks like
+ * it means even after some of the dishes have been turned down individually.
+ */
+export function acceptRemainingItems(orderId: number): void {
+  db.prepare('UPDATE order_items SET accepted = 1 WHERE order_id = ? AND accepted IS NULL').run(orderId)
+  retotalOrder(orderId)
+}
+
 export function getOrder(orderId: number) {
   const row = db
     .prepare(
@@ -466,7 +540,7 @@ export function shapeOrder(row: any) {
   const items = db
     .prepare(
       `SELECT i.id, i.name, i.emoji, i.unit_price_cents, i.quantity, i.paid_at, i.member_id,
-              i.added_by_staff, m.display_name AS member_name
+              i.added_by_staff, i.accepted, m.display_name AS member_name
        FROM order_items i LEFT JOIN group_members m ON m.id = i.member_id
        WHERE i.order_id = ? ORDER BY i.id`,
     )
@@ -566,6 +640,8 @@ export function shapeOrder(row: any) {
       memberName: i.member_name ?? null,
       addedByStaff: !!i.added_by_staff,
       paid: !!i.paid_at,
+      /** null until the kitchen says; true yes, false "we have run out". */
+      accepted: i.accepted === null || i.accepted === undefined ? null : !!i.accepted,
     })),
     payments: payments.map((p) => ({
       id: p.id,

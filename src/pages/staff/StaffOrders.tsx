@@ -102,6 +102,63 @@ function thankWord(t: Thanked): [string, 'good' | 'bad' | 'info'] {
   return [`Accepted, but the notification could not be delivered${t.why ? `: ${t.why}` : '.'}`, 'bad']
 }
 
+/**
+ * Yes or no to one dish on an order.
+ *
+ * Shown only while the answer still means something: once an order is
+ * finished, or paid for, the kitchen's view of what it will cook is history
+ * rather than a decision. Paid especially — lowering the total of an order
+ * somebody has settled leaves the books and the money disagreeing, and the
+ * customer owed a refund nothing would raise. The server refuses it too; this
+ * is so the button is not there to be pressed in the first place.
+ *
+ * Two marks rather than one toggle, because "off" and "not yet looked at" are
+ * different states and a single tick cannot show three things. Pressing the
+ * same answer again clears it.
+ */
+function ItemCall({
+  order,
+  item,
+  busy,
+  decide,
+}: {
+  order: Order
+  item: any
+  busy: boolean
+  decide: (accepted: boolean) => void
+}) {
+  const settled = ['COMPLETED', 'PICKED_UP', 'DELIVERED', 'CANCELLED', 'DECLINED'].includes(order.status)
+  if (settled || order.paymentStatus === 'PAID') {
+    return item.accepted === false ? <span className="item-call-off">off</span> : null
+  }
+  const on = item.accepted === true
+  const off = item.accepted === false
+  return (
+    <span className="item-call">
+      <button
+        type="button"
+        className={`item-call-btn ${off ? 'is-off' : ''}`}
+        disabled={busy}
+        aria-pressed={off}
+        title={`We have run out of ${item.name}`}
+        onClick={() => decide(off ? true : false)}
+      >
+        ✕
+      </button>
+      <button
+        type="button"
+        className={`item-call-btn ${on ? 'is-on' : ''}`}
+        disabled={busy}
+        aria-pressed={on}
+        title={`We can make ${item.name}`}
+        onClick={() => decide(true)}
+      >
+        ✓
+      </button>
+    </span>
+  )
+}
+
 function payLook(o: Order): { cls: string; label: string; hint: string } {
   if (o.paymentState === 'paid') return { cls: 'badge-open', label: 'PAID', hint: 'Confirmed. Tap to undo.' }
   if (o.paymentState === 'sent')
@@ -292,6 +349,35 @@ export default function StaffOrders() {
       toast((e as ApiError).message, 'bad')
     } finally {
       setBusy('')
+    }
+  }
+
+  /**
+   * Yes or no to one dish.
+   *
+   * The thing that actually happens at eight in the evening is that one item
+   * is off and the rest is fine, and the board could only ever answer for the
+   * whole order — so a table that would happily have eaten the rest got
+   * turned away over the paneer. Tapping the same answer again undoes it,
+   * because the commonest correction to a mis-tap is the mis-tap back.
+   */
+  const decideItem = async (order: Order, item: any, accepted: boolean) => {
+    setBusyId(order.id)
+    try {
+      const r = await api<{ order: Order; allDeclined: boolean }>(
+        `/staff/orders/${order.id}/items/${item.id}/decide`,
+        { body: { accepted } },
+      )
+      setOrders((prev) => prev?.map((o) => (o.id === r.order.id ? r.order : o)) ?? null)
+      if (r.allDeclined) {
+        toast('Nothing left on this order — turn the whole thing down so the customer is told why.', 'info')
+      } else if (!accepted) {
+        toast(`${item.name} is off. The total has come down.`, 'info')
+      }
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusyId(null)
     }
   }
 
@@ -607,9 +693,15 @@ export default function StaffOrders() {
                         <div className="qrow-body">
                           <ul className="qrow-items">
                             {o.items.map((i: any) => (
-                              <li key={i.id}>
+                              <li key={i.id} className={i.accepted === false ? 'item-off' : ''}>
                                 <b>{i.quantity}×</b> {i.name}
                                 {i.memberName ? <em> · {i.memberName}</em> : null}
+                                <ItemCall
+                                  order={o}
+                                  item={i}
+                                  busy={busyId === o.id}
+                                  decide={(yes) => void decideItem(o, i, yes)}
+                                />
                               </li>
                             ))}
                           </ul>
@@ -735,9 +827,15 @@ export default function StaffOrders() {
                                 </div>
                               ))
                             : o.items.map((i: any) => (
-                                <div key={i.id} className="o-item">
+                                <div key={i.id} className={`o-item ${i.accepted === false ? 'item-off' : ''}`}>
                                   <b>{i.quantity}×</b>
                                   <span>{i.name}</span>
+                                  <ItemCall
+                                    order={o}
+                                    item={i}
+                                    busy={busyId === o.id}
+                                    decide={(yes) => void decideItem(o, i, yes)}
+                                  />
                                 </div>
                               ))}
                         </div>

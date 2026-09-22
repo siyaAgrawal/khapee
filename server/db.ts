@@ -408,6 +408,19 @@ addColumn('menu_items', 'group_label', "TEXT NOT NULL DEFAULT ''")
 addColumn('menu_items', 'is_special', 'INTEGER NOT NULL DEFAULT 0')
 // Items a waiter added at the table rather than the customer through the app.
 addColumn('order_items', 'added_by_staff', 'INTEGER NOT NULL DEFAULT 0')
+/**
+ * Whether the kitchen will make this particular dish.
+ *
+ * NULL until somebody says — which is nearly always, because the ordinary
+ * answer to an order is yes to all of it. 1 is yes, 0 is "we have run out".
+ *
+ * Deliberately per item rather than per order: the thing that actually
+ * happens at eight in the evening is that one dish is off and the rest is
+ * fine, and until now the only answers the board could give were yes to
+ * everything and no to everything. Refusing the whole order because the
+ * paneer has gone sends away a table that would happily have eaten the rest.
+ */
+addColumn('order_items', 'accepted', 'INTEGER')
 // Bill printed / settled at the counter.
 addColumn('orders', 'bill_closed_at', 'TEXT')
 

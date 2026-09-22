@@ -2705,6 +2705,120 @@ async function runTests() {
     ok('a comma in the name does not split the card', awkward.includes('Bread\\, Butter & Co\\; Ltd'), awkward)
   }
 
+  group('ONE DISH AT A TIME — accepting part of an order')
+  {
+    // What actually happens at eight in the evening is that one thing is off
+    // and the rest is fine. The board could only answer yes to everything or
+    // no to everything, so a table that would happily have eaten the rest got
+    // turned away over the paneer.
+    const two = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [
+          { menuItemId: croissant.id, quantity: 2 },
+          { menuItemId: coldCoffee.id, quantity: 1 },
+        ],
+        customerName: 'Half of it',
+        contactPhone: '98765 43210',
+      },
+    })
+    const order = two.body.order
+    const full = order.totalCents
+    ok('an order starts with nothing ruled on', order.items.every((i: any) => i.accepted === null), order.items)
+
+    const coffee = order.items.find((i: any) => i.name === 'Cold Coffee')
+    const off = await call(`/staff/orders/${order.id}/items/${coffee.id}/decide`, {
+      token: roadToken,
+      body: { accepted: false },
+    })
+    ok('a dish can be turned down on its own', off.status === 200, off.body)
+    ok(
+      'and the total comes down by what it cost',
+      off.body.order.totalCents === full - coffee.unitPriceCents * coffee.quantity,
+      { before: full, after: off.body.order.totalCents },
+    )
+    ok('while the rest is untouched', off.body.order.items.find((i: any) => i.name === 'Butter Croissant').accepted === null)
+    ok('and there is still something to cook', off.body.allDeclined === false, off.body)
+
+    // The commonest correction to a mis-tap is the mis-tap back.
+    const back = await call(`/staff/orders/${order.id}/items/${coffee.id}/decide`, {
+      token: roadToken,
+      body: { accepted: true },
+    })
+    ok('turning it back on restores the total', back.body.order.totalCents === full, back.body.order.totalCents)
+
+    await call(`/staff/orders/${order.id}/items/${coffee.id}/decide`, { token: roadToken, body: { accepted: false } })
+    const yes = await call(`/staff/orders/${order.id}/status`, { token: roadToken, body: { status: 'ACCEPTED' } })
+    ok('accepting takes in everything nobody ruled out', yes.status === 200, yes.body)
+    const after = (await call(`/staff/orders?scope=all`, { token: roadToken })).body.orders.find(
+      (o: any) => o.id === order.id,
+    )
+    ok(
+      'so the accepted dish is marked accepted',
+      after.items.find((i: any) => i.name === 'Butter Croissant').accepted === true,
+      after.items,
+    )
+    ok('and the refused one stays refused', after.items.find((i: any) => i.name === 'Cold Coffee').accepted === false)
+    ok('with the lowered total standing', after.totalCents === full - coffee.unitPriceCents * coffee.quantity)
+
+    // An order with nothing left on it cannot be accepted: that would promise
+    // a plate with no food on it.
+    const doomed = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'All of it off',
+        contactPhone: '98765 43210',
+      },
+    })
+    const only = doomed.body.order.items[0]
+    const emptied = await call(`/staff/orders/${doomed.body.order.id}/items/${only.id}/decide`, {
+      token: roadToken,
+      body: { accepted: false },
+    })
+    ok('the board is told when nothing is left', emptied.body.allDeclined === true, emptied.body)
+    const refused = await call(`/staff/orders/${doomed.body.order.id}/status`, {
+      token: roadToken,
+      body: { status: 'ACCEPTED' },
+    })
+    ok('and accepting an empty order is refused', refused.status === 400, refused.body)
+    ok('pointing at declining instead', /decline/i.test(refused.body.error ?? ''), refused.body.error)
+
+    // Money already taken is not quietly rewritten. The customer would be
+    // owed a refund that nothing in the app would ever raise.
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Already settled',
+        contactPhone: '98765 43210',
+      },
+    })
+    await call(`/staff/orders/${paid.body.order.id}/payment`, { token: roadToken, body: { paymentStatus: 'PAID' } })
+    const late = await call(`/staff/orders/${paid.body.order.id}/items/${paid.body.order.items[0].id}/decide`, {
+      token: roadToken,
+      body: { accepted: false },
+    })
+    ok('a paid order cannot have its total quietly lowered', late.status === 409, late.body)
+    ok('and it says to refund instead', /refund/i.test(late.body.error ?? ''), late.body.error)
+
+    // Somebody else's order is not theirs to edit.
+    ok(
+      'another restaurant cannot rule on these dishes',
+      (await call(`/staff/orders/${order.id}/items/${coffee.id}/decide`, {
+        token: basilToken,
+        body: { accepted: false },
+      })).status === 403,
+    )
+    ok(
+      'and a stranger cannot at all',
+      (await call(`/staff/orders/${order.id}/items/${coffee.id}/decide`, { body: { accepted: false } })).status === 401,
+    )
+  }
+
   group('FINDING A DISH — every menu, not only the plain ones')
   {
     const { dishMatches, searchWords } = await import('../src/lib/menu-search.ts')

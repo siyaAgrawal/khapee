@@ -5579,3 +5579,52 @@ button.nav-link {
   text-transform: uppercase;
   color: var(--muted);
 }
+
+/* Yes or no to one dish. Small and quiet until pressed: on a board of thirty
+   orders these appear a couple of hundred times, and anything louder would
+   read as the page's main business rather than an exception to it. */
+.item-call {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+.item-call-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.item-call-btn:hover:not(:disabled) { border-color: var(--line-strong); color: var(--ink); }
+.item-call-btn:disabled { opacity: 0.4; cursor: default; }
+.item-call-btn.is-on {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+.item-call-btn.is-off {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+/* Struck through rather than removed: the kitchen needs to see that somebody
+   asked for it, and the customer will ask about it at the counter. */
+.item-off {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.item-call-off {
+  margin-left: auto;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bad);
+}
+.qrow-items li,
+.o-item { display: flex; align-items: center; gap: 6px; }

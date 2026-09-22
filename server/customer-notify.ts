@@ -146,6 +146,31 @@ export function tellCustomer(orderId: number, status: OrderStatus): void {
 
   const line = WORTH_A_BUZZ[status]
   if (!line) return
+
+  /**
+   * If part of the order was turned down, that is the news.
+   *
+   * "Revery is making it now" is a cheerful thing to read about an order
+   * with the dish you actually wanted struck off it. Somebody who is not
+   * getting what they ordered should learn it from the notification, not
+   * from the counter.
+   */
+  if (status === 'ACCEPTED') {
+    const gone = db
+      .prepare('SELECT name FROM order_items WHERE order_id = ? AND accepted = 0')
+      .all(orderId) as any[]
+    if (gone.length) {
+      const named = gone.map((g) => g.name)
+      const list = named.length === 1 ? named[0] : `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`
+      void pushToCustomer(orderId, {
+        title: `Order #${row.order_number}`,
+        body: `${row.restaurant} is making the rest, but ${list} ${named.length === 1 ? 'is' : 'are'} off today. You will not be charged for ${named.length === 1 ? 'it' : 'them'}.`,
+        url: `/order/${row.order_number}`,
+        tag: `khapee-order-${orderId}`,
+      }).catch(() => {})
+      return
+    }
+  }
   void pushToCustomer(orderId, {
     title: `Order #${row.order_number}`,
     body: line(row.restaurant),

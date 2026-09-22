@@ -3,7 +3,7 @@ import { db, WRITES_ARE_TEMPORARY } from '../db.ts'
 import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
 import { publish } from '../events.ts'
-import { createOrder, getOrder, shapeOrder } from '../orders-service.ts'
+import { acceptRemainingItems, createOrder, decideItem, getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
@@ -115,6 +115,45 @@ staffRouter.post('/orders/clear', (req: any, res) => {
   res.json({ cleared: total, active })
 })
 
+/** Nothing left to cook: accepting would promise a plate with no food on it. */
+function nothingLeft(orderId: number): boolean {
+  const row = db
+    .prepare('SELECT COUNT(*) n FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)')
+    .get(orderId) as any
+  return Number(row.n) === 0
+}
+
+/**
+ * Yes or no to one dish, rather than to the whole order.
+ *
+ * What actually happens at eight in the evening is that one thing is off and
+ * the rest is fine. Until now the board could only answer yes to everything
+ * or no to everything, so a table that would happily have eaten the rest got
+ * turned away over the paneer.
+ */
+staffRouter.post('/orders/:id/items/:itemId/decide', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const id = Number(req.params.id)
+  const row = db.prepare('SELECT restaurant_id FROM orders WHERE id = ?').get(id) as any
+  if (!row) return res.status(404).json({ error: 'Order not found.' })
+  if (row.restaurant_id !== restaurantId) {
+    return res.status(403).json({ error: 'That order belongs to another restaurant.' })
+  }
+
+  const result = decideItem(id, Number(req.params.itemId), !!req.body?.accepted)
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+
+  audit(restaurantId, actorOf(req), 'order.item.decide', 'order', id, {
+    itemId: Number(req.params.itemId),
+    accepted: !!req.body?.accepted,
+  })
+  publish('order:update', { restaurantId, orderId: id, order: result.order })
+  publish('orders', { restaurantId })
+  // Said back rather than left to be noticed: an order with nothing left on
+  // it cannot be accepted, and the board has to offer declining instead.
+  res.json({ order: result.order, allDeclined: result.allDeclined })
+})
+
 staffRouter.post('/orders/:id/status', async (req, res) => {
   const restaurantId = myRestaurant(req)
   const id = Number(req.params.id)
@@ -153,6 +192,17 @@ staffRouter.post('/orders/:id/status', async (req, res) => {
       ).run(row.user_id, id, restaurantId, `Order #${row.order_number} — ${STATUS_LABEL[to]}`, '')
     }
   })()
+
+  // Accept means what it looks like it means, even after some dishes have
+  // been turned down one at a time.
+  if (to === 'ACCEPTED') {
+    if (nothingLeft(id)) {
+      return res.status(400).json({
+        error: 'Every dish on this order has been turned down. Decline the order instead, so the customer is told why.',
+      })
+    }
+    acceptRemainingItems(id)
+  }
 
   const order = getOrder(id)
   // The customer's own phone, for nothing — see server/customer-notify.ts.
@@ -1891,6 +1941,12 @@ staffRouter.post('/orders/:id/accept', async (req: any, res) => {
   // an order — this one and the status route — and only one of them was
   // sending the customer's update and the WhatsApp nudge, so whether anybody
   // heard about an order depended on which screen it was accepted from.
+  if (nothingLeft(order.id)) {
+    return res.status(400).json({
+      error: 'Every dish on this order has been turned down. Decline the order instead, so the customer is told why.',
+    })
+  }
+  acceptRemainingItems(order.id)
   tellCustomer(order.id, 'ACCEPTED')
   const thanked = await thankNudge(order.id)
   publish('orders', { restaurantId })

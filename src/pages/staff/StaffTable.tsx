@@ -4,6 +4,7 @@ import { api, ApiError, openStream } from '../../lib/api'
 import { LoadingBlock, money, Modal, Spinner, clockTime, useToast } from '../../components/ui'
 import { nextStatus, STATUS_LABEL, type OrderStatus } from '../../../shared/orders'
 import { waAppLink } from '../../../shared/thanks'
+import { printReceipt } from '../../lib/receipt'
 
 type Bill = any
 type Item = { id: number; name: string; section: string; priceCents: number }
@@ -261,7 +262,14 @@ export default function StaffTable() {
             time that the day's sales were never recorded.
           */}
           <div className="bill-acts mt-3">
-            <button className="btn btn-secondary" onClick={() => window.print()}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                if (!printReceipt(bill)) {
+                  toast('This browser would not open the printer. Try Chrome, or use Send e-bill.', 'bad')
+                }
+              }}
+            >
               🖨 Print
             </button>
             <a
@@ -282,77 +290,6 @@ export default function StaffTable() {
             </button>
           </div>
 
-        {/*
-          The bill as a customer receives it.
-      
-          Off screen until somebody prints, and then the only thing on the page.
-          Built here rather than opened in a new tab because a pop-up asking to
-          be allowed is one more thing to go wrong at a counter with a queue.
-
-          What it calls itself is decided by one thing: whether the restaurant is
-          registered for GST. A business that is not must not hand out a document
-          headed "Tax Invoice", must not print a GST number, and must not show a
-          tax line — most small cafes are under the threshold, and a bill that
-          implies registration is a worse problem than a plain one.
-        */}
-        <div className="bill-print" aria-hidden>
-          <h1>{bill.restaurant.name}</h1>
-          {bill.restaurant.taxEnabled && bill.restaurant.legalName && (
-            <p>{bill.restaurant.legalName}</p>
-          )}
-          {bill.restaurant.address && <p>{bill.restaurant.address}</p>}
-          {bill.restaurant.phone && <p>{bill.restaurant.phone}</p>}
-          {bill.restaurant.taxEnabled && bill.restaurant.gstin && (
-            <p>GSTIN: {bill.restaurant.gstin}</p>
-          )}
-
-          <h2>{bill.restaurant.taxEnabled ? 'Tax Invoice' : 'Bill'}</h2>
-
-          <div className="bill-print-meta">
-            <span>#{bill.orderNumber}</span>
-            <span>{new Date(String(bill.placedAt).replace(' ', 'T') + 'Z').toLocaleString()}</span>
-          </div>
-          <div className="bill-print-meta">
-            <span>{bill.tableLabel ?? 'Counter'}</span>
-            <span>{bill.customerName}</span>
-          </div>
-
-          <table>
-            <tbody>
-              {bill.items.map((i: any) => (
-                <tr key={i.id}>
-                  <td>{i.quantity} × {i.name}</td>
-                  <td className="bill-print-amt">{money(i.unitPriceCents * i.quantity)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {bill.deliveryFeeCents > 0 && (
-            <div className="bill-print-meta">
-              <span>Delivery</span>
-              <span>{money(bill.deliveryFeeCents)}</span>
-            </div>
-          )}
-          <div className="bill-print-total">
-            <span>Total</span>
-            <span>{money(bill.totalCents)}</span>
-          </div>
-          {bill.paidCents > 0 && (
-            <div className="bill-print-meta">
-              <span>Paid</span>
-              <span>{money(bill.paidCents)}</span>
-            </div>
-          )}
-          {bill.dueCents > 0 && (
-            <div className="bill-print-meta">
-              <span>Due</span>
-              <span>{money(bill.dueCents)}</span>
-            </div>
-          )}
-
-          <p className="bill-print-foot">Thank you — ordered through Khapee</p>
-        </div>
         </section>
       </div>
 

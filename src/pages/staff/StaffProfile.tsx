@@ -185,13 +185,39 @@ function InstallPanel() {
         downloaded — it is the same Khapee, kept on this machine.
       </p>
 
-      {install.installed ? (
+      {install.route === 'installed' ? (
         <p className="tiny">✓ Already installed on this device. You are using it now.</p>
-      ) : install.canInstall ? (
+      ) : install.route === 'button' ? (
         <button className="btn btn-accent" onClick={() => void install.install()}>
           Install Khapee
         </button>
-      ) : install.iPhone ? (
+      ) : install.route === 'menu' ? (
+        /* Chrome and Edge both install web apps, and both have a menu item
+           that works whenever you like — the automatic button is a
+           convenience on top, not the mechanism. Saying "this browser cannot
+           install it" to a Windows machine running Chrome, which is what this
+           did, was simply wrong. */
+        <>
+          <p className="tiny muted mb-2">
+            Your browser can install it from its own menu — it has not offered the button here, which
+            usually means it is already installed, or you have opened this page before.
+          </p>
+          <ol className="alert-steps">
+            <li>
+              Click the <strong>⋮</strong> menu at the top right of the browser.
+            </li>
+            <li>
+              Choose <strong>Cast, save and share</strong>, then{' '}
+              <strong>Install page as app</strong>. On Edge it is <strong>Apps</strong>, then{' '}
+              <strong>Install this site as an app</strong>.
+            </li>
+            <li>Confirm. Khapee gets its own icon and window.</li>
+          </ol>
+          <p className="tiny muted">
+            If there is no such item, it is already installed — look in the Start menu for Khapee.
+          </p>
+        </>
+      ) : install.route === 'ios' ? (
         <ol className="alert-steps">
           <li>
             At the bottom of Safari, tap the <strong>Share</strong> button — the square with an arrow
@@ -204,9 +230,9 @@ function InstallPanel() {
         </ol>
       ) : (
         <p className="tiny muted">
-          This browser cannot install it. On a computer use <strong>Chrome</strong> or{' '}
-          <strong>Edge</strong>, and on Android use Chrome — the button appears here once you do. On an
-          iPhone it is Share, then Add to Home Screen.
+          This browser does not install web apps. On a computer use <strong>Chrome</strong> or{' '}
+          <strong>Edge</strong>, on Android use Chrome, and on an iPhone use Safari — Share, then Add
+          to Home Screen.
         </p>
       )}
     </section>

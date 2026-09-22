@@ -21,6 +21,27 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      /**
+       * Catch the install offer before the app exists.
+       *
+       * Chrome raises beforeinstallprompt as soon as it decides a site is
+       * installable, which is routinely before React has mounted and attached
+       * its listener — and the event fires once. Miss it and there is no way
+       * to ask for it again: the page simply believes the browser cannot
+       * install, which is what the dashboard was telling a Windows machine
+       * running Chrome. Parked here, where nothing has to have loaded yet.
+       */
+      window.__khapeeInstall = null
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault()
+        window.__khapeeInstall = e
+        window.dispatchEvent(new Event('khapee:installable'))
+      })
+      window.addEventListener('appinstalled', function () {
+        window.__khapeeInstall = null
+      })
+    </script>
+    <script>
       // Keep the app up to date on its own.
       //
       // A phone that has Khapee installed will otherwise sit on the copy it

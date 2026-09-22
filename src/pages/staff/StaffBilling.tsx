@@ -135,23 +135,46 @@ export default function StaffBilling() {
 
   return (
     <>
+      {/*
+        Said before anything else, because the screen said the opposite.
+
+        A page called "Billing system" that asks for "your billing system's
+        address" reads as Khapee needing one — and somebody running a cafe
+        with no POS concluded, reasonably, that Khapee could not bill on its
+        own. It can: the Till raises numbered bills, takes payment and prints.
+        Everything below is for a restaurant that already runs something else
+        and wants a copy of each order sent there too.
+      */}
       <section className="card card-pad">
+        <h2 style={{ marginBottom: 6 }}>Khapee already bills on its own</h2>
+        <p className="tiny muted">
+          The <strong>Till</strong> raises a numbered bill for every order, takes the payment, prints
+          it and sends it to the customer. You do not need anything on this page for that.
+        </p>
+        <p className="tiny muted" style={{ marginTop: 8 }}>
+          This page is only for a restaurant that <em>also</em> runs another billing system — Petpooja,
+          POSist, or similar — and wants each Khapee order to land in it as well, so the kitchen and
+          the till never disagree. If you do not run one, there is nothing to do here.
+        </p>
+      </section>
+
+      <section className="card card-pad mt-3">
         <div className="alert-step">
           <span className="alert-num" aria-hidden>
             1
           </span>
           <div>
-            <h2>Send each order as it happens</h2>
+            <h2>Send each order to your other system</h2>
             <p className="tiny muted">
-              Khapee posts every order to an address you give it — when it is placed, when it moves
-              along, and when it is paid. Most modern billing systems can take this. Ask whoever set
-              yours up for its webhook or “incoming order” address.
+              If you run a POS of your own, Khapee posts every order to it — when it is placed, when
+              it moves along, and when it is paid. Ask whoever set that system up for its webhook or
+              “incoming order” address.
             </p>
           </div>
         </div>
 
         <div className="field" style={{ marginTop: 12 }}>
-          <label htmlFor="bill-url">Your billing system’s address</label>
+          <label htmlFor="bill-url">Your other system’s address (optional)</label>
           <input
             id="bill-url"
             className="input"

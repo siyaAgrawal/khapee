@@ -670,6 +670,66 @@ addColumn('payments', 'invoice_id', 'INTEGER')
 addColumn('payments', 'refund_of', 'INTEGER')
 addColumn('payments', 'reason', "TEXT NOT NULL DEFAULT ''")
 
+/**
+ * A payment outlives the order it came from.
+ *
+ * payments.order_id was NOT NULL, while invoices.order_id is ON DELETE SET
+ * NULL — deliberately, because an invoice is a record of something that
+ * happened and must survive the order being cleared off a board. The two
+ * rules together mean that taking payment on an invoice whose order has gone
+ * fails with a constraint error, which reaches the cashier as "something went
+ * wrong on our side" while they are standing in front of a customer holding
+ * cash. That is precisely what happened once Clear history existed.
+ *
+ * The invoice is the thing a payment belongs to; the order is where it came
+ * from and may legitimately be gone. So the column becomes nullable, which
+ * SQLite can only do by rebuilding the table — done once, guarded, and with
+ * foreign keys off so the copy does not trip the cascades it is preserving.
+ */
+const paymentsOrderIdNotNull = (
+  db.prepare('PRAGMA table_info(payments)').all() as any[]
+).some((c) => c.name === 'order_id' && c.notnull === 1)
+
+if (paymentsOrderIdNotNull) {
+  db.pragma('foreign_keys = OFF')
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE payments_rebuilt (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id      INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+        session_id    INTEGER REFERENCES group_sessions(id) ON DELETE SET NULL,
+        member_id     INTEGER REFERENCES group_members(id) ON DELETE SET NULL,
+        payer_name    TEXT    NOT NULL DEFAULT '',
+        amount_cents  INTEGER NOT NULL,
+        method        TEXT    NOT NULL DEFAULT 'upi',
+        status        TEXT    NOT NULL DEFAULT 'CLAIMED' CHECK (status IN ('CLAIMED','CONFIRMED','REJECTED')),
+        upi_ref       TEXT    NOT NULL DEFAULT '',
+        covers        TEXT    NOT NULL DEFAULT '',
+        created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+        settled_at    TEXT,
+        tendered_cents INTEGER,
+        change_cents  INTEGER,
+        taken_by      INTEGER,
+        invoice_id    INTEGER,
+        refund_of     INTEGER,
+        reason        TEXT    NOT NULL DEFAULT ''
+      );
+      INSERT INTO payments_rebuilt
+        (id, order_id, session_id, member_id, payer_name, amount_cents, method, status, upi_ref,
+         covers, created_at, settled_at, tendered_cents, change_cents, taken_by, invoice_id,
+         refund_of, reason)
+      SELECT id, order_id, session_id, member_id, payer_name, amount_cents, method, status, upi_ref,
+             covers, created_at, settled_at, tendered_cents, change_cents, taken_by, invoice_id,
+             refund_of, reason
+        FROM payments;
+      DROP TABLE payments;
+      ALTER TABLE payments_rebuilt RENAME TO payments;
+      CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id, status);
+    `)
+  })()
+  db.pragma('foreign_keys = ON')
+}
+
 
 // A dining session already stood for "these people, here, now". It now also
 // stands for a car at the roadside: same session, different place.

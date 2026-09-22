@@ -2777,6 +2777,45 @@ async function runTests() {
     )
   }
 
+  group('A PAYMENT OUTLIVES THE ORDER IT CAME FROM')
+  {
+    // An invoice is a record of something that happened and survives its
+    // order being cleared off a board — invoices.order_id is ON DELETE SET
+    // NULL on purpose. payments.order_id was NOT NULL, so taking payment on
+    // such an invoice failed with a constraint error that reached the cashier
+    // as "something went wrong on our side", holding the customer's cash.
+    const sale = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { items: [{ menuItemId: croissant.id, quantity: 1 }], customerName: 'Counter', serviceMode: 'counter' },
+    })
+    const orderId = sale.body.order.id
+    const billed = await call('/staff/pos/finalise', { token: roadToken, body: { orderId } })
+    const invoiceId = billed.body.invoice.id
+    ok('a counter sale can be billed', !!invoiceId, billed.body)
+
+    // Exactly what Clear history does to it.
+    const gone = new Database(DB_PATH)
+    gone.prepare('DELETE FROM orders WHERE id = ?').run(orderId)
+    const orphan = gone.prepare('SELECT order_id FROM invoices WHERE id = ?').get(invoiceId) as any
+    gone.close()
+    ok('clearing the order leaves the invoice standing', orphan?.order_id === null, orphan)
+
+    const paid = await call('/staff/pos/pay', {
+      token: roadToken,
+      body: { invoiceId, amountCents: 100, method: 'cash' },
+    })
+    ok('and it can still be paid', paid.status === 200, paid.body)
+    ok('without a server error', paid.status !== 500, paid.body)
+
+    const after = new Database(DB_PATH)
+    const row = after
+      .prepare('SELECT order_id, amount_cents FROM payments WHERE invoice_id = ? ORDER BY id DESC LIMIT 1')
+      .get(invoiceId) as any
+    after.close()
+    ok('the payment records no order, rather than refusing to exist', row?.order_id === null, row)
+    ok('and the money on it is right', row?.amount_cents === 100, row)
+  }
+
   group('ONE DISH AT A TIME — accepting part of an order')
   {
     // What actually happens at eight in the evening is that one thing is off

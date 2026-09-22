@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
+import { useInstall } from '../../lib/install'
 
 /**
  * Four places, not twelve.
@@ -24,6 +25,7 @@ const LINKS = [
 export default function StaffLayout() {
   const { user, logout } = useSession()
   const navigate = useNavigate()
+  const install = useInstall()
   const [newCount, setNewCount] = useState(0)
 
   const refresh = () =>
@@ -66,6 +68,19 @@ export default function StaffLayout() {
           ))}
         </nav>
         <div className="side-foot">
+          {/* Khapee runs perfectly well in a tab, and on the machine that
+              rings up the bills it is better as an app: its own icon, its own
+              window, no address bar, and it can be set to open when the
+              computer starts. Chrome will do all of that and never mentions
+              it — so this asks. */}
+          {install.canInstall && (
+            <button
+              className="side-link side-install"
+              onClick={() => void install.install()}
+            >
+              <span aria-hidden>⬇</span> Install Khapee on this computer
+            </button>
+          )}
           <NavLink to="/" className="side-link">
             <span aria-hidden>🍽️</span> Order as a customer
           </NavLink>

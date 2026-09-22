@@ -5662,3 +5662,16 @@ button.nav-link {
 }
 .qrow-items li,
 .o-item { display: flex; align-items: center; gap: 6px; }
+
+/* The install offer, shaped like the links beside it so it reads as part of
+   the sidebar rather than an advertisement for itself. */
+.side-install {
+  width: 100%;
+  text-align: left;
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+}
+.side-install:hover { border-color: var(--accent); color: var(--accent); }

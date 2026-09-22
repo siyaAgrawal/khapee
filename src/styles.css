@@ -3564,6 +3564,24 @@ textarea {
 /* Off screen; the only thing on paper. */
 .bill-print { display: none; }
 
+/**
+ * An 80mm roll, not a sheet of A4.
+ *
+ * Declared so the browser lays the receipt out for the paper it is going
+ * onto: 80mm wide and as long as it needs to be. Without this it composes
+ * for A4 and the driver shrinks the result to fit the roll, which is how a
+ * receipt comes out at half size with the total in six-point type.
+ *
+ * Margin zero because a thermal printer has no margins — the head is as wide
+ * as the paper. The padding inside the receipt is what keeps text off the
+ * edge, and it is in the element where it can be seen rather than in a page
+ * box that behaves differently in every browser.
+ */
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
 @media print {
   /* Only the receipt survives a print. */
   body * {
@@ -3580,8 +3598,8 @@ textarea {
     position: absolute;
     left: 0;
     top: 0;
-    width: 72mm;
-    padding: 4mm 2mm;
+    width: 80mm;
+    padding: 3mm;
     color: #000;
     background: #fff;
     font-family: var(--mono);

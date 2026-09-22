@@ -5707,7 +5707,7 @@ button.nav-link {
    phone, and the record. Equal width, because none of them is the exception. */
 .bill-acts {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 .bill-acts .btn {

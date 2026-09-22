@@ -1461,6 +1461,8 @@ staffRouter.get('/bill/:id', (req, res) => {
       orderNumber: shaped.orderNumber,
       /** So the bill can be sent to the person who ate it, not just printed. */
       customerPhone: shaped.customerPhone ?? '',
+      /** "No onions" belongs on the kitchen's copy, in large letters. */
+      note: shaped.note ?? '',
       tableLabel: shaped.tableLabel,
       serviceType: shaped.serviceType,
       customerName: shaped.customerName,

@@ -4,7 +4,7 @@ import { api, ApiError, openStream } from '../../lib/api'
 import { LoadingBlock, money, Modal, Spinner, clockTime, useToast } from '../../components/ui'
 import { nextStatus, STATUS_LABEL, type OrderStatus } from '../../../shared/orders'
 import { waAppLink } from '../../../shared/thanks'
-import { printReceipt } from '../../lib/receipt'
+import { printKot, printReceipt } from '../../lib/receipt'
 
 type Bill = any
 type Item = { id: number; name: string; section: string; priceCents: number }
@@ -287,6 +287,20 @@ export default function StaffTable() {
             </a>
             <button className="btn btn-secondary" disabled={busy} onClick={saveBill}>
               {busy ? <Spinner /> : '💾 Save'}
+            </button>
+            {/* The kitchen's copy. Separate from the bill because they are
+                read by different people for different reasons — one decides
+                what goes on the range, the other what is owed — and the
+                kitchen must never be asked to act on a price. */}
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                if (!printKot(bill)) {
+                  toast('This browser would not open the printer. Try Chrome.', 'bad')
+                }
+              }}
+            >
+              🍳 KOT
             </button>
           </div>
 

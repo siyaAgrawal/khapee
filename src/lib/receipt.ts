@@ -143,6 +143,10 @@ export function receiptHtml(bill: ReceiptBill): string {
  * leaving somebody watching a printer that was never asked for anything.
  */
 export function printReceipt(bill: ReceiptBill): boolean {
+  return printDocument(receiptHtml(bill))
+}
+
+function printDocument(html: string): boolean {
   try {
     const frame = document.createElement('iframe')
     // Off-screen rather than display:none — a frame that is not laid out has
@@ -162,7 +166,7 @@ export function printReceipt(bill: ReceiptBill): boolean {
       return false
     }
     doc.open()
-    doc.write(receiptHtml(bill))
+    doc.write(html)
     doc.close()
 
     const go = () => {
@@ -183,4 +187,74 @@ export function printReceipt(bill: ReceiptBill): boolean {
   } catch {
     return false
   }
+}
+
+
+/**
+ * The kitchen's copy: what to cook, and nothing about money.
+ *
+ * A KOT is not a smaller bill. The person reading it is standing at a range
+ * with their hands full, glancing at a slip pegged above them — so the
+ * quantities are large and to the left where the eye lands, the dish names
+ * are set as big as the roll allows, and every rupee is absent. A price on a
+ * kitchen ticket is one more thing to read past, and the one thing on a bill
+ * the kitchen must never be asked to act on.
+ *
+ * The note is the loudest thing on it, because "no onions" is the reason the
+ * ticket gets misread and the plate comes back.
+ */
+export function kotHtml(bill: ReceiptBill & { note?: string }): string {
+  const when = bill.placedAt
+    ? new Date(String(bill.placedAt).replace(' ', 'T') + 'Z').toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  const lines = bill.items
+    .map((i) => `<tr><td class="q">${esc(i.quantity)}</td><td class="n">${esc(i.name)}</td></tr>`)
+    .join('')
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><title>KOT ${esc(bill.orderNumber)}</title>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 3mm; width: 80mm; background: #fff; color: #000;
+    font-family: ui-monospace, "Courier New", monospace;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  h1 {
+    font-size: 20px; margin: 0; text-align: center; letter-spacing: .18em;
+    border-bottom: 2px solid #000; padding-bottom: 3px;
+  }
+  .where { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; margin: 5px 0; }
+  .meta { display: flex; justify-content: space-between; font-size: 11px; }
+  table { width: 100%; border-collapse: collapse; margin: 7px 0 0; }
+  td { padding: 4px 0; vertical-align: top; border-bottom: 1px dotted #000; }
+  .q { font-size: 20px; font-weight: 700; width: 12mm; }
+  .n { font-size: 15px; line-height: 1.25; }
+  .note {
+    margin-top: 8px; padding: 4px; border: 2px solid #000;
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+  }
+  .cut { margin-top: 10px; text-align: center; font-size: 10px; }
+</style></head>
+<body>
+  <h1>KOT</h1>
+  <div class="where">
+    <span>${esc(bill.tableLabel ?? 'COUNTER')}</span>
+    <span>#${esc(bill.orderNumber)}</span>
+  </div>
+  <div class="meta"><span>${esc(when)}</span><span>${esc(bill.customerName ?? '')}</span></div>
+  <table><tbody>${lines}</tbody></table>
+  ${bill.note ? `<div class="note">${esc(bill.note)}</div>` : ''}
+  <p class="cut">— — — — — — — —</p>
+</body></html>`
+}
+
+/** Same off-screen frame as the receipt; see printReceipt for why. */
+export function printKot(bill: ReceiptBill & { note?: string }): boolean {
+  return printDocument(kotHtml(bill))
 }

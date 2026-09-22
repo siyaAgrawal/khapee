@@ -146,7 +146,66 @@ export function printReceipt(bill: ReceiptBill): boolean {
   return printDocument(receiptHtml(bill))
 }
 
+/**
+ * One press, and paper.
+ *
+ * A web page cannot print silently on its own — every browser insists on its
+ * dialog, and no amount of code gets around that. What removes it is how
+ * Chrome is started: with --kiosk-printing it prints straight to the default
+ * printer and shows nothing at all. That is how a till should be launched,
+ * and it turns this into exactly one click. Without it the same click opens
+ * the print box, which is the browser's decision and not ours.
+ *
+ * So the document is printed from a frame nobody sees. Under kiosk printing
+ * that is seamless: press KOT, paper comes out, the screen never changes.
+ *
+ * A visible window is kept for the one case the frame cannot cover — a
+ * browser that refuses to print a frame at all — because a button that does
+ * nothing visible is indistinguishable from a broken printer, and that cost
+ * an evening.
+ */
 function printDocument(html: string): boolean {
+  if (openInFrame(html)) return true
+  return openInWindow(withManualPrint(html))
+}
+
+/** The fallback window carries its own button; the frame never needs one. */
+function withManualPrint(html: string): string {
+  return html.replace(
+    '</body>',
+    `<div class="screen-only" style="margin-top:12px;padding:8px;border:1px dashed #999;font-size:11px;text-align:center">
+       <button onclick="window.print()" style="font:inherit;padding:6px 14px;cursor:pointer">Print this</button>
+       <div style="margin-top:6px;color:#555">If the print box did not open, press Ctrl&nbsp;+&nbsp;P.</div>
+     </div>
+     <style>@media print { .screen-only { display: none !important } }</style>
+   </body>`,
+  )
+}
+
+function openInWindow(html: string): boolean {
+  try {
+    // Narrow, so it sits beside the dashboard rather than covering it.
+    const win = window.open('', 'khapee-print', 'width=420,height=680')
+    if (!win) return false
+    win.document.open()
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    // After layout, or the dialog can be handed an empty page.
+    setTimeout(() => {
+      try {
+        win.print()
+      } catch {
+        /* the button in the document is the way out */
+      }
+    }, 250)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function openInFrame(html: string): boolean {
   try {
     const frame = document.createElement('iframe')
     // Off-screen rather than display:none — a frame that is not laid out has
@@ -174,13 +233,9 @@ function printDocument(html: string): boolean {
         frame.contentWindow?.focus()
         frame.contentWindow?.print()
       } finally {
-        // Left long enough for the print dialog to take its copy of the
-        // document; removed so a second print does not find two of them.
         setTimeout(() => frame.remove(), 60_000)
       }
     }
-    // Fonts and layout first: printing an empty document is the failure this
-    // whole file exists to avoid.
     if (frame.contentWindow?.document.readyState === 'complete') setTimeout(go, 60)
     else frame.onload = () => setTimeout(go, 60)
     return true

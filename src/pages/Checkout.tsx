@@ -47,6 +47,8 @@ export default function Checkout() {
   // A scanned table QR already answered "which table", so start on its answer
   // rather than an empty grid.
   const scannedTable = restaurantId ? readTableContext(restaurantId) : null
+  /** Somebody at a known table asking to sit somewhere else after all. */
+  const [changingTable, setChangingTable] = useState(false)
   const [tableId, setTableId] = useState<number | null>(dining?.tableId ?? scannedTable?.tableId ?? null)
   const [tableLabel, setTableLabel] = useState<string | null>(
     dining?.tableLabel ?? scannedTable?.tableLabel ?? null,
@@ -369,7 +371,37 @@ export default function Checkout() {
 
         <section className="card card-pad">
           {/* Table — only when eating in */}
-          {where === 'here' && !placeDecided && (
+          {/*
+            Already at a table: say so, do not ask again.
+
+            Scanning the QR on table 3 is the customer saying which table they
+            are at — completely, and more reliably than a grid of buttons can.
+            Showing the grid anyway asked the question a second time, put the
+            answer they had already given at risk of a mis-tap, and filled the
+            screen of the one person who had done exactly the right thing.
+
+            Kept changeable, because somebody scans a code, then moves to a
+            bigger table, and the only thing worse than asking twice is not
+            letting them correct it.
+          */}
+          {where === 'here' && !placeDecided && seated && !changingTable && (
+            <div className="field">
+              <label>Table</label>
+              <div className="seated-at">
+                <span>
+                  <strong>{seatedLabel ?? `Table ${seated}`}</strong>
+                  <em className="tiny muted">
+                    {scannedTable ? ' · from the code you scanned' : ' · from your open table'}
+                  </em>
+                </span>
+                <button type="button" className="link-btn" onClick={() => setChangingTable(true)}>
+                  Change
+                </button>
+              </div>
+            </div>
+          )}
+
+          {where === 'here' && !placeDecided && (!seated || changingTable) && (
             <div className="field">
               <label>Table</label>
               {!tables ? (
@@ -383,6 +415,7 @@ export default function Checkout() {
                       onClick={() => {
                         setTableId(t.id)
                         setTableLabel(t.label)
+                        setChangingTable(false)
                         if (dining?.token) {
                           api(`/sessions/${dining.token}/table`, { body: { tableId: t.id } })
                             .then(() => {

@@ -5684,3 +5684,36 @@ button.nav-link {
   padding-inline: 12px;
 }
 .nav-install:hover { border-color: var(--accent); }
+
+/* The three things done with a bill, side by side: paper, the customer's
+   phone, and the record. Equal width, because none of them is the exception. */
+.bill-acts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.bill-acts .btn {
+  justify-content: center;
+  padding-inline: 6px;
+  white-space: nowrap;
+}
+.bill-acts .is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 420px) {
+  .bill-acts { grid-template-columns: 1fr; }
+}
+
+/* "You are at table 3" — one line instead of a grid, for somebody who has
+   already answered the question by scanning the code on the table. */
+.seated-at {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md, 12px);
+  background: var(--surface-2);
+}

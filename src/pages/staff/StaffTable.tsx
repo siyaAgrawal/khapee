@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError, openStream } from '../../lib/api'
 import { LoadingBlock, money, Modal, Spinner, clockTime, useToast } from '../../components/ui'
 import { nextStatus, STATUS_LABEL, type OrderStatus } from '../../../shared/orders'
+import { waAppLink } from '../../../shared/thanks'
 
 type Bill = any
 type Item = { id: number; name: string; section: string; priceCents: number }
@@ -109,6 +110,52 @@ export default function StaffTable() {
 
   if (!bill) return <LoadingBlock />
 
+  /**
+   * The bill on the customer's own phone.
+   *
+   * WhatsApp, because that is where an Indian customer already is, and from
+   * the restaurant's own number, which is free and unlimited — Meta bills a
+   * business only for messaging somebody who has not messaged them first.
+   * The total and the order's own page, so they can open it later rather than
+   * keeping a photograph of a receipt.
+   */
+  const billLink = bill
+    ? waAppLink(
+        bill.customerPhone ?? '',
+        `${bill.restaurant.name}\n` +
+          `Bill #${bill.orderNumber} — ${money(bill.totalCents)}\n` +
+          `${window.location.origin}/order/${bill.orderNumber}`,
+      )
+    : ''
+
+  /**
+   * Recording the sale, and handing it to the till if there is one.
+   *
+   * Finalising is what turns an order into a numbered bill that cannot be
+   * quietly edited afterwards. Where the restaurant has pointed Khapee at
+   * their own billing system, the same press sends it there — see
+   * server/order-feed.ts — so the two cannot disagree about the day.
+   */
+  const saveBill = async () => {
+    setBusy(true)
+    try {
+      const r = await api<{ invoice?: any; alreadyBilled?: boolean }>('/staff/pos/finalise', {
+        body: { orderId: Number(id) },
+      })
+      toast(
+        r.invoice?.number
+          ? `Saved as ${r.invoice.number}.`
+          : 'Saved.',
+        'good',
+      )
+      load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const next = order ? nextStatus(order.serviceType ?? order.type, order.status) : null
 
   return (
@@ -200,9 +247,40 @@ export default function StaffTable() {
             </div>
           )}
 
-          <button className="btn btn-ghost btn-block mt-3" onClick={() => window.print()}>
-            Print
-          </button>
+          {/*
+            The three things done with a bill, in the order they happen.
+
+            Print is paper for whoever is standing there. Send is the same
+            bill on the customer's phone, which is what most people now want
+            and what saves the paper. Save records it — and, where the
+            restaurant has pointed Khapee at their POS, hands it over so their
+            own till has the sale too.
+
+            Each says what it did rather than looking like it worked: a button
+            that silently does nothing is how somebody finds out at closing
+            time that the day's sales were never recorded.
+          */}
+          <div className="bill-acts mt-3">
+            <button className="btn btn-secondary" onClick={() => window.print()}>
+              🖨 Print
+            </button>
+            <a
+              className={`btn btn-secondary ${billLink ? '' : 'is-disabled'}`}
+              href={billLink || undefined}
+              aria-disabled={!billLink}
+              onClick={(e) => {
+                if (!billLink) {
+                  e.preventDefault()
+                  toast('This order has no phone number on it, so there is nowhere to send it.', 'info')
+                }
+              }}
+            >
+              💬 Send e-bill
+            </a>
+            <button className="btn btn-secondary" disabled={busy} onClick={saveBill}>
+              {busy ? <Spinner /> : '💾 Save'}
+            </button>
+          </div>
 
         {/*
           The bill as a customer receives it.

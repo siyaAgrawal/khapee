@@ -4,6 +4,7 @@ import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 import { useInstall } from '../../lib/install'
+import { useNewVersion } from '../../lib/version'
 
 /**
  * Four places, not twelve.
@@ -26,6 +27,7 @@ export default function StaffLayout() {
   const { user, logout } = useSession()
   const navigate = useNavigate()
   const install = useInstall()
+  const version = useNewVersion()
   const [newCount, setNewCount] = useState(0)
 
   const refresh = () =>
@@ -99,6 +101,22 @@ export default function StaffLayout() {
         </div>
       </aside>
       <main className="staff-main">
+        {/* Unmissable and not dismissible.
+            A till that is never closed never reloads, so it runs whatever
+            build it opened with until somebody tells it otherwise — and
+            reports faults from code that has not existed for days. This is
+            the telling. */}
+        {version.stale && (
+          <div className="stale-bar">
+            <span>
+              <strong>Khapee has been updated.</strong> This computer is still running the old
+              version — reload to pick it up.
+            </span>
+            <button className="btn btn-accent btn-sm" onClick={version.reload}>
+              Reload now
+            </button>
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

@@ -190,6 +190,25 @@ if (fs.existsSync(path.join(dist, 'index.html'))) {
   // page's own title, description and picture written into it before it is
   // sent; the browser then renders the app over the top as usual.
   const shell = fs.readFileSync(path.join(dist, 'index.html'), 'utf8')
+
+  /**
+   * Which build this server is serving.
+   *
+   * An installed app that is never closed never navigates, so it never asks
+   * for the shell again and goes on running the JavaScript it started with —
+   * for days. Everything shipped in the meantime is invisible to it, and the
+   * faults it reports are from code that no longer exists, which is a very
+   * expensive way to debug.
+   *
+   * The build's own asset name is the version: it is a content hash, so it
+   * changes exactly when the code does and never otherwise. The running app
+   * can read its own from the page it was loaded with and compare.
+   */
+  const build = (shell.match(/\/assets\/(index-[A-Za-z0-9_-]+\.js)/) ?? [])[1] ?? 'dev'
+  app.get('/api/version', (_req, res) => {
+    res.set('Cache-Control', 'no-store')
+    res.json({ build })
+  })
   app.get(/^(?!\/api).*/, (req, res) => {
     const origin = originOf(req)
     const meta = metaFor(req.path, origin)

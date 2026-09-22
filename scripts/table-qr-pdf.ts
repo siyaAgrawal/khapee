@@ -70,20 +70,36 @@ function textWidth(text: string, size: number): number {
   return (units / 1000) * size
 }
 
-const parts: string[] = []
-const show = (text: string, size: number, bold: boolean, cx: number, y: number) => {
+const show = (into: string[], text: string, size: number, bold: boolean, cx: number, y: number) => {
   const t = pdfText(text)
   const x = cx - textWidth(text, size) / 2
-  parts.push(`BT /${bold ? 'FB' : 'FR'} ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${t}) Tj ET`)
+  into.push(`BT /${bold ? 'FB' : 'FR'} ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${t}) Tj ET`)
 }
 
-/** How many across. Three is the most that leaves a code big enough to scan. */
-const cols = tables.length <= 2 ? 1 : tables.length <= 6 ? 2 : 3
-const rows = Math.ceil(tables.length / cols)
+/**
+ * Six to a page — three across, two down — spilling onto as many pages as
+ * that takes.
+ *
+ * Fitting everything onto one sheet shrinks the code once a restaurant has
+ * more than half a dozen tables, and a small code is the whole problem: it
+ * has to scan from a phone held at arm's length across a table, in a café's
+ * lighting, on a laminated card that has been wiped down a hundred times.
+ * Paper is cheaper than a code nobody can read.
+ */
+const cols = Math.max(1, Number(process.env.KHAPEE_COLS ?? 3))
+const rows = Math.max(1, Number(process.env.KHAPEE_ROWS ?? 2))
+const PER_PAGE = cols * rows
 const cardW = (PAGE_W - MARGIN * 2) / cols
 const cardH = (PAGE_H - MARGIN * 2 - 46) / rows
+const pageCount = Math.ceil(tables.length / PER_PAGE)
 
-tables.forEach((table, i) => {
+/** One content stream per sheet. */
+const streams: string[][] = Array.from({ length: pageCount }, () => [])
+
+tables.forEach((table, index) => {
+  const page = Math.floor(index / PER_PAGE)
+  const i = index % PER_PAGE
+  const parts = streams[page]
   const col = i % cols
   const row = Math.floor(i / cols)
   const left = MARGIN + col * cardW
@@ -97,18 +113,30 @@ tables.forEach((table, i) => {
     `0.8 G 0.5 w ${(left + 6).toFixed(2)} ${(top - cardH + 8).toFixed(2)} ${(cardW - 12).toFixed(2)} ${(cardH - 14).toFixed(2)} re S`,
   )
 
-  show(restaurant.name, 9, false, cx, top - 22)
-  show(table.label, 19, true, cx, top - 46)
-
   const url = `${site}/t/${table.token}`
   const qr = QRCode.create(url, { errorCorrectionLevel: 'M' })
   const size = qr.modules.size
-  // As large as the card allows, less room for the label above and the
-  // address below. A code that fills its card is a code that scans standing up.
-  const box = Math.min(cardW - 46, cardH - 104)
+
+  /**
+   * As large as the card allows, and centred in what is left.
+   *
+   * Three columns means width is what limits the code, so the side padding is
+   * kept tight — every point taken off the margin goes into the code itself,
+   * and the code is the only part of this page that has to work from across a
+   * table. The block is then centred vertically rather than pinned to the top,
+   * because two rows on A4 leaves a card much taller than its contents and
+   * everything sitting at the top of an empty box looks like a mistake.
+   */
+  const box = Math.min(cardW - 26, cardH - 116)
   const module = box / size
+  const blockH = 22 + 26 + box + 26
+  const blockTop = top - (cardH - blockH) / 2
+
+  show(parts, restaurant.name, 9, false, cx, blockTop - 16)
+  show(parts, table.label, 19, true, cx, blockTop - 40)
+
   const qrLeft = cx - box / 2
-  const qrBottom = top - 62 - box
+  const qrBottom = blockTop - 52 - box
 
   parts.push('0 g')
   for (let y = 0; y < size; y++) {
@@ -124,25 +152,44 @@ tables.forEach((table, i) => {
   }
 
   parts.push('0.35 g')
-  show('Scan to see the menu and order', 7.5, false, cx, qrBottom - 16)
+  show(parts, 'Scan to see the menu and order', 7.5, false, cx, qrBottom - 16)
   parts.push('0 g')
 })
 
-parts.unshift('0 g')
-parts.push('0 g')
-show(`${restaurant.name} - table codes`, 12, true, PAGE_W / 2, PAGE_H - MARGIN - 14)
-parts.push('0.45 g')
-show(`${tables.length} tables - khapee.com`, 8, false, PAGE_W / 2, PAGE_H - MARGIN - 30)
+streams.forEach((parts, page) => {
+  parts.unshift('0 g')
+  parts.push('0 g')
+  show(parts, `${restaurant.name} - table codes`, 12, true, PAGE_W / 2, PAGE_H - MARGIN - 14)
+  parts.push('0.45 g')
+  const what = pageCount > 1 ? `page ${page + 1} of ${pageCount} - ` : ''
+  show(parts, `${what}${tables.length} tables - khapee.com`, 8, false, PAGE_W / 2, PAGE_H - MARGIN - 30)
+})
 
-const content = parts.join('\n')
+/**
+ * Catalog, the page tree, then a Page and a content stream for each sheet,
+ * and the two fonts last so their numbers do not move as pages are added.
+ */
+const FONT_R = 3 + pageCount * 2
+const FONT_B = FONT_R + 1
+const pageObjects: string[] = []
+const streamObjects: string[] = []
+const kids: string[] = []
+streams.forEach((parts, page) => {
+  const pageObj = 3 + page * 2
+  const streamObj = pageObj + 1
+  kids.push(`${pageObj} 0 R`)
+  pageObjects.push(
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] ` +
+      `/Resources << /Font << /FR ${FONT_R} 0 R /FB ${FONT_B} 0 R >> >> /Contents ${streamObj} 0 R >>`,
+  )
+  const content = parts.join('\n')
+  streamObjects.push(`<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`)
+})
 
-/** The smallest PDF that holds a page: catalog, pages, page, stream, fonts. */
 const objects = [
   '<< /Type /Catalog /Pages 2 0 R >>',
-  `<< /Type /Pages /Kids [3 0 R] /Count 1 >>`,
-  `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] ` +
-    `/Resources << /Font << /FR 5 0 R /FB 6 0 R >> >> /Contents 4 0 R >>`,
-  `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
+  `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pageCount} >>`,
+  ...pageObjects.flatMap((p, i) => [p, streamObjects[i]]),
   '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
   '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
 ]
@@ -162,6 +209,9 @@ const out = path.resolve(import.meta.dirname, '..', 'data', 'qr', `${slug}-table
 fs.mkdirSync(path.dirname(out), { recursive: true })
 fs.writeFileSync(out, pdf, 'latin1')
 
-console.log(`\n  ${restaurant.name}: ${tables.length} table codes on one A4 page`)
+console.log(
+  `\n  ${restaurant.name}: ${tables.length} table codes, ${cols} across x ${rows} down` +
+    ` = ${PER_PAGE} a page, ${pageCount} page${pageCount === 1 ? '' : 's'}`,
+)
 for (const t of tables) console.log(`    ${t.label.padEnd(10)} ${site}/t/${t.token}`)
 console.log(`\n  PDF:  ${path.relative(process.cwd(), out)}\n`)

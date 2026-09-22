@@ -15,6 +15,7 @@ import { applyTheme } from '../lib/themes'
 import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
+import { PaarrooMark, PaarrooWordmark } from '../components/PaarrooBrand'
 import type { RestaurantCard } from './Home'
 
 type MenuItem = {
@@ -112,10 +113,11 @@ export default function Restaurant() {
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
-  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'plain' | ''
+  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'paarroo' | 'plain' | ''
   const noir = theme === 'noir'
   const hut = theme === 'hut'
   const revery = theme === 'revery'
+  const paarroo = theme === 'paarroo'
   /**
    * "plain" is not a look of its own — it is the ordinary page with the
    * photographs left off. A restaurant whose pictures are not good enough to
@@ -135,7 +137,7 @@ export default function Restaurant() {
    */
   const [query, setQuery] = useState('')
   /** Themed restaurants share the menu and page shell, dressed differently. */
-  const themed = noir || hut || revery
+  const themed = noir || hut || revery || paarroo
   const noirPage = themed
 
   /**
@@ -169,7 +171,7 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''}`}>
+      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
@@ -191,9 +193,25 @@ export default function Restaurant() {
 
                 <div className="noir-hero-lockup">
                   <span className="noir-hero-mark">
-                    {revery ? <ReveryMark size={50} /> : hut ? <HutMark size={48} /> : <NoirMark size={46} />}
+                    {paarroo ? (
+                      <PaarrooMark size={50} />
+                    ) : revery ? (
+                      <ReveryMark size={50} />
+                    ) : hut ? (
+                      <HutMark size={48} />
+                    ) : (
+                      <NoirMark size={46} />
+                    )}
                   </span>
-                  {revery ? <ReveryWordmark /> : hut ? <HutWordmark /> : <NoirWordmark />}
+                  {paarroo ? (
+                    <PaarrooWordmark />
+                  ) : revery ? (
+                    <ReveryWordmark />
+                  ) : hut ? (
+                    <HutWordmark />
+                  ) : (
+                    <NoirWordmark />
+                  )}
                   <p className="noir-hero-line">{data.restaurant.description}</p>
                   <div className="noir-hero-meta">
                     <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>

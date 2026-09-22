@@ -5432,3 +5432,150 @@ button.nav-link {
 .secret-out .link-btn {
   margin-top: 6px;
 }
+
+/* ── 28 Paarroo ───────────────────────────────────────────────────────────
+   The one light theme. The others are evening places; this is a breakfast
+   one, and idli at eight in the morning on a black page reads as the wrong
+   meal. So the ground stays white — near-white, strictly: pure #fff next to
+   a white phone bezel looks like a page that failed to load, and a hair of
+   warmth in it reads as paper.
+
+   The South Indian character lives in the accents rather than the ground,
+   and they are taken from the room instead of invented: banana leaf green,
+   filter-coffee brown, turmeric, temple vermilion. Used on section marks and
+   little else, because a white room with four loud colours in it is not a
+   white room. */
+:root[data-theme='paarroo'] {
+  --bg: #fbfaf7;
+  --bg-tint: #f5f3ee;
+  --surface: #ffffff;
+  --surface-2: #f7f5f0;
+  --ink: #1d2320;
+  --ink-2: #3c4541;
+  /* Dark enough to read, at 5.2:1 against this ground. The obvious grey for
+     a caption sits at 3.7:1, which is under the 4.5 an ordinary person needs
+     and is exactly the text there is most of here — every dish on this menu
+     carries a description. Quiet is a tone, not a contrast level. */
+  --muted: #5f6a64;
+  --line: rgba(29, 35, 32, 0.1);
+  --line-strong: rgba(29, 35, 32, 0.2);
+
+  --accent: #2f7d55;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6f1ea;
+
+  --good: #2f7d55;
+  --good-soft: #e6f1ea;
+  --warn: #b07d16;
+  --warn-soft: #faf1dc;
+  --bad: #b8432c;
+  --bad-soft: #fbeae6;
+  --info: #3f6f8f;
+  --info-soft: #e8f0f5;
+
+  /* Light shadows, not dark ones turned down. A black shadow at low opacity
+     on a warm white goes grey and dirty; these are tinted with the ground. */
+  --shadow-sm: 0 1px 2px rgba(29, 35, 32, 0.06);
+  --shadow-md: 0 6px 18px rgba(29, 35, 32, 0.08);
+  --shadow-lg: 0 22px 48px rgba(29, 35, 32, 0.12);
+  --shadow-accent: 0 10px 24px rgba(47, 125, 85, 0.18);
+}
+
+/* The shared themed layout carries its own ink, set for a dark ground: the
+   section titles, the tab rail and the add buttons all read from --noir-ink,
+   which is a near-white. Left alone, every heading on this page is white text
+   on a white page — legible only as a faint smudge, and only if you know it
+   is there. Redefining the two variables fixes all five places at once, which
+   is the point of their being variables. */
+.paarroo-page,
+/* .noir — the menu component's own root — re-declares these inside the page,
+   so setting them on the page alone leaves every dish name pale. Both. */
+.paarroo-page .noir {
+  --noir-ink: #1d2320;
+  --noir-dim: #5f6a64;
+}
+
+/* The hero, lightened.
+   With no photograph the art block is a gradient built from the restaurant's
+   hue, and at this green that is a dark slab across the top of a white page —
+   the one element loud enough to undo the whole room. Here it is a pale wash
+   with the emoji sitting on it, which reads as a header rather than a
+   photograph that failed to load. */
+.paarroo-page .noir-hero-img {
+  background: linear-gradient(145deg, #eef5f0 0%, #f6f4ee 55%, #f2f6f2 100%);
+}
+.paarroo-page .noir-hero-art {
+  border: 1px solid rgba(29, 35, 32, 0.07);
+}
+
+/* And the few places it paints directly rather than through a token. Each of
+   these would otherwise be a dark smear across a white page. */
+.paarroo-page .noir-hero-veil {
+  background:
+    radial-gradient(120% 85% at 50% 8%, transparent 46%, rgba(29, 35, 32, 0.06) 100%),
+    linear-gradient(180deg, transparent 40%, rgba(251, 250, 247, 0.86) 82%, rgba(251, 250, 247, 0.99) 100%);
+}
+.paarroo-page .noir-hero-sheen {
+  background: linear-gradient(104deg, transparent 38%, rgba(47, 125, 85, 0.07) 50%, transparent 62%);
+}
+.paarroo-page .noir-hero-lockup,
+.paarroo-page .noir-hero-line,
+.paarroo-page .noir-hero-meta {
+  color: var(--ink);
+}
+.paarroo-page .noir-tab {
+  border: 1px solid rgba(29, 35, 32, 0.12);
+  background: #ffffff;
+}
+.paarroo-page .noir-tab:hover {
+  color: var(--ink);
+  border-color: rgba(29, 35, 32, 0.24);
+}
+.paarroo-page .noir-item {
+  background: #ffffff;
+  border: 1px solid rgba(29, 35, 32, 0.08);
+}
+.paarroo-page .noir-row { border-bottom: 1px solid rgba(29, 35, 32, 0.08); }
+.paarroo-page .noir-dots { border-bottom: 1px dotted rgba(29, 35, 32, 0.22); }
+
+/* The wordmark. Set rather than drawn: the sign outside is lettering, and a
+   logo invented here would be a different restaurant's. */
+.paarroo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+.paarroo-wordmark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.paarroo-wordmark-name {
+  font-size: 30px;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  line-height: 1;
+}
+.paarroo-wordmark-rule {
+  width: 46px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.55;
+}
+.paarroo-wordmark-line {
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  text-transform: uppercase;
+  color: var(--muted);
+}

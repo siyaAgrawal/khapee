@@ -1,0 +1,946 @@
+[
+  {
+    "name": "28 Paarroo",
+    "description": "South Indian kitchen and speciality coffee — idli, uttapam, appam and a full espresso bar.",
+    "address": "Indore",
+    "categories": [
+      "South Indian",
+      "Cafe",
+      "Coffee"
+    ],
+    "emoji": "🥥",
+    "hue": 150,
+    "prepMinutes": 20,
+    "tables": 6,
+    "menu": [
+      {
+        "category": "South Indian",
+        "items": [
+          {
+            "name": "Paniyaram",
+            "price": 317,
+            "veg": true,
+            "description": "Bite-sized, crisp outside and soft inside — South Indian dumplings from fermented rice and lentil batter."
+          },
+          {
+            "name": "Vegetable Upma",
+            "price": 250,
+            "veg": true,
+            "description": "Classic semolina upma loaded with fresh mixed vegetables — wholesome and nutritious."
+          },
+          {
+            "name": "Masala Upma",
+            "price": 263,
+            "veg": true,
+            "description": "Upma prepared with a bold masala spice blend — extra flavourful and satisfying."
+          },
+          {
+            "name": "Tomato Upma",
+            "price": 250,
+            "veg": true,
+            "description": "Semolina upma cooked with ripe tomatoes, onions and South Indian spices — tangy and flavourful."
+          },
+          {
+            "name": "Plain Uttapam",
+            "price": 380,
+            "veg": true,
+            "description": "Thick soft rice pancake — simple and satisfying. Served with chutney and sambhar."
+          },
+          {
+            "name": "Onion Uttapam",
+            "price": 250,
+            "veg": true,
+            "description": "Uttapam topped generously with fresh diced onions — mildly sharp and delicious."
+          },
+          {
+            "name": "Tomato Uttapam",
+            "price": 250,
+            "veg": true,
+            "description": "Soft uttapam topped with sliced ripe tomatoes — fresh, tangy and light."
+          },
+          {
+            "name": "Mix Uttapam",
+            "price": 304,
+            "veg": true,
+            "description": "Uttapam topped with a mix of onion, tomato and other fresh vegetables."
+          },
+          {
+            "name": "Masala Uttapam",
+            "price": 304,
+            "veg": true,
+            "description": "Uttapam loaded with a flavourful spiced masala topping."
+          },
+          {
+            "name": "Cheese Paneer Uttapam",
+            "price": 245,
+            "veg": true,
+            "description": "Soft uttapam generously topped with crumbled and spiced cottage cheese."
+          },
+          {
+            "name": "Cheese Chilly Onion Uttapam",
+            "price": 245,
+            "veg": true,
+            "description": "Uttapam topped with fresh onion and a layer of melted cheese — crowd pleasing and hearty."
+          },
+          {
+            "name": "Cheese Paneer Chettinad Uttapam",
+            "price": 331,
+            "veg": true,
+            "description": "Chettinad spiced uttapam topped with both paneer and cheese — indulgent and aromatic."
+          },
+          {
+            "name": "Steamed Idli (2 Pieces) With Sambhar",
+            "price": 182,
+            "veg": true,
+            "description": "Classic soft steamed idli, served with hot sambhar and fresh coconut chutney."
+          },
+          {
+            "name": "Butter Idli Sambhar (2 Pieces)",
+            "price": 317,
+            "veg": true,
+            "description": "Soft steamed idli generously coated with melted butter, served with sambhar."
+          },
+          {
+            "name": "Button Ghee Podi Idli Sambhar",
+            "price": 304,
+            "veg": true,
+            "description": "Mini button idlis tossed in ghee and podi, served with hot sambhar. 7–8 small pieces."
+          },
+          {
+            "name": "Thatte Ghee Podi Idli (1 Piece)",
+            "price": 250,
+            "veg": true,
+            "description": "Flat disc-shaped thatte idli tossed in pure ghee and gunpowder podi."
+          },
+          {
+            "name": "Kanjivaram Idli (2 Pieces) With Sambhar",
+            "price": 150,
+            "veg": true,
+            "description": "Dense, spiced Kanjivaram style idli made with rice, lentils and peppercorns. Served with sambhar."
+          },
+          {
+            "name": "Medu Vada With Sambhar",
+            "price": 209,
+            "veg": true,
+            "description": "Crispy, fluffy urad dal vada served with sambhar — a South Indian classic."
+          },
+          {
+            "name": "Batata Bonda With Sambhar",
+            "price": 250,
+            "veg": true,
+            "description": "Golden fried potato bonda served with piping hot sambhar on the side."
+          },
+          {
+            "name": "Mysore Bonda With Sambhar",
+            "price": 110,
+            "veg": true,
+            "description": "Mysore style bonda served with sambhar — a slightly spicier, richer preparation."
+          },
+          {
+            "name": "Kerala Palappam",
+            "price": 90,
+            "veg": true,
+            "description": "Soft, lacy-edged bowl-shaped rice pancake from Kerala — crisp outside, fluffy in the centre."
+          },
+          {
+            "name": "Ghee Palappam",
+            "price": 110,
+            "veg": true,
+            "description": "Kerala palappam enriched with pure ghee for an indulgent, aromatic finish."
+          }
+        ]
+      },
+      {
+        "category": "Meals",
+        "items": [
+          {
+            "name": "Sambhar Annam",
+            "price": 180,
+            "veg": true,
+            "description": "Steamed rice cooked and mixed with authentic sambar lentil stew — a temple style comfort dish."
+          },
+          {
+            "name": "Amas Korma With Poori",
+            "price": 220,
+            "veg": true,
+            "description": "Amas korma curry with 2 poori."
+          },
+          {
+            "name": "Veg Stew With Appam",
+            "price": 220,
+            "veg": true,
+            "description": "Coconut based mild vegetable stew served alongside soft, spongy appam — a Kerala classic."
+          },
+          {
+            "name": "Avial With Appam",
+            "price": 220,
+            "veg": true,
+            "description": "Kerala style mixed vegetable avial in coconut curd gravy, served with appam — traditional and wholesome."
+          }
+        ]
+      },
+      {
+        "category": "Main Course",
+        "items": [
+          {
+            "name": "Paneer Chettinad",
+            "price": 310,
+            "veg": true
+          },
+          {
+            "name": "Paneer Chettinad With Malabar Paratha",
+            "price": 450,
+            "veg": true
+          },
+          {
+            "name": "Kachhe Kele Ki Curry With Malabar Paratha",
+            "price": 450,
+            "veg": true,
+            "description": "Served for Jain too."
+          },
+          {
+            "name": "Mix Vegetable",
+            "price": 300,
+            "veg": true
+          },
+          {
+            "name": "Paneer Lababdar",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Paneer Butter Masala",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Paneer Bhurji",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Paneer Bhurji Kadhi",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Punjabi Paneer",
+            "price": 380,
+            "veg": true
+          },
+          {
+            "name": "Matar Paneer",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Kadai Paneer",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Paneer Masala",
+            "price": 300,
+            "veg": true
+          },
+          {
+            "name": "Shahi Paneer",
+            "price": 350,
+            "veg": true
+          },
+          {
+            "name": "Kaju Curry",
+            "price": 380,
+            "veg": true
+          },
+          {
+            "name": "Malai Kofta",
+            "price": 320,
+            "veg": true
+          },
+          {
+            "name": "Veg Kofta",
+            "price": 280,
+            "veg": true
+          },
+          {
+            "name": "Dal Tadka",
+            "price": 230,
+            "veg": true
+          },
+          {
+            "name": "Dal Fry",
+            "price": 230,
+            "veg": true
+          },
+          {
+            "name": "Dal Butter",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Dal Double Tadka",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Gobhi Masala",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Bhindi Masala",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Bhindi Do Pyaaza",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Jeera Aloo",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Dum Kashmiri Aloo",
+            "price": 280,
+            "veg": true
+          },
+          {
+            "name": "Aloo Matar Tari",
+            "price": 230,
+            "veg": true
+          },
+          {
+            "name": "Sev Tamatar",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Sev Masala",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Dudh Sev",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Chana Masala",
+            "price": 220,
+            "veg": true
+          },
+          {
+            "name": "Rajma Masala",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Lehsuni Palak",
+            "price": 250,
+            "veg": true
+          },
+          {
+            "name": "Punjabi Kadhi",
+            "price": 288,
+            "veg": true
+          },
+          {
+            "name": "Tomato Rasam",
+            "price": 196,
+            "veg": true,
+            "description": "Classic South Indian tomato based rasam — tangy, peppery and warming. Served piping hot."
+          },
+          {
+            "name": "Lemon Coriander Rasam",
+            "price": 196,
+            "veg": true,
+            "description": "Fresh and zesty rasam made with lemon juice and fragrant coriander — light and refreshing."
+          }
+        ]
+      },
+      {
+        "category": "Rice",
+        "items": [
+          {
+            "name": "Veg Pulao",
+            "price": 378,
+            "veg": true
+          },
+          {
+            "name": "Jeera Rice",
+            "price": 288,
+            "veg": true
+          },
+          {
+            "name": "Masala Rice",
+            "price": 324,
+            "veg": true
+          },
+          {
+            "name": "Kashmiri Pulao",
+            "price": 432,
+            "veg": true
+          },
+          {
+            "name": "Green Matar Pulao",
+            "price": 324,
+            "veg": true
+          },
+          {
+            "name": "Perugu Annam",
+            "price": 304,
+            "veg": true,
+            "description": "Soft rice mixed with fresh curd, tempered with mustard and green chilli — cooling and nourishing."
+          },
+          {
+            "name": "Thakkali Annam",
+            "price": 331,
+            "veg": true,
+            "description": "Fragrant rice cooked with ripe tomatoes and South Indian spices — a wholesome one-pot meal."
+          },
+          {
+            "name": "Charu Annam",
+            "price": 304,
+            "veg": true,
+            "description": "Soft rice mixed with peppery, tangy rasam — light, warming and deeply soothing."
+          },
+          {
+            "name": "Nimbe Lemon Rice Annam",
+            "price": 331,
+            "veg": true,
+            "description": "Rice tempered with mustard, curry leaves, turmeric and fresh lemon juice — vibrant and tangy."
+          },
+          {
+            "name": "Tamarind Annam",
+            "price": 331,
+            "veg": true,
+            "description": "Rice cooked with tamarind paste and spices — tangy, nutty and richly flavoured."
+          },
+          {
+            "name": "Ghugra Annam",
+            "price": 331,
+            "veg": true,
+            "description": "Speciality ghugra style flavoured rice — a regional recipe with a unique spice blend."
+          }
+        ]
+      },
+      {
+        "category": "Biryani",
+        "items": [
+          {
+            "name": "Veg Biryani",
+            "price": 398,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Thali",
+        "items": [
+          {
+            "name": "Traditional South Thali — Temple Style Bhojanam",
+            "price": 538,
+            "veg": true,
+            "description": "Chutney, podi, pappu, vegetable fry, masala curry, poori, flavoured rice, sambhar, rasam, curd, majiga pulusu, dessert and assorted pickle. Subject to availability."
+          }
+        ]
+      },
+      {
+        "category": "Chef's Specials",
+        "items": [
+          {
+            "name": "Dal Tadka With 2 Paratha",
+            "price": 180,
+            "veg": true,
+            "description": "Yellow lentil dal tempered with ghee, cumin and aromatics, served with 2 parathas."
+          },
+          {
+            "name": "Dal Tadka Rice",
+            "price": 180,
+            "veg": true,
+            "description": "Comforting dal tadka served over steamed basmati rice — a satisfying, wholesome meal."
+          },
+          {
+            "name": "Chole Rice",
+            "price": 200,
+            "veg": true,
+            "description": "Spiced Punjabi chickpea chole curry served with steamed rice — robust and hearty."
+          },
+          {
+            "name": "Rajma Rice",
+            "price": 200,
+            "veg": true,
+            "description": "Slow cooked red kidney bean rajma curry served with steamed rice — a North Indian comfort staple."
+          },
+          {
+            "name": "Paneer Masala Rice",
+            "price": 240,
+            "veg": true,
+            "description": "Spiced paneer masala curry served alongside flavoured rice — rich, indulgent and satisfying."
+          }
+        ]
+      },
+      {
+        "category": "Breads",
+        "items": [
+          {
+            "name": "Ghee Dabba Roti",
+            "price": 304,
+            "veg": true,
+            "description": "Soft, layered dabba roti generously cooked with pure ghee — flaky and indulgent."
+          },
+          {
+            "name": "Ghee Podi Dabba Roti",
+            "price": 331,
+            "veg": true,
+            "description": "Ghee dabba roti dusted with gunpowder podi — extra aromatic and flavourful."
+          },
+          {
+            "name": "Malabar Paratha",
+            "price": 120,
+            "veg": true,
+            "description": "Flaky, layered Kerala style paratha — crisp outside, soft and buttery within."
+          },
+          {
+            "name": "Tawa Paratha",
+            "price": 60,
+            "veg": true
+          },
+          {
+            "name": "Tawa Roti",
+            "price": 35,
+            "veg": true
+          }
+        ]
+      },
+      {
+        "category": "Coffee",
+        "items": [
+          {
+            "name": "Espresso",
+            "price": 135,
+            "veg": true,
+            "description": "A short, intense and concentrated coffee shot — pure and unadulterated espresso."
+          },
+          {
+            "name": "Americano",
+            "price": 185,
+            "veg": true,
+            "description": "Double shot espresso diluted with steamed hot water — bold yet smooth."
+          },
+          {
+            "name": "Espresso Macchiato",
+            "price": 225,
+            "veg": true,
+            "description": "A single espresso shot marked with a small amount of froth — no milk, just espresso and foam."
+          },
+          {
+            "name": "Cortado",
+            "price": 235,
+            "veg": true,
+            "description": "Espresso with an equal part of steamed milk and a little froth — balanced and smooth."
+          },
+          {
+            "name": "Flat White",
+            "price": 245,
+            "veg": true,
+            "description": "Double shot espresso topped with a thin velvety layer of microfoam. The balance of rich and smooth."
+          },
+          {
+            "name": "Cappuccino",
+            "price": 255,
+            "veg": true,
+            "description": "Classic espresso shot with equal parts steamed milk and frothy foam — a beloved Italian staple."
+          },
+          {
+            "name": "Cafe Latte",
+            "price": 255,
+            "veg": true,
+            "description": "One part espresso with double part steamed milk and a thin layer of froth — creamy and mild."
+          },
+          {
+            "name": "Cafe Mocha",
+            "price": 275,
+            "veg": true,
+            "description": "Espresso with steamed milk, a deep layer of froth and chocolate syrup."
+          },
+          {
+            "name": "Cinnamon Latte",
+            "price": 275,
+            "veg": true
+          },
+          {
+            "name": "Irish Coffee",
+            "price": 245,
+            "veg": true,
+            "description": "Rich espresso with hot water, Irish liqueur flavour and whipped cream — warming and indulgent."
+          },
+          {
+            "name": "Vietnamese Hot Coffee",
+            "price": 225,
+            "veg": true
+          },
+          {
+            "name": "Affogato",
+            "price": 245,
+            "veg": true,
+            "description": "A double shot of hot espresso poured over vanilla ice cream. Divine contrast of hot and cold."
+          }
+        ]
+      },
+      {
+        "category": "Cold Coffee",
+        "items": [
+          {
+            "name": "Iced Americano",
+            "price": 195,
+            "veg": true,
+            "description": "Espresso shot served over ice with cold water — clean, crisp and refreshing."
+          },
+          {
+            "name": "Iced Latte",
+            "price": 255,
+            "veg": true,
+            "description": "Espresso shot poured over iced cold milk — smooth, creamy and perfectly chilled."
+          },
+          {
+            "name": "Iced Cappuccino",
+            "price": 255,
+            "veg": true,
+            "description": "Espresso shot with iced cold milk and a little froth — a cold take on the classic."
+          },
+          {
+            "name": "Iced Mocha",
+            "price": 275,
+            "veg": true,
+            "description": "Espresso shot with iced cold milk topped with chocolate syrup — indulgent and refreshing."
+          },
+          {
+            "name": "Vietnamese Iced Coffee",
+            "price": 275,
+            "veg": true,
+            "description": "Double shot espresso shaken with condensed milk — rich, sweet and intensely flavoured."
+          },
+          {
+            "name": "Cold Brew",
+            "price": 245,
+            "veg": true,
+            "description": "Coffee grounds steeped in cold water for 16–24 hours — smooth, mellow and less acidic."
+          },
+          {
+            "name": "Espresso Tonic",
+            "price": 275,
+            "veg": true,
+            "description": "Espresso poured over tonic water — effervescent, bitter and surprisingly refreshing."
+          },
+          {
+            "name": "Blue Espresso Tonic",
+            "price": 275,
+            "veg": true,
+            "description": "Our signature blue espresso tonic — striking, effervescent, with a visual wow factor."
+          },
+          {
+            "name": "Sun Sine Orange Juice Coffee",
+            "price": 275,
+            "veg": true,
+            "description": "A bold espresso based drink blended with fresh orange juice — vibrant and tangy."
+          },
+          {
+            "name": "Coffee Cren Cranberry Coffee",
+            "price": 275,
+            "veg": true,
+            "description": "Espresso combined with cranberry — fruity, tart and a unique speciality creation."
+          },
+          {
+            "name": "Ginger Ala Coffee",
+            "price": 275,
+            "veg": true,
+            "description": "Coffee infused with warming ginger — a spicy, aromatic speciality blend."
+          }
+        ]
+      },
+      {
+        "category": "Frappes",
+        "items": [
+          {
+            "name": "Cafe Frappe",
+            "price": 285,
+            "veg": true,
+            "description": "Double shot espresso blended with milk and ice cream — thick, creamy and utterly satisfying."
+          },
+          {
+            "name": "Mocha Frappe",
+            "price": 315,
+            "veg": true,
+            "description": "Double shot espresso blended with milk and ice cream, topped with chocolate sauce and a scoop of ice cream."
+          },
+          {
+            "name": "Irish Frappe",
+            "price": 315,
+            "veg": true,
+            "description": "Espresso and milk blended with ice cream and Irish flavoured syrup — smooth and indulgent."
+          },
+          {
+            "name": "KitKat Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Frappe mixed with KitKat, garnished in KitKat chocolate syrup — a chocolate lover's treat."
+          },
+          {
+            "name": "Oreo Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Frappe mixed with Oreo biscuits, garnished with Oreo pieces and chocolate sauce."
+          },
+          {
+            "name": "Caramel Oreo Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Frappe blended with Oreo biscuits and topped with salted caramelised sauce — sweet and salty."
+          },
+          {
+            "name": "Brownie Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Frappe mixed with brownie and chocolate sauce, garnished with fresh brownie pieces."
+          },
+          {
+            "name": "Nutella Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Frappe blended with Nutella, topped with whipped cream — rich hazelnut chocolate."
+          },
+          {
+            "name": "Choco Chip Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Espresso shot mixed with choco chips and ice in our specially crafted frappe."
+          },
+          {
+            "name": "Choco Bliss Frappe",
+            "price": 325,
+            "veg": true,
+            "description": "Premium chocolate frappe blended with rich coffee, topped with grated chocolate and chocolate syrup."
+          },
+          {
+            "name": "28 Paarroo Special Frappe",
+            "price": 335,
+            "veg": true,
+            "description": "Our signature chocolate frappe with KitKat and choco chip, whipped cream and Ferrero chocolate."
+          }
+        ]
+      },
+      {
+        "category": "Shakes",
+        "items": [
+          {
+            "name": "Chocolate Shake",
+            "price": 255,
+            "veg": true,
+            "description": "Rich, creamy and smooth chocolate — a perfect velvety blend."
+          },
+          {
+            "name": "Vanilla Shake",
+            "price": 245,
+            "veg": true,
+            "description": "Thick, creamy vanilla shake with the sweet aroma of real vanilla — a timeless classic."
+          },
+          {
+            "name": "Strawberry Shake",
+            "price": 255,
+            "veg": true,
+            "description": "Fresh strawberry blended with cold milk and ice cream — vibrant, fruity and refreshing."
+          },
+          {
+            "name": "Blackcurrant Shake",
+            "price": 180,
+            "veg": true,
+            "description": "Rich blackcurrant blended with milk and ice cream — deep, fruity and luxuriously creamy."
+          },
+          {
+            "name": "Oreo Shake",
+            "price": 255,
+            "veg": true,
+            "description": "Premium vanilla ice cream and imported Oreo — thick and velvety, topped with Oreo and chocolate."
+          },
+          {
+            "name": "KitKat Shake",
+            "price": 315,
+            "veg": true,
+            "description": "Rich chocolate, creamy ice cream and crispy KitKat, topped with KitKat and chocolate syrup."
+          },
+          {
+            "name": "Brownie Shake",
+            "price": 315,
+            "veg": true,
+            "description": "Ice cream and brownie chocolate blend, topped with brownie pieces and chocolate syrup."
+          },
+          {
+            "name": "Nutella Shake",
+            "price": 325,
+            "veg": true,
+            "description": "A blend of Nutella, cold milk and smooth ice cream — thick, creamy chocolate with every sip."
+          },
+          {
+            "name": "Ferrero Shake",
+            "price": 335,
+            "veg": true,
+            "description": "Chocolate shake blended with Ferrero Rocher, topped with Ferrero pieces and chocolate syrup."
+          },
+          {
+            "name": "Avocado Delight Shake",
+            "price": 240,
+            "veg": true,
+            "description": "Fresh creamy avocado blended with dry fruits and chilled milk, topped with dry fruits."
+          }
+        ]
+      },
+      {
+        "category": "Hot Chocolate",
+        "items": [
+          {
+            "name": "Hot Chocolate",
+            "price": 245,
+            "veg": true,
+            "description": "Our alluring melted hot chocolate, crafted in 28 Paarroo's special style."
+          },
+          {
+            "name": "Cinnamon Hot Chocolate",
+            "price": 245,
+            "veg": true
+          },
+          {
+            "name": "Caramel Hot Chocolate",
+            "price": 275,
+            "veg": true
+          },
+          {
+            "name": "Nutella Hot Chocolate",
+            "price": 275,
+            "veg": true
+          },
+          {
+            "name": "Iced Chocolate",
+            "price": 225,
+            "veg": true,
+            "description": "A cold refreshing chocolate drink made with a rich chocolate base, milk, ice and a touch of sweetness."
+          }
+        ]
+      },
+      {
+        "category": "Iced Tea",
+        "items": [
+          {
+            "name": "Lemon Iced Tea",
+            "price": 255,
+            "veg": true,
+            "description": "Refreshing black tea chilled and infused with lemon — light, tangy and perfect for summer."
+          },
+          {
+            "name": "Peach Iced Tea",
+            "price": 255,
+            "veg": true,
+            "description": "Chilled tea with a sweet, fruity peach infusion — soft and fragrant."
+          },
+          {
+            "name": "Guava Iced Tea",
+            "price": 255,
+            "veg": true,
+            "description": "Tropical guava flavoured iced tea — fruity, refreshing and uniquely delicious."
+          },
+          {
+            "name": "Pomegranate Iced Tea",
+            "price": 170,
+            "veg": true,
+            "description": "Ruby red pomegranate iced tea — tangy, slightly sweet and packed with antioxidants."
+          },
+          {
+            "name": "Green Apple Iced Tea",
+            "price": 255,
+            "veg": true,
+            "description": "Crisp green apple iced tea — tart, fresh and thirst quenching."
+          }
+        ]
+      },
+      {
+        "category": "Lemonade & Coolers",
+        "items": [
+          {
+            "name": "Classic Lemonade",
+            "price": 225,
+            "veg": true,
+            "description": "Freshly squeezed lemonade served your way — mixed, salted or sweet."
+          },
+          {
+            "name": "Masala Lemonade",
+            "price": 225,
+            "veg": true,
+            "description": "Lemonade spiced with cumin, chaat masala and black salt — tangy, spicy and invigorating."
+          },
+          {
+            "name": "Kiwi Lemonade",
+            "price": 235,
+            "veg": true
+          },
+          {
+            "name": "Guava Lemonade",
+            "price": 235,
+            "veg": true
+          },
+          {
+            "name": "Cold Matka Chaas",
+            "price": 60,
+            "veg": true,
+            "description": "Chilled buttermilk served in a traditional clay pot — cooling and refreshing."
+          },
+          {
+            "name": "Matka Chaach",
+            "price": 70,
+            "veg": true,
+            "description": "Summer special."
+          }
+        ]
+      },
+      {
+        "category": "Milk & Water",
+        "items": [
+          {
+            "name": "Bisleri (1 L)",
+            "price": 19.05,
+            "veg": true,
+            "description": "Bisleri in a 1 litre PET bottle."
+          },
+          {
+            "name": "Lactose Free Milk",
+            "price": 50,
+            "veg": true
+          },
+          {
+            "name": "Soya Milk",
+            "price": 60,
+            "veg": true
+          },
+          {
+            "name": "Oat Milk",
+            "price": 80,
+            "veg": true
+          },
+          {
+            "name": "Coconut Milk",
+            "price": 80,
+            "veg": true
+          },
+          {
+            "name": "Almond Milk",
+            "price": 80,
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

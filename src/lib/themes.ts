@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | 'revery' | 'plain' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'plain' | ''
 
 /** How one section of a themed menu presents itself. */
 export type SectionVoice = {
@@ -77,6 +77,37 @@ const REVERY_VOICES: Record<string, SectionVoice> = {
   Maggi: { accent: '#e8b545', kicker: 'Two minutes, allegedly', glyph: '🍜' },
 }
 
+/**
+ * 28 Paarroo's sections.
+ *
+ * The one light theme here, and deliberately: the others are evening places
+ * and this is a breakfast one — idli at eight in the morning under a dark
+ * page reads as the wrong meal. So the ground stays white and the South
+ * Indian character lives in the accents, which are taken from the room rather
+ * than invented: banana leaf, filter coffee, turmeric, temple vermilion.
+ *
+ * The kickers are plain. A café that serves steamed idli and pulls espresso
+ * does not need to be told it is characterful.
+ */
+const PAARROO_VOICES: Record<string, SectionVoice> = {
+  'South Indian': { accent: '#2f7d55', kicker: 'Off the griddle, all day', glyph: 'இ' },
+  Meals: { accent: '#3c7f52', kicker: 'A plate, and enough of it', glyph: '◍' },
+  'Main Course': { accent: '#b8432c', kicker: 'The long-simmered ones', glyph: '◆' },
+  Rice: { accent: '#c99a2e', kicker: 'One pot, many ways', glyph: '◌' },
+  Biryani: { accent: '#a8572a', kicker: 'Worth the wait', glyph: '◈' },
+  Thali: { accent: '#2f7d55', kicker: 'Everything, at once', glyph: '❁' },
+  "Chef's Specials": { accent: '#b8432c', kicker: 'What the kitchen would order', glyph: '✦' },
+  Breads: { accent: '#c08a3e', kicker: 'Hot, and folded', glyph: '◗' },
+  Coffee: { accent: '#6f4423', kicker: 'Pulled to order', glyph: '☕' },
+  'Cold Coffee': { accent: '#8a6039', kicker: 'Over plenty of ice', glyph: '🧊' },
+  Frappes: { accent: '#7a5230', kicker: 'Blended, and topped', glyph: '🥤' },
+  Shakes: { accent: '#c06d8e', kicker: 'Thick, and a spoon', glyph: '🥛' },
+  'Hot Chocolate': { accent: '#6b3f2a', kicker: 'For the cooler end of the day', glyph: '🍫' },
+  'Iced Tea': { accent: '#3f8f79', kicker: 'Long and cold', glyph: '🫖' },
+  'Lemonade & Coolers': { accent: '#5aa03c', kicker: 'For the heat outside', glyph: '🍋' },
+  'Milk & Water': { accent: '#5c8aa8', kicker: 'Plain, and cold', glyph: '💧' },
+}
+
 const FALLBACK: SectionVoice = { accent: '#c9a227', kicker: 'From the kitchen', glyph: '·' }
 
 /**
@@ -98,6 +129,7 @@ export function accentVars(hex: string): Record<string, string> {
 }
 
 export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
+  if (theme === 'paarroo') return PAARROO_VOICES[section] ?? { ...FALLBACK, accent: '#2f7d55' }
   if (theme === 'revery') return REVERY_VOICES[section] ?? { ...FALLBACK, accent: '#8fc46b' }
   if (theme === 'hut') return HUT_VOICES[section] ?? { ...FALLBACK, accent: '#e8a33d' }
   if (theme === 'noir') return NOIR_VOICES[section] ?? FALLBACK

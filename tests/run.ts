@@ -2705,6 +2705,42 @@ async function runTests() {
     ok('a comma in the name does not split the card', awkward.includes('Bread\\, Butter & Co\\; Ltd'), awkward)
   }
 
+  group('WHAT SHIPS — the published catalogue, not the test seed')
+  {
+    // These assert the committed snapshot rather than the seeded test
+    // database, because the snapshot is what a phone actually downloads. The
+    // rest of this suite tests behaviour; this tests the cargo.
+    const shipped = new Database(path.join(root, 'data', 'snapshot.db'), { readonly: true })
+    const paarroo = shipped
+      .prepare("SELECT id, theme FROM restaurants WHERE name = '28 Paarroo'")
+      .get() as any
+    ok('28 Paarroo ships', !!paarroo, paarroo)
+    if (paarroo) {
+      // Every other themed restaurant is an evening place and reads dark.
+      // This one serves idli at eight in the morning, when a black page makes
+      // it look like the wrong meal, so it has a light theme of its own.
+      ok('carrying its own look', paarroo.theme === 'paarroo', paarroo.theme)
+      const items = shipped
+        .prepare('SELECT COUNT(*) n FROM menu_items WHERE restaurant_id = ?')
+        .get(paarroo.id) as any
+      ok('with its whole menu', items.n === 150, items.n)
+      // ₹19.05 is the only price on Khapee that is not whole rupees, and
+      // rounding it would stay invisible until somebody reconciled a till.
+      const water = shipped
+        .prepare("SELECT price_cents FROM menu_items WHERE restaurant_id = ? AND name LIKE 'Bisleri%'")
+        .get(paarroo.id) as any
+      ok('and paise that were not rounded away', water?.price_cents === 1905, water)
+    }
+
+    // A theme nothing has written colours for leaves the page with no palette
+    // at all, so the set the app knows has to cover the set the data uses.
+    const KNOWN = new Set(['', 'plain', 'noir', 'hut', 'revery', 'paarroo'])
+    const themes = shipped.prepare('SELECT DISTINCT theme FROM restaurants').all() as any[]
+    const strange = themes.map((t) => t.theme ?? '').filter((t) => !KNOWN.has(t))
+    ok('every look in the data is one the app can draw', strange.length === 0, strange)
+    shipped.close()
+  }
+
   group('SENDING ORDERS TO A BILLING SYSTEM')
   {
     // Only the pure halves are imported. Anything touching the database has

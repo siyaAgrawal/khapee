@@ -4,6 +4,7 @@
  *   npx tsx scripts/login.ts shyam-sandwich
  *   npx tsx scripts/login.ts shyam-sandwich ice-balls jain-shree
  *   npx tsx scripts/login.ts shyam-sandwich --email owner@theirdomain.com
+ *   npx tsx scripts/login.ts cafe-vijay-bhaiya-saket-wale --password 'theirs123'
  *
  * A restaurant imported from its menu gets a placeholder login on a shared
  * demo password — an address that reaches nobody, and a password anybody who
@@ -46,10 +47,26 @@ const PLACEHOLDER = /@(tablo|ordro|khapee)\.local$/
 const args = process.argv.slice(2)
 const emailFlag = args.indexOf('--email')
 const forcedEmail = emailFlag >= 0 ? args[emailFlag + 1] : ''
+/**
+ * A password chosen rather than generated.
+ *
+ * Normally this makes one, because a password somebody picks for a shop is
+ * usually the shop's name and a number. But the owner is allowed to choose:
+ * it is their business, and a password they can remember and actually use
+ * beats a strong one taped to the monitor. It resets an existing account too,
+ * which is the case this exists for — an account nobody can get into.
+ */
+const passFlag = args.indexOf('--password')
+const chosenPassword = passFlag >= 0 ? String(args[passFlag + 1] ?? '') : ''
+if (passFlag >= 0 && chosenPassword.length < 8) {
+  console.error('\n  A password needs at least 8 characters.\n')
+  process.exit(1)
+}
 // Guard the "+ 1" behind the flag actually being there: indexOf returns -1
 // when it is not, and -1 + 1 is 0, which silently swallowed the first slug.
 const emailValueAt = emailFlag >= 0 ? emailFlag + 1 : -1
-const slugs = args.filter((a, i) => !a.startsWith('--') && i !== emailValueAt)
+const passValueAt = passFlag >= 0 ? passFlag + 1 : -1
+const slugs = args.filter((a, i) => !a.startsWith('--') && i !== emailValueAt && i !== passValueAt)
 
 if (!slugs.length) {
   console.error('\n  Usage: npx tsx scripts/login.ts <slug> [more slugs] [--email you@example.com]\n')
@@ -81,10 +98,16 @@ for (const slug of slugs) {
   db.transaction(() => {
     let userId: number
     if (existing) {
-      // Somebody's account already. Its password is theirs and is left alone.
       userId = existing.id
+      // An existing account's password is theirs and is left alone — unless
+      // one was named, which is the whole point of --password: getting back
+      // into an account nobody can sign in to.
+      if (chosenPassword) {
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(chosenPassword), userId)
+        password = chosenPassword
+      }
     } else {
-      password = makePassword()
+      password = chosenPassword || makePassword()
       userId = Number(
         db
           .prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')
@@ -116,7 +139,7 @@ for (const slug of slugs) {
   issued.push({
     restaurant: restaurant.name,
     email,
-    password: password || '(unchanged — this address already had an account)',
+    password: password || '(unchanged - this address already had an account)',
   })
 }
 
@@ -127,4 +150,19 @@ for (const row of issued) {
   console.log(`    password  ${row.password}`)
   console.log('')
 }
-console.log('  Printed once and not stored. Hand them over, then change them from Settings.\n')
+console.log(
+  chosenPassword
+    ? '  Set as asked. Nothing readable is stored - only the hash.\n'
+    : '  Printed once and not stored. Hand them over, then change them from Settings.\n',
+)
+
+/**
+ * Changing a password invalidates every signed-in session on that account.
+ *
+ * Session tokens are signed over the password hash, so they all stop working
+ * the moment it changes — which is correct, and is also a surprise if nobody
+ * says so. Whoever was signed in on a phone or a till has to sign in again.
+ */
+if (chosenPassword) {
+  console.log('  Anyone signed in on this account is signed out and must sign in again.\n')
+}

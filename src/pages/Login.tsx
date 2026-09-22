@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useSession } from '../lib/session'
 import { ApiError } from '../lib/api'
 import { Spinner } from '../components/ui'
@@ -10,7 +10,17 @@ export default function Login() {
   const { login } = useSession()
   const navigate = useNavigate()
   const location = useLocation() as any
-  const [email, setEmail] = useState('')
+  const [params] = useSearchParams()
+  /**
+   * The address can come in the link.
+   *
+   * Setting up a restaurant's till means reading an address off a message and
+   * typing it into a machine behind a counter, and "vijaybhaiya@khapee.com"
+   * gets mistyped about as often as it gets typed. A link carries it exactly,
+   * leaving only the password — which is never put in a link, because a link
+   * is pasted into chats, left in history, and sent on to other people.
+   */
+  const [email, setEmail] = useState(() => (params.get('email') ?? '').trim().toLowerCase())
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -88,6 +98,9 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
+              /* The address arrived in the link, so the cursor belongs in the
+                 only box still empty. */
+              autoFocus={!!email}
               required
             />
           </div>

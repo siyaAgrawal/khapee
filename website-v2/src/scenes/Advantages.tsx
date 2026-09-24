@@ -4,71 +4,46 @@ import { useLoop } from '../lib/scene'
 /**
  * Section two: what it is worth to a restaurant.
  *
- * Short on purpose. The film has already taken a few minutes and this is the
- * second of three things on the page — an owner reading it wants three
- * numbers, not another story, and the moment it becomes a story it stops
- * being read.
+ * Three sentences, and nothing wrapped around them. It had a headline, a
+ * figure and a paragraph for each point, which is four things to read before
+ * reaching the one that matters — and the three sentences are already the
+ * argument. An owner does not need "the same kitchen, a busier counter" to
+ * explain a line that explains itself.
  *
- * On white, because after four screens of dark purple the eye needs somewhere
- * to rest, and because the argument here is commercial rather than emotional.
- * The three are the three the notes kept: a table that waits is not earning,
- * aggregators take a quarter to a third and this takes nothing, and nobody
- * queues.
+ * On white, because after the film the eye needs somewhere to rest, and
+ * because this is a commercial argument rather than an emotional one.
  */
 const POINTS = [
-  {
-    figure: 'Twice',
-    unit: 'the table turnover',
-    line: 'A table held by somebody waiting is not earning. Ordering on the way turns the same hour into twice the covers.',
-  },
-  {
-    figure: '0%',
-    unit: 'commission',
-    line: 'Aggregators take a quarter to a third of every bill. Khapee takes nothing — UPI goes from the customer’s bank straight into yours.',
-  },
-  {
-    figure: 'No',
-    unit: 'queue at the door',
-    line: 'People who see a queue leave. Orders that are already paid for and already cooking do not make one.',
-  },
+  'A table held by someone waiting is not earning.',
+  'We take no commission. Others take a quarter to a third.',
+  'No queue at the door.',
 ]
 
 export function Advantages() {
   return (
     <section id="restaurants" className="relative bg-cream text-ink">
-      <div className="mx-auto max-w-[1100px] px-[7vw] py-[14vh]">
-        <p className="kicker" style={{ color: 'var(--clay)' }}>
+      <div className="mx-auto max-w-[1000px] px-[7vw] py-[16vh]">
+        <p className="kicker mb-[7vh]" style={{ color: 'var(--clay)' }}>
           For restaurants
         </p>
-        <h2
-          className="display mt-5 max-w-[16ch]"
-          style={{ fontSize: 'clamp(28px, 5vw, 62px)' }}
-        >
-          The same kitchen.
-          <br />
-          <span style={{ color: 'var(--clay)' }}>A busier counter.</span>
-        </h2>
 
-        <div className="mt-[8vh] grid gap-y-14 gap-x-[5vw] md:grid-cols-3">
-          {POINTS.map((p, i) => (
-            <motion.div
-              key={p.figure}
-              initial={{ opacity: 0, y: 18 }}
+        <div>
+          {POINTS.map((line, i) => (
+            <motion.p
+              key={line}
+              className="display border-t py-[4.5vh]"
+              style={{
+                fontSize: 'clamp(23px, 3.6vw, 46px)',
+                lineHeight: 1.12,
+                borderColor: 'rgba(23,17,37,0.14)',
+              }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-15%' }}
-              transition={{ duration: 0.55, delay: i * 0.08, ease: [0.2, 0.8, 0.3, 1] }}
+              viewport={{ once: true, margin: '-18%' }}
+              transition={{ duration: 0.55, delay: i * 0.1, ease: [0.2, 0.8, 0.3, 1] }}
             >
-              <span className="block h-px w-12 mb-7" style={{ background: 'var(--clay)' }} />
-              <p className="display" style={{ fontSize: 'clamp(38px, 5.2vw, 62px)', lineHeight: 0.95 }}>
-                {p.figure}
-              </p>
-              <p className="mt-2 text-[14px] font-semibold tracking-[0.04em] uppercase" style={{ color: 'var(--clay)' }}>
-                {p.unit}
-              </p>
-              <p className="mt-5 text-[15.5px] leading-relaxed" style={{ color: '#5d5566' }}>
-                {p.line}
-              </p>
-            </motion.div>
+              {line}
+            </motion.p>
           ))}
         </div>
       </div>

@@ -136,7 +136,7 @@ export function Drive() {
               <Car speed={speed} mood={mood} look={CAST.driver} />
               <span className="absolute left-9 top-6 kicker">You</span>
             </div>
-            <motion.div style={{ opacity: kitchen, background: '#241a3d' }}>
+            <motion.div style={{ background: '#241a3d' }}>
               <Kitchen p={kitchen} />
               <span className="absolute left-9 top-6 kicker">Cafe Vijay Bhaiya</span>
             </motion.div>

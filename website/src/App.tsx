@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useScroll, useMotionValueEvent } from 'framer-motion'
 import { useSmoothScroll } from './lib/scene'
 import { Drive } from './scenes/Drive'
-import { School } from './scenes/School'
 import { Work } from './scenes/Work'
 import { Takeaway } from './scenes/Takeaway'
 import { Converge, Demo } from './scenes/Converge'
@@ -20,7 +19,6 @@ import { Finale } from './scenes/Finale'
  */
 const CHAPTERS = [
   { id: 'drive', label: 'The drive' },
-  { id: 'school', label: 'After school' },
   { id: 'work', label: 'After work' },
   { id: 'takeaway', label: 'Takeaway' },
   { id: 'idea', label: 'The idea' },
@@ -36,7 +34,6 @@ export default function App() {
       <Masthead />
       <main>
         <Drive />
-        <School />
         <Work />
         <Takeaway />
         <Converge />

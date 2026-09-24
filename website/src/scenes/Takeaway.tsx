@@ -90,7 +90,7 @@ export function Takeaway() {
             </motion.div>
             <span className="absolute left-9 top-6 kicker">Four minutes away</span>
           </div>
-          <motion.div className="" style={{ opacity: kitchen, background: '#241a3d' }}>
+          <motion.div className="" style={{ background: '#241a3d' }}>
             <Kitchen p={kitchen} />
             <span className="absolute left-9 top-6 kicker">Packing now</span>
           </motion.div>

@@ -1,6 +1,6 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useScene } from '../lib/scene'
-import { Line, Section, Shot, Warmth } from '../components/Scene'
+import { Cue, Line, Section, Shot, Warmth } from '../components/Scene'
 import { Beats } from '../components/Beats'
 import { PhoneFilm, usePhoneStep } from '../components/Phone'
 import { Car } from '../components/Car'
@@ -41,36 +41,61 @@ export function Work() {
 
   return (
     <Section id="work" sceneRef={ref} lengthVh={lengthVh}>
-      <div className="absolute inset-0 bg-wine" />
+      <div className="absolute inset-0 bg-night" />
       <Warmth o={warm} y="62%" />
 
-      {/* ---- leaving, in the dark, in the car park ---- */}
+      {/*
+        ---- leaving, in the dark ----
+        The words sit on the left and the picture on the right, with the office
+        pushed down to the floor of the frame. Before this the copy was wedged
+        between the building and the phone, so it belonged to neither and the
+        eye had nowhere to start.
+      */}
       <Shot t={t} a={-0.06} b={0} c={0.28} d={0.36} from={1.05} to={1}>
-        <div className="flex items-center gap-[5vw] flex-wrap justify-center px-8 pt-[8vh] pb-[12vh]">
-          <svg viewBox="0 0 300 320" className="w-[26vw] min-w-[200px] max-w-[330px]" aria-hidden>
-            {/* an office with two windows still lit, which is the whole mood */}
-            <rect x="40" y="20" width="220" height="266" rx="4" fill="#271640" />
+        <div className="absolute inset-y-0 right-0 w-1/2">
+          {/* the office, low and behind: two windows still lit, which is the
+              whole mood of the scene */}
+          <svg
+            viewBox="0 0 300 320"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[86%] max-w-[420px]"
+            preserveAspectRatio="xMidYMax meet"
+            aria-hidden
+          >
+            <rect x="40" y="20" width="220" height="266" rx="4" fill="#2b1b49" />
             {Array.from({ length: 24 }).map((_, i) => (
               <rect
                 key={i}
                 x={60 + (i % 4) * 48} y={44 + Math.floor(i / 4) * 40}
                 width="32" height="26" rx="2"
-                fill={i === 6 || i === 17 ? '#d9a441' : '#140d20'}
-                opacity={i === 6 || i === 17 ? 0.75 : 1}
+                fill={i === 6 || i === 17 ? '#d9a441' : '#1a1030'}
+                opacity={i === 6 || i === 17 ? 0.8 : 1}
               />
             ))}
-            <rect y="286" width="300" height="34" fill="#1a1030" />
+            <rect y="286" width="300" height="34" fill="#1f1436" />
           </svg>
-          <PhoneFilm step={phone} scale={0.92} />
+          {/* and the phone in front of it */}
+          <div className="absolute inset-0 grid place-items-center px-[2vw]">
+            <PhoneFilm step={phone} scale={0.92} />
+          </div>
         </div>
       </Shot>
 
-      <Line t={t} a={-0.06} b={0} c={0.07} d={0.1} size="lg">
-        Nine hours. One more thing to wait for.
-      </Line>
-      <Line t={t} a={0.28} b={0.31} c={0.34} d={0.37} size="sm">
-        &ldquo;We&rsquo;ll have it ready when you arrive.&rdquo;
-      </Line>
+      <Cue t={t} a={-0.06} b={0} c={0.08} d={0.13}>
+        <span className="chip mb-5 block">Vijay Nagar, 9:10pm</span>
+        <span className="display block" style={{ fontSize: 'clamp(26px, min(5.2vw, 7.4vh), 74px)' }}>
+          The work is over.
+          <br />
+          <span className="text-gold">Your wait is not.</span>
+        </span>
+      </Cue>
+
+      <Cue t={t} a={0.16} b={0.2} c={0.26} d={0.31}>
+        <span className="display block" style={{ fontSize: 'clamp(20px, min(3.6vw, 5.2vh), 48px)' }}>
+          &ldquo;We&rsquo;ll have it ready
+          <br />
+          when you arrive.&rdquo;
+        </span>
+      </Cue>
 
       {/* ---- the drive home, and the kitchen, on one clock ---- */}
       <Shot t={t} a={0.32} b={0.4} c={0.82} d={0.9} from={1.08} to={1}>
@@ -81,7 +106,7 @@ export function Work() {
           <div style={{ background: '#1b1330' }}>
             <Car speed={speed} mood={mood} look={CAST.worker} />
           </div>
-          <motion.div className="" style={{ opacity: kitchen, background: '#241a3d' }}>
+          <motion.div className="" style={{ background: '#241a3d' }}>
             <Kitchen p={kitchen} />
           </motion.div>
           </div>

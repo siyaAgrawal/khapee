@@ -72,7 +72,9 @@ export function Takeaway() {
 
       {/* ---- both moving at once ---- */}
       <Shot t={t} a={0.28} b={0.36} c={0.74} d={0.82} from={1.08} to={1}>
-        <div className="split">
+        <div className="absolute inset-0 flex flex-col">
+          <div className="h-[16vh] shrink-0" />
+          <div className="split flex-1">
           <div>
             <div className="absolute inset-0 bg-ink" />
             {/* the street going past, fast enough to smear */}
@@ -85,12 +87,13 @@ export function Takeaway() {
                 <Walker mood={mood} look={CAST.hurried} stride={stride} />
               </svg>
             </motion.div>
-            <span className="absolute left-6 top-6 kicker">Four minutes away</span>
+            <span className="absolute left-9 top-6 kicker">Four minutes away</span>
           </div>
-          <motion.div className="" style={{ opacity: kitchen }}>
+          <motion.div className="" style={{ opacity: kitchen, background: '#241a3d' }}>
             <Kitchen p={kitchen} />
-            <span className="absolute left-6 top-6 kicker">Packing now</span>
+            <span className="absolute left-9 top-6 kicker">Packing now</span>
           </motion.div>
+          </div>
         </div>
       </Shot>
 

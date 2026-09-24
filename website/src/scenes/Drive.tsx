@@ -1,6 +1,6 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useScene } from '../lib/scene'
-import { Cue, Line, Section, Shot } from '../components/Scene'
+import { Band, Cue, Line, Section, Shot } from '../components/Scene'
 import { Beats } from '../components/Beats'
 import { Confetti } from '../components/Confetti'
 import { PhoneFilm, usePhoneStep } from '../components/Phone'
@@ -65,12 +65,14 @@ export function Drive() {
         The phone sits right of centre so the words have somewhere to live.
       */}
       <Shot t={t} a={-0.06} b={0} c={0.26} d={0.34} from={1.06} to={1}>
-        <motion.div
-          style={{ scale: phoneScale }}
-          className="relative sm:translate-x-[52%] md:translate-x-[46%] lg:translate-x-[38%]"
-        >
-          <PhoneFilm step={phone} />
-        </motion.div>
+        {/* The phone owns the right half outright. Nudging it off centre was
+            never going to be reliable — on some widths it still landed under
+            the words. Half the frame each, and they cannot meet. */}
+        <div className="absolute inset-y-0 right-0 w-1/2 grid place-items-center px-[2vw]">
+          <motion.div style={{ scale: phoneScale }}>
+            <PhoneFilm step={phone} />
+          </motion.div>
+        </div>
       </Shot>
 
       {/* the words, in order, each getting the frame to itself */}
@@ -103,7 +105,7 @@ export function Drive() {
         <span className="display block" style={{ fontSize: 'clamp(22px, min(4vw, 6vh), 54px)' }}>
           ₹250, by UPI.
         </span>
-        <span className="block mt-4 text-[15px] text-dust/70 max-w-[30ch]">
+        <span className="display block mt-4 text-dust/75 max-w-[26ch]" style={{ fontSize: 'clamp(14px, min(1.9vw, 2.6vh), 20px)', lineHeight: 1.25 }}>
           Straight into the restaurant&rsquo;s own account.
           <span className="text-sage"> No commission, no middleman.</span>
         </span>
@@ -113,23 +115,33 @@ export function Drive() {
         &ldquo;Keep it ready. I&rsquo;m coming.&rdquo;
       </Line>
 
-      {/* ---- the road, and the kitchen, at the same time ---- */}
-      <Shot t={t} a={0.3} b={0.38} c={0.8} d={0.88} from={1.1} to={1}>
-        <div className="split">
-          <div>
-            <Car speed={speed} mood={mood} look={CAST.driver} />
-            <span className="absolute left-6 top-6 kicker">You</span>
+      {/*
+        ---- the road, and the kitchen, at the same time ----
+        A band at the top for the words, and the two halves taking everything
+        below it. Both halves carry their own dark ground so there is no strip
+        of page colour above or below the picture — that gap was the art
+        letterboxing itself inside a panel it did not fill.
+      */}
+      <Shot t={t} a={0.3} b={0.38} c={0.8} d={0.88} from={1.05} to={1}>
+        <div className="absolute inset-0 flex flex-col">
+          <div className="h-[16vh] shrink-0" />
+          <div className="split flex-1">
+            <div style={{ background: '#1b1330' }}>
+              <Car speed={speed} mood={mood} look={CAST.driver} />
+              <span className="absolute left-9 top-6 kicker">You</span>
+            </div>
+            <motion.div style={{ opacity: kitchen, background: '#241a3d' }}>
+              <Kitchen p={kitchen} />
+              <span className="absolute left-9 top-6 kicker">Cafe Vijay Bhaiya</span>
+            </motion.div>
           </div>
-          <motion.div className="" style={{ opacity: kitchen }}>
-            <Kitchen p={kitchen} />
-            <span className="absolute left-6 top-6 kicker">Cafe Vijay Bhaiya</span>
-          </motion.div>
         </div>
       </Shot>
 
-      <Line t={t} a={0.5} b={0.55} c={0.62} d={0.68} size="sm" place="top">
-        You are driving. It is cooking. Neither of you is waiting.
-      </Line>
+      {/* the caption, in the band kept for it */}
+      <Band t={t} a={0.38} b={0.44} c={0.78} d={0.84}>
+        You are driving. It is cooking. <span className="text-gold">Neither of you is waiting.</span>
+      </Band>
 
       {/*
         ---- inside, and it is already on the table ----

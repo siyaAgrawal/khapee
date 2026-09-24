@@ -42,7 +42,7 @@ export function Kitchen({ p }: { p: MotionValue<number> }) {
   const glow = useTransform(p, [0.86, 1], [0, 1])
 
   return (
-    <svg viewBox="0 0 520 360" className="w-full h-full" aria-hidden>
+    <svg viewBox="0 0 520 360" className="w-full h-full" preserveAspectRatio="xMidYMax meet" aria-hidden>
       {/* back of house */}
       <rect width="520" height="360" fill="#2b1b49" />
       <rect y="250" width="520" height="110" fill="#211539" />

@@ -36,7 +36,7 @@ export function Car({
   const blurCss = useTransform(blur, (b) => `blur(${b}px)`)
 
   return (
-    <svg viewBox="0 0 560 300" className="w-full h-full" aria-hidden>
+    <svg viewBox="0 0 560 300" className="w-full h-full" preserveAspectRatio="xMidYMax meet" aria-hidden>
       <rect width="560" height="300" fill={night ? '#1a1030' : '#271640'} />
 
       {/* the city, far away and barely moving: the parallax that gives depth */}

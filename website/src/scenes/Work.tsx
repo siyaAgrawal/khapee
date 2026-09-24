@@ -74,13 +74,16 @@ export function Work() {
 
       {/* ---- the drive home, and the kitchen, on one clock ---- */}
       <Shot t={t} a={0.32} b={0.4} c={0.82} d={0.9} from={1.08} to={1}>
-        <div className="split">
-          <div>
+        <div className="absolute inset-0 flex flex-col">
+          <div className="h-[16vh] shrink-0" />
+          <div className="split flex-1">
+          <div style={{ background: '#1b1330' }}>
             <Car speed={speed} mood={mood} look={CAST.worker} />
           </div>
-          <motion.div className="" style={{ opacity: kitchen }}>
+          <motion.div className="" style={{ opacity: kitchen, background: '#241a3d' }}>
             <Kitchen p={kitchen} />
           </motion.div>
+          </div>
         </div>
       </Shot>
 

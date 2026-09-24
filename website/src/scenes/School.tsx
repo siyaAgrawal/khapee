@@ -86,13 +86,13 @@ export function School() {
                 <Walker mood={mood} look={CAST.student} stride={stride} />
               </svg>
             </motion.div>
-            <span className="absolute left-6 top-6 kicker">You, walking</span>
+            <span className="absolute left-9 top-6 kicker">You, walking</span>
           </div>
 
           {/* right: the kitchen */}
           <motion.div className="absolute inset-y-0 right-0 left-1/2 overflow-hidden" style={{ opacity: kitchen }}>
             <Kitchen p={kitchen} />
-            <span className="absolute left-6 top-6 kicker">The kitchen</span>
+            <span className="absolute left-9 top-6 kicker">The kitchen</span>
           </motion.div>
 
           {/* the line between them, which stops existing when they meet */}
@@ -108,7 +108,7 @@ export function School() {
       </Line>
 
       {/* ---- collecting ---- */}
-      <Shot t={t} a={0.88} b={0.94} c={0.99} d={1.01} from={1.1} to={1}>
+      <Shot t={t} a={0.88} b={0.94} c={0.99} d={1.01} from={1.05} to={1}>
         <svg viewBox="0 0 760 420" className="w-full h-full" aria-hidden>
           <rect width="760" height="420" fill="#191125" />
           <rect y="320" width="760" height="100" fill="#211539" />

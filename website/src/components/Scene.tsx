@@ -98,7 +98,7 @@ export function Line({
       ? 'clamp(30px, min(7vw, 11vh), 92px)'
       : size === 'lg'
         ? 'clamp(21px, min(4.2vw, 6.6vh), 56px)'
-        : 'clamp(13.5px, min(1.7vw, 2.6vh), 20px)'
+        : 'clamp(15px, min(2.2vw, 3vh), 26px)'
   const pos =
     place === 'bottom'
       ? 'items-end pb-[10vh]'
@@ -112,7 +112,11 @@ export function Line({
       style={{ opacity, y }}
     >
       <p
-        className={size === 'sm' ? 'text-center text-ash max-w-[44ch]' : 'display text-center max-w-[18ch]'}
+        className={
+          size === 'sm'
+            ? 'display text-center text-dust/85 max-w-[34ch]'
+            : 'display text-center max-w-[18ch]'
+        }
         style={{ fontSize: font }}
       >
         {children}
@@ -176,6 +180,46 @@ export function Cue({
       style={{ opacity, y }}
     >
       {children}
+    </motion.div>
+  )
+}
+
+/**
+ * The caption band at the top of a split-screen shot.
+ *
+ * White, and in a strip of its own that the picture never enters. The line
+ * used to be a muted grey floated over the middle of the frame, where it sat
+ * on top of whichever half happened to be busy — so it was both hard to read
+ * and in the way. A band reserved for it costs a sixth of the height and the
+ * words are legible for it.
+ */
+export function Band({
+  t,
+  a,
+  b,
+  c,
+  d,
+  children,
+}: {
+  t: MotionValue<number>
+  a: number
+  b: number
+  c: number
+  d: number
+  children: React.ReactNode
+}) {
+  const opacity = useHold(t, a, b, c, d)
+  return (
+    <motion.div
+      className="absolute inset-x-0 top-0 h-[16vh] z-20 flex items-center justify-center px-8 pointer-events-none"
+      style={{ opacity }}
+    >
+      <p
+        className="display text-center text-cream"
+        style={{ fontSize: 'clamp(16px, min(2.4vw, 3.2vh), 28px)' }}
+      >
+        {children}
+      </p>
     </motion.div>
   )
 }

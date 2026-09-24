@@ -74,11 +74,11 @@ export function Work() {
 
       {/* ---- the drive home, and the kitchen, on one clock ---- */}
       <Shot t={t} a={0.32} b={0.4} c={0.82} d={0.9} from={1.08} to={1}>
-        <div className="w-full h-full grid grid-rows-2 md:grid-rows-1 md:grid-cols-2">
-          <div className="relative overflow-hidden">
+        <div className="split">
+          <div>
             <Car speed={speed} mood={mood} look={CAST.worker} />
           </div>
-          <motion.div className="relative overflow-hidden border-l border-white/5" style={{ opacity: kitchen }}>
+          <motion.div className="" style={{ opacity: kitchen }}>
             <Kitchen p={kitchen} />
           </motion.div>
         </div>

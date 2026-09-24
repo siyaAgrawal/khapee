@@ -67,7 +67,7 @@ export function Drive() {
       <Shot t={t} a={-0.06} b={0} c={0.26} d={0.34} from={1.06} to={1}>
         <motion.div
           style={{ scale: phoneScale }}
-          className="relative sm:translate-x-[26%] md:translate-x-[34%]"
+          className="relative sm:translate-x-[52%] md:translate-x-[46%] lg:translate-x-[38%]"
         >
           <PhoneFilm step={phone} />
         </motion.div>
@@ -115,12 +115,12 @@ export function Drive() {
 
       {/* ---- the road, and the kitchen, at the same time ---- */}
       <Shot t={t} a={0.3} b={0.38} c={0.8} d={0.88} from={1.1} to={1}>
-        <div className="w-full h-full grid grid-rows-2 md:grid-rows-1 md:grid-cols-2">
-          <div className="relative overflow-hidden">
+        <div className="split">
+          <div>
             <Car speed={speed} mood={mood} look={CAST.driver} />
             <span className="absolute left-6 top-6 kicker">You</span>
           </div>
-          <motion.div className="relative overflow-hidden border-l border-white/5" style={{ opacity: kitchen }}>
+          <motion.div className="" style={{ opacity: kitchen }}>
             <Kitchen p={kitchen} />
             <span className="absolute left-6 top-6 kicker">Cafe Vijay Bhaiya</span>
           </motion.div>

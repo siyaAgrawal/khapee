@@ -172,7 +172,7 @@ export function Cue({
   const y = useTransform(t, [a, d], [18, -18])
   return (
     <motion.div
-      className="absolute inset-y-0 left-0 z-20 flex flex-col justify-center pl-[7vw] pr-[6vw] sm:pr-[44vw] pointer-events-none"
+      className="absolute inset-y-0 left-0 z-20 flex flex-col justify-center pl-[7vw] pr-[6vw] sm:pr-0 sm:max-w-[46vw] pointer-events-none"
       style={{ opacity, y }}
     >
       {children}

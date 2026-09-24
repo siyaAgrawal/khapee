@@ -72,8 +72,8 @@ export function Takeaway() {
 
       {/* ---- both moving at once ---- */}
       <Shot t={t} a={0.28} b={0.36} c={0.74} d={0.82} from={1.08} to={1}>
-        <div className="relative w-full h-full grid grid-rows-2 md:grid-rows-1 md:grid-cols-2">
-          <div className="relative overflow-hidden">
+        <div className="split">
+          <div>
             <div className="absolute inset-0 bg-ink" />
             {/* the street going past, fast enough to smear */}
             <motion.div
@@ -87,7 +87,7 @@ export function Takeaway() {
             </motion.div>
             <span className="absolute left-6 top-6 kicker">Four minutes away</span>
           </div>
-          <motion.div className="relative overflow-hidden border-l border-white/5" style={{ opacity: kitchen }}>
+          <motion.div className="" style={{ opacity: kitchen }}>
             <Kitchen p={kitchen} />
             <span className="absolute left-6 top-6 kicker">Packing now</span>
           </motion.div>

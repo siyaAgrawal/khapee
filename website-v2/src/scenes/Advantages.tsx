@@ -19,7 +19,7 @@ import { useLoop } from '../lib/scene'
  */
 const POINTS: { lead: string; hit: string; tail?: string }[] = [
   { lead: 'A table held by someone waiting', hit: ' is not earning.' },
-  { lead: 'Others take a quarter to a third.', hit: ' We take nothing.' },
+  { lead: 'Other aggregators take a quarter to a third.', hit: ' We take nothing.' },
   { lead: '', hit: 'No queue', tail: ' at the door.' },
 ]
 

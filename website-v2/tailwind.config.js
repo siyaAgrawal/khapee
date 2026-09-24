@@ -12,15 +12,19 @@ export default {
         jewel beds that differ scene to scene, terracotta and gold as the only
         accents, and cream doing all the talking.
       */
+      /*
+        Pointed at the theme variables rather than at fixed values, so a class
+        like bg-night follows whichever palette is on. The raw-channel form is
+        what lets bg-gold/14 and text-dust/75 keep working.
+      */
       colors: {
-        ink: '#191125',
-        night: '#271640',
-        clay: '#b9563c',
-        gold: '#d9a441',
-        sage: '#7fae9f',
-        cream: '#f4ede1',
-        dust: '#dfd3c1',
-        ash: '#9a9097',
+        ink: 'rgb(var(--s1-rgb) / <alpha-value>)',
+        night: 'rgb(var(--s3-rgb) / <alpha-value>)',
+        gold: 'rgb(var(--accent-rgb) / <alpha-value>)',
+        clay: 'rgb(var(--accent2-rgb) / <alpha-value>)',
+        cream: 'rgb(var(--paper-rgb) / <alpha-value>)',
+        dust: 'rgb(var(--paper-dim-rgb) / <alpha-value>)',
+        ash: 'rgb(var(--ash-rgb) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bricolage Grotesque"', '"Space Grotesk"', 'ui-sans-serif', 'sans-serif'],

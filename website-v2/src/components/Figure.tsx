@@ -20,11 +20,11 @@ import { motion, useMotionValue, useTransform, type MotionValue } from 'framer-m
 export type Skin = { skin: string; hair: string; cloth: string; rim: string }
 
 export const CAST: Record<string, Skin> = {
-  driver: { skin: '#d79a63', hair: '#241a14', cloth: '#1f9e8c', rim: '#c98c33' },
-  student: { skin: '#c1834f', hair: '#1c140f', cloth: '#b9563c', rim: '#d9a441' },
-  worker: { skin: '#e0a978', hair: '#2b211a', cloth: '#d9a441', rim: '#7fae9f' },
-  hurried: { skin: '#b0744a', hair: '#1a1310', cloth: '#8a9a55', rim: '#b9563c' },
-  chef: { skin: '#cd9260', hair: '#1e1713', cloth: '#f4ede1', rim: '#c98c33' },
+  driver: { skin: '#d79a63', hair: '#241a14', cloth: 'var(--cloth1)', rim: 'var(--accent-dim)' },
+  student: { skin: '#c1834f', hair: '#1c140f', cloth: 'var(--accent2)', rim: 'var(--accent)' },
+  worker: { skin: '#e0a978', hair: '#2b211a', cloth: 'var(--accent)', rim: 'var(--cloth3)' },
+  hurried: { skin: '#b0744a', hair: '#1a1310', cloth: 'var(--cloth2)', rim: 'var(--accent2)' },
+  chef: { skin: '#cd9260', hair: '#1e1713', cloth: 'var(--paper)', rim: 'var(--accent-dim)' },
 }
 
 export function Face({ mood, look }: { mood: MotionValue<number>; look: Skin }) {
@@ -81,8 +81,8 @@ export function Face({ mood, look }: { mood: MotionValue<number>; look: Skin }) 
         style={{ scaleY: mouthFlip, scaleX: mouthWide, originX: '50%', originY: '8px' }}
       />
       <motion.g style={{ opacity: cheek }}>
-        <ellipse cx={-11} cy={3.5} rx={3.6} ry={2.2} fill="#b9563c" opacity={0.5} />
-        <ellipse cx={11} cy={3.5} rx={3.6} ry={2.2} fill="#b9563c" opacity={0.5} />
+        <ellipse cx={-11} cy={3.5} rx={3.6} ry={2.2} fill="var(--accent2)" opacity={0.5} />
+        <ellipse cx={11} cy={3.5} rx={3.6} ry={2.2} fill="var(--accent2)" opacity={0.5} />
       </motion.g>
     </g>
   )
@@ -132,13 +132,13 @@ export function Walker({
 
   return (
     <motion.g style={{ y: bob }}>
-      <ellipse cx={0} cy={150} rx={26} ry={5} fill="#0c0716" opacity={0.5} />
+      <ellipse cx={0} cy={150} rx={26} ry={5} fill="var(--s0)" opacity={0.5} />
       {/* legs */}
       <motion.g style={{ originX: '0px', originY: '78px', rotate: legA }}>
-        <path d="M-7 78 q-2 38 -1 66" stroke="#2b1b49" strokeWidth={13} fill="none" strokeLinecap="round" />
+        <path d="M-7 78 q-2 38 -1 66" stroke="var(--s4)" strokeWidth={13} fill="none" strokeLinecap="round" />
       </motion.g>
       <motion.g style={{ originX: '0px', originY: '78px', rotate: legB }}>
-        <path d="M7 78 q2 38 1 66" stroke="#3d2566" strokeWidth={13} fill="none" strokeLinecap="round" />
+        <path d="M7 78 q2 38 1 66" stroke="var(--s5)" strokeWidth={13} fill="none" strokeLinecap="round" />
       </motion.g>
       {/* torso */}
       <path d="M-22 82 q-4 -52 22 -52 q26 0 22 52 z" fill={look.cloth} />
@@ -151,9 +151,9 @@ export function Walker({
         <path d="M21 40 q9 22 6 38" stroke={look.cloth} strokeWidth={11} fill="none" strokeLinecap="round" />
         {carry && (
           <g transform="translate(27 86)">
-            <path d="M-15 -10 h30 l3 34 h-36 z" fill="#c98c33" />
-            <path d="M-7 -10 q7 -10 14 0" stroke="#8f6426" strokeWidth={2.6} fill="none" strokeLinecap="round" />
-            <rect x={-10} y={4} width={20} height={10} rx={2} fill="#f4ede1" opacity={0.9} />
+            <path d="M-15 -10 h30 l3 34 h-36 z" fill="var(--accent-dim)" />
+            <path d="M-7 -10 q7 -10 14 0" stroke="var(--accent-dim)" strokeWidth={2.6} fill="none" strokeLinecap="round" />
+            <rect x={-10} y={4} width={20} height={10} rx={2} fill="var(--paper)" opacity={0.9} />
           </g>
         )}
       </motion.g>

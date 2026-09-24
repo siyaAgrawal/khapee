@@ -16,16 +16,164 @@
   page none of that means anything.
 */
 
-:root {
+/*
+  Five palettes, one set of slots.
+  ------------------------------------------------------------------
+  Every colour in the page — the scenes included, not just the buttons — reads
+  from these variables, so a theme is a dozen lines rather than a rewrite.
+
+  The brief was a colour that pops and that the industry has not taken. What is
+  taken, and therefore avoided: Zomato's red, Swiggy's orange, Deliveroo's
+  bright teal, foodpanda's hot pink, Uber Eats' green, and the McDonald's
+  yellow half the category borrows.
+
+  --s0..--s6 run darkest to lightest. --accent carries light and food,
+  --accent2 objects and emphasis, --paper is what type is set in.
+*/
+/* 1. Aubergine & Gold — the current one. Warm, nocturnal, restaurant-ish. */
+:root,
+:root[data-theme='aubergine'] {
   color-scheme: dark;
-  --ink: #191125;
-  --night: #271640;
-  --clay: #b9563c;
-  --gold: #d9a441;
-  --sage: #7fae9f;
-  --cream: #f4ede1;
-  --dust: #dfd3c1;
-  --ash: #9a9097;
+  --s0-rgb: 20 13 32;
+  --s1-rgb: 25 17 37;
+  --s2-rgb: 30 22 54;
+  --s3-rgb: 39 22 64;
+  --s4-rgb: 43 27 73;
+  --s5-rgb: 51 33 90;
+  --s6-rgb: 74 58 122;
+  --accent-rgb: 217 164 65;
+  --accent-dim-rgb: 168 124 38;
+  --accent2-rgb: 185 86 60;
+  --accent2-dim-rgb: 143 61 40;
+  --paper-rgb: 244 237 225;
+  --paper-dim-rgb: 223 211 193;
+  --ash-rgb: 154 144 151;
+  --cloth1-rgb: 109 122 88;
+  --cloth2-rgb: 138 154 85;
+  --cloth3-rgb: 127 174 159;
+}
+
+/* 2. Ink & Chartreuse — near-black with a blue cast and an acid citrus
+   nobody in food is using; it belongs to tooling and nightlife, which is
+   exactly why it stands out on a menu. A highlight only: at any size larger
+   than a line of type it stops being appetising. */
+:root[data-theme='chartreuse'] {
+  --s0-rgb: 7 9 12;
+  --s1-rgb: 11 14 19;
+  --s2-rgb: 16 20 27;
+  --s3-rgb: 21 27 36;
+  --s4-rgb: 28 35 46;
+  --s5-rgb: 38 47 61;
+  --s6-rgb: 58 70 88;
+  --accent-rgb: 205 250 74;
+  --accent-dim-rgb: 143 174 50;
+  --accent2-rgb: 95 127 255;
+  --accent2-dim-rgb: 63 87 187;
+  --paper-rgb: 238 242 240;
+  --paper-dim-rgb: 195 203 205;
+  --ash-rgb: 125 136 148;
+  --cloth1-rgb: 58 70 88;
+  --cloth2-rgb: 95 127 255;
+  --cloth3-rgb: 143 174 50;
+}
+
+/* 3. Oxblood & Brass — a dining room rather than an app. Leather, brass,
+   low light. The least software-looking of the five. */
+:root[data-theme='oxblood'] {
+  --s0-rgb: 21 8 9;
+  --s1-rgb: 28 12 14;
+  --s2-rgb: 37 17 20;
+  --s3-rgb: 51 22 26;
+  --s4-rgb: 62 28 33;
+  --s5-rgb: 78 37 43;
+  --s6-rgb: 109 58 65;
+  --accent-rgb: 214 167 86;
+  --accent-dim-rgb: 161 124 54;
+  --accent2-rgb: 127 154 106;
+  --accent2-dim-rgb: 90 111 75;
+  --paper-rgb: 243 233 217;
+  --paper-dim-rgb: 216 202 180;
+  --ash-rgb: 160 143 134;
+  --cloth1-rgb: 127 154 106;
+  --cloth2-rgb: 214 167 86;
+  --cloth3-rgb: 168 107 88;
+}
+
+/* 4. Forest & Butter — deep green, but nothing like the bright green Uber
+   Eats owns. The colour of a dark room with plants in it. */
+:root[data-theme='forest'] {
+  --s0-rgb: 6 15 12;
+  --s1-rgb: 10 23 18;
+  --s2-rgb: 14 31 25;
+  --s3-rgb: 19 42 33;
+  --s4-rgb: 24 52 42;
+  --s5-rgb: 33 67 54;
+  --s6-rgb: 53 96 80;
+  --accent-rgb: 240 205 124;
+  --accent-dim-rgb: 177 149 79;
+  --accent2-rgb: 212 121 90;
+  --accent2-dim-rgb: 156 85 60;
+  --paper-rgb: 241 239 227;
+  --paper-dim-rgb: 207 204 187;
+  --ash-rgb: 139 154 145;
+  --cloth1-rgb: 212 121 90;
+  --cloth2-rgb: 240 205 124;
+  --cloth3-rgb: 111 159 134;
+}
+
+/* 5. Cobalt & Saffron — the loudest, and the most Indian: a pairing you see
+   on a wall in Rajasthan and nowhere in food delivery. */
+:root[data-theme='cobalt'] {
+  --s0-rgb: 5 10 28;
+  --s1-rgb: 8 16 39;
+  --s2-rgb: 12 22 54;
+  --s3-rgb: 16 29 74;
+  --s4-rgb: 22 38 92;
+  --s5-rgb: 30 50 115;
+  --s6-rgb: 49 73 163;
+  --accent-rgb: 246 167 35;
+  --accent-dim-rgb: 184 122 22;
+  --accent2-rgb: 232 96 74;
+  --accent2-dim-rgb: 173 65 50;
+  --paper-rgb: 242 240 232;
+  --paper-dim-rgb: 203 201 192;
+  --ash-rgb: 133 144 173;
+  --cloth1-rgb: 49 73 163;
+  --cloth2-rgb: 246 167 35;
+  --cloth3-rgb: 111 138 212;
+}
+
+/*
+  Every colour on the page resolves from the triplets above.
+
+  Two forms of each: a full colour for SVG fills and strokes, and the raw
+  channels so Tailwind can apply an opacity to them. One source of truth per
+  theme, written once here.
+*/
+:root {
+  --s0: rgb(var(--s0-rgb));
+  --s1: rgb(var(--s1-rgb));
+  --s2: rgb(var(--s2-rgb));
+  --s3: rgb(var(--s3-rgb));
+  --s4: rgb(var(--s4-rgb));
+  --s5: rgb(var(--s5-rgb));
+  --s6: rgb(var(--s6-rgb));
+  --accent: rgb(var(--accent-rgb));
+  --accent-dim: rgb(var(--accent-dim-rgb));
+  --accent2: rgb(var(--accent2-rgb));
+  --accent2-dim: rgb(var(--accent2-dim-rgb));
+  --paper: rgb(var(--paper-rgb));
+  --paper-dim: rgb(var(--paper-dim-rgb));
+  --ash: rgb(var(--ash-rgb));
+  --cloth1: rgb(var(--cloth1-rgb));
+  --cloth2: rgb(var(--cloth2-rgb));
+  --cloth3: rgb(var(--cloth3-rgb));
+  --ink: rgb(var(--s1-rgb));
+  --night: rgb(var(--s3-rgb));
+  --gold: rgb(var(--accent-rgb));
+  --clay: rgb(var(--accent2-rgb));
+  --cream: rgb(var(--paper-rgb));
+  --dust: rgb(var(--paper-dim-rgb));
 }
 
 html {
@@ -293,3 +441,29 @@ html.lenis, html.lenis body { height: auto; }
 }
 .split > * { position: relative; overflow: hidden; }
 .split > * + * { border-left: 1px solid rgba(244, 237, 225, 0.07); }
+
+
+/* The palette switcher: temporary, for choosing. Delete with its component. */
+.swatches {
+  position: fixed;
+  left: 16px;
+  bottom: 22px;
+  z-index: 60;
+  display: flex;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+}
+.swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+.swatch:hover { transform: scale(1.14); }
+.swatch[aria-pressed='true'] { border-color: #fff; transform: scale(1.2); }

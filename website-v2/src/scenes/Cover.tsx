@@ -80,23 +80,23 @@ export function Cover({ next }: { next: string }) {
             className="w-[19vw] min-w-[120px] max-w-[230px] h-auto shrink-0"
             aria-hidden
           >
-            <circle cx="110" cy="110" r="88" fill="#211539" />
-            <circle cx="110" cy="110" r="88" fill="none" stroke="#452c68" strokeWidth="3" />
+            <circle cx="110" cy="110" r="88" fill="var(--s2)" />
+            <circle cx="110" cy="110" r="88" fill="none" stroke="var(--s6)" strokeWidth="3" />
             {Array.from({ length: 12 }).map((_, i) => (
               <rect
                 key={i}
-                x="108" y="30" width="4" height="13" rx="2" fill="#5c3d84"
+                x="108" y="30" width="4" height="13" rx="2" fill="var(--s6)"
                 transform={`rotate(${i * 30} 110 110)`}
               />
             ))}
-            <line x1="110" y1="110" x2="110" y2="58" stroke="#f4ede1" strokeWidth="5" strokeLinecap="round" />
-            <line x1="110" y1="110" x2="146" y2="128" stroke="#f4ede1" strokeWidth="5" strokeLinecap="round" />
+            <line x1="110" y1="110" x2="110" y2="58" stroke="var(--paper)" strokeWidth="5" strokeLinecap="round" />
+            <line x1="110" y1="110" x2="146" y2="128" stroke="var(--paper)" strokeWidth="5" strokeLinecap="round" />
             <motion.line
               x1="110" y1="110" x2="110" y2="44"
-              stroke="#b9563c" strokeWidth="2.4" strokeLinecap="round"
+              stroke="var(--accent2)" strokeWidth="2.4" strokeLinecap="round"
               style={{ rotate: hand, originX: '110px', originY: '110px' }}
             />
-            <circle cx="110" cy="110" r="5" fill="#f4ede1" />
+            <circle cx="110" cy="110" r="5" fill="var(--paper)" />
           </svg>
 
           <div className="hidden sm:block">

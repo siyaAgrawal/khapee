@@ -5,6 +5,7 @@ import { Cover } from './scenes/Cover'
 import { Journey } from './scenes/Journey'
 import { Arrival } from './scenes/Arrival'
 import { Advantages, Close } from './scenes/Advantages'
+import { Palette } from './components/Palette'
 
 /**
  * Khapee, in three sections and no more.
@@ -40,6 +41,7 @@ export default function App() {
         <Close />
       </main>
       <Ledger />
+      <Palette />
       <div className="grain" aria-hidden />
     </>
   )
@@ -114,7 +116,7 @@ function Ledger() {
           key={c.id}
           href={`#${c.id}`}
           className="transition-colors flex items-center gap-1.5"
-          style={{ color: i === at ? '#d9a441' : undefined }}
+          style={{ color: i === at ? 'var(--accent)' : undefined }}
         >
           <span style={{ opacity: 0.55 }}>{String(i + 1).padStart(2, '0')}</span>
           {i === at ? <b>{c.label}</b> : <span className="hidden xl:inline">{c.label}</span>}

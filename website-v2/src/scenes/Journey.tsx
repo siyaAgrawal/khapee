@@ -83,15 +83,15 @@ export function Journey() {
 
       {/* ---- the road and the kitchen, on one clock ---- */}
       <Shot t={t} a={0.3} b={0.36} c={0.78} d={0.84} from={1.06} to={1}>
-        <div className="absolute inset-0 flex flex-col" style={{ background: '#1e1636' }}>
+        <div className="absolute inset-0 flex flex-col" style={{ background: 'var(--s2)' }}>
           <div className="h-[19vh] shrink-0" />
           <div className="flex-1 grid place-items-center min-h-0">
             <div className="split">
-              <div style={{ background: '#1b1330' }}>
+              <div style={{ background: 'var(--s1)' }}>
                 <Car speed={speed} mood={mood} look={CAST.worker} />
                 <span className="absolute left-9 top-6 kicker">You</span>
               </div>
-              <div style={{ background: '#241a3d' }}>
+              <div style={{ background: 'var(--s3)' }}>
                 <Kitchen p={kitchen} />
                 <span className="absolute left-9 top-6 kicker">Cafe Vijay Bhaiya</span>
               </div>

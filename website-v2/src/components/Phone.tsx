@@ -214,8 +214,8 @@ function ScreenBody({ step, act }: { step: Step; act: (s: Step) => void }) {
         <div className="px-5 pt-12 text-center">
           <motion.svg viewBox="0 0 80 80" className="mx-auto w-16 h-16"
             initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
-            <circle cx="40" cy="40" r="33" fill="none" stroke="#d9a441" strokeWidth="3" />
-            <motion.path d="M25 41 L35 52 L56 28" fill="none" stroke="#d9a441" strokeWidth="4.5"
+            <circle cx="40" cy="40" r="33" fill="none" stroke="var(--accent)" strokeWidth="3" />
+            <motion.path d="M25 41 L35 52 L56 28" fill="none" stroke="var(--accent)" strokeWidth="4.5"
               strokeLinecap="round" strokeLinejoin="round"
               initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.45, delay: 0.15 }} />
           </motion.svg>
@@ -350,7 +350,7 @@ export function PhoneDemo() {
             className="tap-target h-1.5 rounded-full transition-all"
             style={{
               width: s === step ? 22 : 7,
-              background: s === step ? '#d9a441' : 'rgba(243,239,230,0.22)',
+              background: s === step ? 'var(--accent)' : 'rgba(243,239,230,0.22)',
             }}
           />
         ))}

@@ -93,16 +93,16 @@ export function Close() {
       <div className="mx-auto max-w-[900px] px-[7vw] py-[18vh] text-center">
         {/* the clock again, small, because it is the whole idea in one shape */}
         <svg viewBox="0 0 220 220" className="w-[74px] h-[74px] mx-auto mb-10" aria-hidden>
-          <circle cx="110" cy="110" r="88" fill="#211539" />
-          <circle cx="110" cy="110" r="88" fill="none" stroke="#452c68" strokeWidth="6" />
-          <line x1="110" y1="110" x2="110" y2="58" stroke="#f4ede1" strokeWidth="8" strokeLinecap="round" />
-          <line x1="110" y1="110" x2="146" y2="128" stroke="#f4ede1" strokeWidth="8" strokeLinecap="round" />
+          <circle cx="110" cy="110" r="88" fill="var(--s2)" />
+          <circle cx="110" cy="110" r="88" fill="none" stroke="var(--s6)" strokeWidth="6" />
+          <line x1="110" y1="110" x2="110" y2="58" stroke="var(--paper)" strokeWidth="8" strokeLinecap="round" />
+          <line x1="110" y1="110" x2="146" y2="128" stroke="var(--paper)" strokeWidth="8" strokeLinecap="round" />
           <motion.line
             x1="110" y1="110" x2="110" y2="44"
-            stroke="#d9a441" strokeWidth="4" strokeLinecap="round"
+            stroke="var(--accent)" strokeWidth="4" strokeLinecap="round"
             style={{ rotate: hand, originX: '110px', originY: '110px' }}
           />
-          <circle cx="110" cy="110" r="8" fill="#f4ede1" />
+          <circle cx="110" cy="110" r="8" fill="var(--paper)" />
         </svg>
 
         <h2 className="display mx-auto max-w-[14ch]" style={{ fontSize: 'clamp(30px, 5.4vw, 70px)' }}>

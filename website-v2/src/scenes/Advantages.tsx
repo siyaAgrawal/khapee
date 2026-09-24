@@ -4,46 +4,72 @@ import { useLoop } from '../lib/scene'
 /**
  * Section two: what it is worth to a restaurant.
  *
- * Three sentences, and nothing wrapped around them. It had a headline, a
+ * Three sentences and nothing wrapped around them. It had a headline, a big
  * figure and a paragraph for each point, which is four things to read before
- * reaching the one that matters — and the three sentences are already the
- * argument. An owner does not need "the same kitchen, a busier counter" to
- * explain a line that explains itself.
+ * reaching the one that mattered — and the sentences are already the argument.
  *
- * On white, because after the film the eye needs somewhere to rest, and
- * because this is a commercial argument rather than an emotional one.
+ * One of them is paraphrased and only one. "We take no commission, others take
+ * a quarter to a third" is the right fact in the wrong order: it opens on the
+ * good news and closes on the competitor, so the last thing in the reader's ear
+ * is what somebody else charges. Turned around, the sentence ends on nothing,
+ * which is the number worth remembering.
+ *
+ * On white, because after the film the eye needs somewhere to rest, and because
+ * this is a commercial argument rather than an emotional one.
  */
-const POINTS = [
-  'A table held by someone waiting is not earning.',
-  'We take no commission. Others take a quarter to a third.',
-  'No queue at the door.',
+const POINTS: { lead: string; hit: string; tail?: string }[] = [
+  { lead: 'A table held by someone waiting', hit: ' is not earning.' },
+  { lead: 'Others take a quarter to a third.', hit: ' We take nothing.' },
+  { lead: '', hit: 'No queue', tail: ' at the door.' },
 ]
 
 export function Advantages() {
   return (
-    <section id="restaurants" className="relative bg-cream text-ink">
-      <div className="mx-auto max-w-[1000px] px-[7vw] py-[16vh]">
-        <p className="kicker mb-[7vh]" style={{ color: 'var(--clay)' }}>
-          For restaurants
-        </p>
+    <section id="restaurants" className="relative bg-cream text-ink overflow-hidden">
+      {/* a block of the brand colour running off the edge, so the section has
+          a shape rather than being a white gap between two dark ones */}
+      <div
+        className="absolute -right-[12vw] -top-[8vh] w-[42vw] h-[42vw] rounded-full"
+        style={{ background: 'rgba(217,164,65,0.14)' }}
+        aria-hidden
+      />
+
+      <div className="relative mx-auto max-w-[1060px] px-[7vw] py-[15vh]">
+        <h2
+          className="display mb-[8vh]"
+          style={{ fontSize: 'clamp(34px, 6.4vw, 86px)', lineHeight: 0.95 }}
+        >
+          For <span style={{ color: 'var(--clay)' }}>restaurants</span>
+        </h2>
 
         <div>
-          {POINTS.map((line, i) => (
-            <motion.p
-              key={line}
-              className="display border-t py-[4.5vh]"
-              style={{
-                fontSize: 'clamp(23px, 3.6vw, 46px)',
-                lineHeight: 1.12,
-                borderColor: 'rgba(23,17,37,0.14)',
-              }}
-              initial={{ opacity: 0, y: 16 }}
+          {POINTS.map((p, i) => (
+            <motion.div
+              key={p.hit}
+              className="flex items-baseline gap-[3vw] border-t py-[4.6vh]"
+              style={{ borderColor: 'rgba(23,17,37,0.16)' }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-18%' }}
-              transition={{ duration: 0.55, delay: i * 0.1, ease: [0.2, 0.8, 0.3, 1] }}
+              transition={{ duration: 0.6, delay: i * 0.1, ease: [0.2, 0.8, 0.3, 1] }}
             >
-              {line}
-            </motion.p>
+              <span
+                className="display shrink-0"
+                style={{
+                  fontSize: 'clamp(20px, 2.4vw, 32px)',
+                  color: 'var(--clay)',
+                  opacity: 0.55,
+                  lineHeight: 1,
+                }}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <p className="display" style={{ fontSize: 'clamp(24px, 4vw, 52px)', lineHeight: 1.08 }}>
+                {p.lead}
+                <span style={{ color: 'var(--clay)' }}>{p.hit}</span>
+                {p.tail}
+              </p>
+            </motion.div>
           ))}
         </div>
       </div>

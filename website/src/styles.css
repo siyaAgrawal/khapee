@@ -257,33 +257,24 @@ html.lenis, html.lenis body { height: auto; }
 /* Grain, quieter. At full strength it looked like noise rather than film. */
 
 /*
-  Side by side whenever the screen is wider than it is tall.
+  Always side by side. Never stacked.
   ------------------------------------------------------------------
-  The split-screen scenes were stacking on anything under 768px, which meant a
-  perfectly good landscape window — a browser pane, a small laptop, a phone
-  turned sideways — got the portrait layout and put the car above the kitchen
-  instead of beside it. That breaks the one thing the shot exists to say,
-  which is that these two things are happening at the same moment.
+  This tried a width rule and then an orientation rule, and both were wrong
+  for the same reason: whenever either of them decided the frame was too
+  narrow, the car went above the kitchen instead of beside it — and the only
+  thing that shot exists to say is that these two things are happening at the
+  same moment. Stacked, it reads as one after the other, which is the exact
+  opposite.
 
-  Width was the wrong question. The right one is whether the frame is landscape,
-  because that is what decides whether two things fit next to each other.
+  So the halves stay halves at every size. On something genuinely narrow they
+  get small rather than getting rearranged, which is the right trade: a small
+  picture still says the thing, and a rearranged one says something false.
 */
 .split {
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   width: 100%;
   height: 100%;
 }
-/* Either enough width for two halves, or a landscape frame of any size. */
-@media (min-width: 620px), (orientation: landscape) {
-  .split {
-    grid-template-rows: none;
-    grid-template-columns: 1fr 1fr;
-  }
-}
 .split > * { position: relative; overflow: hidden; }
-/* The rule between the halves follows the same logic. */
-.split > * + * { border-left: 0; border-top: 1px solid rgba(244, 237, 225, 0.07); }
-@media (min-width: 620px), (orientation: landscape) {
-  .split > * + * { border-top: 0; border-left: 1px solid rgba(244, 237, 225, 0.07); }
-}
+.split > * + * { border-left: 1px solid rgba(244, 237, 225, 0.07); }

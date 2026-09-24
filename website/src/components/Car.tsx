@@ -33,11 +33,48 @@ export function Car({
   /* The skyline drifts at a fraction of the road's speed. That ratio is
      the only thing making this look like distance rather than a backdrop. */
   const cityX = useTransform(dash, (v) => v * 0.12)
+  /* Two slower layers above it. Different rates are the whole of the effect —
+     one layer moving is a backdrop, three is distance. */
+  const skyX = useTransform(dash, (v) => v * 0.05)
+  const cableX = useTransform(dash, (v) => v * 0.34)
   const blurCss = useTransform(blur, (b) => `blur(${b}px)`)
 
   return (
-    <svg viewBox="0 0 560 300" className="w-full h-full" preserveAspectRatio="xMidYMax meet" aria-hidden>
+    <svg viewBox="0 -250 560 550" className="w-full h-full" preserveAspectRatio="xMidYMax meet" aria-hidden>
       <rect width="560" height="300" fill={night ? '#1a1030' : '#271640'} />
+
+      {/* the high city, slowest of all — three layers of parallax now */}
+      <motion.g style={{ x: skyX, opacity: 0.22 }}>
+        {[0, 240, 480, 720].map((x) => (
+          <g key={x} transform={`translate(${x} 0)`}>
+            <rect x="12" y="-214" width="46" height="180" fill="#2a1f52" />
+            <rect x="72" y="-158" width="34" height="124" fill="#261c4a" />
+            <rect x="124" y="-238" width="52" height="204" fill="#2e2259" />
+            <rect x="190" y="-186" width="30" height="152" fill="#261c4a" />
+            {[0, 1, 2, 3].map((r) =>
+              [0, 1].map((c) => (
+                <rect key={`${r}-${c}`} x={132 + c * 18} y={-224 + r * 30} width="8" height="12"
+                      fill="#d9a441" opacity={(r + c) % 3 === 0 ? 0.7 : 0.2} />
+              )),
+            )}
+          </g>
+        ))}
+      </motion.g>
+
+      {/* cables, which is what a street in Indore actually has overhead */}
+      <motion.g style={{ x: cableX }}>
+        {[0, 1, 2, 3].map((i) => (
+          <g key={i} transform={`translate(${i * 300} 0)`}>
+            <rect x="40" y="-190" width="5" height="172" fill="#221a3f" />
+            <path d="M42 -176 q150 26 300 0" fill="none" stroke="#221a3f" strokeWidth="3" />
+            <path d="M42 -164 q150 30 300 0" fill="none" stroke="#221a3f" strokeWidth="2.5" />
+            {/* the lamp on the pole, and the cone it throws */}
+            <path d="M42 -190 q26 -6 34 4" fill="none" stroke="#221a3f" strokeWidth="4" />
+            <circle cx="78" cy="-184" r="6" fill="#d9a441" opacity="0.85" />
+            <path d="M78 -178 L30 -10 L126 -10 Z" fill="#d9a441" opacity="0.07" />
+          </g>
+        ))}
+      </motion.g>
 
       {/* the city, far away and barely moving: the parallax that gives depth */}
       <motion.g style={{ x: cityX, opacity: 0.32 }}>

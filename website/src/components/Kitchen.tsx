@@ -42,9 +42,33 @@ export function Kitchen({ p }: { p: MotionValue<number> }) {
   const glow = useTransform(p, [0.86, 1], [0, 1])
 
   return (
-    <svg viewBox="0 0 520 360" className="w-full h-full" preserveAspectRatio="xMidYMax meet" aria-hidden>
+    <svg viewBox="-20 -190 560 550" className="w-full h-full" preserveAspectRatio="xMidYMax meet" aria-hidden>
       {/* back of house */}
-      <rect width="520" height="360" fill="#2b1b49" />
+      <rect x="0" y="-190" width="520" height="550" fill="#241a3d" />
+      {/* the wall above the pass: tiles, an extractor, a rail of pans */}
+      <g opacity="0.55">
+        {Array.from({ length: 13 }).map((_, c) =>
+          Array.from({ length: 4 }).map((_, r) => (
+            <rect key={`${c}-${r}`} x={4 + c * 40} y={-186 + r * 38} width="36" height="34" rx="2"
+                  fill={(c + r) % 2 ? '#2d2150' : '#291d48'} />
+          )),
+        )}
+      </g>
+      <g>
+        <path d="M150 -190 h220 l36 74 h-292 z" fill="#2f2356" />
+        <rect x="112" y="-118" width="296" height="12" rx="3" fill="#3a2b66" />
+        <rect x="128" y="-106" width="264" height="5" fill="#241a3d" opacity="0.6" />
+      </g>
+      <g>
+        <rect x="40" y="-92" width="150" height="4" rx="2" fill="#3a2b66" />
+        {[62, 104, 146].map((x, i) => (
+          <g key={x} transform={`translate(${x} -88)`}>
+            <path d={`M-14 0 a14 14 0 0 0 28 0 z`} fill="#4a3a7a" />
+            <rect x="-1.5" y="-14" width="3" height="14" fill="#4a3a7a" />
+            {i === 1 && <ellipse cy="1" rx="9" ry="3" fill="#d9a441" opacity="0.25" />}
+          </g>
+        ))}
+      </g>
       <rect y="250" width="520" height="110" fill="#211539" />
 
       {/* heat lamps over the pass */}

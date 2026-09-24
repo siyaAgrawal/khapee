@@ -17,20 +17,26 @@
 */
 
 /*
-  Five palettes, one set of slots.
+  Purple and yellow, three ways, none of them Zepto.
   ------------------------------------------------------------------
-  Every colour in the page — the scenes included, not just the buttons — reads
-  from these variables, so a theme is a dozen lines rather than a rewrite.
+  Purple with a bright yellow is Zepto's palette and there is no arguing with
+  that — deep blue-violet, flat lemon, two colours and no others. The pairing
+  is still the right one for Khapee, so the job is to keep the energy and move
+  out of their register.
 
-  The brief was a colour that pops and that the industry has not taken. What is
-  taken, and therefore avoided: Zomato's red, Swiggy's orange, Deliveroo's
-  bright teal, foodpanda's hot pink, Uber Eats' green, and the McDonald's
-  yellow half the category borrows.
+  Three ways to do it, and the options below use all three: take the purple
+  warmer (towards aubergine, mulberry) or far darker (blackcurrant); take the
+  yellow off lemon (honey, apricot, acid-green); and add a third accent, which
+  is the strongest of the three, because a two-colour brand stops looking like
+  another two-colour brand the moment it has a third.
+
+  Also avoided throughout: Zomato's red, Swiggy's orange, Deliveroo's teal,
+  foodpanda's pink, Uber Eats' green.
 
   --s0..--s6 run darkest to lightest. --accent carries light and food,
   --accent2 objects and emphasis, --paper is what type is set in.
 */
-/* 1. Aubergine & Gold — the current one. Warm, nocturnal, restaurant-ish. */
+/* 1. Aubergine & Gold — the current one, unchanged. */
 :root,
 :root[data-theme='aubergine'] {
   color-scheme: dark;
@@ -53,102 +59,83 @@
   --cloth3-rgb: 127 174 159;
 }
 
-/* 2. Ink & Chartreuse — near-black with a blue cast and an acid citrus
-   nobody in food is using; it belongs to tooling and nightlife, which is
-   exactly why it stands out on a menu. A highlight only: at any size larger
-   than a line of type it stops being appetising. */
-:root[data-theme='chartreuse'] {
-  --s0-rgb: 7 9 12;
-  --s1-rgb: 11 14 19;
-  --s2-rgb: 16 20 27;
-  --s3-rgb: 21 27 36;
-  --s4-rgb: 28 35 46;
-  --s5-rgb: 38 47 61;
-  --s6-rgb: 58 70 88;
-  --accent-rgb: 205 250 74;
-  --accent-dim-rgb: 143 174 50;
-  --accent2-rgb: 95 127 255;
-  --accent2-dim-rgb: 63 87 187;
-  --paper-rgb: 238 242 240;
-  --paper-dim-rgb: 195 203 205;
-  --ash-rgb: 125 136 148;
-  --cloth1-rgb: 58 70 88;
-  --cloth2-rgb: 95 127 255;
-  --cloth3-rgb: 143 174 50;
+/* 2. Aubergine, Honey & Pistachio — purple and yellow with a green in
+   it. Zepto is two colours and only two; a third that is neither warm
+   nor brand-shaped breaks the resemblance faster than any amount of
+   shifting the other two. Pistachio also reads as food, which yellow
+   on purple never does on its own. */
+:root[data-theme='pistachio'] {
+  --s0-rgb: 22 12 30;
+  --s1-rgb: 28 16 39;
+  --s2-rgb: 36 21 54;
+  --s3-rgb: 46 24 66;
+  --s4-rgb: 55 30 78;
+  --s5-rgb: 67 39 99;
+  --s6-rgb: 95 63 133;
+  --accent-rgb: 232 185 68;
+  --accent-dim-rgb: 176 138 43;
+  --accent2-rgb: 168 198 108;
+  --accent2-dim-rgb: 125 154 72;
+  --paper-rgb: 246 240 226;
+  --paper-dim-rgb: 221 212 193;
+  --ash-rgb: 156 146 166;
+  --cloth1-rgb: 168 198 108;
+  --cloth2-rgb: 232 185 68;
+  --cloth3-rgb: 127 154 176;
 }
 
-/* 3. Oxblood & Brass — a dining room rather than an app. Leather, brass,
-   low light. The least software-looking of the five. */
-:root[data-theme='oxblood'] {
-  --s0-rgb: 21 8 9;
-  --s1-rgb: 28 12 14;
-  --s2-rgb: 37 17 20;
-  --s3-rgb: 51 22 26;
-  --s4-rgb: 62 28 33;
-  --s5-rgb: 78 37 43;
-  --s6-rgb: 109 58 65;
-  --accent-rgb: 214 167 86;
-  --accent-dim-rgb: 161 124 54;
-  --accent2-rgb: 127 154 106;
-  --accent2-dim-rgb: 90 111 75;
-  --paper-rgb: 243 233 217;
-  --paper-dim-rgb: 216 202 180;
-  --ash-rgb: 160 143 134;
-  --cloth1-rgb: 127 154 106;
-  --cloth2-rgb: 214 167 86;
-  --cloth3-rgb: 168 107 88;
+/* 3. Blackcurrant, Acid & Ice — the crazy one. Far darker than Zepto's
+   flat bright violet, with a yellow pushed towards green until it is
+   acid rather than lemon, and a cold blue against it. Electric, and
+   nobody in the category is anywhere near it. */
+:root[data-theme='blackcurrant'] {
+  --s0-rgb: 13 5 18;
+  --s1-rgb: 20 8 24;
+  --s2-rgb: 27 12 34;
+  --s3-rgb: 36 16 45;
+  --s4-rgb: 45 21 57;
+  --s5-rgb: 59 30 74;
+  --s6-rgb: 86 48 105;
+  --accent-rgb: 233 224 79;
+  --accent-dim-rgb: 168 161 50;
+  --accent2-rgb: 111 208 232;
+  --accent2-dim-rgb: 63 147 168;
+  --paper-rgb: 242 239 244;
+  --paper-dim-rgb: 210 204 216;
+  --ash-rgb: 142 132 160;
+  --cloth1-rgb: 111 208 232;
+  --cloth2-rgb: 233 224 79;
+  --cloth3-rgb: 154 127 192;
 }
 
-/* 4. Forest & Butter — deep green, but nothing like the bright green Uber
-   Eats owns. The colour of a dark room with plants in it. */
-:root[data-theme='forest'] {
-  --s0-rgb: 6 15 12;
-  --s1-rgb: 10 23 18;
-  --s2-rgb: 14 31 25;
-  --s3-rgb: 19 42 33;
-  --s4-rgb: 24 52 42;
-  --s5-rgb: 33 67 54;
-  --s6-rgb: 53 96 80;
-  --accent-rgb: 240 205 124;
-  --accent-dim-rgb: 177 149 79;
-  --accent2-rgb: 212 121 90;
-  --accent2-dim-rgb: 156 85 60;
-  --paper-rgb: 241 239 227;
-  --paper-dim-rgb: 207 204 187;
-  --ash-rgb: 139 154 145;
-  --cloth1-rgb: 212 121 90;
-  --cloth2-rgb: 240 205 124;
-  --cloth3-rgb: 111 159 134;
-}
-
-/* 5. Cobalt & Saffron — the loudest, and the most Indian: a pairing you see
-   on a wall in Rajasthan and nowhere in food delivery. */
-:root[data-theme='cobalt'] {
-  --s0-rgb: 5 10 28;
-  --s1-rgb: 8 16 39;
-  --s2-rgb: 12 22 54;
-  --s3-rgb: 16 29 74;
-  --s4-rgb: 22 38 92;
-  --s5-rgb: 30 50 115;
-  --s6-rgb: 49 73 163;
-  --accent-rgb: 246 167 35;
-  --accent-dim-rgb: 184 122 22;
-  --accent2-rgb: 232 96 74;
-  --accent2-dim-rgb: 173 65 50;
-  --paper-rgb: 242 240 232;
-  --paper-dim-rgb: 203 201 192;
-  --ash-rgb: 133 144 173;
-  --cloth1-rgb: 49 73 163;
-  --cloth2-rgb: 246 167 35;
-  --cloth3-rgb: 111 138 212;
+/* 4. Mulberry & Apricot — the purple pulled towards red and the yellow
+   towards orange, so the pair sits in a warmer register entirely.
+   Reads as a dining room rather than a delivery app, and is the
+   furthest of the three from a blue-violet and a lemon. */
+:root[data-theme='mulberry'] {
+  --s0-rgb: 23 8 17;
+  --s1-rgb: 31 11 23;
+  --s2-rgb: 42 15 31;
+  --s3-rgb: 56 20 42;
+  --s4-rgb: 67 26 51;
+  --s5-rgb: 85 35 65;
+  --s6-rgb: 119 57 94;
+  --accent-rgb: 240 169 92;
+  --accent-dim-rgb: 184 124 60;
+  --accent2-rgb: 217 87 122;
+  --accent2-dim-rgb: 163 61 88;
+  --paper-rgb: 247 237 228;
+  --paper-dim-rgb: 222 210 198;
+  --ash-rgb: 165 143 155;
+  --cloth1-rgb: 217 87 122;
+  --cloth2-rgb: 240 169 92;
+  --cloth3-rgb: 143 127 168;
 }
 
 /*
-  Every colour on the page resolves from the triplets above.
-
-  Two forms of each: a full colour for SVG fills and strokes, and the raw
-  channels so Tailwind can apply an opacity to them. One source of truth per
-  theme, written once here.
+  Every colour resolves from the triplets above: a full value for SVG fills and
+  the raw channels so Tailwind can put an opacity on them. One source of truth
+  per theme.
 */
 :root {
   --s0: rgb(var(--s0-rgb));

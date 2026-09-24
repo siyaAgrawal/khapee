@@ -12,11 +12,10 @@ import { useEffect, useState } from 'react'
  * and the winner becomes the only :root in the stylesheet.
  */
 export const PALETTES = [
-  { id: 'aubergine', name: 'Aubergine & Gold', dot: '#271640', ring: '#d9a441' },
-  { id: 'chartreuse', name: 'Ink & Chartreuse', dot: '#0b0e13', ring: '#cdfa4a' },
-  { id: 'oxblood', name: 'Oxblood & Brass', dot: '#33161a', ring: '#d6a756' },
-  { id: 'forest', name: 'Forest & Butter', dot: '#132a21', ring: '#f0cd7c' },
-  { id: 'cobalt', name: 'Cobalt & Saffron', dot: '#101d4a', ring: '#f6a723' },
+  { id: 'aubergine', name: 'Aubergine & Gold — as it is', dot: '#271640', ring: '#d9a441' },
+  { id: 'pistachio', name: 'Aubergine, Honey & Pistachio', dot: '#2e1842', ring: '#a8c66c' },
+  { id: 'blackcurrant', name: 'Blackcurrant, Acid & Ice', dot: '#24102d', ring: '#e9e04f' },
+  { id: 'mulberry', name: 'Mulberry & Apricot', dot: '#38142a', ring: '#f0a95c' },
 ] as const
 
 const KEY = 'khapee.palette'

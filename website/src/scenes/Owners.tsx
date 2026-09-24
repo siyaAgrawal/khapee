@@ -25,7 +25,7 @@ import { CAST, Walker } from '../components/Figure'
  *     queue of people deciding to eat somewhere else.
  */
 export function Owners() {
-  const { ref, t, lengthVh } = useScene(820)
+  const { ref, t, lengthVh } = useScene(580)
   const loop = useLoop(1)
 
   /* --- 1: covers per hour ------------------------------------------- */

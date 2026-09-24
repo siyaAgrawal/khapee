@@ -15,7 +15,7 @@ import { CAST, Walker } from '../components/Figure'
  * previous scenes would have got to the kitchen.
  */
 export function Takeaway() {
-  const { ref, t, lengthVh } = useScene(640)
+  const { ref, t, lengthVh } = useScene(440)
   const loop = useLoop(1)
 
   const mood = useTransform(t, [0, 0.18, 0.3, 0.72, 0.88], [0.12, 0.12, 0.38, 0.42, 1])

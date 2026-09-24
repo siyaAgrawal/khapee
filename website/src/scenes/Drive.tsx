@@ -21,7 +21,7 @@ import { CAST, Walker } from '../components/Figure'
  * opposite of what it is claiming.
  */
 export function Drive() {
-  const { ref, t, lengthVh } = useScene(900)
+  const { ref, t, lengthVh } = useScene(620)
 
   /* The face, across the whole scene: tired and hungry at the start, and
      genuinely pleased at the moment the food is there. Nothing about this is
@@ -84,12 +84,17 @@ export function Drive() {
           true of everybody, and it says nothing. This inverts the thing
           everybody has accepted without noticing they accepted it.
         */}
-        <span className="display block" style={{ fontSize: 'clamp(30px, min(6.2vw, 9vh), 88px)' }}>
-          The food should
+        <span className="display block" style={{ fontSize: 'clamp(24px, min(4.7vw, 6.8vh), 68px)' }}>
+          Why wait for
           <br />
-          be the one
+          your food when
           <br />
-          <span className="text-gold">waiting.</span>
+          your food{' '}
+          <span className="text-gold">
+            can
+            <br />
+            wait for you?
+          </span>
         </span>
       </Cue>
 
@@ -142,8 +147,8 @@ export function Drive() {
 
       {/* the caption, in the band kept for it */}
       <Band t={t} a={0.38} b={0.44} c={0.78} d={0.84}>
-        Why wait for your food when your food{' '}
-        <span className="text-gold">can wait for you?</span>
+        Both of you started at the same time.{' '}
+        <span className="text-gold">Neither of you is waiting.</span>
       </Band>
 
       {/*

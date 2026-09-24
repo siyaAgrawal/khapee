@@ -14,7 +14,7 @@ import { CAST } from '../components/Figure'
  * between them, because the pause is what makes it land.
  */
 export function Finale() {
-  const { ref, t, lengthVh } = useScene(660)
+  const { ref, t, lengthVh } = useScene(460)
   const loop = useLoop(1)
 
   const mood = useTransform(t, [0, 0.2, 0.4], [0.4, 0.9, 1])

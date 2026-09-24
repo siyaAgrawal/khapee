@@ -15,7 +15,7 @@ import { CAST, Walker } from '../components/Figure'
  * made; the divider slides away when the two meet.
  */
 export function School() {
-  const { ref, t, lengthVh } = useScene(760)
+  const { ref, t, lengthVh } = useScene(520)
   const loop = useLoop(1)
 
   const mood = useTransform(t, [0, 0.2, 0.34, 0.78, 0.9], [0.1, 0.1, 0.45, 0.5, 1])

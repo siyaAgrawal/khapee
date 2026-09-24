@@ -19,7 +19,7 @@ const YOU = ['Leaving the office', '5 min', '2 min', 'Pulling in']
 const THEM = ['Order received', 'On the range', 'Packing', 'On the pass']
 
 export function Work() {
-  const { ref, t, lengthVh } = useScene(780)
+  const { ref, t, lengthVh } = useScene(540)
 
   const mood = useTransform(t, [0, 0.24, 0.36, 0.8, 0.92], [0.03, 0.03, 0.35, 0.4, 1])
   const speed = useTransform(t, [0.34, 0.44, 0.76, 0.84], [0, 1, 1, 0])

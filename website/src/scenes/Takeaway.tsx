@@ -1,6 +1,7 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useLoop, useScene } from '../lib/scene'
 import { Line, Section, Shot, Warmth } from '../components/Scene'
+import { Beats } from '../components/Beats'
 import { PhoneFilm, usePhoneStep } from '../components/Phone'
 import { Kitchen } from '../components/Kitchen'
 import { CAST, Walker } from '../components/Figure'
@@ -14,7 +15,7 @@ import { CAST, Walker } from '../components/Figure'
  * previous scenes would have got to the kitchen.
  */
 export function Takeaway() {
-  const { ref, t, lengthVh } = useScene(400)
+  const { ref, t, lengthVh } = useScene(640)
   const loop = useLoop(1)
 
   const mood = useTransform(t, [0, 0.18, 0.3, 0.72, 0.88], [0.12, 0.12, 0.38, 0.42, 1])
@@ -39,17 +40,17 @@ export function Takeaway() {
 
   return (
     <Section id="takeaway" sceneRef={ref} lengthVh={lengthVh}>
-      <div className="absolute inset-0 bg-rust" />
+      <div className="absolute inset-0 bg-night" />
       <Warmth o={warm} x="60%" y="55%" />
 
       {/* ---- late ---- */}
       <Shot t={t} a={-0.06} b={0} c={0.24} d={0.32} from={1.06} to={1}>
         <div className="flex items-center gap-[5vw] flex-wrap justify-center px-8 pt-[8vh] pb-[12vh]">
           <svg viewBox="0 0 220 220" className="w-[20vw] min-w-[150px] max-w-[240px]" aria-hidden>
-            <circle cx="110" cy="110" r="88" fill="#1d1b15" />
-            <circle cx="110" cy="110" r="88" fill="none" stroke="#38342a" strokeWidth="3" />
+            <circle cx="110" cy="110" r="88" fill="#211539" />
+            <circle cx="110" cy="110" r="88" fill="none" stroke="#452c68" strokeWidth="3" />
             {Array.from({ length: 12 }).map((_, i) => (
-              <rect key={i} x="108" y="30" width="4" height="13" rx="2" fill="#4a4438"
+              <rect key={i} x="108" y="30" width="4" height="13" rx="2" fill="#5c3d84"
                     transform={`rotate(${i * 30} 110 110)`} />
             ))}
             <line x1="110" y1="110" x2="110" y2="58" stroke="#f4ede1" strokeWidth="5" strokeLinecap="round" />
@@ -96,15 +97,15 @@ export function Takeaway() {
       {/* ---- in, and straight out ---- */}
       <Shot t={t} a={0.76} b={0.84} c={0.97} d={1.01} from={1.12} to={1}>
         <svg viewBox="0 0 760 400" className="w-full h-full" aria-hidden>
-          <rect width="760" height="400" fill="#17160f" />
-          <rect y="312" width="760" height="88" fill="#1d1b15" />
-          <rect x="380" y="76" width="340" height="236" rx="5" fill="#232019" />
-          <rect x="404" y="52" width="292" height="30" rx="5" fill="#2a2720" />
+          <rect width="760" height="400" fill="#191125" />
+          <rect y="312" width="760" height="88" fill="#211539" />
+          <rect x="380" y="76" width="340" height="236" rx="5" fill="#2b1b49" />
+          <rect x="404" y="52" width="292" height="30" rx="5" fill="#33215a" />
           <text x="550" y="73" textAnchor="middle" fontSize="13" letterSpacing="4" fill="#d9a441" fontWeight="600">
             PICK UP
           </text>
-          <rect x="404" y="196" width="292" height="7" rx="3.5" fill="#4a4438" />
-          <rect x="404" y="270" width="292" height="7" rx="3.5" fill="#4a4438" />
+          <rect x="404" y="196" width="292" height="7" rx="3.5" fill="#5c3d84" />
+          <rect x="404" y="270" width="292" height="7" rx="3.5" fill="#5c3d84" />
           {/* the bag that was theirs, leaving with them */}
           <motion.g style={{ opacity: useTransform(arrive, [0, 0.45], [1, 0]) }}>
             <g transform="translate(470 196)">
@@ -113,7 +114,7 @@ export function Takeaway() {
             </g>
           </motion.g>
           <g transform="translate(624 196)">
-            <path d="M-20 -44 h40 l4 44 h-48 z" fill="#332f26" />
+            <path d="M-20 -44 h40 l4 44 h-48 z" fill="#3a2560" />
           </g>
           <motion.g style={{ x: useTransform(arrive, [0, 1], [-60, 90]) }}>
             <g transform="translate(220 172)">
@@ -132,6 +133,7 @@ export function Takeaway() {
         Let your food wait for you.
       </Line>
 
+      <Beats sceneRef={ref} t={t} marks={[{ at: 0.02, label: 'Late' }, { at: 0.12, label: 'Ordering' }, { at: 0.36, label: 'Both moving' }, { at: 0.8, label: 'Straight out' }]} />
       <div className="vignette" />
     </Section>
   )

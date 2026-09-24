@@ -132,13 +132,13 @@ export function Walker({
 
   return (
     <motion.g style={{ y: bob }}>
-      <ellipse cx={0} cy={150} rx={26} ry={5} fill="#0d0c08" opacity={0.5} />
+      <ellipse cx={0} cy={150} rx={26} ry={5} fill="#0c0716" opacity={0.5} />
       {/* legs */}
       <motion.g style={{ originX: '0px', originY: '78px', rotate: legA }}>
-        <path d="M-7 78 q-2 38 -1 66" stroke="#2a261f" strokeWidth={13} fill="none" strokeLinecap="round" />
+        <path d="M-7 78 q-2 38 -1 66" stroke="#2b1b49" strokeWidth={13} fill="none" strokeLinecap="round" />
       </motion.g>
       <motion.g style={{ originX: '0px', originY: '78px', rotate: legB }}>
-        <path d="M7 78 q2 38 1 66" stroke="#38332a" strokeWidth={13} fill="none" strokeLinecap="round" />
+        <path d="M7 78 q2 38 1 66" stroke="#3d2566" strokeWidth={13} fill="none" strokeLinecap="round" />
       </motion.g>
       {/* torso */}
       <path d="M-22 82 q-4 -52 22 -52 q26 0 22 52 z" fill={look.cloth} />

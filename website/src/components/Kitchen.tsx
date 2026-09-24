@@ -44,20 +44,20 @@ export function Kitchen({ p }: { p: MotionValue<number> }) {
   return (
     <svg viewBox="0 0 520 360" className="w-full h-full" aria-hidden>
       {/* back of house */}
-      <rect width="520" height="360" fill="#173f37" />
-      <rect y="250" width="520" height="110" fill="#122d28" />
+      <rect width="520" height="360" fill="#2b1b49" />
+      <rect y="250" width="520" height="110" fill="#211539" />
 
       {/* heat lamps over the pass */}
       {[150, 250, 350].map((x) => (
         <g key={x}>
-          <line x1={x} y1="0" x2={x} y2="44" stroke="#0e211d" strokeWidth="2" />
+          <line x1={x} y1="0" x2={x} y2="44" stroke="#1a1030" strokeWidth="2" />
           <path d={`M${x - 20} 44 h40 l-9 17 h-22 z`} fill="#b9563c" />
           <ellipse cx={x} cy="70" rx="30" ry="9" fill="#d9a441" opacity="0.16" />
         </g>
       ))}
 
       {/* shelving, for depth rather than detail */}
-      <rect x="20" y="86" width="120" height="4" fill="#0e211d" />
+      <rect x="20" y="86" width="120" height="4" fill="#1a1030" />
       <rect x="34" y="62" width="16" height="24" rx="2" fill="#7fae9f" opacity="0.5" />
       <rect x="58" y="68" width="14" height="18" rx="2" fill="#d9a441" opacity="0.45" />
 
@@ -79,12 +79,12 @@ export function Kitchen({ p }: { p: MotionValue<number> }) {
       </g>
 
       {/* the range */}
-      <rect x="252" y="236" width="196" height="16" rx="4" fill="#0e211d" />
+      <rect x="252" y="236" width="196" height="16" rx="4" fill="#1a1030" />
       <motion.g style={{ opacity: panOut }}>
-        <ellipse cx="316" cy="234" rx="44" ry="13" fill="#0e211d" />
+        <ellipse cx="316" cy="234" rx="44" ry="13" fill="#1a1030" />
         <ellipse cx="316" cy="230" rx="36" ry="10" fill="#b9563c" />
         <ellipse cx="316" cy="228" rx="26" ry="7" fill="#d9a441" />
-        <path d="M352 232 q34 -4 44 -14" stroke="#0e211d" strokeWidth="7" fill="none" strokeLinecap="round" />
+        <path d="M352 232 q34 -4 44 -14" stroke="#1a1030" strokeWidth="7" fill="none" strokeLinecap="round" />
         <g transform="translate(316 216)">
           <motion.path d="M-14 0 c-5 -8 5 -12 0 -20" stroke="#d9a441" strokeWidth="3" fill="none" strokeLinecap="round" style={w1} />
           <motion.path d="M0 0 c5 -8 -5 -12 0 -20" stroke="#d9a441" strokeWidth="3" fill="none" strokeLinecap="round" style={w2} />

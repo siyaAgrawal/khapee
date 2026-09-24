@@ -1,6 +1,7 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useLoop, useScene } from '../lib/scene'
 import { Section, Shot } from '../components/Scene'
+import { Beats } from '../components/Beats'
 import { Car } from '../components/Car'
 import { CAST } from '../components/Figure'
 
@@ -13,7 +14,7 @@ import { CAST } from '../components/Figure'
  * between them, because the pause is what makes it land.
  */
 export function Finale() {
-  const { ref, t, lengthVh } = useScene(420)
+  const { ref, t, lengthVh } = useScene(660)
   const loop = useLoop(1)
 
   const mood = useTransform(t, [0, 0.2, 0.4], [0.4, 0.9, 1])
@@ -46,7 +47,7 @@ export function Finale() {
           <line x1="300" y1="0" x2="300" y2="58" stroke="#26262e" strokeWidth="2.5" />
           <path d="M262 58 h76 l-17 30 h-42 z" fill="#2e2e37" />
           <motion.ellipse cx="300" cy="250" rx="130" ry="34" fill="#d9a441" opacity={0.2} style={{ opacity: bag }} />
-          <rect x="150" y="248" width="300" height="9" rx="4.5" fill="#4a4438" />
+          <rect x="150" y="248" width="300" height="9" rx="4.5" fill="#5c3d84" />
           <motion.g style={{ opacity: bag, scale: useTransform(bag, [0, 1], [0.9, 1]), originX: '300px', originY: '248px' }}>
             <g transform="translate(300 248)">
               <path d="M-30 -66 h60 l7 66 h-74 z" fill="#b9563c" />
@@ -90,7 +91,9 @@ export function Finale() {
       >
         <div className="text-center">
           <div className="flex items-center justify-center gap-4">
-            <span className="grid place-items-center w-14 h-14 rounded-2xl bg-cream text-ink text-[24px]">◗</span>
+            <span className="grid place-items-center w-14 h-14 bg-white text-ink text-[24px]" style={{ borderRadius: 5 }}>
+              ◗
+            </span>
             <span className="display" style={{ fontSize: 'clamp(46px,8vw,104px)' }}>Khapee</span>
           </div>
           <p className="mt-5 text-ash text-[16px]">Order before you arrive.</p>
@@ -108,6 +111,7 @@ export function Finale() {
         </div>
       </motion.div>
 
+      <Beats sceneRef={ref} t={t} marks={[{ at: 0.02, label: 'Pulling in' }, { at: 0.26, label: 'Waiting' }, { at: 0.42, label: 'Ready' }, { at: 0.62, label: 'You' }, { at: 0.9, label: 'Khapee' }]} />
       <div className="vignette" />
     </Section>
   )

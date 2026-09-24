@@ -37,15 +37,15 @@ export function Car({
 
   return (
     <svg viewBox="0 0 560 300" className="w-full h-full" aria-hidden>
-      <rect width="560" height="300" fill={night ? '#1b1913' : '#22201a'} />
+      <rect width="560" height="300" fill={night ? '#1a1030' : '#271640'} />
 
       {/* the city, far away and barely moving: the parallax that gives depth */}
       <motion.g style={{ x: cityX, opacity: 0.32 }}>
         {[0, 190, 380, 570].map((x) => (
           <g key={x} transform={`translate(${x} 0)`}>
-            <rect x="20" y="96" width="34" height="108" fill="#2e2a21" />
-            <rect x="66" y="126" width="26" height="78" fill="#26221b" />
-            <rect x="104" y="80" width="40" height="124" fill="#39342a" />
+            <rect x="20" y="96" width="34" height="108" fill="#33215a" />
+            <rect x="66" y="126" width="26" height="78" fill="#2b1b49" />
+            <rect x="104" y="80" width="40" height="124" fill="#3d2566" />
             {[0, 1, 2].map((r) =>
               [0, 1].map((c) => (
                 <rect key={`${r}-${c}`} x={112 + c * 14} y={92 + r * 22} width="7" height="10" fill="#d9a441" opacity="0.85" />
@@ -56,7 +56,7 @@ export function Car({
       </motion.g>
 
       {/* the road, and the streaks that make it read as speed */}
-      <rect y="204" width="560" height="96" fill="#1c1a14" />
+      <rect y="204" width="560" height="96" fill="#1a1030" />
       <rect y="202" width="560" height="3" fill="#b9563c" />
       <motion.g style={{ x: dash, filter: blurCss }}>
         {Array.from({ length: 9 }).map((_, i) => (
@@ -80,8 +80,8 @@ export function Car({
         />
         <path d="M108 232 q-4 -46 44 -54 l30 -44 h12 l-26 46 q-44 10 -40 52 z" fill="#c9694a" />
         {/* glass */}
-        <path d="M196 132 q-7 0 -11 7 l-22 38 h84 v-45 z" fill="#1b1913" />
-        <path d="M258 132 h44 q9 0 13 8 l20 37 h-77 z" fill="#1b1913" />
+        <path d="M196 132 q-7 0 -11 7 l-22 38 h84 v-45 z" fill="#1a1030" />
+        <path d="M258 132 h44 q9 0 13 8 l20 37 h-77 z" fill="#1a1030" />
         {/* whoever is driving, lit by their own phone */}
         <g transform="translate(212 154) scale(0.62)">
           <path d="M-24 46 q-4 -30 24 -30 q28 0 24 30 z" fill={look.cloth} />
@@ -95,7 +95,7 @@ export function Car({
         {/* wheels */}
         {[168, 356].map((cx) => (
           <g key={cx}>
-            <circle cx={cx} cy="232" r="30" fill="#17160f" />
+            <circle cx={cx} cy="232" r="30" fill="#191125" />
             <motion.g style={{ rotate: wheel, originX: `${cx}px`, originY: '232px' }}>
               <circle cx={cx} cy="232" r="14" fill="#d9a441" />
               <rect x={cx - 1.6} y="216" width="3.2" height="32" fill="#8d5a12" />
@@ -103,7 +103,7 @@ export function Car({
             </motion.g>
           </g>
         ))}
-        <ellipse cx="262" cy="266" rx="150" ry="10" fill="#0d0c08" opacity="0.55" />
+        <ellipse cx="262" cy="266" rx="150" ry="10" fill="#0c0716" opacity="0.55" />
       </motion.g>
     </svg>
   )

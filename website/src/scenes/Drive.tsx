@@ -1,11 +1,12 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useScene } from '../lib/scene'
-import { Cue, Line, Section, Shot, Warmth } from '../components/Scene'
+import { Cue, Line, Section, Shot } from '../components/Scene'
+import { Beats } from '../components/Beats'
+import { Confetti } from '../components/Confetti'
 import { PhoneFilm, usePhoneStep } from '../components/Phone'
 import { Car } from '../components/Car'
 import { Kitchen } from '../components/Kitchen'
 import { CAST, Walker } from '../components/Figure'
-import { Timelines } from '../components/Timelines'
 
 /**
  * Scene one: the drive.
@@ -20,7 +21,7 @@ import { Timelines } from '../components/Timelines'
  * opposite of what it is claiming.
  */
 export function Drive() {
-  const { ref, t, lengthVh } = useScene(560)
+  const { ref, t, lengthVh } = useScene(900)
 
   /* The face, across the whole scene: tired and hungry at the start, and
      genuinely pleased at the moment the food is there. Nothing about this is
@@ -44,9 +45,7 @@ export function Drive() {
   ])
 
   const kitchen = useCue(t, 0.36, 0.8)
-  const rails = useCue(t, 0.34, 0.86)
   const arrival = useCue(t, 0.84, 1)
-  const warm = useTransform(t, [0.36, 0.5, 0.86, 1], [0, 0.55, 0.55, 1])
 
   /* The pull out of the phone and into the street: the phone grows and goes
      as the car comes in behind it, so there is never a frame of nothing. */
@@ -55,7 +54,6 @@ export function Drive() {
   return (
     <Section id="drive" sceneRef={ref} lengthVh={lengthVh}>
       <div className="absolute inset-0 bg-night" />
-      <Warmth o={warm} />
 
       {/*
         ---- in the car, ordering ----
@@ -71,8 +69,6 @@ export function Drive() {
           style={{ scale: phoneScale }}
           className="relative sm:translate-x-[26%] md:translate-x-[34%]"
         >
-          {/* the colour a lit screen actually throws in a dark car */}
-          <div className="absolute -inset-12" style={{ background: 'rgba(217,164,65,0.1)' }} aria-hidden />
           <PhoneFilm step={phone} />
         </motion.div>
       </Shot>
@@ -80,12 +76,18 @@ export function Drive() {
       {/* the words, in order, each getting the frame to itself */}
       <Cue t={t} a={-0.06} b={0} c={0.06} d={0.1}>
         <span className="chip mb-5 block">Indore, 8:40pm</span>
+        {/*
+          The thesis, up front and in seven words. It opened on "Hungry, and
+          twenty minutes away", which is a situation rather than an argument —
+          true of everybody, and it says nothing. This inverts the thing
+          everybody has accepted without noticing they accepted it.
+        */}
         <span className="display block" style={{ fontSize: 'clamp(30px, min(6.2vw, 9vh), 88px)' }}>
-          Hungry,
+          The food should
           <br />
-          and twenty
+          be the one
           <br />
-          minutes <span className="text-gold">away.</span>
+          <span className="text-gold">waiting.</span>
         </span>
       </Cue>
 
@@ -125,53 +127,82 @@ export function Drive() {
         </div>
       </Shot>
 
-      {/* the two clocks, running together under the picture */}
-      <motion.div
-        className="absolute left-0 right-0 bottom-[7vh] z-20 flex justify-center px-6 pointer-events-none"
-        style={{ opacity: rails }}
-      >
-        <Timelines p={useCue(t, 0.36, 0.9)} compact />
-      </motion.div>
-
       <Line t={t} a={0.5} b={0.55} c={0.62} d={0.68} size="sm" place="top">
         You are driving. It is cooking. Neither of you is waiting.
       </Line>
 
-      {/* ---- arriving ---- */}
+      {/*
+        ---- inside, and it is already on the table ----
+        Shot from within the room rather than from the street. The front of the
+        restaurant was correct and said nothing: the whole point is the plate
+        sitting on the table before the person reaches it, and you cannot see a
+        table from outside. They come through the door at the back and walk to
+        food that is already steaming.
+      */}
       <Shot t={t} a={0.82} b={0.9} c={0.97} d={1} from={1.16} to={1}>
         <svg viewBox="0 0 900 460" className="w-full h-full" aria-hidden>
           <rect width="900" height="460" fill="#191125" />
-          <rect y="340" width="900" height="120" fill="#241735" />
-          {/* the front of the restaurant, lit */}
-          <rect x="120" y="70" width="660" height="272" rx="6" fill="#2e1d44" />
-          <rect x="150" y="104" width="600" height="150" rx="4" fill="#140d20" />
-          <motion.rect x="150" y="104" width="600" height="150" rx="4" fill="#d9a441" style={{ opacity: arrival }} opacity={0.12} />
-          <rect x="392" y="40" width="116" height="34" rx="6" fill="#382550" />
-          <text x="450" y="63" textAnchor="middle" fontSize="15" letterSpacing="4" fill="#d9a441" fontWeight="600">OPEN</text>
-          {/* the pass, seen through the window, with one bag on it */}
-          <rect x="520" y="212" width="200" height="7" rx="3.5" fill="#5a3f78" />
-          <g transform="translate(610 212)">
-            <path d="M-22 -50 h44 l5 50 h-54 z" fill="#b9563c" />
-            <rect x="-15" y="-28" width="30" height="13" rx="2" fill="#f4ede1" opacity="0.9" />
-            <motion.ellipse cy="0" rx="54" ry="16" fill="#d9a441" style={{ opacity: arrival }} opacity={0.3} />
+          <rect y="286" width="900" height="174" fill="#241735" />
+          <rect y="283" width="900" height="3" fill="#33215a" />
+
+          {/* the door at the back, standing open on the street */}
+          <rect x="612" y="78" width="132" height="208" rx="4" fill="#2e1d44" />
+          <motion.rect
+            x="622" y="88" width="112" height="188" rx="3" fill="#d9a441"
+            style={{ opacity: useTransform(arrival, [0, 0.5], [0.3, 0.1]) }}
+          />
+          {/* a hanging lamp over the table */}
+          <line x1="300" y1="0" x2="300" y2="58" stroke="#3a2752" strokeWidth="3" />
+          <path d="M268 58 h64 l-15 28 h-34 z" fill="#b9563c" />
+
+          {/* the table, laid, with the food on it and hot */}
+          <g transform="translate(300 300)">
+            <rect x="-128" y="0" width="256" height="9" rx="4" fill="#5a3f78" />
+            <rect x="-74" y="9" width="9" height="86" fill="#452c68" />
+            <rect x="65" y="9" width="9" height="86" fill="#452c68" />
+            <motion.ellipse cy="-4" rx="76" ry="17" fill="#d9a441" opacity={0.14} style={{ opacity: useTransform(arrival, [0, 1], [0, 0.22]) }} />
+            <ellipse cy="-6" rx="52" ry="16" fill="#f4ede1" />
+            <ellipse cy="-9" rx="37" ry="11" fill="#e0d3bc" />
+            <ellipse cy="-11" rx="26" ry="7.5" fill="#b9563c" />
+            <path d="M52 -30 h22 l-4 26 h-14 z" fill="#8a7fb0" opacity="0.55" />
+            {/* steam, so it reads as food that has just been put down */}
+            <g transform="translate(0 -26)">
+              {[-13, 0, 13].map((x, i) => (
+                <motion.path
+                  key={x}
+                  d={`M${x} 0 c${i % 2 ? 5 : -5} -7 ${i % 2 ? -5 : 5} -11 0 -18`}
+                  stroke="#d9a441" strokeWidth="2.6" fill="none" strokeLinecap="round"
+                  style={{ opacity: useTransform(arrival, [0.25, 0.7], [0, 0.55]) }}
+                />
+              ))}
+            </g>
           </g>
-          {/* the door, and somebody coming through it */}
-          <rect x="196" y="176" width="104" height="166" rx="4" fill="#3a2752" />
-          <motion.g style={{ x: useTransform(arrival, [0, 1], [-120, 0]) }}>
-            <g transform="translate(300 190) scale(0.92)">
+
+          {/* and the person, crossing the room to it */}
+          <motion.g style={{ x: useTransform(arrival, [0, 1], [230, 0]) }}>
+            <g transform="translate(560 128) scale(0.92)">
               <Walker mood={mood} look={CAST.driver} />
             </g>
           </motion.g>
         </svg>
       </Shot>
 
-      <Line t={t} a={0.9} b={0.94} c={0.965} d={0.985} size="xl">
-        You arrived. Your food was already here.
+      {/* the payoff, and the only celebration on the page */}
+      <motion.div
+        className="absolute inset-0 z-30 pointer-events-none"
+        style={{ opacity: useTransform(t, [0.895, 0.91, 0.985, 1], [0, 1, 1, 0]) }}
+      >
+        <Confetti p={useCue(t, 0.9, 1)} />
+      </motion.div>
+
+      <Line t={t} a={0.9} b={0.94} c={0.965} d={0.985} size="xl" place="top">
+        You arrived. Your food was <span className="text-gold">already here.</span>
       </Line>
       <Line t={t} a={0.975} b={0.99} c={1} d={1.01} size="xl">
         That&rsquo;s Khapee.
       </Line>
 
+      <Beats sceneRef={ref} t={t} marks={[{ at: 0.02, label: 'Hungry' }, { at: 0.12, label: 'Ordering' }, { at: 0.23, label: 'Paid' }, { at: 0.42, label: 'On the way' }, { at: 0.66, label: 'Cooking' }, { at: 0.88, label: 'Arrived' }]} />
       <div className="vignette" />
     </Section>
   )

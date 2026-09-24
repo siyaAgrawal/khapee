@@ -20,9 +20,6 @@
   color-scheme: dark;
   --ink: #191125;
   --night: #271640;
-  --pine: #12433f;
-  --brick: #3b2119;
-  --rust: #4d241a;
   --clay: #b9563c;
   --gold: #d9a441;
   --sage: #7fae9f;
@@ -144,7 +141,7 @@ html.lenis, html.lenis body { height: auto; }
   border: 1px solid transparent;
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
 }
-.cta-primary { background: var(--cream); color: #17160f; }
+.cta-primary { background: var(--cream); color: #160f22; }
 .cta-primary:hover { background: #fff; transform: translateY(-1px); }
 .cta-ghost { border-color: rgba(244, 237, 225, 0.28); color: var(--cream); }
 .cta-ghost:hover { border-color: var(--cream); transform: translateY(-1px); }
@@ -153,7 +150,7 @@ html.lenis, html.lenis body { height: auto; }
 
 .phone-shell {
   border-radius: 34px;
-  background: #26241f;
+  background: #2e2144;
   padding: 7px;
   box-shadow:
     0 0 0 1px rgba(244, 237, 225, 0.1),
@@ -161,7 +158,7 @@ html.lenis, html.lenis body { height: auto; }
 }
 .phone-screen {
   border-radius: 28px;
-  background: #151410;
+  background: #171029;
   overflow: hidden;
   position: relative;
 }

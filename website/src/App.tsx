@@ -6,6 +6,7 @@ import { School } from './scenes/School'
 import { Work } from './scenes/Work'
 import { Takeaway } from './scenes/Takeaway'
 import { Converge, Demo } from './scenes/Converge'
+import { Owners } from './scenes/Owners'
 import { Finale } from './scenes/Finale'
 
 /**
@@ -23,6 +24,7 @@ const CHAPTERS = [
   { id: 'work', label: 'After work' },
   { id: 'takeaway', label: 'Takeaway' },
   { id: 'idea', label: 'The idea' },
+  { id: 'owners', label: 'For restaurants' },
   { id: 'demo', label: 'The app' },
   { id: 'end', label: 'Khapee' },
 ]
@@ -38,6 +40,7 @@ export default function App() {
         <Work />
         <Takeaway />
         <Converge />
+        <Owners />
         <Demo />
         <Finale />
       </main>
@@ -64,7 +67,7 @@ function Masthead() {
       className="fixed top-0 inset-x-0 z-50 flex items-center gap-3 px-6 py-5 transition-all duration-500"
       style={{ opacity: gone ? 0 : 1, transform: gone ? 'translateY(-12px)' : 'none', pointerEvents: gone ? 'none' : 'auto' }}
     >
-      <span className="grid place-items-center w-9 h-9 bg-gold text-ink text-[15px]" style={{ borderRadius: 3 }}>
+      <span className="grid place-items-center w-9 h-9 bg-white text-ink text-[15px]" style={{ borderRadius: 3 }}>
         ◗
       </span>
       <span className="display text-[22px] tracking-[-0.04em]">Khapee</span>

@@ -15,9 +15,6 @@ export default {
       colors: {
         ink: '#191125',
         night: '#271640',
-        pine: '#12433f',
-        brick: '#3b2119',
-        rust: '#4d241a',
         clay: '#b9563c',
         gold: '#d9a441',
         sage: '#7fae9f',

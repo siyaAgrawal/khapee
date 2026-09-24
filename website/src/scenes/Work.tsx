@@ -1,6 +1,7 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useScene } from '../lib/scene'
 import { Line, Section, Shot, Warmth } from '../components/Scene'
+import { Beats } from '../components/Beats'
 import { PhoneFilm, usePhoneStep } from '../components/Phone'
 import { Car } from '../components/Car'
 import { Kitchen } from '../components/Kitchen'
@@ -18,7 +19,7 @@ const YOU = ['Leaving the office', '5 min', '2 min', 'Pulling in']
 const THEM = ['Order received', 'On the range', 'Packing', 'On the pass']
 
 export function Work() {
-  const { ref, t, lengthVh } = useScene(480)
+  const { ref, t, lengthVh } = useScene(780)
 
   const mood = useTransform(t, [0, 0.24, 0.36, 0.8, 0.92], [0.03, 0.03, 0.35, 0.4, 1])
   const speed = useTransform(t, [0.34, 0.44, 0.76, 0.84], [0, 1, 1, 0])
@@ -48,17 +49,17 @@ export function Work() {
         <div className="flex items-center gap-[5vw] flex-wrap justify-center px-8 pt-[8vh] pb-[12vh]">
           <svg viewBox="0 0 300 320" className="w-[26vw] min-w-[200px] max-w-[330px]" aria-hidden>
             {/* an office with two windows still lit, which is the whole mood */}
-            <rect x="40" y="20" width="220" height="266" rx="4" fill="#22201a" />
+            <rect x="40" y="20" width="220" height="266" rx="4" fill="#271640" />
             {Array.from({ length: 24 }).map((_, i) => (
               <rect
                 key={i}
                 x={60 + (i % 4) * 48} y={44 + Math.floor(i / 4) * 40}
                 width="32" height="26" rx="2"
-                fill={i === 6 || i === 17 ? '#d9a441' : '#141308'}
+                fill={i === 6 || i === 17 ? '#d9a441' : '#140d20'}
                 opacity={i === 6 || i === 17 ? 0.75 : 1}
               />
             ))}
-            <rect y="286" width="300" height="34" fill="#1a1812" />
+            <rect y="286" width="300" height="34" fill="#1a1030" />
           </svg>
           <PhoneFilm step={phone} scale={0.92} />
         </div>
@@ -97,12 +98,12 @@ export function Work() {
       {/* ---- handed over ---- */}
       <Shot t={t} a={0.86} b={0.92} c={0.99} d={1.01} from={1.12} to={1}>
         <svg viewBox="0 0 760 420" className="w-full h-full" aria-hidden>
-          <rect width="760" height="420" fill="#17160f" />
-          <rect y="330" width="760" height="90" fill="#1d1b15" />
-          <rect x="60" y="96" width="640" height="234" rx="5" fill="#232019" />
+          <rect width="760" height="420" fill="#191125" />
+          <rect y="330" width="760" height="90" fill="#211539" />
+          <rect x="60" y="96" width="640" height="234" rx="5" fill="#2b1b49" />
           <motion.rect x="92" y="126" width="576" height="124" rx="4" fill="#d9a441" opacity={0.13} style={{ opacity: arrive }} />
           {/* the counter, and the hand-over */}
-          <rect x="300" y="268" width="330" height="8" rx="4" fill="#4a4438" />
+          <rect x="300" y="268" width="330" height="8" rx="4" fill="#5c3d84" />
           <motion.g style={{ x: useTransform(arrive, [0, 1], [70, 0]) }}>
             <g transform="translate(470 268)">
               <path d="M-22 -48 h44 l5 48 h-54 z" fill="#b9563c" />
@@ -119,6 +120,7 @@ export function Work() {
         Long day. Short wait.
       </Line>
 
+      <Beats sceneRef={ref} t={t} marks={[{ at: 0.02, label: 'Clocking off' }, { at: 0.14, label: 'Ordering' }, { at: 0.42, label: 'Driving' }, { at: 0.7, label: 'Packing' }, { at: 0.9, label: 'Home' }]} />
       <div className="vignette" />
     </Section>
   )

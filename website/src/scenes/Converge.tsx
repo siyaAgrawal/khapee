@@ -12,7 +12,7 @@ import { PhoneDemo } from '../components/Phone'
  * line, and at that moment arriving and being ready are the same event.
  */
 export function Converge() {
-  const { ref, t, lengthVh } = useScene(340)
+  const { ref, t, lengthVh } = useScene(520)
   const rails = useCue(t, 0.12, 0.92)
   const head = useTransform(t, [0, 0.1, 0.2], [0, 1, 1])
 

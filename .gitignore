@@ -24,3 +24,5 @@ website/dist
 
 # Vercel project link (machine-local)
 .vercel
+website-v2/node_modules
+website-v2/dist

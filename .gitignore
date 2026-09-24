@@ -21,3 +21,6 @@ data/.session-secret
 data/.vapid.json
 website/node_modules
 website/dist
+
+# Vercel project link (machine-local)
+.vercel

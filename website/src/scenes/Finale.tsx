@@ -3,6 +3,7 @@ import { useCue, useLoop, useScene } from '../lib/scene'
 import { Section, Shot } from '../components/Scene'
 import { Beats } from '../components/Beats'
 import { Car } from '../components/Car'
+import { Confetti } from '../components/Confetti'
 import { CAST } from '../components/Figure'
 
 /**
@@ -23,9 +24,10 @@ export function Finale() {
 
   const bag = useCue(t, 0.24, 0.42)
   const ready = useCue(t, 0.38, 0.52)
-  const first = useTransform(t, [0.56, 0.62, 0.7, 0.75], [0, 1, 1, 0])
-  const second = useTransform(t, [0.75, 0.8, 0.88, 0.92], [0, 1, 1, 0])
-  const logo = useCue(t, 0.9, 0.97)
+  const first = useTransform(t, [0.6, 0.66, 0.73, 0.78], [0, 1, 1, 0])
+  const second = useTransform(t, [0.78, 0.82, 0.85, 0.88], [0, 1, 1, 0])
+  const third = useTransform(t, [0.86, 0.9, 0.93, 0.96], [0, 1, 1, 0])
+  const logo = useCue(t, 0.95, 0.99)
 
   return (
     <Section id="end" sceneRef={ref} lengthVh={lengthVh}>
@@ -72,6 +74,14 @@ export function Finale() {
         </div>
       </motion.div>
 
+      {/* and the one celebration on the whole page, at the end of it */}
+      <motion.div
+        className="absolute inset-0 z-30 pointer-events-none"
+        style={{ opacity: useTransform(t, [0.5, 0.56, 0.86, 0.92], [0, 1, 1, 0]) }}
+      >
+        <Confetti p={useCue(t, 0.54, 0.92)} />
+      </motion.div>
+
       {/* the line, in two halves, with the pause in between */}
       <motion.div className="absolute inset-0 grid place-items-center px-6" style={{ opacity: first }}>
         <p className="display text-center" style={{ fontSize: 'clamp(40px,8vw,112px)' }}>
@@ -81,6 +91,11 @@ export function Finale() {
       <motion.div className="absolute inset-0 grid place-items-center px-6" style={{ opacity: second }}>
         <p className="display text-center text-gold" style={{ fontSize: 'clamp(40px,8vw,112px)' }}>
           Your food does.
+        </p>
+      </motion.div>
+      <motion.div className="absolute inset-0 grid place-items-center px-6" style={{ opacity: third }}>
+        <p className="display text-center" style={{ fontSize: 'clamp(34px,6.4vw,92px)' }}>
+          That&rsquo;s <span className="text-gold">Khapee.</span>
         </p>
       </motion.div>
 

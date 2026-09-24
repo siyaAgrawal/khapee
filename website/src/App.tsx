@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useScroll, useMotionValueEvent } from 'framer-motion'
 import { useSmoothScroll } from './lib/scene'
-import { Drive } from './scenes/Drive'
-import { Work } from './scenes/Work'
-import { Takeaway } from './scenes/Takeaway'
-import { Converge, Demo } from './scenes/Converge'
+import { Cover } from './scenes/Cover'
+import { Journey } from './scenes/Journey'
+import { Pickup } from './scenes/Pickup'
+import { Demo } from './scenes/Converge'
 import { Owners } from './scenes/Owners'
 import { Finale } from './scenes/Finale'
 
@@ -18,13 +18,12 @@ import { Finale } from './scenes/Finale'
  * people believe when they have watched it happen, not when they have read it.
  */
 const CHAPTERS = [
-  { id: 'drive', label: 'The drive' },
-  { id: 'work', label: 'After work' },
-  { id: 'takeaway', label: 'Takeaway' },
-  { id: 'idea', label: 'The idea' },
+  { id: 'cover', label: 'Khapee' },
+  { id: 'journey', label: 'The wait' },
+  { id: 'pickup', label: 'Takeaway' },
   { id: 'owners', label: 'For restaurants' },
   { id: 'demo', label: 'The app' },
-  { id: 'end', label: 'Khapee' },
+  { id: 'end', label: 'The end' },
 ]
 
 export default function App() {
@@ -33,10 +32,9 @@ export default function App() {
     <>
       <Masthead />
       <main>
-        <Drive />
-        <Work />
-        <Takeaway />
-        <Converge />
+        <Cover next="journey" />
+        <Journey />
+        <Pickup />
         <Owners />
         <Demo />
         <Finale />

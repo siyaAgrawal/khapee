@@ -91,3 +91,40 @@ services:
     #   name: ordro-data
     #   mountPath: /var/data
     #   sizeGB: 1
+
+  # --- The marketing site -----------------------------------------------
+  #
+  # A separate static service on purpose. It is a folder of files with no
+  # server behind it, so it costs nothing to run and cannot take the ordering
+  # app down with it — and the app above keeps khapee.com, because that is
+  # where every QR code, receipt link and saved bookmark already points.
+  #
+  # It gets its own onrender.com address. Pointing a domain at it — khapee.com
+  # with the app moved to an app. subdomain, or www., or a new name — is a
+  # decision about where customers land, not a deployment detail, so it is left
+  # for whoever makes that call.
+  - type: web
+    name: khapee-site
+    runtime: static
+
+    # --include=dev for the same reason as the app above: the build runs tsc
+    # and vite, both of which are devDependencies, and a host with NODE_ENV set
+    # to production would skip them and fail with "vite: not found".
+    buildCommand: cd website && npm install --include=dev && npm run build
+    staticPublishPath: ./website/dist
+
+    routes:
+      # One page, so anything not found is that page rather than a 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    headers:
+      # The bundle is content-hashed, so it can be cached hard; index.html
+      # must not be, or a deploy reaches nobody until their cache expires.
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache

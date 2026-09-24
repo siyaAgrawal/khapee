@@ -7,7 +7,6 @@ import { api, ApiError } from '../lib/api'
 import { useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
-import { saveGroup } from '../lib/group'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../components/ui'
 
@@ -92,16 +91,21 @@ export default function Checkout() {
   const isNearby = dining?.serviceMode === 'precinct'
   const placeDecided = isDelivery || isCar || isNearby
 
-  /** Named for the situation, so "pay later" means something concrete. */
+  /**
+   * Named for the situation, so "pay later" means something concrete — and it
+   * says how, because "pay at the restaurant" reads to a lot of people as
+   * cash only, and they choose it or avoid it on that assumption. Every one of
+   * these counters takes a phone as readily as a note.
+   */
   const payLaterLabel = isDelivery
-    ? 'Pay on delivery'
+    ? 'UPI or cash on delivery'
     : isCar
-      ? 'Pay at the car'
+      ? 'UPI or cash at the car'
       : isNearby
-        ? 'Pay when it arrives'
+        ? 'UPI or cash when it arrives'
         : where === 'later'
-          ? 'Pay when you collect'
-          : 'Pay at the restaurant'
+          ? 'UPI or cash when you collect'
+          : 'UPI or cash at the restaurant'
 
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
   /** Takeaway alone, now that picking a table is proof enough of being at one. */
@@ -258,10 +262,22 @@ export default function Checkout() {
       })
       const order = r.order
       rememberReceipt(order.orderNumber, order.verifyToken)
-      // The room this order opened — so friends can join without any extra step.
-      if (order.groupToken && order.roomCode) {
-        saveGroup({ token: order.groupToken, code: order.roomCode, restaurantId })
-      }
+      /**
+       * The room this order opened stays open — and this phone stays out of it.
+       *
+       * It used to join itself here, on the reasoning that the person who
+       * ordered is obviously at the table. The cost of that was invisible and
+       * enormous: being in a group changes what the cart does — it stops being
+       * an order and becomes a staging area for a shared ticket — so every
+       * customer who had ever eaten in was quietly put somewhere that made
+       * ordinary ordering impossible on their next visit, having never asked
+       * to share anything with anybody. "You are in a group" about a table
+       * they were at last week, and no way to place a simple order.
+       *
+       * Joining a table is now something a person does, by scanning the code
+       * or opening the link. The room is still here for them; it just does not
+       * reach out and take them.
+       */
       if (order.sessionToken) {
         saveDining({
           token: order.sessionToken,

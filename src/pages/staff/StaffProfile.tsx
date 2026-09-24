@@ -5,6 +5,7 @@ import LiveStrip from '../../components/LiveStrip'
 import { useSession } from '../../lib/session'
 import { useInstall } from '../../lib/install'
 import { Art, LoadingBlock, Spinner, useToast } from '../../components/ui'
+import { printTestSlip, printWord } from '../../lib/receipt'
 
 type Profile = {
   id: number
@@ -329,8 +330,9 @@ export default function StaffProfile() {
           prepMinutes: form.prepMinutes,
           categories: form.categories,
           city: form.city,
-          upiVpa: form.upiVpa,
-          upiName: form.upiName,
+          // Not sent from here any more. The UPI list below owns which account
+          // is in use, and Save carrying a copy of it loaded minutes ago would
+          // quietly put the money back into the old account.
           acceptsPickup: form.acceptsPickup,
           acceptsTakeaway: form.acceptsTakeaway,
           acceptsGroups: form.acceptsGroups,
@@ -501,6 +503,8 @@ export default function StaffProfile() {
 
           <InstallPanel />
 
+          <PrinterPanel restaurantName={form.name} />
+
           <section className="card card-pad">
             <h2 style={{ marginBottom: 12 }}>Cover photo</h2>
             <ImagePicker
@@ -540,48 +544,7 @@ export default function StaffProfile() {
             ))}
           </section>
 
-          <section className="card card-pad">
-            <h2 style={{ marginBottom: 6 }}>UPI</h2>
-            <p className="tiny muted mb-2">
-              Customers pay straight into this UPI ID from their own app. Khapee shows the request and
-              records what they claim — you confirm it under Payments. No payment provider, no fees
-              through us.
-            </p>
-            <div className="field">
-              <label htmlFor="p-vpa">Your UPI ID</label>
-              <input
-                id="p-vpa"
-                className="input"
-                value={form.upiVpa}
-                onChange={(e) => set('upiVpa', e.target.value.trim())}
-                placeholder="restaurant@okhdfcbank"
-                autoCapitalize="none"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="p-upiname">Name shown while paying</label>
-              <input
-                id="p-upiname"
-                className="input"
-                value={form.upiName}
-                onChange={(e) => set('upiName', e.target.value)}
-                placeholder={form.name}
-              />
-            </div>
-            {!form.upiVpa && (
-              <div className="notice" style={{ marginTop: 4 }}>
-                <span aria-hidden>⚡</span>
-                <div>
-                  <strong>Add this and customers skip the code</strong>
-                  <p className="tiny">
-                    When someone pays in the app, paying is itself the proof they are here — no
-                    asking staff for a code, no typing. Leave it blank to take payment at the
-                    counter only.
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
+          <UpiAccounts restaurantName={form.name} />
 
 
           <SignIn />
@@ -622,5 +585,229 @@ export default function StaffProfile() {
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * The UPI accounts money can be taken into, and which one customers see.
+ *
+ * One field was the wrong shape for a real counter. There is the Paytm card
+ * propped against the till, the owner's own ID, and usually a third belonging
+ * to whoever is actually standing there on a Sunday — and which one is in use
+ * changes with the week. With a single box that meant retyping a VPA off
+ * somebody's phone screen, and a mistyped VPA sends a customer's money to a
+ * stranger with no way to get it back. So they are all kept, typed once, and
+ * choosing between them is a tap.
+ */
+function UpiAccounts({ restaurantName }: { restaurantName: string }) {
+  const toast = useToast()
+  const [accounts, setAccounts] = useState<
+    { id: number; vpa: string; displayName: string; label: string; isActive: boolean }[] | null
+  >(null)
+  const [vpa, setVpa] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [label, setLabel] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const load = () =>
+    api<{ accounts: any[] }>('/staff/upi')
+      .then((r) => setAccounts(r.accounts))
+      .catch((e: ApiError) => toast(e.message, 'bad'))
+
+  useEffect(() => {
+    void load()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const add = async () => {
+    setBusy(true)
+    try {
+      const r = await api<{ accounts: any[] }>('/staff/upi', {
+        body: { vpa: vpa.trim(), displayName: displayName.trim(), label: label.trim() },
+      })
+      setAccounts(r.accounts)
+      setVpa('')
+      setDisplayName('')
+      setLabel('')
+      toast('Added.', 'good')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const use = async (id: number) => {
+    try {
+      const r = await api<{ accounts: any[] }>(`/staff/upi/${id}/use`, { body: {} })
+      setAccounts(r.accounts)
+      toast('Customers will pay into this one from now on.', 'good')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    }
+  }
+
+  const remove = async (id: number, shownVpa: string) => {
+    if (!window.confirm(`Remove ${shownVpa}? Payments already taken into it are kept.`)) return
+    try {
+      const r = await api<{ accounts: any[] }>(`/staff/upi/${id}`, { method: 'DELETE' })
+      setAccounts(r.accounts)
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    }
+  }
+
+  return (
+    <section className="card card-pad">
+      <h2 style={{ marginBottom: 6 }}>UPI</h2>
+      <p className="tiny muted mb-2">
+        Money goes straight from the customer&rsquo;s app into your account. Khapee builds the
+        request and records what they say they sent — you confirm it under Till. No payment
+        provider, no fees through us.
+      </p>
+
+      {!accounts ? (
+        <LoadingBlock />
+      ) : accounts.length === 0 ? (
+        <div className="notice" style={{ marginBottom: 12 }}>
+          <span aria-hidden>⚡</span>
+          <div>
+            <strong>Add one and customers skip the code</strong>
+            <p className="tiny">
+              When somebody pays in the app, paying is itself the proof they are here — no asking
+              staff for a code, no typing. Leave this empty to take payment at the counter only.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <ul className="device-list" style={{ marginBottom: 12 }}>
+          {accounts.map((a) => (
+            <li key={a.id}>
+              <div style={{ minWidth: 0 }}>
+                <strong className="mono">{a.vpa}</strong>
+                {a.isActive && <span className="badge badge-open" style={{ marginLeft: 8 }}>Shown to customers</span>}
+                <p className="tiny muted">
+                  {[a.label, a.displayName].filter(Boolean).join(' · ') || 'No name set'}
+                </p>
+              </div>
+              <span className="spacer" />
+              {!a.isActive && (
+                <button className="btn btn-secondary btn-sm" onClick={() => void use(a.id)}>
+                  Use this one
+                </button>
+              )}
+              <button className="btn btn-ghost btn-sm" onClick={() => void remove(a.id, a.vpa)}>
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="field">
+        <label htmlFor="p-vpa">Add a UPI ID</label>
+        <input
+          id="p-vpa"
+          className="input"
+          value={vpa}
+          onChange={(e) => setVpa(e.target.value.trim())}
+          placeholder="restaurant@okhdfcbank"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+        <span className="hint">
+          Exactly as it appears in your UPI app or under the QR on your counter card.
+        </span>
+      </div>
+      <div className="row row-wrap">
+        <input
+          className="input"
+          style={{ maxWidth: 220 }}
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder={`Name shown while paying — ${restaurantName}`}
+        />
+        <input
+          className="input"
+          style={{ maxWidth: 160 }}
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Counter card"
+          aria-label="What you call this account"
+        />
+        <button className="btn btn-secondary" disabled={busy || !vpa.trim()} onClick={add}>
+          {busy ? <Spinner /> : 'Add'}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Proving the printer works, without waiting for a customer.
+ *
+ * "It is not printing" is three different faults wearing the same clothes: the
+ * browser never asked for a printer, the browser asked and Windows sent it to
+ * a PDF, or the roll is in the wrong way round. On a real bill you can only
+ * tell them apart by elimination, in the middle of service, with somebody
+ * waiting. This takes exactly the path a bill takes — same document, same
+ * paper size — so whatever it does, a bill will do.
+ *
+ * And it says which of the three happened, because the button that silently
+ * did nothing is the reason this panel exists.
+ */
+function PrinterPanel({ restaurantName }: { restaurantName: string }) {
+  const toast = useToast()
+  const [busy, setBusy] = useState(false)
+
+  return (
+    <section className="card card-pad">
+      <h2 style={{ marginBottom: 6 }}>Printing</h2>
+      <p className="tiny muted mb-2">
+        Bills and kitchen slips print to whatever this computer&rsquo;s{' '}
+        <strong>default printer</strong> is — set the thermal printer as the default in Windows, and
+        Khapee will use it.
+      </p>
+
+      <button
+        className="btn btn-secondary"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true)
+          try {
+            toast(...printWord(await printTestSlip(restaurantName), 'Test slip'))
+          } finally {
+            setBusy(false)
+          }
+        }}
+      >
+        {busy ? <Spinner /> : '🖨 Print a test slip'}
+      </button>
+
+      {/*
+        The one thing that removes the print dialog, said plainly.
+
+        No web page anywhere can print silently on its own — every browser
+        insists on its box, and there is no code that gets around it. What
+        removes it is how Chrome is started. A till launched this way prints on
+        one press with nothing on screen; launched any other way, the same
+        press opens the print box, and that is the browser's rule rather than
+        ours.
+      */}
+      <div className="notice" style={{ marginTop: 14 }}>
+        <span aria-hidden>⚡</span>
+        <div>
+          <strong>One press, no print box</strong>
+          <p className="tiny">
+            Make a desktop shortcut on the billing computer with this as its target, and open Khapee
+            from it. Bills and KOTs then go straight to the printer.
+          </p>
+          <code className="mono tiny" style={{ display: 'block', marginTop: 6, wordBreak: 'break-all' }}>
+            "C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing
+            --app=https://khapee.com/staff/orders/tables
+          </code>
+        </div>
+      </div>
+    </section>
   )
 }

@@ -811,7 +811,64 @@ CREATE TABLE IF NOT EXISTS pos_deliveries (
   created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_pos_deliveries ON pos_deliveries(restaurant_id, id DESC);
+
+-- The UPI accounts a restaurant can be paid into.
+--
+-- One was assumed, and one is not what a small restaurant has. The counter has
+-- a Paytm card propped against the till, the owner has a personal ID, and
+-- there is usually a third belonging to whoever is actually standing there on
+-- a Sunday. Which one is shown changes — the card gets swapped, an account
+-- gets frozen, the owner wants today's takings somewhere specific — and with a
+-- single field that meant retyping a VPA from a phone screen and mistyping it,
+-- which sends a customer's money to a stranger.
+--
+-- So they are all kept, and one is marked as the one customers are shown.
+-- restaurants.upi_vpa still holds that choice, because every payment path
+-- already reads it; this table is where the choice comes from.
+CREATE TABLE IF NOT EXISTS restaurant_upi (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  vpa           TEXT    NOT NULL,
+  display_name  TEXT    NOT NULL DEFAULT '',
+  label         TEXT    NOT NULL DEFAULT '',
+  is_active     INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_upi_vpa ON restaurant_upi(restaurant_id, vpa);
+
+-- A kitchen ticket: what was sent to the range, and when.
+--
+-- A KOT is not a bill and not an order. It is one round of an evening — the
+-- drinks, then the starters, then the food somebody added at nine — and the
+-- kitchen needs each round on its own slip while the table needs all of them
+-- added up at the end. Without a record of which items went on which ticket,
+-- reprinting a KOT reprints the whole table, and the range gets a second copy
+-- of food it cooked an hour ago.
+CREATE TABLE IF NOT EXISTS kots (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  order_id      INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  seq_no        INTEGER NOT NULL,
+  note          TEXT    NOT NULL DEFAULT '',
+  printed_at    TEXT,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+  created_by    INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_kots_order ON kots(order_id, id);
+
+CREATE TABLE IF NOT EXISTS kot_items (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  kot_id        INTEGER NOT NULL REFERENCES kots(id) ON DELETE CASCADE,
+  order_item_id INTEGER REFERENCES order_items(id) ON DELETE SET NULL,
+  name          TEXT    NOT NULL,
+  quantity      INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_kot_items ON kot_items(kot_id);
 `)
+
+// Which round of the kitchen each item went out on, so a reprint is a reprint
+// of that round and not of the whole table.
+addColumn('order_items', 'kot_id', 'INTEGER')
 
 export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })

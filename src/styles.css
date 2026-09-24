@@ -5752,3 +5752,175 @@ button.nav-link {
   color: var(--ink);
   font-size: 14px;
 }
+
+/* --- The floor: tables as the navigation ---------------------------------- */
+/*
+  The tabs are sized to be hit with a thumb while holding something in the
+  other hand, which is the actual posture of everybody who uses this screen.
+  A table with nothing on it is still drawn, because an empty table is the
+  answer to a question asked more often than any other here.
+*/
+.floor-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.floor-tab {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-width: 92px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  color: var(--ink);
+  font: inherit;
+}
+.floor-tab:hover { border-color: var(--line-strong); }
+.floor-tab.busy { background: var(--accent-soft); }
+.floor-tab.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.floor-tab-name { font-weight: 650; font-size: 14px; }
+.floor-tab-sub { font-size: 11px; opacity: 0.7; }
+/* Something on this table is waiting on a person. Deliberately loud, and
+   deliberately only on that table rather than across the whole screen. */
+.floor-tab.waiting { border-color: var(--warn); }
+.floor-tab-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: floor-pulse 1.6s ease-in-out infinite;
+}
+@keyframes floor-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floor-tab-dot { animation: none; }
+}
+
+.floor-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 900px) { .floor-body { grid-template-columns: 1fr; } }
+
+.floor-order { margin-bottom: 12px; }
+.floor-order.is-new { border-color: var(--warn); }
+
+.floor-items { list-style: none; margin: 10px 0 0; padding: 0; }
+.floor-items li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--line);
+  font-size: 14px;
+}
+.floor-items li:last-child { border-bottom: 0; }
+.floor-items li > span:nth-of-type(1) { flex: 1; min-width: 0; }
+.floor-items .item-off { opacity: 0.45; text-decoration: line-through; }
+/* Whether the range has been told. The whole reason a KOT is recorded. */
+.floor-pending {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.floor-sent {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.floor-order-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.floor-bill { position: sticky; top: 16px; }
+
+/*
+  The pop-up. It stays until somebody answers it: a message with a four-second
+  life is unreadable to a person carrying two plates, and an order nobody read
+  is an order nobody is cooking.
+*/
+.floor-alerts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: grid;
+  gap: 8px;
+  max-width: min(380px, calc(100vw - 32px));
+}
+.floor-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--warn);
+  border-left-width: 4px;
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(17, 17, 16, 0.16);
+}
+.floor-alert-body { flex: 1; min-width: 0; }
+.floor-alert-body p { margin: 2px 0 0; color: var(--muted); }
+
+/* --- Takings: what came in, and how -------------------------------------- */
+.takings-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+.takings-total {
+  display: grid;
+  gap: 2px;
+  padding: 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--r-lg);
+}
+.takings-total span { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
+.takings-total strong { font-size: 26px; line-height: 1.1; }
+.takings-total em { font-style: normal; opacity: 0.7; color: inherit; }
+
+.takings-method {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  color: var(--ink);
+  font: inherit;
+}
+.takings-method:hover { border-color: var(--line-strong); }
+.takings-method.on { border-color: var(--accent); background: var(--accent-soft); }
+.takings-method strong { font-size: 20px; }
+.takings-emoji { font-size: 16px; }
+
+.ledger tr.is-refund { opacity: 0.72; }

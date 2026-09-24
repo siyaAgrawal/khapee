@@ -38,6 +38,8 @@ import {
 } from '../billing.ts'
 import { shapeDiningSession, startCarSession } from '../dining.ts'
 import { generateAlertCode, randomToken } from '../ids.ts'
+import { floorBoard, kotById, openKot, settleTable, tableBill } from '../floor.ts'
+import { orderHistory, takings } from '../takings.ts'
 
 export const staffRouter = Router()
 staffRouter.use(requireStaff)
@@ -1914,30 +1916,56 @@ staffRouter.post('/tax/rates', (req: any, res) => {
   res.status(201).json({ rate: db.prepare('SELECT * FROM tax_rates WHERE id = ?').get(Number(info.lastInsertRowid)) })
 })
 
-/** A counter sale: the cashier builds the order, and it bills like any other. */
+/**
+ * An order taken at the restaurant's own end.
+ *
+ * A waiter with a pad, somebody ringing up, a walk-in at the counter: the same
+ * order in every respect except who typed it. It is ACCEPTED on arrival
+ * because the restaurant is the one placing it — there is nobody to say yes
+ * to, and an order sitting on the board waiting for the person who just
+ * entered it to accept it is a step that means nothing.
+ */
 staffRouter.post('/pos/sale', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   const lines = (Array.isArray(req.body?.items) ? req.body.items : []).filter((l: any) => Number(l?.quantity) > 0)
   if (!lines.length) return res.status(400).json({ error: 'Add something to the sale first.' })
 
-  const mode = ['counter', 'takeaway', 'dine_in', 'car', 'delivery'].includes(String(req.body?.serviceMode))
-    ? String(req.body.serviceMode)
-    : 'counter'
+  /** Sitting at a table makes it a dine-in order whatever the caller said. */
+  const table = req.body?.tableId
+    ? (db
+        .prepare('SELECT * FROM restaurant_tables WHERE id = ? AND restaurant_id = ?')
+        .get(Number(req.body.tableId), restaurantId) as any)
+    : null
+  if (req.body?.tableId && !table) return res.status(404).json({ error: 'No such table.' })
+
+  const mode = table
+    ? 'dine_in'
+    : ['counter', 'takeaway', 'dine_in', 'car', 'delivery'].includes(String(req.body?.serviceMode))
+      ? String(req.body.serviceMode)
+      : 'counter'
 
   const result = createOrder({
     restaurantId,
     type: mode === 'dine_in' ? 'dine_in' : 'pickup',
     items: lines.map((l: any) => ({ menuItemId: Number(l.menuItemId), quantity: Number(l.quantity) })),
-    customerName: String(req.body?.customerName ?? '').trim() || 'Counter',
+    customerName: String(req.body?.customerName ?? '').trim() || (table ? table.label : 'Counter'),
     userId: null,
     note: String(req.body?.note ?? ''),
+    // Staff at the till are the proof that somebody is at that table; there is
+    // no QR to scan here and no code to go and ask a colleague for.
+    tableId: table ? table.id : null,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
 
-  // Staff raised it at the counter, so it is not waiting on a code or a table.
   db.prepare("UPDATE orders SET service_mode = ?, status = 'ACCEPTED' WHERE id = ?").run(mode, result.order.id)
   db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'ACCEPTED', 'counter')").run(result.order.id)
-  audit(restaurantId, actorOf(req), 'order.counter', 'order', result.order.id, { mode })
+  if (String(req.body?.contactPhone ?? '').trim()) {
+    db.prepare('UPDATE orders SET contact_phone = ? WHERE id = ?').run(
+      String(req.body.contactPhone).trim().slice(0, 20),
+      result.order.id,
+    )
+  }
+  audit(restaurantId, actorOf(req), 'order.counter', 'order', result.order.id, { mode, tableId: table?.id ?? null })
   publish('orders', { restaurantId })
   publish('ops', { restaurantId })
   // Re-read: the order was shaped before the update above, so returning it
@@ -2154,4 +2182,205 @@ staffRouter.delete('/precincts/:id/spots/:spotId', (req: any, res) => {
     precinctId,
   )
   res.json({ ok: true })
+})
+
+// --- The floor: tables, rounds to the kitchen, and the bill at the end -------
+//
+// See server/floor.ts for why a KOT and a bill are different documents. These
+// routes are thin: everything that touches money or the kitchen is in there,
+// under test, because this is the part of Khapee that is wrong in front of a
+// customer when it is wrong at all.
+
+staffRouter.get('/floor', (req: any, res) => {
+  res.json(floorBoard(myRestaurant(req)))
+})
+
+/** Sends the untold part of an order to the range, and hands back the slip. */
+staffRouter.post('/orders/:id/kot', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const result = openKot(restaurantId, Number(req.params.id), req.user.id)
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  publish('orders', { restaurantId })
+  res.status(201).json({ kot: result.kot })
+})
+
+/** A round already sent, for when the slip is lost under the pass. */
+staffRouter.get('/kot/:id', (req: any, res) => {
+  const kot = kotById(myRestaurant(req), Number(req.params.id))
+  if (!kot) return res.status(404).json({ error: 'No such ticket.' })
+  res.json({ kot })
+})
+
+staffRouter.get('/floor/table/:id/bill', (req: any, res) => {
+  const bill = tableBill(myRestaurant(req), Number(req.params.id))
+  if (!bill) return res.status(404).json({ error: 'No such table.' })
+  res.json({ bill })
+})
+
+staffRouter.post('/floor/table/:id/settle', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const result = settleTable(
+    restaurantId,
+    Number(req.params.id),
+    String(req.body?.method ?? 'cash'),
+    String(req.body?.payerName ?? ''),
+  )
+  if (!result.ok) return res.status(result.status).json({ error: result.error })
+  publish('orders', { restaurantId })
+  publish('ops', { restaurantId })
+  res.json(result)
+})
+
+// --- Takings and history ----------------------------------------------------
+
+/** What came in, split by how. See server/takings.ts. */
+staffRouter.get('/takings', (req: any, res) => {
+  res.json(
+    takings(
+      myRestaurant(req),
+      {
+        days: req.query.days === undefined ? undefined : Number(req.query.days),
+        from: req.query.from ? String(req.query.from) : undefined,
+        to: req.query.to ? String(req.query.to) : undefined,
+      },
+      String(req.query.method ?? 'all'),
+    ),
+  )
+})
+
+/** Every order taken, and who placed it. */
+staffRouter.get('/history', (req: any, res) => {
+  res.json(
+    orderHistory(myRestaurant(req), {
+      q: req.query.q ? String(req.query.q) : '',
+      days: req.query.days === undefined ? undefined : Number(req.query.days),
+      limit: req.query.limit === undefined ? undefined : Number(req.query.limit),
+      offset: req.query.offset === undefined ? undefined : Number(req.query.offset),
+    }),
+  )
+})
+
+// --- Where the money is paid into -------------------------------------------
+//
+// More than one UPI account, one of them shown. See the restaurant_upi table
+// for why a single field was the wrong shape for a real counter.
+
+/** Everything on file, newest last, with the one customers see marked. */
+function upiAccounts(restaurantId: number) {
+  const restaurant = db.prepare('SELECT upi_vpa, upi_name FROM restaurants WHERE id = ?').get(restaurantId) as any
+  const rows = db
+    .prepare('SELECT * FROM restaurant_upi WHERE restaurant_id = ? ORDER BY id')
+    .all(restaurantId) as any[]
+
+  /**
+   * The single ID a restaurant already had becomes the first of the list.
+   *
+   * Done here rather than in a migration because it has to be right for a
+   * restaurant that is set up after this shipped as well as before, and
+   * because the list is read far more often than it is written — so this is
+   * the one place that can promise the two never disagree.
+   */
+  if (!rows.length && restaurant?.upi_vpa) {
+    db.prepare(
+      `INSERT OR IGNORE INTO restaurant_upi (restaurant_id, vpa, display_name, label, is_active)
+       VALUES (?, ?, ?, 'Main', 1)`,
+    ).run(restaurantId, restaurant.upi_vpa, restaurant.upi_name ?? '')
+    return db.prepare('SELECT * FROM restaurant_upi WHERE restaurant_id = ? ORDER BY id').all(restaurantId) as any[]
+  }
+  return rows
+}
+
+const shapeUpi = (r: any) => ({
+  id: r.id as number,
+  vpa: r.vpa as string,
+  displayName: (r.display_name as string) ?? '',
+  label: (r.label as string) ?? '',
+  isActive: !!r.is_active,
+})
+
+staffRouter.get('/upi', (req: any, res) => {
+  res.json({ accounts: upiAccounts(myRestaurant(req)).map(shapeUpi) })
+})
+
+staffRouter.post('/upi', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const vpa = String(req.body?.vpa ?? '').trim().toLowerCase()
+  // A VPA is name@handle and nothing else. Money sent to a mistyped one is
+  // gone, so a malformed ID is refused here rather than printed onto a QR.
+  if (!/^[a-z0-9.\-_]{2,60}@[a-z][a-z0-9.\-_]{1,30}$/.test(vpa)) {
+    return res.status(400).json({ error: 'That is not a UPI ID. They look like name@bank.' })
+  }
+  const displayName = String(req.body?.displayName ?? '').trim().slice(0, 60)
+  const label = String(req.body?.label ?? '').trim().slice(0, 30)
+
+  const existing = upiAccounts(restaurantId)
+  const already = existing.find((r) => r.vpa === vpa)
+  if (already) return res.status(409).json({ error: 'That UPI ID is already on the list.' })
+
+  const info = db
+    .prepare(
+      'INSERT INTO restaurant_upi (restaurant_id, vpa, display_name, label, is_active) VALUES (?, ?, ?, ?, 0)',
+    )
+    .run(restaurantId, vpa, displayName, label)
+
+  // The first one added is the one shown — there is nothing else it could be.
+  if (!existing.length) {
+    db.prepare('UPDATE restaurant_upi SET is_active = 1 WHERE id = ?').run(Number(info.lastInsertRowid))
+    db.prepare('UPDATE restaurants SET upi_vpa = ?, upi_name = ? WHERE id = ?').run(vpa, displayName, restaurantId)
+  }
+  res.status(201).json({ accounts: upiAccounts(restaurantId).map(shapeUpi) })
+})
+
+/** Choosing which account customers are shown. */
+staffRouter.post('/upi/:id/use', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const row = db
+    .prepare('SELECT * FROM restaurant_upi WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!row) return res.status(404).json({ error: 'No such UPI ID.' })
+
+  db.transaction(() => {
+    db.prepare('UPDATE restaurant_upi SET is_active = 0 WHERE restaurant_id = ?').run(restaurantId)
+    db.prepare('UPDATE restaurant_upi SET is_active = 1 WHERE id = ?').run(row.id)
+    // Mirrored onto the restaurant, which is what every payment path reads.
+    db.prepare('UPDATE restaurants SET upi_vpa = ?, upi_name = ? WHERE id = ?').run(
+      row.vpa,
+      row.display_name ?? '',
+      restaurantId,
+    )
+  })()
+  audit(restaurantId, actorOf(req), 'upi.select', 'restaurant', restaurantId, { vpa: row.vpa })
+  res.json({ accounts: upiAccounts(restaurantId).map(shapeUpi) })
+})
+
+staffRouter.delete('/upi/:id', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const row = db
+    .prepare('SELECT * FROM restaurant_upi WHERE id = ? AND restaurant_id = ?')
+    .get(Number(req.params.id), restaurantId) as any
+  if (!row) return res.status(404).json({ error: 'No such UPI ID.' })
+
+  const rest = upiAccounts(restaurantId).filter((r) => r.id !== row.id)
+  db.transaction(() => {
+    db.prepare('DELETE FROM restaurant_upi WHERE id = ?').run(row.id)
+    /**
+     * Removing the one in use hands the job to another, rather than leaving
+     * the restaurant with no way to be paid. Taking UPI away silently is the
+     * kind of change nobody notices until a customer cannot pay.
+     */
+    if (row.is_active) {
+      const next = rest[0]
+      if (next) {
+        db.prepare('UPDATE restaurant_upi SET is_active = 1 WHERE id = ?').run(next.id)
+        db.prepare('UPDATE restaurants SET upi_vpa = ?, upi_name = ? WHERE id = ?').run(
+          next.vpa,
+          next.display_name ?? '',
+          restaurantId,
+        )
+      } else {
+        db.prepare("UPDATE restaurants SET upi_vpa = '', upi_name = '' WHERE id = ?").run(restaurantId)
+      }
+    }
+  })()
+  res.json({ accounts: upiAccounts(restaurantId).map(shapeUpi) })
 })

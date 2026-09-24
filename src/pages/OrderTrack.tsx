@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError, openStream } from '../lib/api'
@@ -7,8 +7,7 @@ import { QRCanvas } from '../lib/qr'
 import { receiptToken } from '../lib/table-context'
 import { currentEndpoint, followOrder, needsHomeScreen, pushSupported } from '../lib/push'
 import { useToast } from '../components/ui'
-import { readGroup } from '../lib/group'
-import { flowFor, STATUS_LABEL, type OrderStatus } from '../../shared/orders'
+import { flowFor, isAccepted, STATUS_LABEL, type OrderStatus } from '../../shared/orders'
 
 export default function OrderTrack() {
   const { orderNumber = '' } = useParams()
@@ -60,20 +59,56 @@ export default function OrderTrack() {
    * the app waits, visibly, and the tick is drawn when the restaurant ticks it
    * off — which arrives here on its own over the live stream.
    */
-  const [celebrate, setCelebrate] = useState(!!placed.justPlaced && !placed.paid)
+  const [celebrate, setCelebrate] = useState<'accepted' | 'paid' | null>(null)
   const [confirmedNow, setConfirmedNow] = useState(false)
   const waitingOnPayment = !!placed.justPlaced && !!placed.paid && order?.paymentState === 'sent'
+
+  /**
+   * The tick belongs to the restaurant, not to the act of ordering.
+   *
+   * This screen used to draw a green tick and "Order placed" the instant
+   * checkout handed over. Placing an order is not a restaurant agreeing to
+   * cook it — the order was sitting on a board nobody had looked at yet, and
+   * could still be turned down — so the tick was a promise made on the
+   * kitchen's behalf without asking it. Somebody who saw it and then read
+   * "could not be taken" was told two opposite things by the same screen.
+   *
+   * So the tick waits for the yes, which arrives here on its own over the live
+   * stream. Until then there is a plainly unfinished state saying what is
+   * actually happening: it has been sent, and they are looking at it.
+   */
+  const accepted = !!order && isAccepted(order.status as OrderStatus)
+  /**
+   * Whether the yes happened while somebody was watching.
+   *
+   * Opening the link to a week-old order is not a moment to celebrate, and a
+   * tick thrown across the screen on arrival would be celebrating the act of
+   * opening a page. The tick is for the transition, so there has to have been
+   * something to transition from.
+   */
+  const sawWaiting = useRef(false)
+  const tickShown = useRef(false)
+  useEffect(() => {
+    if (order && !accepted) sawWaiting.current = true
+  }, [order, accepted])
+
+  useEffect(() => {
+    if (!accepted || tickShown.current) return
+    if (!sawWaiting.current && !placed.justPlaced) return
+    tickShown.current = true
+    setCelebrate('accepted')
+  }, [accepted, placed.justPlaced])
 
   useEffect(() => {
     if (!placed.justPlaced || !placed.paid) return
     if (order?.paymentState !== 'paid' || confirmedNow) return
     setConfirmedNow(true)
-    setCelebrate(true)
+    setCelebrate('paid')
   }, [order?.paymentState, placed.justPlaced, placed.paid, confirmedNow])
 
   useEffect(() => {
     if (!celebrate) return
-    const done = setTimeout(() => setCelebrate(false), 2100)
+    const done = setTimeout(() => setCelebrate(null), 2600)
     return () => clearTimeout(done)
   }, [celebrate])
 
@@ -170,22 +205,34 @@ export default function OrderTrack() {
     <div className="app">
       <Header />
       {celebrate && (
-        <div className="placed" role="status" aria-live="polite" onClick={() => setCelebrate(false)}>
+        <div className="placed" role="status" aria-live="polite" onClick={() => setCelebrate(null)}>
           <div className="placed-mark">
             <svg viewBox="0 0 80 80" aria-hidden>
               <circle className="placed-ring" cx="40" cy="40" r="34" />
               <path className="placed-tick" d="M24 41 L35 52 L57 29" />
             </svg>
           </div>
-          <strong>{confirmedNow ? 'Payment confirmed' : 'Order placed'}</strong>
+          <strong>{celebrate === 'paid' ? 'Payment confirmed' : 'Order accepted'}</strong>
           <p>
-            {confirmedNow
+            {celebrate === 'paid'
               ? `${order.restaurantName} has your ${money(order.totalCents)}.`
-              : order.status === 'REQUESTED'
-                ? `${order.restaurantName} is looking at it now.`
-                : `${order.restaurantName} has it.`}
+              : `${order.restaurantName} is making it.`}
           </p>
           <span className="tiny muted">#{order.orderNumber}</span>
+        </div>
+      )}
+      {/* Unfinished on purpose, and it stays until the kitchen answers. The
+          honest picture of an order nobody has said yes to yet. */}
+      {!accepted && !cancelled && order.status !== 'DECLINED' && (
+        <div className="paying" role="status" aria-live="polite">
+          <span className="paying-spin" aria-hidden />
+          <div>
+            <strong>Sent to {order.restaurantName}</strong>
+            <p className="tiny">
+              Waiting for them to accept it. You&rsquo;ll see a tick here the moment they do — this
+              page updates itself.
+            </p>
+          </div>
         </div>
       )}
       {waitingOnPayment && (
@@ -323,8 +370,10 @@ export default function OrderTrack() {
             <div style={{ display: 'grid', placeItems: 'center', margin: '6px 0 10px' }}>
               <QRCanvas value={`${window.location.origin}/g/${order.roomCode}`} size={150} />
             </div>
+            {/* The link rather than /group, because this phone is not in the
+                room until somebody says so. Opening it is that saying-so. */}
             <div className="center">
-              <Link className="btn btn-secondary btn-sm" to="/group">
+              <Link className="btn btn-secondary btn-sm" to={`/g/${order.roomCode}`}>
                 Open the table
               </Link>
             </div>
@@ -389,12 +438,12 @@ export default function OrderTrack() {
           {order.paymentState === 'unpaid' && (
             <p className="tiny muted" style={{ marginTop: 8 }}>
               {order.serviceMode === 'delivery'
-                ? 'Pay on delivery'
+                ? 'UPI or cash on delivery'
                 : order.serviceMode === 'car'
-                  ? 'Pay when they bring it out'
+                  ? 'UPI or cash when they bring it out'
                   : order.serviceMode === 'precinct'
-                    ? 'Pay when they hand it over'
-                    : 'Pay at the restaurant'}
+                    ? 'UPI or cash when they hand it over'
+                    : 'UPI or cash at the restaurant'}
             </p>
           )}
         </div>

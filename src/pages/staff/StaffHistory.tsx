@@ -1,0 +1,199 @@
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { api, ApiError } from '../../lib/api'
+import { EmptyState, LoadingBlock, money, useToast } from '../../components/ui'
+
+/**
+ * Every order this restaurant has taken, and who placed it.
+ *
+ * The board is about tonight and forgets on purpose. Everything before tonight
+ * was reachable only by scrolling it, which meant the questions that actually
+ * come in — the lady who ordered on Tuesday and left her scarf, the number that
+ * rang about a missing dish, what that regular has every Friday — could not be
+ * answered at all. They are all the same question with a different handle on
+ * it: a name, a phone number, a date, a dish. So all four find a row.
+ */
+type Row = {
+  id: number
+  orderNumber: string
+  createdAt: string
+  status: string
+  serviceMode: string
+  place: string
+  customerName: string
+  customerPhone: string
+  items: { name: string; quantity: number }[]
+  itemCount: number
+  totalCents: number
+  paidCents: number
+  paymentStatus: string
+  methods: string[]
+  invoiceNumber: string
+}
+
+const RANGES = [
+  { days: 1, label: 'Today' },
+  { days: 7, label: '7 days' },
+  { days: 30, label: '30 days' },
+  { days: 365, label: 'A year' },
+]
+
+/** The date, written the way somebody asking about it would say it. */
+function day(iso: string): string {
+  return new Date(String(iso).replace(' ', 'T') + 'Z').toLocaleDateString([], {
+    day: 'numeric',
+    month: 'short',
+  })
+}
+function at(iso: string): string {
+  return new Date(String(iso).replace(' ', 'T') + 'Z').toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export default function StaffHistory() {
+  const toast = useToast()
+  const [rows, setRows] = useState<Row[] | null>(null)
+  const [total, setTotal] = useState(0)
+  const [q, setQ] = useState('')
+  const [days, setDays] = useState(7)
+  const [shown, setShown] = useState(50)
+
+  const load = useCallback(async () => {
+    try {
+      const r = await api<{ rows: Row[]; total: number }>(
+        `/staff/history?days=${days}&limit=${shown}&q=${encodeURIComponent(q.trim())}`,
+      )
+      setRows(r.rows)
+      setTotal(r.total)
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    }
+  }, [days, shown, q, toast])
+
+  // Typing searches, but not on every keystroke — a query per letter across a
+  // year of orders is work nobody asked for.
+  useEffect(() => {
+    const t = setTimeout(() => void load(), q ? 250 : 0)
+    return () => clearTimeout(t)
+  }, [load, q])
+
+  return (
+    <>
+      <div className="staff-controls">
+        <input
+          className="input input-sm order-search"
+          value={q}
+          onChange={(e) => {
+            setShown(50)
+            setQ(e.target.value)
+          }}
+          placeholder="Name, phone, order number, table or dish…"
+          aria-label="Search past orders"
+        />
+        <div className="tabs" style={{ marginBottom: 0 }}>
+          {RANGES.map((r) => (
+            <button
+              key={r.days}
+              className={`tab ${days === r.days ? 'active' : ''}`}
+              onClick={() => {
+                setShown(50)
+                setDays(r.days)
+              }}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <span className="spacer" />
+        <span className="tiny muted">
+          {total} order{total === 1 ? '' : 's'}
+        </span>
+      </div>
+
+      {!rows ? (
+        <LoadingBlock label="Looking back…" />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          emoji="🔎"
+          title={q ? 'Nothing matches that' : 'No orders in this period'}
+          body={
+            q
+              ? 'Try part of a name, the last few digits of a phone number, or a dish.'
+              : 'Widen the dates above to look further back.'
+          }
+        />
+      ) : (
+        <>
+          <div className="card ledger-wrap">
+            <table className="ledger">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Order</th>
+                  <th>Customer</th>
+                  <th>Where</th>
+                  <th>What they had</th>
+                  <th>Total</th>
+                  <th>Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((o) => (
+                  <tr key={o.id}>
+                    <td className="tiny">
+                      <strong>{day(o.createdAt)}</strong>
+                      <div className="muted">{at(o.createdAt)}</div>
+                    </td>
+                    <td>
+                      <Link className="mono" to={`/staff/table/${o.id}`}>
+                        #{o.orderNumber}
+                      </Link>
+                      {o.invoiceNumber && <div className="tiny muted mono">{o.invoiceNumber}</div>}
+                    </td>
+                    <td>
+                      {o.customerName || <span className="muted">—</span>}
+                      {/* Tappable, because the reason anybody is on this
+                          screen is usually that they need to ring them. */}
+                      {o.customerPhone && (
+                        <div className="tiny">
+                          <a className="o-phone" href={`tel:${o.customerPhone.replace(/[^0-9+]/g, '')}`}>
+                            {o.customerPhone}
+                          </a>
+                        </div>
+                      )}
+                    </td>
+                    <td className="tiny">{o.place}</td>
+                    <td className="ledger-items tiny">
+                      {o.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
+                    </td>
+                    <td>
+                      <strong>{money(o.totalCents)}</strong>
+                    </td>
+                    <td>
+                      <span className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}>
+                        {o.paymentStatus === 'PAID' ? 'Paid' : 'Unpaid'}
+                      </span>
+                      {o.methods.length > 0 && (
+                        <div className="tiny muted">{o.methods.join(' + ').toUpperCase()}</div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {rows.length < total && (
+            <div className="center mt-3">
+              <button className="btn btn-secondary" onClick={() => setShown((n) => n + 50)}>
+                Show 50 more
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  )
+}

@@ -132,41 +132,164 @@ export function receiptHtml(bill: ReceiptBill): string {
 }
 
 /**
- * Opens the receipt and asks the printer for it.
+ * What happened when we asked for paper.
  *
- * A hidden iframe rather than a pop-up window: a pop-up is blocked often
- * enough to matter behind a counter, and a blocked one is indistinguishable
- * from a printer that did nothing. An iframe is part of the page, so nothing
- * can refuse it.
- *
- * Returns false when even that fails, so the caller can say so rather than
- * leaving somebody watching a printer that was never asked for anything.
+ * "It printed" and "we asked and nothing answered" have to be different
+ * answers. The first version returned true the moment a frame had been
+ * created, which is not the same thing as a printer being asked for anything
+ * — so a till where printing silently failed looked exactly like one where it
+ * worked, and the only symptom was no paper.
  */
-export function printReceipt(bill: ReceiptBill): boolean {
-  return printDocument(receiptHtml(bill))
+export type PrintOutcome =
+  /** The browser started printing. Under kiosk printing this means paper. */
+  | 'printed'
+  /** The frame would not print, so the bill is open in a window to print by hand. */
+  | 'window'
+  /** Nothing could be opened at all — a blocked pop-up on a locked-down browser. */
+  | 'failed'
+
+/** Prints the bill. See printDocument for how this is made to actually happen. */
+export function printReceipt(bill: ReceiptBill): Promise<PrintOutcome> {
+  return printDocument(receiptHtml(bill), `Bill ${bill.orderNumber}`)
 }
 
 /**
- * One press, and paper.
+ * One press, and paper — and a way to know whether it happened.
  *
- * A web page cannot print silently on its own — every browser insists on its
- * dialog, and no amount of code gets around that. What removes it is how
- * Chrome is started: with --kiosk-printing it prints straight to the default
- * printer and shows nothing at all. That is how a till should be launched,
- * and it turns this into exactly one click. Without it the same click opens
- * the print box, which is the browser's decision and not ours.
+ * A web page cannot print silently on its own. Every browser insists on its
+ * dialog and no amount of code gets around that; what removes it is how Chrome
+ * is started, with --kiosk-printing, which prints straight to the default
+ * printer and shows nothing. That is how a till should be launched and it
+ * makes this exactly one click.
  *
- * So the document is printed from a frame nobody sees. Under kiosk printing
- * that is seamless: press KOT, paper comes out, the screen never changes.
+ * Two things are done differently here, both learned the hard way on a real
+ * counter where this button did nothing at all:
  *
- * A visible window is kept for the one case the frame cannot cover — a
- * browser that refuses to print a frame at all — because a button that does
- * nothing visible is indistinguishable from a broken printer, and that cost
- * an evening.
+ * The document prints itself. The parent reaching into a frame and calling
+ * print() on it is the version that failed — a frame written through
+ * document.write is not reliably ready when the parent thinks it is, and a
+ * print() against a half-built document is a no-op that reports nothing. An
+ * inline script inside the document runs when that document is ready, which is
+ * the only moment that is actually knowable.
+ *
+ * And the result is checked. The document says so itself, immediately before
+ * it calls print — not through beforeprint, because which window that event
+ * is delivered to differs between browsers, and a success signal that is
+ * merely usually delivered would open a second copy in a window and invite
+ * somebody to print the same bill twice. A message the document sends on its
+ * way into print() is plain fact: the browser was asked.
+ *
+ * If that has not arrived shortly after, the frame did not get there — and
+ * rather than leave somebody watching a silent printer, the bill opens in a
+ * visible window they can print by hand.
  */
-function printDocument(html: string): boolean {
-  if (openInFrame(html)) return true
-  return openInWindow(withManualPrint(html))
+const PRINT_PING = 'khapee:printing'
+
+function printDocument(html: string, title: string): Promise<PrintOutcome> {
+  return new Promise((resolve) => {
+    const frame = document.createElement('iframe')
+    frame.setAttribute('aria-hidden', 'true')
+    frame.setAttribute('title', title)
+    // Off the side of the page at its true size. display:none and zero-sized
+    // frames are laid out by nobody, and a frame with no layout has no pages
+    // to print.
+    frame.style.cssText =
+      'position:fixed;left:-10000px;top:0;width:80mm;height:250mm;border:0;visibility:visible'
+    document.body.appendChild(frame)
+
+    let settled = false
+    const doc = frame.contentDocument
+    const win = frame.contentWindow
+    if (!doc || !win) {
+      frame.remove()
+      return resolve(openInWindow(html) ? 'window' : 'failed')
+    }
+
+    const heard = (e: MessageEvent) => {
+      if (settled || e.data !== PRINT_PING || e.source !== win) return
+      settled = true
+      window.removeEventListener('message', heard)
+      // Kept alive well past the dialog: removing the frame while the browser
+      // is still spooling the job cancels it.
+      setTimeout(() => frame.remove(), 60_000)
+      resolve('printed')
+    }
+    window.addEventListener('message', heard)
+
+    doc.open()
+    doc.write(selfPrinting(html))
+    doc.close()
+
+    // Nothing has started printing, so the frame is not going to. Fall back to
+    // something the person can see and press Ctrl+P on.
+    setTimeout(() => {
+      if (settled) return
+      settled = true
+      window.removeEventListener('message', heard)
+      frame.remove()
+      resolve(openInWindow(html) ? 'window' : 'failed')
+    }, 2500)
+  })
+}
+
+/**
+ * The script that makes the document print itself, once it is really ready.
+ *
+ * Deliberately not DOMContentLoaded: layout is still settling at that point,
+ * and a receipt handed to a thermal driver mid-layout comes out as blank
+ * paper — which is the fault this whole file exists because of.
+ */
+function selfPrinting(html: string): string {
+  return html.replace(
+    '</body>',
+    `<script>
+       (function () {
+         var done = false
+         function go() {
+           if (done) return
+           done = true
+           try { window.focus() } catch (e) {}
+           try { parent.postMessage('${PRINT_PING}', '*') } catch (e) {}
+           /*
+            * print() blocks. Under kiosk printing it returns at once, but with
+            * a print dialog it does not return until somebody dismisses it —
+            * and it blocks the page that opened it too, because they share a
+            * thread. So the till sat on a spinner, apparently frozen, behind
+            * a dialog the cashier had not noticed.
+            *
+            * A timeout of zero is enough to fix it: the message above is
+            * delivered and the screen has finished updating before print is
+            * ever called.
+            */
+           setTimeout(function () { window.print() }, 0)
+         }
+         if (document.readyState === 'complete') setTimeout(go, 60)
+         else window.addEventListener('load', function () { setTimeout(go, 60) })
+       })()
+     </script></body>`,
+  )
+}
+
+/**
+ * The visible fallback: the bill in a window of its own, with a button.
+ *
+ * Only reached when the frame would not print. It still tries to print itself,
+ * because usually it will — but a button that is there to be pressed is the
+ * difference between a slow evening and an impossible one.
+ */
+function openInWindow(html: string): boolean {
+  try {
+    // Narrow, so it sits beside the dashboard rather than covering it.
+    const win = window.open('', 'khapee-print', 'width=420,height=680')
+    if (!win) return false
+    win.document.open()
+    win.document.write(selfPrinting(withManualPrint(html)))
+    win.document.close()
+    win.focus()
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** The fallback window carries its own button; the frame never needs one. */
@@ -180,68 +303,6 @@ function withManualPrint(html: string): string {
      <style>@media print { .screen-only { display: none !important } }</style>
    </body>`,
   )
-}
-
-function openInWindow(html: string): boolean {
-  try {
-    // Narrow, so it sits beside the dashboard rather than covering it.
-    const win = window.open('', 'khapee-print', 'width=420,height=680')
-    if (!win) return false
-    win.document.open()
-    win.document.write(html)
-    win.document.close()
-    win.focus()
-    // After layout, or the dialog can be handed an empty page.
-    setTimeout(() => {
-      try {
-        win.print()
-      } catch {
-        /* the button in the document is the way out */
-      }
-    }, 250)
-    return true
-  } catch {
-    return false
-  }
-}
-
-function openInFrame(html: string): boolean {
-  try {
-    const frame = document.createElement('iframe')
-    // Off-screen rather than display:none — a frame that is not laid out has
-    // nothing to print in some browsers.
-    frame.setAttribute('aria-hidden', 'true')
-    frame.style.position = 'fixed'
-    frame.style.right = '100%'
-    frame.style.bottom = '100%'
-    frame.style.width = '80mm'
-    frame.style.height = '200mm'
-    frame.style.border = '0'
-    document.body.appendChild(frame)
-
-    const doc = frame.contentDocument
-    if (!doc) {
-      frame.remove()
-      return false
-    }
-    doc.open()
-    doc.write(html)
-    doc.close()
-
-    const go = () => {
-      try {
-        frame.contentWindow?.focus()
-        frame.contentWindow?.print()
-      } finally {
-        setTimeout(() => frame.remove(), 60_000)
-      }
-    }
-    if (frame.contentWindow?.document.readyState === 'complete') setTimeout(go, 60)
-    else frame.onload = () => setTimeout(go, 60)
-    return true
-  } catch {
-    return false
-  }
 }
 
 
@@ -309,7 +370,64 @@ export function kotHtml(bill: ReceiptBill & { note?: string }): string {
 </body></html>`
 }
 
-/** Same off-screen frame as the receipt; see printReceipt for why. */
-export function printKot(bill: ReceiptBill & { note?: string }): boolean {
-  return printDocument(kotHtml(bill))
+/** Same off-screen frame as the receipt; see printDocument for why. */
+export function printKot(bill: ReceiptBill & { note?: string }): Promise<PrintOutcome> {
+  return printDocument(kotHtml(bill), `KOT ${bill.orderNumber}`)
+}
+
+/**
+ * A slip that proves the printer works, without needing an order.
+ *
+ * "It is not printing" is three different faults wearing the same clothes:
+ * the browser never asked, the browser asked and Windows sent it to a PDF, or
+ * the roll is in wrong. Trying it on a real bill tells you which one it was
+ * only by elimination, in the middle of service. This is the same path a bill
+ * takes — same frame, same paper size — with nothing else that can be blamed.
+ */
+export function printTestSlip(restaurantName: string): Promise<PrintOutcome> {
+  const when = new Date().toLocaleString()
+  return printDocument(
+    `<!doctype html>
+<html><head><meta charset="utf-8"><title>Printer test</title>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  body {
+    margin: 0; padding: 3mm; width: 80mm; background: #fff; color: #000;
+    font-family: ui-monospace, "Courier New", monospace; font-size: 12px; line-height: 1.5;
+  }
+  h1 { font-size: 16px; margin: 0 0 6px; text-align: center; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  .wide { font-size: 15px; font-weight: 700; }
+</style></head>
+<body>
+  <h1>PRINTER TEST</h1>
+  <p style="text-align:center;margin:0">${esc(restaurantName)}</p>
+  <hr>
+  <div class="wide">If you are holding this,</div>
+  <div class="wide">printing works.</div>
+  <hr>
+  <div>80mm roll · full width check:</div>
+  <div>||||||||||||||||||||||||||||||||</div>
+  <hr>
+  <div>${esc(when)}</div>
+  <p style="text-align:center;margin-top:10px">— — — — — — — —</p>
+</body></html>`,
+    'Printer test',
+  )
+}
+
+/**
+ * What to tell somebody, in their own terms, about what just happened.
+ *
+ * The three outcomes need three different sentences: one is nothing to say,
+ * one is a browser that would not print by itself, and one is a click that
+ * went nowhere. Saying "printed" when no paper came out is the failure this
+ * whole file was written to stop.
+ */
+export function printWord(outcome: PrintOutcome, what: string): [string, 'good' | 'bad' | 'info'] {
+  if (outcome === 'printed') return [`${what} sent to the printer.`, 'good']
+  if (outcome === 'window') {
+    return [`${what} is open in a window — press Print there, or Ctrl + P.`, 'info']
+  }
+  return ['The browser would not open the printer. Allow pop-ups for khapee.com, then try again.', 'bad']
 }

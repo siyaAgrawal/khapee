@@ -4,7 +4,7 @@ import { api, ApiError, openStream } from '../../lib/api'
 import { LoadingBlock, money, Modal, Spinner, clockTime, useToast } from '../../components/ui'
 import { nextStatus, STATUS_LABEL, type OrderStatus } from '../../../shared/orders'
 import { waAppLink } from '../../../shared/thanks'
-import { printKot, printReceipt } from '../../lib/receipt'
+import { printKot, printReceipt, printWord } from '../../lib/receipt'
 
 type Bill = any
 type Item = { id: number; name: string; section: string; priceCents: number }
@@ -264,11 +264,7 @@ export default function StaffTable() {
           <div className="bill-acts mt-3">
             <button
               className="btn btn-secondary"
-              onClick={() => {
-                if (!printReceipt(bill)) {
-                  toast('This browser would not open the printer. Try Chrome, or use Send e-bill.', 'bad')
-                }
-              }}
+              onClick={async () => toast(...printWord(await printReceipt(bill), 'Bill'))}
             >
               🖨 Print
             </button>
@@ -294,11 +290,7 @@ export default function StaffTable() {
                 kitchen must never be asked to act on a price. */}
             <button
               className="btn btn-secondary"
-              onClick={() => {
-                if (!printKot(bill)) {
-                  toast('This browser would not open the printer. Try Chrome.', 'bad')
-                }
-              }}
+              onClick={async () => toast(...printWord(await printKot(bill), 'KOT'))}
             >
               🍳 KOT
             </button>

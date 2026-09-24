@@ -4104,6 +4104,279 @@ async function runTests() {
     (await call('/auth/me', { method: 'PATCH', body: { name: 'Nobody' } })).status === 401,
   )
 
+  // A second restaurant, signed in fresh: every token taken at the top of
+  // this run was signed out on purpose by the credentials tests above.
+  const otherToken = (
+    await call('/auth/login', { body: { email: 'staff@basilandbay.test', password: 'password123' } })
+  ).body.token
+
+  group('A TABLE IS THE THING, NOT AN ORDER')
+  {
+    // A restaurant does not think in orders, it thinks in tables — and a table
+    // is two hours long: drinks, then starters, then somebody's friend arrives.
+    // The board could only show those as unrelated cards, so "how much does
+    // table six owe" was four cards added up in somebody's head.
+    const floorTable = (await call('/staff/tables', { token: roadToken })).body.tables[0]
+
+    const first = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: {
+        tableId: floorTable.id,
+        items: [{ menuItemId: croissant.id, quantity: 2 }],
+        customerName: 'Table party',
+      },
+    })
+    ok('staff can take an order at their own end', first.status === 201, first.body)
+    ok('and it lands on the table they picked', first.body.order?.tableLabel === floorTable.label, first.body.order)
+    ok(
+      'already accepted, because the restaurant placed it',
+      first.body.order?.status === 'ACCEPTED',
+      first.body.order?.status,
+    )
+
+    const second = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { tableId: floorTable.id, items: [{ menuItemId: croissant.id, quantity: 1 }], customerName: 'Table party' },
+    })
+    ok('a second round joins the same table', second.status === 201, second.body)
+
+    const floor = await call('/staff/floor', { token: roadToken })
+    const mine = floor.body.tables.find((t: any) => t.id === floorTable.id)
+    ok('the floor shows every table', Array.isArray(floor.body.tables) && floor.body.tables.length > 0)
+    ok('with both rounds on the one that has them', mine?.orders.length === 2, mine?.orders?.length)
+    ok('and a running total across them', mine?.totalCents === 3 * croissant.priceCents, mine?.totalCents)
+    ok('and nothing sent to the kitchen yet', mine?.unsent === 3, mine?.unsent)
+
+    // The bill is the table, not a card on a board.
+    const bill = await call(`/staff/floor/table/${floorTable.id}/bill`, { token: roadToken })
+    ok('the table has one bill', bill.status === 200, bill.body)
+    ok('covering both rounds', bill.body.bill?.rounds === 2, bill.body.bill?.rounds)
+    ok(
+      'with the same dish added up rather than listed twice',
+      bill.body.bill?.items?.length === 1 && bill.body.bill.items[0].quantity === 3,
+      bill.body.bill?.items,
+    )
+    ok('and totalling the whole table', bill.body.bill?.totalCents === 3 * croissant.priceCents, bill.body.bill?.totalCents)
+
+    // Settling is per table, or half a table ends up paid.
+    const settled = await call(`/staff/floor/table/${floorTable.id}/settle`, {
+      token: roadToken,
+      body: { method: 'cash' },
+    })
+    ok('settling closes every round at once', settled.body?.settled === 2, settled.body)
+    ok('taking the whole amount', settled.body?.amountCents === 3 * croissant.priceCents, settled.body)
+
+    const after = await call('/staff/floor', { token: roadToken })
+    const empty = after.body.tables.find((t: any) => t.id === floorTable.id)
+    ok('and the table is free again', empty?.orders.length === 0, empty?.orders?.length)
+
+    const nothing = await call(`/staff/floor/table/${floorTable.id}/settle`, {
+      token: roadToken,
+      body: { method: 'cash' },
+    })
+    ok('settling an empty table is refused rather than taking nothing', nothing.status === 409, nothing.body)
+
+    const foreign = await call(`/staff/floor/table/${floorTable.id}/bill`, { token: otherToken })
+    ok('another restaurant cannot read this table', foreign.status === 404, foreign.status)
+  }
+
+  group('A KOT IS ONE ROUND, NOT THE WHOLE TABLE')
+  {
+    // The failure that matters here is a second copy of the starters reaching
+    // the range, which gets cooked, and which nobody finds out about until the
+    // plates arrive. So what has already gone is recorded rather than worked
+    // out again afterwards.
+    const kotTable = (await call('/staff/tables', { token: roadToken })).body.tables[1]
+    const order = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { tableId: kotTable.id, items: [{ menuItemId: croissant.id, quantity: 2 }], customerName: 'KOT' },
+    })
+    const orderId = order.body.order.id
+
+    const kot = await call(`/staff/orders/${orderId}/kot`, { token: roadToken, body: {} })
+    ok('the first round goes to the kitchen', kot.status === 201, kot.body)
+    ok('numbered from one', kot.body.kot?.seqNo === 1, kot.body.kot)
+    ok('carrying what was ordered', kot.body.kot?.items?.[0]?.quantity === 2, kot.body.kot?.items)
+
+    const again = await call(`/staff/orders/${orderId}/kot`, { token: roadToken, body: {} })
+    ok('pressing it again sends nothing twice', again.status === 409, again.body)
+    ok('and says why', /already/i.test(again.body?.error ?? ''), again.body)
+
+    // A waiter adds a coffee an hour later: that is round two, and only that.
+    await call(`/staff/orders/${orderId}/items`, {
+      token: roadToken,
+      body: { items: [{ menuItemId: coldCoffee.id, quantity: 1 }] },
+    })
+    const round2 = await call(`/staff/orders/${orderId}/kot`, { token: roadToken, body: {} })
+    ok('what is added afterwards is a second round', round2.body.kot?.seqNo === 2, round2.body.kot)
+    ok('holding only the new item', round2.body.kot?.items?.length === 1, round2.body.kot?.items)
+    ok('and not the food already cooking', round2.body.kot?.items?.[0]?.name === coldCoffee.name, round2.body.kot?.items)
+
+    // A slip goes under the pass often enough that reprinting must be exact.
+    const copy = await call(`/staff/kot/${round2.body.kot.id}`, { token: roadToken })
+    ok('a sent round can be printed again', copy.status === 200, copy.body)
+    ok('exactly as it was', copy.body.kot?.items?.[0]?.quantity === 1, copy.body.kot)
+
+    const foreignKot = await call(`/staff/kot/${round2.body.kot.id}`, { token: otherToken })
+    ok("another restaurant cannot read this kitchen's tickets", foreignKot.status === 404, foreignKot.status)
+
+    await call(`/staff/floor/table/${kotTable.id}/settle`, { token: roadToken, body: { method: 'cash' } })
+  }
+
+  group('CASH IS NOT UPI — what came in, split by how')
+  {
+    // At the end of a night somebody counts the drawer. One "taken today"
+    // figure cannot be checked against anything; split by method it reconciles
+    // against a drawer and a phone, which are two things a person can hold.
+    const sale = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { items: [{ menuItemId: croissant.id, quantity: 1 }], customerName: 'Split', serviceMode: 'counter' },
+    })
+    const inv = await call('/staff/pos/finalise', { token: roadToken, body: { orderId: sale.body.order.id } })
+    const invoiceId = inv.body.invoice.id
+    const total = inv.body.invoice.totalCents
+
+    const half = Math.floor(total / 2)
+    await call('/staff/pos/pay', { token: roadToken, body: { invoiceId, amountCents: half, method: 'cash' } })
+    await call('/staff/pos/pay', { token: roadToken, body: { invoiceId, amountCents: total - half, method: 'upi' } })
+
+    const t = await call('/staff/takings?days=0', { token: roadToken })
+    ok('takings are reported', t.status === 200, t.body)
+    const cash = t.body.byMethod.find((m: any) => m.method === 'cash')
+    const upi = t.body.byMethod.find((m: any) => m.method === 'upi')
+    ok('cash is counted as cash', (cash?.amountCents ?? 0) >= half, t.body.byMethod)
+    ok('UPI is counted as UPI', (upi?.amountCents ?? 0) >= total - half, t.body.byMethod)
+    ok('and the two do not run into each other', cash?.method !== upi?.method)
+
+    const onlyCash = await call('/staff/takings?days=0&method=cash', { token: roadToken })
+    ok(
+      'asking for cash gives back cash only',
+      onlyCash.body.payments.every((p: any) => p.method === 'cash'),
+      onlyCash.body.payments?.map((p: any) => p.method),
+    )
+    ok('while the totals still describe the whole day', onlyCash.body.netCents === t.body.netCents, {
+      filtered: onlyCash.body.netCents,
+      all: t.body.netCents,
+    })
+
+    // A day that gave money back did not take it.
+    const before = (await call('/staff/takings?days=0', { token: roadToken })).body.netCents
+    await call(`/staff/pos/invoice/${invoiceId}/refund`, {
+      token: roadToken,
+      body: { amountCents: half, method: 'cash', reason: 'Spilled' },
+    })
+    const afterRefund = await call('/staff/takings?days=0', { token: roadToken })
+    ok('a refund comes off the total', afterRefund.body.netCents === before - half, {
+      before,
+      after: afterRefund.body.netCents,
+    })
+    ok('and off the method it went back on', afterRefund.body.byMethod.find((m: any) => m.method === 'cash')!.amountCents ===
+      cash!.amountCents - half, afterRefund.body.byMethod)
+
+    const theirs = await call('/staff/takings?days=0', { token: otherToken })
+    ok("one restaurant cannot read another's takings", theirs.body.netCents !== t.body.netCents || t.body.netCents === 0)
+  }
+
+  group('WHO ORDERED THAT — history with a person attached')
+  {
+    // The questions that actually come in are "the lady who ordered on Tuesday
+    // and left her scarf" and "this number rang about a missing dish". They are
+    // the same question with a different handle, so all the handles find a row.
+    const named = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Sunita Verma',
+        contactPhone: '99887 76655',
+      },
+    })
+    ok('an order to look for', named.status === 201, named.body)
+
+    const byName = await call('/staff/history?q=Sunita', { token: roadToken })
+    ok('a name finds it', byName.body.rows.some((r: any) => r.customerName === 'Sunita Verma'), byName.body.total)
+    ok('with the phone number on it', byName.body.rows[0]?.customerPhone?.includes('76655'), byName.body.rows[0])
+    ok('and what they had', byName.body.rows[0]?.items?.length > 0, byName.body.rows[0]?.items)
+
+    const byPhone = await call('/staff/history?q=76655', { token: roadToken })
+    ok('part of a phone number finds it', byPhone.body.rows.length > 0, byPhone.body.total)
+
+    const byNumber = await call(`/staff/history?q=${named.body.order.orderNumber}`, { token: roadToken })
+    ok('the order number finds it', byNumber.body.rows.length === 1, byNumber.body.total)
+
+    const byDish = await call(`/staff/history?q=${encodeURIComponent(croissant.name)}`, { token: roadToken })
+    ok('the dish finds it', byDish.body.rows.length > 0, byDish.body.total)
+
+    const nonsense = await call('/staff/history?q=zzzznothing', { token: roadToken })
+    ok('and something nobody ordered finds nothing', nonsense.body.rows.length === 0, nonsense.body.total)
+
+    const theirs = await call('/staff/history?q=Sunita', { token: otherToken })
+    ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
+  }
+
+  group('MORE THAN ONE UPI ID, AND ONE OF THEM SHOWN')
+  {
+    // A counter has the Paytm card propped against the till, the owner's own
+    // ID, and a third belonging to whoever is there on a Sunday. With one box
+    // to hold them, switching meant retyping a VPA off a phone screen — and a
+    // mistyped VPA sends a customer's money to a stranger.
+    const first = await call('/staff/upi', {
+      token: otherToken,
+      body: { vpa: 'counter@ptys', displayName: 'Counter card', label: 'Counter' },
+    })
+    ok('a UPI ID can be added', first.status === 201, first.body)
+    ok('and the first one is the one in use', first.body.accounts[0]?.isActive === true, first.body.accounts)
+
+    const second = await call('/staff/upi', {
+      token: otherToken,
+      body: { vpa: 'owner@okaxis', displayName: 'Owner', label: 'Owner' },
+    })
+    ok('so can a second', second.body.accounts.length === 2, second.body.accounts)
+    ok('without taking over', second.body.accounts.find((a: any) => a.vpa === 'owner@okaxis')?.isActive === false)
+
+    const dupe = await call('/staff/upi', { token: otherToken, body: { vpa: 'owner@okaxis' } })
+    ok('the same ID cannot be added twice', dupe.status === 409, dupe.body)
+
+    const bad = await call('/staff/upi', { token: otherToken, body: { vpa: '9893245024' } })
+    ok('a number that is not a UPI ID is refused', bad.status === 400, bad.body)
+    ok('rather than printed onto a QR', /UPI ID/i.test(bad.body?.error ?? ''), bad.body)
+
+    const ownerId = second.body.accounts.find((a: any) => a.vpa === 'owner@okaxis').id
+    const chosen = await call(`/staff/upi/${ownerId}/use`, { token: otherToken, body: {} })
+    ok('choosing another switches it', chosen.body.accounts.find((a: any) => a.id === ownerId)?.isActive === true)
+    ok('and only one at a time is shown', chosen.body.accounts.filter((a: any) => a.isActive).length === 1)
+
+    // What the customer is actually asked to pay has to follow the choice, or
+    // the screen and the money disagree. The VPA is never listed on its own —
+    // it reaches the customer inside the UPI request — so that is where it is
+    // checked, on the same path a phone takes.
+    const basilDish = (await call(`/restaurants/${basil.id}`)).body.menu.flatMap((c: any) => c.items)[0]
+    const askedFor = await call('/orders/payment-request', {
+      body: { restaurantId: basil.id, items: [{ menuItemId: basilDish.id, quantity: 1 }] },
+    })
+    ok(
+      'the customer is asked to pay the chosen one',
+      askedFor.body?.upiLink?.includes('pa=owner%40okaxis'),
+      askedFor.body?.upiLink,
+    )
+
+    const removed = await call(`/staff/upi/${ownerId}`, { token: otherToken, method: 'DELETE' })
+    ok('removing the one in use hands the job to another', removed.body.accounts.length === 1, removed.body.accounts)
+    ok('rather than leaving nobody paid', removed.body.accounts[0]?.isActive === true, removed.body.accounts)
+
+    const stillPayable = await call('/orders/payment-request', {
+      body: { restaurantId: basil.id, items: [{ menuItemId: basilDish.id, quantity: 1 }] },
+    })
+    ok(
+      'and customers can still pay, into the one that is left',
+      stillPayable.body?.upiLink?.includes('pa=counter%40ptys'),
+      stillPayable.body?.upiLink,
+    )
+
+    const foreign = await call('/staff/upi', { token: roadToken })
+    ok("another restaurant does not see these", !foreign.body.accounts.some((a: any) => a.vpa === 'counter@ptys'), foreign.body.accounts)
+  }
+
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [

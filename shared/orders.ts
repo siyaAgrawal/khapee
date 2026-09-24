@@ -69,6 +69,24 @@ export function nextStatus(type: OrderType | ServiceType, current: OrderStatus):
   return flow[i + 1]
 }
 
+/**
+ * Whether the restaurant has actually said yes to this order.
+ *
+ * The customer's tick hangs on this and nothing else. Placing an order is
+ * something the customer did; being accepted is something the restaurant did,
+ * and only the second one is a promise that food is coming. Drawing a tick for
+ * the first — which is what a confirmation screen naturally does — tells
+ * somebody their order is confirmed while it is still sitting on a board that
+ * nobody has looked at, and a kitchen that then turns it down is breaking a
+ * promise the kitchen never made.
+ *
+ * NEW counts as not yet accepted. An order paid for in the app skips straight
+ * past REQUESTED, but paying is not the kitchen agreeing to cook.
+ */
+export function isAccepted(status: OrderStatus): boolean {
+  return !['REQUESTED', 'NEW', 'DECLINED', 'CANCELLED'].includes(status)
+}
+
 export function isTerminal(type: OrderType | ServiceType, status: OrderStatus): boolean {
   if (status === 'CANCELLED' || status === 'DECLINED') return true
   const flow = flowFor(type)

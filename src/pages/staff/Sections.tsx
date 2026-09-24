@@ -66,9 +66,14 @@ export function OrdersSection() {
     <Section
       title="Orders"
       blurb="Everything being cooked, carried and collected right now."
+      /* Tables first: it is the screen somebody stands in front of all
+         evening, and the board is what you open when you want the whole
+         room at once rather than one table at a time. */
       tabs={[
+        { to: '/staff/orders/tables', label: 'Tables' },
         { to: '/staff/orders', label: 'All orders', end: true },
-        { to: '/staff/orders/floor', label: 'Tables & cars' },
+        { to: '/staff/orders/history', label: 'History' },
+        { to: '/staff/orders/floor', label: 'Cars & runners' },
         { to: '/staff/orders/deliveries', label: 'Deliveries', count: waiting.deliveries },
         { to: '/staff/orders/check', label: 'Check a code' },
       ]}
@@ -81,9 +86,10 @@ export function TillSection() {
   return (
     <Section
       title="Till"
-      blurb="Ring up a sale at the counter, and confirm money that has come in."
+      blurb="Ring up a sale, take the money, and see what came in by cash and by UPI."
       tabs={[
         { to: '/staff/till', label: 'Counter sale', end: true },
+        { to: '/staff/till/takings', label: 'Cash & UPI' },
         { to: '/staff/till/payments', label: 'To confirm', count: waiting.payments },
       ]}
     />

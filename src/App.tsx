@@ -42,6 +42,9 @@ import StaffTables from './pages/staff/StaffTables'
 import StaffMenu from './pages/staff/StaffMenu'
 import StaffVerify from './pages/staff/StaffVerify'
 import StaffPrecincts from './pages/staff/StaffPrecincts'
+import StaffFloor from './pages/staff/StaffFloor'
+import StaffHistory from './pages/staff/StaffHistory'
+import StaffTakings from './pages/staff/StaffTakings'
 import { MenuSection, OrdersSection, SettingsSection, TillSection } from './pages/staff/Sections'
 
 function StaffGate({ children }: { children: JSX.Element }) {
@@ -100,12 +103,15 @@ export default function App() {
         {/* Four sections, each holding the views for one job. */}
         <Route path="orders" element={<OrdersSection />}>
           <Route index element={<StaffOrders />} />
+          <Route path="tables" element={<StaffFloor />} />
+          <Route path="history" element={<StaffHistory />} />
           <Route path="floor" element={<StaffOps />} />
           <Route path="deliveries" element={<StaffRuns />} />
           <Route path="check" element={<StaffVerify />} />
         </Route>
         <Route path="till" element={<TillSection />}>
           <Route index element={<StaffPos />} />
+          <Route path="takings" element={<StaffTakings />} />
           <Route path="payments" element={<StaffPayments />} />
         </Route>
         <Route path="menu" element={<MenuSection />}>

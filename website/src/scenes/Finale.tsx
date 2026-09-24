@@ -15,7 +15,7 @@ import { CAST } from '../components/Figure'
  * between them, because the pause is what makes it land.
  */
 export function Finale() {
-  const { ref, t, lengthVh } = useScene(460)
+  const { ref, t, lengthVh } = useScene(300)
   const loop = useLoop(1)
 
   const mood = useTransform(t, [0, 0.2, 0.4], [0.4, 0.9, 1])
@@ -115,7 +115,7 @@ export function Finale() {
           <p className="mt-2 text-ash/70 text-[13px] tracking-[0.3em] uppercase">Order · Pay · Arrive · Eat</p>
           <div className="mt-10 flex flex-wrap gap-3 justify-center">
             <a className="cta cta-primary" href="https://khapee.com">Order with Khapee</a>
-            <a className="cta cta-ghost" href="https://khapee.com">Explore restaurants</a>
+            <a className="cta cta-ghost" href="#for-restaurants">I run a restaurant</a>
           </div>
           <p className="mt-12 text-ash/50 text-[12px]">
             Made in Indore ·{' '}

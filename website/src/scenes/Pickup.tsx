@@ -16,7 +16,7 @@ import { CAST, Walker } from '../components/Figure'
  * this is the other shape it takes.
  */
 export function Pickup() {
-  const { ref, t, lengthVh } = useScene(400)
+  const { ref, t, lengthVh } = useScene(250)
   const loop = useLoop(1)
 
   const collect = useCue(t, 0.24, 0.72)

@@ -24,7 +24,7 @@ const YOU = ['Leaving the office', '5 min away', '2 min away', 'Pulling in']
 const THEM = ['Order received', 'On the range', 'Packing', 'On the pass']
 
 export function Journey() {
-  const { ref, t, lengthVh } = useScene(880)
+  const { ref, t, lengthVh } = useScene(520)
 
   /* One face across the whole thing: flat out at the start, and genuinely
      pleased at the moment the food is in front of them. */
@@ -51,32 +51,17 @@ export function Journey() {
     <Section id="journey" sceneRef={ref} lengthVh={lengthVh}>
       <div className="absolute inset-0 bg-night" />
 
-      {/* ---- clocking off ---- */}
+      {/*
+        ---- clocking off ----
+        Nothing but the words and the phone. There was an office block behind
+        the copy and it was doing no work: the line says the day is over, which
+        is the whole of what the building was there to establish, and a dim
+        drawing behind text is just something for the eye to trip on.
+      */}
       <Shot t={t} a={-0.06} b={0} c={0.28} d={0.34} from={1.05} to={1}>
-        <div className="absolute inset-y-0 right-0 w-1/2">
-          {/* the office, low and behind — two windows still lit, which is the
-              whole mood of the scene */}
-          <svg
-            viewBox="0 0 300 320"
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[86%] max-w-[420px]"
-            preserveAspectRatio="xMidYMax meet"
-            aria-hidden
-          >
-            <rect x="40" y="20" width="220" height="266" rx="4" fill="#2b1b49" />
-            {Array.from({ length: 24 }).map((_, i) => (
-              <rect
-                key={i}
-                x={60 + (i % 4) * 48} y={44 + Math.floor(i / 4) * 40}
-                width="32" height="26" rx="2"
-                fill={i === 6 || i === 17 ? '#d9a441' : '#1a1030'}
-                opacity={i === 6 || i === 17 ? 0.8 : 1}
-              />
-            ))}
-            <rect y="286" width="300" height="34" fill="#1f1436" />
-          </svg>
-          <div className="absolute inset-0 grid place-items-center px-[2vw]">
-            <PhoneFilm step={phone} scale={0.92} />
-          </div>
+        {/* and the phone, with the right half to itself */}
+        <div className="absolute inset-y-0 right-0 w-1/2 grid place-items-center px-[3vw]">
+          <PhoneFilm step={phone} scale={0.92} />
         </div>
       </Shot>
 

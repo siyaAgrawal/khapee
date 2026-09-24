@@ -25,7 +25,7 @@ import { CAST, Walker } from '../components/Figure'
  *     queue of people deciding to eat somewhere else.
  */
 export function Owners() {
-  const { ref, t, lengthVh } = useScene(580)
+  const { ref, t, lengthVh } = useScene(400)
   const loop = useLoop(1)
 
   /* --- 1: covers per hour ------------------------------------------- */
@@ -177,8 +177,21 @@ export function Owners() {
       </Cue>
 
       <Line t={t} a={0.92} b={0.96} c={0.99} d={1.01} size="lg">
-        Busier counter. Same kitchen.
+        Busier counter. <span className="text-gold">Same kitchen.</span>
       </Line>
+
+      {/* the way on, for somebody who has just been convinced */}
+      <motion.div
+        className="absolute inset-x-0 bottom-[13vh] z-30 flex justify-center gap-3 px-6"
+        style={{ opacity: useTransform(t, [0.94, 0.985], [0, 1]) }}
+      >
+        <a className="cta cta-primary" href="https://khapee.com/for-restaurants">
+          Put your menu on Khapee
+        </a>
+        <a className="cta cta-ghost" href="#">
+          See it from a customer&rsquo;s side
+        </a>
+      </motion.div>
 
       <Beats
         sceneRef={ref}

@@ -6,7 +6,7 @@ import { Journey } from './scenes/Journey'
 import { Pickup } from './scenes/Pickup'
 import { Demo } from './scenes/Converge'
 import { Owners } from './scenes/Owners'
-import { Finale } from './scenes/Finale'
+import { Arrival } from './scenes/Arrival'
 
 /**
  * Khapee, as a film you scrub.
@@ -28,7 +28,7 @@ const CHAPTERS = [
   { id: 'journey', label: 'The wait' },
   { id: 'pickup', label: 'Takeaway' },
   { id: 'demo', label: 'The app' },
-  { id: 'end', label: 'The end' },
+  { id: 'end', label: 'Khapee' },
 ]
 
 const OWNERS_HASH = '#for-restaurants'
@@ -80,7 +80,7 @@ export default function App() {
         <Journey />
         <Pickup />
         <Demo />
-        <Finale />
+        <Arrival />
       </main>
       <Ledger />
       <div className="grain" aria-hidden />

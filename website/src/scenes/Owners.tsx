@@ -25,7 +25,7 @@ import { CAST, Walker } from '../components/Figure'
  *     queue of people deciding to eat somewhere else.
  */
 export function Owners() {
-  const { ref, t, lengthVh } = useScene(400)
+  const { ref, t, lengthVh } = useScene(620)
   const loop = useLoop(1)
 
   /* --- 1: covers per hour ------------------------------------------- */
@@ -42,7 +42,7 @@ export function Owners() {
   const theirs = useTransform(cut, (v) => Math.round(100 - v * 28))
 
   /* --- 3: the queue that never forms -------------------------------- */
-  const queue = useCue(t, 0.78, 0.94)
+  const queue = useCue(t, 0.72, 0.95)
   const walkAway = useTransform(queue, [0, 1], [0, -190])
 
   return (
@@ -51,7 +51,14 @@ export function Owners() {
 
       {/* ============ 1. the same hour, twice ============ */}
       <Shot t={t} a={0.08} b={0.14} c={0.32} d={0.38} from={1.05} to={1}>
-        <div className="w-full h-full flex flex-col justify-center gap-[3vh] pt-[13vh] pb-[15vh] px-[6vw]">
+        <div className="w-full h-full flex flex-col justify-center gap-[2.6vh] pt-[13vh] pb-[15vh] px-[6vw]">
+          {/* the reason, said before the numbers rather than after them */}
+          <p
+            className="display text-center text-cream mx-auto max-w-[26ch]"
+            style={{ fontSize: 'clamp(16px, min(2.6vw, 3.4vh), 30px)', lineHeight: 1.15 }}
+          >
+            A table at which people are waiting is a table that is not earning.
+          </p>
           {/* the hour being measured, above the thing it measures */}
           <div className="flex items-center justify-center gap-3">
             <svg viewBox="0 0 100 100" className="w-[26px] h-[26px]" aria-hidden>
@@ -89,13 +96,11 @@ export function Owners() {
         <span className="display block" style={{ fontSize: 'clamp(28px, min(5.6vw, 8vh), 78px)' }}>
           The same hour.
           <br />
-          <span className="text-gold">Twice the covers.</span>
+          <span className="text-gold">Twice the table
+          <br />
+          turnover.</span>
         </span>
       </Cue>
-
-      <Line t={t} a={0.33} b={0.36} c={0.39} d={0.42} size="sm" place="bottom">
-        A table held by somebody waiting is a table that is not earning.
-      </Line>
 
       {/* ============ 2. all of it arrives ============ */}
       <Shot t={t} a={0.44} b={0.5} c={0.64} d={0.7} from={1.06} to={1}>
@@ -140,7 +145,7 @@ export function Owners() {
       </Cue>
 
       {/* ============ 3. the queue that never forms ============ */}
-      <Shot t={t} a={0.72} b={0.78} c={0.95} d={1.0} from={1.06} to={1}>
+      <Shot t={t} a={0.62} b={0.68} c={0.97} d={1.02} from={1.06} to={1}>
         <svg viewBox="0 0 900 420" className="w-full h-full" aria-hidden>
           <rect width="900" height="420" fill="#191125" />
           <rect y="330" width="900" height="90" fill="#211539" />
@@ -168,7 +173,7 @@ export function Owners() {
         </svg>
       </Shot>
 
-      <Cue t={t} a={0.68} b={0.72} c={0.76} d={0.8}>
+      <Cue t={t} a={0.58} b={0.62} c={0.68} d={0.73}>
         <span className="display block" style={{ fontSize: 'clamp(26px, min(5vw, 7.5vh), 68px)' }}>
           Nobody sees
           <br />
@@ -176,14 +181,14 @@ export function Owners() {
         </span>
       </Cue>
 
-      <Line t={t} a={0.92} b={0.96} c={0.99} d={1.01} size="lg">
+      <Line t={t} a={0.9} b={0.94} c={0.98} d={1.01} size="lg">
         Busier counter. <span className="text-gold">Same kitchen.</span>
       </Line>
 
       {/* the way on, for somebody who has just been convinced */}
       <motion.div
         className="absolute inset-x-0 bottom-[13vh] z-30 flex justify-center gap-3 px-6"
-        style={{ opacity: useTransform(t, [0.94, 0.985], [0, 1]) }}
+        style={{ opacity: useTransform(t, [0.93, 0.98], [0, 1]) }}
       >
         <a className="cta cta-primary" href="https://khapee.com/for-restaurants">
           Put your menu on Khapee
@@ -199,7 +204,7 @@ export function Owners() {
         marks={[
           { at: 0.02, label: 'More covers' },
           { at: 0.44, label: 'All the money' },
-          { at: 0.72, label: 'No queue' },
+          { at: 0.6, label: 'No queue' },
         ]}
       />
       <div className="vignette" />

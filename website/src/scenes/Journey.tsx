@@ -1,11 +1,11 @@
 import { motion, useTransform } from 'framer-motion'
 import { useCue, useScene } from '../lib/scene'
-import { Band, Cue, Line, Section, Shot } from '../components/Scene'
+import { Band, Cue, Section, Shot } from '../components/Scene'
 import { Beats } from '../components/Beats'
 import { PhoneFilm, usePhoneStep } from '../components/Phone'
 import { Car } from '../components/Car'
 import { Kitchen } from '../components/Kitchen'
-import { CAST, Walker } from '../components/Figure'
+import { CAST } from '../components/Figure'
 
 /**
  * The story, once.
@@ -31,8 +31,7 @@ export function Journey() {
   const mood = useTransform(t, [0, 0.2, 0.3, 0.74, 0.88], [0.03, 0.03, 0.35, 0.42, 1])
   const speed = useTransform(t, [0.32, 0.42, 0.7, 0.78], [0, 1, 1, 0])
   const kitchen = useCue(t, 0.34, 0.76)
-  const clocks = useCue(t, 0.36, 0.78)
-  const arrival = useCue(t, 0.84, 1)
+  const pair = useCue(t, 0.82, 0.99)
 
   const phone = usePhoneStep(t, [
     [0, 'location'],
@@ -106,67 +105,22 @@ export function Journey() {
         <span className="text-gold">Neither of you is waiting.</span>
       </Band>
 
-      {/* the two clocks, spelled out under the picture */}
-      <motion.div
-        className="absolute inset-x-0 bottom-[6vh] z-20 px-8 flex justify-center pointer-events-none"
-        style={{ opacity: clocks }}
-      >
-        <div className="w-full max-w-[780px] grid grid-cols-2 gap-x-10 gap-y-2">
-          <Column title="You" marks={YOU} p={clocks} />
-          <Column title="Khapee" marks={THEM} p={clocks} align="right" />
+      {/*
+        ---- you, and them, on one clock ----
+        Its own beat rather than a strip crushed under the split screen. This
+        is the clearest statement of the idea on the whole page — two columns
+        filling at the same time — and it was being read as a caption.
+      */}
+      <Shot t={t} a={0.78} b={0.84} c={0.97} d={1.02} from={1.04} to={1}>
+        <div className="w-full max-w-[900px] px-[6vw] grid grid-cols-2 gap-x-[6vw]">
+          <Column title="You" marks={YOU} p={pair} big />
+          <Column title="Khapee" marks={THEM} p={pair} align="right" big />
         </div>
-      </motion.div>
-
-      {/* ---- inside, and it is already on the table ---- */}
-      <Shot t={t} a={0.82} b={0.88} c={0.97} d={1.01} from={1.14} to={1}>
-        <svg viewBox="0 0 900 460" className="w-full h-full" aria-hidden>
-          <rect width="900" height="460" fill="#191125" />
-          <rect y="286" width="900" height="174" fill="#241735" />
-          <rect y="283" width="900" height="3" fill="#33215a" />
-
-          <rect x="612" y="78" width="132" height="208" rx="4" fill="#2e1d44" />
-          <motion.rect
-            x="622" y="88" width="112" height="188" rx="3" fill="#d9a441"
-            style={{ opacity: useTransform(arrival, [0, 0.5], [0.3, 0.1]) }}
-          />
-          <line x1="300" y1="0" x2="300" y2="58" stroke="#3a2752" strokeWidth="3" />
-          <path d="M268 58 h64 l-15 28 h-34 z" fill="#b9563c" />
-
-          <g transform="translate(300 300)">
-            <rect x="-128" y="0" width="256" height="9" rx="4" fill="#5a3f78" />
-            <rect x="-74" y="9" width="9" height="86" fill="#452c68" />
-            <rect x="65" y="9" width="9" height="86" fill="#452c68" />
-            <motion.ellipse
-              cy="-4" rx="76" ry="17" fill="#d9a441"
-              style={{ opacity: useTransform(arrival, [0, 1], [0, 0.22]) }}
-            />
-            <ellipse cy="-6" rx="52" ry="16" fill="#f4ede1" />
-            <ellipse cy="-9" rx="37" ry="11" fill="#e0d3bc" />
-            <ellipse cy="-11" rx="26" ry="7.5" fill="#b9563c" />
-            <path d="M52 -30 h22 l-4 26 h-14 z" fill="#8a7fb0" opacity="0.55" />
-            <g transform="translate(0 -26)">
-              {[-13, 0, 13].map((x, i) => (
-                <motion.path
-                  key={x}
-                  d={`M${x} 0 c${i % 2 ? 5 : -5} -7 ${i % 2 ? -5 : 5} -11 0 -18`}
-                  stroke="#d9a441" strokeWidth="2.6" fill="none" strokeLinecap="round"
-                  style={{ opacity: useTransform(arrival, [0.25, 0.7], [0, 0.55]) }}
-                />
-              ))}
-            </g>
-          </g>
-
-          <motion.g style={{ x: useTransform(arrival, [0, 1], [230, 0]) }}>
-            <g transform="translate(560 128) scale(0.92)">
-              <Walker mood={mood} look={CAST.worker} />
-            </g>
-          </motion.g>
-        </svg>
       </Shot>
 
-      <Line t={t} a={0.88} b={0.93} c={0.985} d={1.02} size="xl" place="top">
-        Long day. <span className="text-gold">Short wait.</span>
-      </Line>
+      <Band t={t} a={0.8} b={0.86} c={0.97} d={1.02}>
+        Two clocks. <span className="text-gold">One finish line.</span>
+      </Band>
 
       <Beats
         sceneRef={ref}
@@ -176,7 +130,7 @@ export function Journey() {
           { at: 0.15, label: 'Ordering' },
           { at: 0.36, label: 'Both moving' },
           { at: 0.6, label: 'Cooking' },
-          { at: 0.86, label: 'Sitting down' },
+          { at: 0.8, label: 'You vs Khapee' },
         ]}
       />
       <div className="vignette" />
@@ -190,18 +144,20 @@ function Column({
   marks,
   p,
   align = 'left',
+  big = false,
 }: {
   title: string
   marks: string[]
   p: ReturnType<typeof useCue>
   align?: 'left' | 'right'
+  big?: boolean
 }) {
   return (
     <div className={align === 'right' ? 'text-right' : ''}>
-      <p className="kicker mb-2.5">{title}</p>
-      <div className="space-y-1.5">
+      <p className="kicker mb-5" style={big ? { fontSize: 13 } : undefined}>{title}</p>
+      <div className={big ? 'space-y-4' : 'space-y-1.5'}>
         {marks.map((m, i) => (
-          <Mark key={m} label={m} at={0.1 + (i / marks.length) * 0.8} p={p} align={align} />
+          <Mark key={m} label={m} at={0.1 + (i / marks.length) * 0.8} p={p} align={align} big={big} />
         ))}
       </div>
     </div>
@@ -213,16 +169,20 @@ function Mark({
   at,
   p,
   align,
+  big = false,
 }: {
   label: string
   at: number
   p: ReturnType<typeof useCue>
   align: 'left' | 'right'
+  big?: boolean
 }) {
-  const on = useTransform(p, [at - 0.04, at], [0.22, 1])
+  const on = useTransform(p, [at - 0.06, at], [0.18, 1])
   return (
     <motion.p
-      className={`text-[13px] flex items-center gap-2.5 ${align === 'right' ? 'justify-end' : ''}`}
+      className={`flex items-center gap-3 ${big ? 'text-[clamp(15px,2.2vw,26px)]' : 'text-[13px]'} ${
+        align === 'right' ? 'justify-end' : ''
+      }`}
       style={{ opacity: on }}
     >
       {align === 'right' && <span className="text-cream">{label}</span>}

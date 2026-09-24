@@ -73,7 +73,7 @@ export function Takeaway() {
       {/* ---- both moving at once ---- */}
       <Shot t={t} a={0.28} b={0.36} c={0.74} d={0.82} from={1.08} to={1}>
         <div className="absolute inset-0 flex flex-col" style={{ background: '#1e1636' }}>
-          <div className="h-[16vh] shrink-0" />
+          <div className="h-[19vh] shrink-0" />
           <div className="flex-1 grid place-items-center min-h-0">
           <div className="split">
           <div>

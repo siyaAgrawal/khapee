@@ -211,12 +211,12 @@ export function Band({
   const opacity = useHold(t, a, b, c, d)
   return (
     <motion.div
-      className="absolute inset-x-0 top-0 h-[16vh] z-20 flex items-center justify-center px-8 pointer-events-none"
+      className="absolute inset-x-0 top-0 h-[19vh] z-20 flex items-center justify-center px-8 pointer-events-none"
       style={{ opacity }}
     >
       <p
-        className="display text-center text-cream"
-        style={{ fontSize: 'clamp(16px, min(2.4vw, 3.2vh), 28px)' }}
+        className="display text-center text-cream max-w-[24ch]"
+        style={{ fontSize: 'clamp(19px, min(3.4vw, 4.6vh), 44px)', lineHeight: 1.05 }}
       >
         {children}
       </p>

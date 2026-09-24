@@ -124,7 +124,7 @@ export function Drive() {
       */}
       <Shot t={t} a={0.3} b={0.38} c={0.8} d={0.88} from={1.05} to={1}>
         <div className="absolute inset-0 flex flex-col" style={{ background: '#1e1636' }}>
-          <div className="h-[16vh] shrink-0" />
+          <div className="h-[19vh] shrink-0" />
           <div className="flex-1 grid place-items-center min-h-0">
           <div className="split">
             <div style={{ background: '#1b1330' }}>
@@ -142,7 +142,8 @@ export function Drive() {
 
       {/* the caption, in the band kept for it */}
       <Band t={t} a={0.38} b={0.44} c={0.78} d={0.84}>
-        You are driving. It is cooking. <span className="text-gold">Neither of you is waiting.</span>
+        Why wait for your food when your food{' '}
+        <span className="text-gold">can wait for you?</span>
       </Band>
 
       {/*

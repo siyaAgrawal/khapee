@@ -75,7 +75,7 @@ export function Work() {
       {/* ---- the drive home, and the kitchen, on one clock ---- */}
       <Shot t={t} a={0.32} b={0.4} c={0.82} d={0.9} from={1.08} to={1}>
         <div className="absolute inset-0 flex flex-col" style={{ background: '#1e1636' }}>
-          <div className="h-[16vh] shrink-0" />
+          <div className="h-[19vh] shrink-0" />
           <div className="flex-1 grid place-items-center min-h-0">
           <div className="split">
           <div style={{ background: '#1b1330' }}>

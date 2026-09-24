@@ -64,9 +64,22 @@ export function Cover({ next }: { next: string }) {
           </h1>
         </div>
 
-        {/* the clock and the phone, as a pair */}
-        <div className="flex items-center gap-[4vw] justify-self-center">
-          <svg viewBox="0 0 220 220" className="w-[20vw] min-w-[130px] max-w-[250px] h-auto" aria-hidden>
+        {/*
+          The clock and the phone as a pair, both whole.
+
+          Two goes at this. Floating apart, the clock belonged to neither the
+          headline nor the screen and was anchored to nothing. Overlapped, the
+          phone cut a slice off it — and a half-hidden clock is not a clock.
+          So: a small gap, a shared centre line, and nothing in front of
+          anything. They read as one pair because they are level and close,
+          which is all that was ever needed.
+        */}
+        <div className="relative justify-self-center flex items-center gap-[3vw]">
+          <svg
+            viewBox="0 0 220 220"
+            className="w-[19vw] min-w-[120px] max-w-[230px] h-auto shrink-0"
+            aria-hidden
+          >
             <circle cx="110" cy="110" r="88" fill="#211539" />
             <circle cx="110" cy="110" r="88" fill="none" stroke="#452c68" strokeWidth="3" />
             {Array.from({ length: 12 }).map((_, i) => (

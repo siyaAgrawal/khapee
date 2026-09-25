@@ -113,8 +113,22 @@ for (const suffix of ['', '-wal', '-shm']) {
   if (fs.existsSync(f)) fs.unlinkSync(f)
 }
 
-const server = spawn('npx', ['tsx', 'server/index.ts'], {
+/*
+ * Its own process group, and tsx directly rather than through npx.
+ *
+ * The server is two processes: a launcher and the node process that actually
+ * holds the port. Signalling the child reached the launcher alone and the
+ * grandchild carried on serving, which is how a run that ended perfectly well
+ * still left something on 4399 for the next one to collide with. detached
+ * gives the pair a group of their own so one signal reaches both.
+ *
+ * Going through npx added a third process that exited early, leaving the rest
+ * reparented and outliving a kill aimed at the group it had led. The binary is
+ * sitting in node_modules; there is no reason to ask npx to find it.
+ */
+const server = spawn(path.join(root, 'node_modules', '.bin', 'tsx'), ['server/index.ts'], {
   cwd: root,
+  detached: true,
   env: {
     ...process.env,
     TABLO_PORT: String(PORT),
@@ -130,10 +144,44 @@ let serverLog = ''
 server.stdout.on('data', (d) => (serverLog += d))
 server.stderr.on('data', (d) => (serverLog += d))
 
+let downed = false
 function shutdown() {
-  server.kill('SIGTERM')
+  if (downed) return
+  downed = true
+  if (!server.pid) return
+  try {
+    /*
+     * The group, and SIGKILL rather than SIGTERM.
+     *
+     * A polite signal was tried first and is not good enough here: it closed
+     * the listener but left tsx and its node child alive, and the graceful
+     * escalation had to be a timer, which never fires because this runs on
+     * the way out of the process. There is nothing to flush — the database is
+     * deleted at the start of the next run — so the only thing a grace period
+     * buys is the orphan it was meant to prevent.
+     */
+    process.kill(-server.pid, 'SIGKILL')
+  } catch {
+    // Already gone.
+  }
 }
+
 process.on('exit', shutdown)
+/*
+ * 'exit' does not fire for a signal, so Ctrl-C used to leak the entire tree —
+ * and interrupting a slow run is exactly when somebody does that.
+ */
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+  process.on(sig, () => {
+    shutdown()
+    process.exit(130)
+  })
+}
+process.on('uncaughtException', (e) => {
+  console.error('\nTest run threw:', e)
+  shutdown()
+  process.exit(1)
+})
 
 try {
   await waitForServer()
@@ -2328,8 +2376,12 @@ async function runTests() {
     // link, telling Google to prefer a URL that only redirects. Run a second
     // server the way production runs it and check what a crawler is told.
     const port = PORT + 1
-    const proxied = spawn('npx', ['tsx', 'server/index.ts'], {
+    // Its own group, and killed as one — same reason as the main server above.
+    // This is the spawn that was actually leaking: SIGTERM to the launcher left
+    // the node process behind it running, two per test run, for ever.
+    const proxied = spawn(path.join(root, 'node_modules', '.bin', 'tsx'), ['server/index.ts'], {
       cwd: root,
+      detached: true,
       env: { ...process.env, NODE_ENV: 'production', TABLO_PORT: String(port), TABLO_DB: DB_PATH },
       stdio: ['ignore', 'ignore', 'pipe'],
     })
@@ -2361,7 +2413,11 @@ async function runTests() {
       const robots = await asEdge('/robots.txt')
       ok('and the sitemap robots points at is too', robots.includes(`Sitemap: ${secure}/sitemap.xml`), robots)
     } finally {
-      proxied.kill('SIGTERM')
+      try {
+        if (proxied.pid) process.kill(-proxied.pid, 'SIGKILL')
+      } catch {
+        // Already gone.
+      }
     }
   }
 

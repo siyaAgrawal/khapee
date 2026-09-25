@@ -115,7 +115,15 @@ for (const suffix of ['', '-wal', '-shm']) {
 
 const server = spawn('npx', ['tsx', 'server/index.ts'], {
   cwd: root,
-  env: { ...process.env, TABLO_PORT: String(PORT), TABLO_DB: DB_PATH },
+  env: {
+    ...process.env,
+    TABLO_PORT: String(PORT),
+    TABLO_DB: DB_PATH,
+    // Whoever runs Khapee itself, rather than one restaurant on it. The
+    // "rings for every restaurant" grant is read from this, so there has to be
+    // somebody on it for that to be testable at all.
+    KHAPEE_OWNER_EMAILS: 'dual@tablo.test',
+  },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 let serverLog = ''
@@ -3540,6 +3548,48 @@ async function runTests() {
       },
     })
     ok('the same device does not count twice', again.body.devices === good.body.devices, again.body)
+
+    /*
+     * Whoever runs Khapee wants every order on it, not only the places they
+     * happen to staff.
+     *
+     * This could not be asked for at all before. The send query honoured
+     * all_restaurants and saveSubscription accepted it, but no route ever set
+     * it — and the dashboard re-subscribes on every page load with the flag
+     * defaulting to false, so even an invite that set it was wiped by the next
+     * reload. It is now read from the account, which is also why it cannot be
+     * asked for in the request body: that would let anyone running one
+     * restaurant subscribe to everybody else's customer names.
+     */
+    const ownerEverywhere = await call('/staff/alerts/subscribe', {
+      token: dualToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/the-owner',
+          keys: { p256dh: 'BDpUB9' + 'q'.repeat(80), auth: 'ownerownerowner1' },
+        },
+      },
+    })
+    ok('an owner on the list follows every restaurant', ownerEverywhere.body.everywhere === true, ownerEverywhere.body)
+
+    const strangerSees = await call('/staff/alerts', { token: roadToken })
+    ok(
+      'so their phone rings for a restaurant they have nothing to do with',
+      strangerSees.body.push.list.some((d: any) => d.who === 'Owner phone — every restaurant'),
+      strangerSees.body.push.list,
+    )
+
+    // And an ordinary restaurant account does not quietly gain the same thing.
+    const notTheOwner = await call('/staff/alerts/subscribe', {
+      token: roadToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/not-the-owner',
+          keys: { p256dh: 'BDpUB9' + 'w'.repeat(80), auth: 'nottheownerkeys1' },
+        },
+      },
+    })
+    ok('somebody running one restaurant does not', notTheOwner.body.everywhere === false, notTheOwner.body)
 
     // One phone, an owner with two places. Nobody should have to guess that
     // the picker at the top of the dashboard was also choosing which orders

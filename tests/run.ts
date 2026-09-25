@@ -4653,6 +4653,12 @@ async function runTests() {
         success: '1',
         restaurants: [{ restaurantid: 'R156072', details: { minimum_prep_time: '25' } }],
         categories: [{ categoryid: '900', categoryname: 'Petpooja Specials', categoryrank: '1' }],
+        // Petpooja confirmed the outlet's tables ride along with the menu, and
+        // those names are the ones their till knows a dine-in order by.
+        tables: [
+          { tableid: 'PT-1', tablename: 'Garden 2', seats: '6' },
+          { tableid: 'PT-2', tablename: 'T4' },
+        ],
         items: [
           {
             itemid: 'PP-1',
@@ -4688,15 +4694,39 @@ async function runTests() {
     const seekh = specials?.items.find((i: any) => i.name === 'Chicken Seekh')
     ok('anything not plainly veg is shown as non-veg', seekh?.isVeg === false, seekh)
 
+    // The tables that came with it. Khapee used to invent its own names, which
+    // meant a dine-in order named a table their till had never heard of.
+    const withTables = await call('/staff/tables', { token: roadToken })
+    const garden = withTables.body.tables?.find((t: any) => t.label === 'Garden 2')
+    ok('tables arrive with the menu', !!garden, withTables.body.tables?.map((t: any) => t.label))
+    ok('with the seats the till gave', garden?.seats === 6, garden)
+
+    // Pushed again below; a table must not grow a second copy of itself either.
+    const tablesBefore = withTables.body.tables?.length ?? 0
+
     // Pushed twice, because Petpooja push on every edit and a menu that grows
     // a second copy of itself each time is worse than no integration at all.
     await call(`/petpooja/${secret}/menu`, {
       body: {
         restaurants: [{ restaurantid: 'R156072' }],
         categories: [{ categoryid: '900', categoryname: 'Petpooja Specials' }],
+        tables: [{ tableid: 'PT-1', tablename: 'Garden 2', seats: '6' }],
         items: [{ itemid: 'PP-1', itemname: 'Paneer Tikka', item_categoryid: '900', price: '260', item_attributeid: '1' }],
       },
     })
+    const tablesAfter = await call('/staff/tables', { token: roadToken })
+    ok(
+      'pushing again does not duplicate a table',
+      tablesAfter.body.tables.filter((t: any) => t.label === 'Garden 2').length === 1,
+      tablesAfter.body.tables.map((t: any) => t.label),
+    )
+    // T4 was in the first push and not the second. A table carries a printed QR
+    // code, so it stays put rather than being tidied away under somebody.
+    ok(
+      'and a table left out of a later push is not removed',
+      tablesAfter.body.tables.length === tablesBefore,
+      { before: tablesBefore, after: tablesAfter.body.tables.length },
+    )
     const twice = await call('/staff/menu', { token: roadToken })
     const again = twice.body.categories.find((c: any) => c.name === 'Petpooja Specials')
     ok('pushing again does not duplicate the dish', again.items.filter((i: any) => i.name === 'Paneer Tikka').length === 1, again.items.length)

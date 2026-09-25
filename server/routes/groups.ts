@@ -12,6 +12,7 @@ import {
 } from '../groups.ts'
 import { getOrder } from '../orders-service.ts'
 import { alertRestaurant } from '../alerts.ts'
+import { pushOrder } from '../petpooja.ts'
 import { syncOrderPayment, upiLink } from '../payments.ts'
 
 export const groupsRouter = Router()
@@ -165,6 +166,13 @@ groupsRouter.post('/session/items', (req, res) => {
     moreItems: true,
   })
 
+  /* And the till, if the restaurant bills on one. Their API is one KOT per
+     order, so this round goes over as an order of its own against the same
+     table — which is exactly what Petpooja said it would become. Not awaited:
+     a round belongs to the kitchen whether or not somebody's Windows machine
+     answered. */
+  void pushOrder(order.id, originOf(req)).catch(() => {})
+
   res.status(201).json({ session })
 })
 
@@ -271,3 +279,15 @@ groupsRouter.post('/session/paid', (req, res) => {
     message: 'Sent to the restaurant to confirm.',
   })
 })
+
+/**
+ * The host the request actually arrived on, which is what Petpooja's callback
+ * URL has to be built from. Deliberately a copy of the same three lines in
+ * orders.ts and staff.ts rather than a shared import — these three routers are
+ * otherwise independent of one another, and a helper module that exists to
+ * hold one expression is a worse trade than the repetition.
+ */
+function originOf(req: any): string {
+  const proto = String(req.headers['x-forwarded-proto'] ?? req.protocol ?? 'https').split(',')[0]
+  return `${proto}://${req.get('host')}`
+}

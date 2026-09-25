@@ -607,6 +607,23 @@ addColumn('menu_categories', 'pos_category_id', 'TEXT')
 addColumn('orders', 'pos_order_id', 'TEXT')
 addColumn('orders', 'pos_pushed_at', 'TEXT')
 addColumn('orders', 'pos_error', "TEXT NOT NULL DEFAULT ''")
+/*
+ * Which Petpooja order carried this line.
+ *
+ * Their API is one KOT per order, confirmed by Petpooja directly: a table that
+ * orders again later becomes a second order over there, against the same
+ * table. Ours is the other way round — one order accumulates rounds all
+ * evening — so the two only line up if the unit we send is the round rather
+ * than the order. Stamped per line because the round is exactly "the lines
+ * that have not gone yet", and anything coarser sends somebody's starters to
+ * the kitchen twice.
+ */
+addColumn('order_items', 'pos_order_id', 'TEXT')
+addColumn('order_items', 'pos_pushed_at', 'TEXT')
+/* Their name for the table, which is the one their till knows it by. A dine-in
+   order names a table in table_no, and a name we invented is a table they do
+   not have. */
+addColumn('restaurant_tables', 'pos_table_id', 'TEXT')
 db.exec('CREATE INDEX IF NOT EXISTS idx_menu_items_pos ON menu_items(restaurant_id, pos_item_id)')
 // The kitchen's queue is sorted by it, so it is worth an index the moment a
 // restaurant has a day's worth of orders rather than a demo's worth.

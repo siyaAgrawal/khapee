@@ -263,12 +263,15 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
             pc_tax_amount: '0.00',
             pc_tax_percentage: '0',
             order_type: dineIn ? 'D' : 'P',
+            /* Their name for the table when we know it, ours only as a last
+               resort — a table_no their till does not recognise is an order
+               that lands nowhere. */
             advanced_order: order.wanted_at ? 'Y' : 'N',
             /* Paid in the app is ONLINE; anything settled at the counter is
                cash on delivery as far as their till is concerned, which is
                what stops it asking a customer to pay twice. */
             payment_type: order.payment_status === 'PAID' ? 'ONLINE' : 'COD',
-            table_no: dineIn ? String(order.table_label ?? '') : '',
+            table_no: dineIn ? String(order.pos_table_id || order.table_label || '') : '',
             no_of_persons: '',
             discount_total: '0.00',
             tax_total: '0.00',
@@ -331,18 +334,40 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
 
   const link = linkFor(order.restaurant_id)
   if (!linkReady(link) || !link.pushOrders) return { ok: false, skipped: 'not linked' }
-  if (order.pos_order_id) return { ok: true, posOrderId: order.pos_order_id }
 
   const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(order.restaurant_id) as any
+
+  /* Their id for this table, when the menu push has told us one. */
+  const posTableId = order.table_id
+    ? ((db.prepare('SELECT pos_table_id FROM restaurant_tables WHERE id = ?').get(order.table_id) as any)
+        ?.pos_table_id ?? '')
+    : ''
+
+  /*
+   * The round: everything on this order that has not been sent yet.
+   *
+   * This used to return early the moment the order had a pos_order_id, on the
+   * assumption that an order goes to the till once. It does not. A table
+   * orders drinks, then starters, then somebody's friend arrives — and every
+   * one of those rounds after the first was silently dropped here, so the
+   * kitchen cooked the first round and never heard about the rest.
+   */
   const items = db
     .prepare(
-      `SELECT oi.name, oi.quantity, oi.unit_price_cents, m.pos_item_id
+      `SELECT oi.id, oi.name, oi.quantity, oi.unit_price_cents, m.pos_item_id
          FROM order_items oi LEFT JOIN menu_items m ON m.id = oi.menu_item_id
-        WHERE oi.order_id = ? AND (oi.accepted IS NULL OR oi.accepted = 1)`,
+        WHERE oi.order_id = ? AND oi.pos_order_id IS NULL
+          AND (oi.accepted IS NULL OR oi.accepted = 1)
+        ORDER BY oi.id`,
     )
     .all(orderId) as any[]
 
-  if (!items.length) return { ok: false, skipped: 'nothing to send' }
+  if (!items.length) {
+    return order.pos_order_id
+      ? { ok: true, posOrderId: order.pos_order_id }
+      : { ok: false, skipped: 'nothing to send' }
+  }
+
   const unknown = items.filter((i) => !i.pos_item_id)
   if (unknown.length) {
     const why = `Not sent to Petpooja: ${unknown.map((i) => i.name).join(', ')} ${unknown.length > 1 ? 'are' : 'is'} not in the Petpooja menu yet.`
@@ -351,7 +376,25 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
     return { ok: false, skipped: why }
   }
 
-  const payload = orderPayload(link, order, items, restaurant, `${origin}/api/petpooja/${link.webhookSecret}/callback`)
+  /*
+   * Their order id has to be new every round or the second one is rejected as
+   * a duplicate, so rounds after the first carry a suffix. The callback looks
+   * an order up by this string, so it is matched back with the suffix stripped
+   * rather than by remembering what we sent.
+   */
+  const roundNo =
+    ((db
+      .prepare('SELECT COUNT(DISTINCT pos_order_id) AS n FROM order_items WHERE order_id = ? AND pos_order_id IS NOT NULL')
+      .get(orderId) as any)?.n ?? 0) + 1
+  const clientOrderId = roundNo === 1 ? order.order_number : `${order.order_number}-${roundNo}`
+
+  const payload = orderPayload(
+    link,
+    { ...order, order_number: clientOrderId, pos_table_id: posTableId },
+    items,
+    restaurant,
+    `${origin}/api/petpooja/${link.webhookSecret}/callback`,
+  )
   const reply = await call(endpoint('saveOrder'), payload)
 
   if (!reply.ok) {
@@ -361,9 +404,15 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
   }
 
   const posOrderId = String(reply.body?.orderID ?? '')
-  db.prepare(
-    "UPDATE orders SET pos_order_id = ?, pos_pushed_at = datetime('now'), pos_error = '' WHERE id = ?",
-  ).run(posOrderId, orderId)
+  /* Stamped only on the lines that actually went, and only after they went:
+     a round marked as sent before the till answered is a round nobody cooks. */
+  const stamp = db.prepare("UPDATE order_items SET pos_order_id = ?, pos_pushed_at = datetime('now') WHERE id = ?")
+  db.transaction(() => {
+    for (const i of items) stamp.run(posOrderId || clientOrderId, i.id)
+    db.prepare(
+      "UPDATE orders SET pos_order_id = COALESCE(NULLIF(pos_order_id, ''), ?), pos_pushed_at = datetime('now'), pos_error = '' WHERE id = ?",
+    ).run(posOrderId, orderId)
+  })()
   db.prepare("UPDATE petpooja_links SET last_order_at = datetime('now'), last_error = '' WHERE restaurant_id = ?").run(
     order.restaurant_id,
   )
@@ -427,7 +476,7 @@ export async function fetchMenu(restaurantId: number): Promise<{ ok: boolean; bo
  * Prices arrive in rupees and are stored in paise, because every price in this
  * database is an integer and always has been.
  */
-export function applyMenuPush(link: Link, payload: any): { categories: number; items: number; retired: number } {
+export function applyMenuPush(link: Link, payload: any): { categories: number; items: number; retired: number; tables: number } {
   const restaurants = Array.isArray(payload?.restaurants) ? payload.restaurants : []
   const categories = Array.isArray(payload?.categories) ? payload.categories : []
   const items = Array.isArray(payload?.items) ? payload.items : []
@@ -581,10 +630,67 @@ export function applyMenuPush(link: Link, payload: any): { categories: number; i
     retired = info.changes
   }
 
+  const tables = applyTables(link, payload)
+
   db.prepare("UPDATE petpooja_links SET last_menu_at = datetime('now'), last_error = '' WHERE restaurant_id = ?").run(
     link.restaurantId,
   )
-  return { categories: addedCategories, items: wrote, retired }
+  return { categories: addedCategories, items: wrote, retired, tables }
+}
+
+/**
+ * The restaurant's own tables, which arrive with the menu.
+ *
+ * Petpooja confirmed this directly when asked where table_no comes from: the
+ * outlet's table list is part of the menu payload, and those are the names
+ * their till knows. Khapee used to invent its own — Table 1 to 7, whatever
+ * somebody typed — and a dine-in order then named a table that did not exist
+ * over there.
+ *
+ * Matched on their id first and the name second, so a restaurant that already
+ * typed "T4" into Khapee gets it adopted rather than sat beside a duplicate.
+ * Nothing is ever deleted: a table with a QR code on it has been printed and
+ * stuck to furniture, and a menu push that arrives short of one table must not
+ * quietly unpoint that code.
+ */
+function applyTables(link: Link, payload: any): number {
+  const rows = [payload?.tables, payload?.Tables, payload?.restaurants?.[0]?.tables].find(Array.isArray) as any[] | undefined
+  if (!rows?.length) return 0
+
+  let touched = 0
+  db.transaction(() => {
+    for (const t of rows) {
+      const posId = String(t.tableid ?? t.table_id ?? t.id ?? '').trim()
+      const name = String(t.tablename ?? t.table_name ?? t.name ?? '').trim()
+      if (!posId && !name) continue
+      const label = name || posId
+
+      const byPos = posId
+        ? (db
+            .prepare('SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND pos_table_id = ?')
+            .get(link.restaurantId, posId) as any)
+        : null
+      const byName = byPos
+        ? null
+        : (db
+            .prepare('SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND label = ? COLLATE NOCASE')
+            .get(link.restaurantId, label) as any)
+
+      if (byPos) {
+        db.prepare('UPDATE restaurant_tables SET label = ? WHERE id = ?').run(label, byPos.id)
+      } else if (byName) {
+        db.prepare('UPDATE restaurant_tables SET pos_table_id = ? WHERE id = ?').run(posId, byName.id)
+      } else {
+        // The token is what a QR code resolves to, so it is made the same way
+        // a hand-added table's is rather than left null.
+        db.prepare(
+          'INSERT INTO restaurant_tables (restaurant_id, label, seats, token, pos_table_id) VALUES (?, ?, ?, ?, ?)',
+        ).run(link.restaurantId, label, Math.max(1, Number(t.seats ?? t.capacity) || 4), randomBytes(9).toString('base64url'), posId)
+      }
+      touched++
+    }
+  })()
+  return touched
 }
 
 /** Sold out, from the kitchen's own screen. */
@@ -611,9 +717,18 @@ export function applyStock(link: Link, itemIds: string[], inStock: boolean): num
  *   -1  cancelled        1, 2, 3  accepted        5  food ready       10  delivered
  */
 export function applyCallback(link: Link, orderNumber: string, status: string, cancelReason: string) {
+  /*
+   * Rounds after the first went over as ORDER-2, ORDER-3 and so on, because
+   * their API rejects an order id it has already seen. The answer coming back
+   * carries whichever one it was about, so the suffix comes off before the
+   * order is looked up — every round belongs to the same order here, and the
+   * restaurant accepting the third one is accepting the table.
+   */
+  const asked = String(orderNumber).toUpperCase().trim()
+  const base = asked.replace(/-\d+$/, '')
   const order = db
     .prepare('SELECT * FROM orders WHERE restaurant_id = ? AND order_number = ?')
-    .get(link.restaurantId, String(orderNumber).toUpperCase()) as any
+    .get(link.restaurantId, base) as any
   if (!order) return { ok: false, error: 'No such order' }
 
   /*

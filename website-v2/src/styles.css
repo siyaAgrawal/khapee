@@ -102,16 +102,20 @@
     saturation short.
 
     So the whole scale is pinned to one hue and one high saturation, and only
-    the lightness moves down it. Type still clears: cream 8.1:1 on the surface,
-    acid 6.7:1, ice 5.2:1.
+    the lightness moves down it.
+
+    Then lifted again, from 37% lightness to 44%, which is a step past the
+    reference itself. This is about as far as it goes: cream is 6.4:1 on the
+    surface and the acid yellow 5.3:1, and another step of this size would put
+    the yellow under the line where it stops being readable on the purple.
   */
-  --s0-rgb: 33 4 57;
-  --s1-rgb: 47 4 82;
-  --s2-rgb: 67 4 119;
-  --s3-rgb: 102 4 184;
-  --s4-rgb: 120 9 211;
-  --s5-rgb: 143 25 240;
-  --s6-rgb: 176 95 241;
+  --s0-rgb: 42 5 72;
+  --s1-rgb: 58 5 102;
+  --s2-rgb: 84 5 148;
+  --s3-rgb: 123 4 220;
+  --s4-rgb: 144 19 246;
+  --s5-rgb: 164 67 244;
+  --s6-rgb: 194 132 245;
   --accent-rgb: 233 224 79;
   --accent-dim-rgb: 168 161 50;
   --accent2-rgb: 111 208 232;

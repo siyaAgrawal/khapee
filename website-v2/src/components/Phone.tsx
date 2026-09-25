@@ -61,15 +61,38 @@ export function PhoneShell({ children, scale = 1 }: { children: React.ReactNode;
 
 /* --- pieces of the interface ----------------------------------------- */
 
-const Bar = () => (
-  <div className="flex items-center justify-between px-5 pt-3 pb-1 text-[10px] text-ash">
-    <span className="font-semibold text-cream">9:41</span>
-    <span className="flex gap-1 items-center">
-      <span className="inline-block w-3.5 h-1.5 rounded-sm bg-cream/70" />
-      <span className="inline-block w-4 h-2 rounded-[2px] border border-cream/50" />
-    </span>
-  </div>
-)
+/**
+ * The status bar.
+ *
+ * The time used to be hard-coded to 9:41, which is the time Apple puts on
+ * every phone in every keynote — so it is the one detail that tells anybody
+ * who recognises it that this is a mockup rather than a screenshot. It reads
+ * the real clock now, which costs nothing and is never wrong.
+ */
+function useClock() {
+  const [now, setNow] = useState(() => clockFace())
+  useEffect(() => {
+    const id = setInterval(() => setNow(clockFace()), 20_000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
+const clockFace = () =>
+  new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[ap]\.?m\.?/i, '')
+
+function Bar() {
+  const now = useClock()
+  return (
+    <div className="flex items-center justify-between px-5 pt-3 pb-1 text-[10px] text-ash">
+      <span className="font-semibold text-cream">{now}</span>
+      <span className="flex gap-1 items-center">
+        <span className="inline-block w-3.5 h-1.5 rounded-sm bg-cream/70" />
+        <span className="inline-block w-4 h-2 rounded-[2px] border border-cream/50" />
+      </span>
+    </div>
+  )
+}
 
 function Btn({ label, onClick, tone = 'solid' }: { label: string; onClick?: () => void; tone?: 'solid' | 'line' }) {
   return (

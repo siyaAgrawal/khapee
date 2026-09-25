@@ -25,6 +25,7 @@ export default {
         cream: 'rgb(var(--paper-rgb) / <alpha-value>)',
         dust: 'rgb(var(--paper-dim-rgb) / <alpha-value>)',
         ash: 'rgb(var(--ash-rgb) / <alpha-value>)',
+        onpaper: 'rgb(var(--on-paper-rgb) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bricolage Grotesque"', '"Space Grotesk"', 'ui-sans-serif', 'sans-serif'],

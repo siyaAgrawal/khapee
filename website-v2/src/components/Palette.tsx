@@ -21,7 +21,7 @@ export const PALETTES = [
 const KEY = 'khapee.palette'
 
 export function Palette() {
-  const [on, setOn] = useState<string>(() => localStorage.getItem(KEY) ?? 'aubergine')
+  const [on, setOn] = useState<string>(() => localStorage.getItem(KEY) ?? 'blackcurrant')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', on)

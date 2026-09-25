@@ -30,7 +30,7 @@ export function Advantages() {
           a shape rather than being a white gap between two dark ones */}
       <div
         className="absolute -right-[12vw] -top-[8vh] w-[42vw] h-[42vw] rounded-full"
-        style={{ background: 'rgba(217,164,65,0.14)' }}
+        style={{ background: 'rgb(var(--accent-rgb) / 0.16)' }}
         aria-hidden
       />
 
@@ -39,7 +39,7 @@ export function Advantages() {
           className="display mb-[8vh]"
           style={{ fontSize: 'clamp(34px, 6.4vw, 86px)', lineHeight: 0.95 }}
         >
-          For <span style={{ color: 'var(--clay)' }}>restaurants</span>
+          For <span style={{ color: 'var(--on-paper)' }}>restaurants</span>
         </h2>
 
         <div>
@@ -47,7 +47,7 @@ export function Advantages() {
             <motion.div
               key={p.hit}
               className="flex items-baseline gap-[3vw] border-t py-[4.6vh]"
-              style={{ borderColor: 'rgba(23,17,37,0.16)' }}
+              style={{ borderColor: 'rgb(var(--s1-rgb) / 0.18)' }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-18%' }}
@@ -57,7 +57,7 @@ export function Advantages() {
                 className="display shrink-0"
                 style={{
                   fontSize: 'clamp(20px, 2.4vw, 32px)',
-                  color: 'var(--clay)',
+                  color: 'var(--on-paper)',
                   opacity: 0.55,
                   lineHeight: 1,
                 }}
@@ -66,7 +66,7 @@ export function Advantages() {
               </span>
               <p className="display" style={{ fontSize: 'clamp(24px, 4vw, 52px)', lineHeight: 1.08 }}>
                 {p.lead}
-                <span style={{ color: 'var(--clay)' }}>{p.hit}</span>
+                <span style={{ color: 'var(--on-paper)' }}>{p.hit}</span>
                 {p.tail}
               </p>
             </motion.div>

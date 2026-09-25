@@ -36,10 +36,9 @@
   --s0..--s6 run darkest to lightest. --accent carries light and food,
   --accent2 objects and emphasis, --paper is what type is set in.
 */
-/* 1. Aubergine & Gold — the current one, unchanged. */
-:root,
+/* 1. Aubergine & Gold — the one this started on, kept for comparison. */
 :root[data-theme='aubergine'] {
-  color-scheme: dark;
+  --on-paper-rgb: 150 63 40;
   --s0-rgb: 20 13 32;
   --s1-rgb: 25 17 37;
   --s2-rgb: 30 22 54;
@@ -65,6 +64,7 @@
    shifting the other two. Pistachio also reads as food, which yellow
    on purple never does on its own. */
 :root[data-theme='pistachio'] {
+  --on-paper-rgb: 90 112 46;
   --s0-rgb: 22 12 30;
   --s1-rgb: 28 16 39;
   --s2-rgb: 36 21 54;
@@ -88,7 +88,10 @@
    flat bright violet, with a yellow pushed towards green until it is
    acid rather than lemon, and a cold blue against it. Electric, and
    nobody in the category is anywhere near it. */
+:root,
 :root[data-theme='blackcurrant'] {
+  color-scheme: dark;
+  --on-paper-rgb: 30 106 128;
   --s0-rgb: 13 5 18;
   --s1-rgb: 20 8 24;
   --s2-rgb: 27 12 34;
@@ -113,6 +116,7 @@
    Reads as a dining room rather than a delivery app, and is the
    furthest of the three from a blue-violet and a lemon. */
 :root[data-theme='mulberry'] {
+  --on-paper-rgb: 158 66 38;
   --s0-rgb: 23 8 17;
   --s1-rgb: 31 11 23;
   --s2-rgb: 42 15 31;
@@ -161,6 +165,7 @@
   --clay: rgb(var(--accent2-rgb));
   --cream: rgb(var(--paper-rgb));
   --dust: rgb(var(--paper-dim-rgb));
+  --on-paper: rgb(var(--on-paper-rgb));
 }
 
 html {

@@ -86,7 +86,7 @@ function Btn({ label, onClick, tone = 'solid' }: { label: string; onClick?: () =
 
 const Row = ({ name, note, price, on }: { name: string; note: string; price: string; on?: boolean }) => (
   <div
-    className={`flex items-center gap-3 rounded-xl p-2.5 ${on ? 'bg-gold/12 ring-1 ring-gold/40' : 'bg-white/[0.035]'}`}
+    className={`flex items-center gap-3 rounded-xl p-2.5 ${on ? 'bg-gold/12 ring-1 ring-gold/40' : 'bg-cream/[0.05]'}`}
   >
     <div className="w-9 h-9 rounded-md bg-clay shrink-0" />
     <div className="min-w-0 flex-1">
@@ -106,9 +106,9 @@ function ScreenBody({ step, act }: { step: Step; act: (s: Step) => void }) {
         <div className="px-5 pt-8">
           <p className="kicker">Khapee</p>
           <h4 className="display text-[26px] mt-3 leading-tight">Where are you?</h4>
-          <div className="mt-6 h-40 rounded-2xl bg-white/[0.04] relative overflow-hidden">
+          <div className="mt-6 h-40 rounded-2xl bg-cream/[0.06] relative overflow-hidden">
             <div className="absolute inset-0 opacity-30"
-                 style={{ backgroundImage: 'linear-gradient(#ffffff14 1px,transparent 1px),linear-gradient(90deg,#ffffff14 1px,transparent 1px)', backgroundSize: '26px 26px' }} />
+                 style={{ backgroundImage: 'linear-gradient(rgb(var(--fg-rgb)/0.09) 1px,transparent 1px),linear-gradient(90deg,rgb(var(--fg-rgb)/0.09) 1px,transparent 1px)', backgroundSize: '26px 26px' }} />
             <motion.div
               className="absolute left-1/2 top-1/2 w-3 h-3 -ml-1.5 -mt-1.5 rounded-full bg-gold"
               animate={{ scale: [1, 1.25, 1] }} transition={{ duration: 1.6, repeat: Infinity }}
@@ -214,8 +214,8 @@ function ScreenBody({ step, act }: { step: Step; act: (s: Step) => void }) {
         <div className="px-5 pt-12 text-center">
           <motion.svg viewBox="0 0 80 80" className="mx-auto w-16 h-16"
             initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
-            <circle cx="40" cy="40" r="33" fill="none" stroke="#d9a441" strokeWidth="3" />
-            <motion.path d="M25 41 L35 52 L56 28" fill="none" stroke="#d9a441" strokeWidth="4.5"
+            <circle cx="40" cy="40" r="33" fill="none" stroke="var(--accent)" strokeWidth="3" />
+            <motion.path d="M25 41 L35 52 L56 28" fill="none" stroke="var(--accent)" strokeWidth="4.5"
               strokeLinecap="round" strokeLinejoin="round"
               initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.45, delay: 0.15 }} />
           </motion.svg>
@@ -236,7 +236,7 @@ function ScreenBody({ step, act }: { step: Step; act: (s: Step) => void }) {
               </div>
             ))}
           </div>
-          <div className="mt-7 rounded-xl bg-white/[0.04] p-3.5">
+          <div className="mt-7 rounded-xl bg-cream/[0.06] p-3.5">
             <p className="text-[11px] text-ash">Ready in</p>
             <p className="display text-[26px] text-gold">6 min</p>
             <p className="text-[10.5px] text-ash mt-1">You arrive in 7.</p>
@@ -350,7 +350,7 @@ export function PhoneDemo() {
             className="tap-target h-1.5 rounded-full transition-all"
             style={{
               width: s === step ? 22 : 7,
-              background: s === step ? '#d9a441' : 'rgba(243,239,230,0.22)',
+              background: s === step ? 'var(--accent)' : 'rgba(243,239,230,0.22)',
             }}
           />
         ))}

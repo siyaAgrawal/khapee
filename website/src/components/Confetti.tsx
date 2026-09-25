@@ -25,7 +25,7 @@ const PIECES = Array.from({ length: 54 }, (_, i) => {
     size: 5 + r(5) * 8,
     long: r(6) > 0.5,
     delay: r(7) * 0.22,
-    tone: ['var(--gold)', 'var(--cream)', 'var(--clay)', '#ffffff'][Math.floor(r(8) * 4)],
+    tone: ['var(--gold)', 'var(--cream)', 'var(--clay)', 'var(--accent)'][Math.floor(r(8) * 4)],
   }
 })
 

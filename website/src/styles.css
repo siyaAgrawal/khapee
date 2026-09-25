@@ -11,36 +11,131 @@
   is why the whole thing reads as continuous motion rather than as slides.
   See src/lib/scene.ts.
 
-  Dark on purpose. These scenes are lit — a phone in a dark car, a kitchen
-  pass, headlights on a wet road — and light comes from the food. On a white
-  page none of that means anything.
+  Two times of day, and the page opens in the daytime one.
+  ------------------------------------------------------------------
+  This was dark only, and the reasoning was sound as far as it went: the
+  scenes are lit — a phone in a dark car, a kitchen pass, headlights on a wet
+  road — and light coming from the food means nothing on a white page.
+
+  What that argument missed is that the site is the front door of a business,
+  and most people arrive at it in daylight on a phone with a white browser
+  behind it. So the scenery now runs on one scale that inverts, --s0 through
+  --s8: in the dark theme it climbs from near-black up to a lilac, and in the
+  light theme it descends from white down to a deep violet. Every drawing in
+  every scene is painted from that scale rather than from a hex, so the same
+  shapes read as a lit night or a bright afternoon without a single path
+  being redrawn.
+
+  What does not invert is the food. A samosa is the same colour at noon and
+  at midnight, and so are the fire, the terracotta, the sage and the
+  headlights — those stay fixed, which is also what keeps the two themes
+  recognisably the same film.
 */
 
 :root {
-  color-scheme: dark;
-  --ink: #191125;
-  --night: #271640;
+  color-scheme: light;
+
+  /*
+    Channels rather than colours, so Tailwind's opacity modifiers keep
+    working: bg-cream/70 compiles to rgb(var(--fg-rgb) / 0.7), which a plain
+    hex in the config cannot do.
+  */
+  --paper-rgb: 255 255 255;
+  --bed-rgb: 241 236 250;
+  --fg-rgb: 25 17 37;
+  --fg2-rgb: 75 68 88;
+  --fg3-rgb: 111 104 128;
+  --accent-rgb: 104 44 194;
+  --on-accent-rgb: 255 255 255;
+  --line-rgb: 25 17 37;
+  --line-a: 0.1;
+
+  /* The scenery scale, light: white at the bottom, deep violet at the top. */
+  --s0: #ffffff;
+  --s1: #f7f4fc;
+  --s2: #f1ecfa;
+  --s3: #e7e0f4;
+  --s4: #dbd1ee;
+  --s5: #cdc1e6;
+  --s6: #bcaddb;
+  --s7: #9a86c4;
+  --s8: #5f4e90;
+
+  /*
+    Fixed in both themes: these are things, not surfaces. A plate is white at
+    midnight, terracotta is terracotta, and the warm light spilling out of a
+    kitchen pass is the same temperature whatever the page behind it is doing.
+    Flipping these with the theme is what would make the two versions look
+    like two different films.
+  */
   --clay: #b9563c;
   --gold: #d9a441;
   --sage: #7fae9f;
-  --cream: #f4ede1;
-  --dust: #dfd3c1;
-  --ash: #9a9097;
+  --porcelain: #f4ede1;
+  --porcelain-dim: #e0d3bc;
+
+  --paper: rgb(var(--paper-rgb));
+  --bed: rgb(var(--bed-rgb));
+  --fg: rgb(var(--fg-rgb));
+  --accent: rgb(var(--accent-rgb));
+  --on-accent: rgb(var(--on-accent-rgb));
+  --line: rgb(var(--line-rgb) / var(--line-a));
+
+  /* The old names, kept pointing at their new roles so the rules further
+     down this file did not all have to be rewritten at once. */
+  --ink: var(--fg);
+  --night: var(--bed);
+  --cream: var(--fg);
+  --dust: rgb(var(--fg2-rgb));
+  --ash: rgb(var(--fg3-rgb));
+}
+
+/*
+  The dark theme. Applied by the toggle in the masthead, and by the system
+  preference only when nobody has chosen — see src/lib/theme.ts. Light is the
+  default in both cases, because that is what the front door should open on.
+*/
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper-rgb: 12 7 22;
+  --bed-rgb: 39 22 64;
+  --fg-rgb: 244 237 225;
+  --fg2-rgb: 223 211 193;
+  --fg3-rgb: 154 144 151;
+  /* Lifted: the light theme's purple disappears into a near-black page. */
+  --accent-rgb: 173 140 240;
+  --on-accent-rgb: 20 13 32;
+  --line-rgb: 244 237 225;
+  --line-a: 0.1;
+
+  --s0: #0c0716;
+  --s1: #140d20;
+  --s2: #1a1030;
+  --s3: #241a3d;
+  --s4: #2b1b49;
+  --s5: #33215a;
+  --s6: #3d2566;
+  --s7: #4f3a7d;
+  --s8: #8a7fb0;
 }
 
 html {
-  background: var(--ink);
+  background: var(--paper);
   /* Lenis drives the scrolling; the browser must not also try. */
   scroll-behavior: auto;
 }
 
 body {
   margin: 0;
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--paper);
+  color: var(--fg);
   font-family: 'Space Grotesk', ui-sans-serif, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  /* Both themes change several dozen painted shapes at once; without this the
+     switch is a flicker rather than a dissolve. */
+  transition: background 0.4s ease, color 0.4s ease;
 }
 
 /* Lenis needs these or the wheel and the transform fight each other. */
@@ -48,19 +143,38 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
 
-::selection { background: var(--magenta); color: var(--cream); }
+::selection { background: var(--accent); color: var(--on-accent); }
 
 /* --- Type ------------------------------------------------------------ */
 /*
   Large, and very little of it. The animation is making the argument; a
   paragraph explaining the animation would be admitting it had failed.
+
+  Inter rather than Bricolage. Bricolage has deliberate irregularity in the
+  letterforms, which is lovely on a poster and is exactly what made the app
+  look hand-made in the wrong way — and the site and the app have to be one
+  brand or neither is. The size and the tracking do the work instead.
 */
 .display {
-  font-family: 'Bricolage Grotesque', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
-  font-variation-settings: 'opsz' 72;
-  letter-spacing: -0.042em;
-  line-height: 0.9;
+  letter-spacing: -0.03em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+/*
+  The one loud line, on the cover and nowhere else. Same face and same setting
+  as the headline at the top of the app, so somebody who has seen one
+  recognises the other.
+*/
+.shout {
+  font-family: 'Archivo', 'Inter', ui-sans-serif, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  text-transform: lowercase;
   text-wrap: balance;
 }
 /*
@@ -68,20 +182,22 @@ html.lenis, html.lenis body { height: auto; }
   on its own line of colour rather than floating in grey.
 */
 .kicker {
-  font-family: 'Space Grotesk', ui-sans-serif, sans-serif;
+  font-family: 'Inter', ui-sans-serif, sans-serif;
   font-size: clamp(10px, 1vw, 11px);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--gold);
+  color: var(--accent);
 }
 .num {
-  font-family: 'Bricolage Grotesque', sans-serif;
-  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
   font-size: clamp(52px, 9vw, 130px);
   line-height: 0.8;
-  letter-spacing: -0.06em;
-  -webkit-text-stroke: 2px var(--magenta);
+  letter-spacing: -0.05em;
+  /* --magenta was never defined, so this drew a transparent number with no
+     stroke at all: an invisible element taking up 130px of the page. */
+  -webkit-text-stroke: 2px var(--accent);
   color: transparent;
 }
 
@@ -106,7 +222,7 @@ html.lenis, html.lenis body { height: auto; }
   pointer-events: none;
   /* A printed edge rather than a soft vignette: a thin dark border that
      frames the picture without blurring into it. */
-  box-shadow: inset 0 0 0 1px rgba(244, 237, 225, 0.07);
+  box-shadow: inset 0 0 0 1px var(--line);
   background: none;
 }
 .warmth {
@@ -132,7 +248,7 @@ html.lenis, html.lenis body { height: auto; }
   gap: 10px;
   padding: 15px 26px;
   border-radius: 3px;
-  font-family: 'Bricolage Grotesque', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: 14.5px;
   letter-spacing: 0.04em;
@@ -141,24 +257,28 @@ html.lenis, html.lenis body { height: auto; }
   border: 1px solid transparent;
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.3, 1), background 0.2s ease, border-color 0.2s ease;
 }
-.cta-primary { background: var(--cream); color: #160f22; }
-.cta-primary:hover { background: #fff; transform: translateY(-1px); }
-.cta-ghost { border-color: rgba(244, 237, 225, 0.28); color: var(--cream); }
-.cta-ghost:hover { border-color: var(--cream); transform: translateY(-1px); }
+/* The primary button is the brand, in both themes. It used to be a cream
+   block with near-black type, which on a white page is a button you cannot
+   see. */
+.cta-primary { background: var(--accent); color: var(--on-accent); }
+.cta-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.cta-ghost { border-color: var(--line); color: var(--fg); }
+.cta-ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
 
 /* --- The phone ------------------------------------------------------- */
 
+/* The phone is showing the app, and the app is light by default too. */
 .phone-shell {
   border-radius: 34px;
-  background: #2e2144;
+  background: var(--s5);
   padding: 7px;
   box-shadow:
-    0 0 0 1px rgba(244, 237, 225, 0.1),
-    0 26px 60px rgba(0, 0, 0, 0.55);
+    0 0 0 1px var(--line),
+    0 26px 60px rgb(var(--fg-rgb) / 0.28);
 }
 .phone-screen {
   border-radius: 28px;
-  background: #171029;
+  background: var(--s1);
   overflow: hidden;
   position: relative;
 }
@@ -167,13 +287,15 @@ html.lenis, html.lenis body { height: auto; }
 
 /* --- Timelines ------------------------------------------------------- */
 
-.rail { position: relative; height: 3px; background: rgba(255, 244, 226, 0.14); border-radius: 2px; }
-.rail-fill { position: absolute; inset: 0 auto 0 0; background: var(--gold); border-radius: 2px; }
+.rail { position: relative; height: 3px; background: var(--line); border-radius: 2px; }
+.rail-fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 2px; }
 .node {
   width: 10px; height: 10px; border-radius: 50%;
-  background: #2b2036; border: 1.5px solid rgba(255, 244, 226, 0.32);
+  background: var(--s4); border: 1.5px solid var(--line);
 }
-.node.on { background: var(--marigold); border-color: var(--marigold); box-shadow: 0 0 16px rgba(217, 164, 65, 0.8); }
+/* --marigold was never defined either: a node that came "on" turned
+   transparent instead of lighting up. */
+.node.on { background: var(--accent); border-color: var(--accent); }
 
 /* --- Progress ledger ------------------------------------------------- */
 
@@ -187,15 +309,15 @@ html.lenis, html.lenis body { height: auto; }
   gap: 8px;
   padding: 9px 14px;
   border-radius: 999px;
-  background: rgba(23, 22, 15, 0.68);
-  border: 1px solid rgba(255, 244, 226, 0.12);
+  background: rgb(var(--paper-rgb) / 0.78);
+  border: 1px solid var(--line);
   backdrop-filter: blur(14px);
   font-size: 10.5px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ash);
+  color: rgb(var(--fg3-rgb));
 }
-.ledger b { color: var(--cream); font-weight: 600; }
+.ledger b { color: var(--fg); font-weight: 600; }
 
 /*
   A film nobody asked to watch should not play itself. With motion reduced,
@@ -225,9 +347,14 @@ html.lenis, html.lenis body { height: auto; }
   inset: -50%;
   z-index: 60;
   pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* On a dark page it is film grain; on a white one, multiplied, it is dirt. */
+:root[data-theme='dark'] .grain {
   opacity: 0.13;
   mix-blend-mode: soft-light;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /*
@@ -244,13 +371,13 @@ html.lenis, html.lenis body { height: auto; }
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--accent);
 }
 .chip::before {
   content: '';
   width: 26px;
   height: 1px;
-  background: var(--gold);
+  background: var(--accent);
   opacity: 0.6;
 }
 
@@ -292,4 +419,46 @@ html.lenis, html.lenis body { height: auto; }
   align-self: center;
 }
 .split > * { position: relative; overflow: hidden; }
-.split > * + * { border-left: 1px solid rgba(244, 237, 225, 0.07); }
+.split > * + * { border-left: 1px solid var(--line); }
+
+/* --- The mark, and the switch ---------------------------------------- */
+
+/*
+  The wordmark, set exactly as the app sets it and as the icon draws it:
+  lowercase, heavy, tight, ending in a full stop that carries the brand
+  colour. One logo in three places.
+*/
+.brand {
+  font-family: 'Inter', ui-sans-serif, sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--fg);
+  text-decoration: none;
+}
+.brand-dot {
+  color: var(--accent);
+}
+
+/*
+  Daylight or night. Quiet, square-ish, and the same height as the two buttons
+  beside it so the header reads as one row rather than as a control that was
+  added later.
+*/
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}

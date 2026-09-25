@@ -25,7 +25,7 @@ import { dirname, join } from 'node:path'
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 
 /** Kept in step with --brand-fixed in src/styles.css. */
-const BRAND = '#7a3fd9'
+const BRAND = '#682cc2'
 
 /**
  * `maskable` leaves a ring of bare purple around the word, because Android

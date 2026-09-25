@@ -29,25 +29,26 @@
   --line-strong: rgba(25, 17, 37, 0.17);
 
   /*
-   * The brand purple, set where a food brand sets its colour.
+   * The brand purple. Picked off a sheet of six, rendered on the real screen
+   * rather than as swatches, because a colour behaves differently under a
+   * white search field and an italic headline than it does in a square.
    *
-   * Zomato's red is 55% lightness and about 70% saturation; so is this. That
-   * is not a coincidence — an app you order lunch from is bright, and the
-   * near-black aubergine this used to be looked like a bank. Mixed to the
-   * same recipe in purple it still carries white text at 5.9:1, so it can be
-   * both the big block at the top of the page and the word on a button.
+   * It is the one colour the whole product is built on, so it is worth being
+   * exact about: it carries white text at 7.7:1, which means it works for the
+   * block at the top of the page, the word on a button, and the 11px label on
+   * a tile, without a second, darker purple being kept for the small type.
    */
-  --accent: #7a3fd9;
+  --accent: #682cc2;
   --accent-ink: #ffffff;
-  --accent-soft: #f1eafd;
-  --accent-dark: #5f2cb4;
+  --accent-soft: #efe8fa;
+  --accent-dark: #55219e;
   --gold: #d9a441;
   --gold-soft: #f7ecd6;
   /* Held at these values in both themes, for the few surfaces that are the
      same colour whatever the phone is set to — the block at the top of the
      page, the app icon, the title card. */
   --cream-fixed: #f4ede1;
-  --brand-fixed: #7a3fd9;
+  --brand-fixed: #682cc2;
 
   --good: #1f6b45;
   --good-soft: #e6f1ea;

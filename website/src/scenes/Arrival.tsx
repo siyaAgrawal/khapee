@@ -33,38 +33,38 @@ export function Arrival() {
           <div className="h-[19vh] shrink-0" />
           <div className="flex-1 grid place-items-center min-h-0 px-[3vw] pb-[8vh]">
             <svg viewBox="0 0 900 430" className="w-full h-full" preserveAspectRatio="xMidYMid meet" aria-hidden>
-              <rect width="900" height="430" fill="#191125" />
-              <rect y="262" width="900" height="168" fill="#241735" />
-              <rect y="259" width="900" height="3" fill="#33215a" />
+              <rect width="900" height="430" fill="var(--s1)" />
+              <rect y="262" width="900" height="168" fill="var(--s2)" />
+              <rect y="259" width="900" height="3" fill="var(--s5)" />
 
               {/* the door at the back, open on the street */}
-              <rect x="612" y="54" width="132" height="208" rx="4" fill="#2e1d44" />
+              <rect x="612" y="54" width="132" height="208" rx="4" fill="var(--s3)" />
               <motion.rect
-                x="622" y="64" width="112" height="188" rx="3" fill="#d9a441"
+                x="622" y="64" width="112" height="188" rx="3" fill="var(--gold)"
                 style={{ opacity: useTransform(arrival, [0, 0.5], [0.3, 0.1]) }}
               />
-              <line x1="300" y1="0" x2="300" y2="34" stroke="#3a2752" strokeWidth="3" />
+              <line x1="300" y1="0" x2="300" y2="34" stroke="var(--s5)" strokeWidth="3" />
               <path d="M268 34 h64 l-15 28 h-34 z" fill="#b9563c" />
 
               {/* the table, laid, with the food on it and hot */}
               <g transform="translate(300 276)">
-                <rect x="-128" y="0" width="256" height="9" rx="4" fill="#5a3f78" />
-                <rect x="-74" y="9" width="9" height="86" fill="#452c68" />
-                <rect x="65" y="9" width="9" height="86" fill="#452c68" />
+                <rect x="-128" y="0" width="256" height="9" rx="4" fill="var(--s7)" />
+                <rect x="-74" y="9" width="9" height="86" fill="var(--s6)" />
+                <rect x="65" y="9" width="9" height="86" fill="var(--s6)" />
                 <motion.ellipse
-                  cy="-4" rx="76" ry="17" fill="#d9a441"
+                  cy="-4" rx="76" ry="17" fill="var(--gold)"
                   style={{ opacity: useTransform(arrival, [0, 1], [0, 0.22]) }}
                 />
-                <ellipse cy="-6" rx="52" ry="16" fill="#f4ede1" />
-                <ellipse cy="-9" rx="37" ry="11" fill="#e0d3bc" />
+                <ellipse cy="-6" rx="52" ry="16" fill="var(--porcelain)" />
+                <ellipse cy="-9" rx="37" ry="11" fill="var(--porcelain-dim)" />
                 <ellipse cy="-11" rx="26" ry="7.5" fill="#b9563c" />
-                <path d="M52 -30 h22 l-4 26 h-14 z" fill="#8a7fb0" opacity="0.55" />
+                <path d="M52 -30 h22 l-4 26 h-14 z" fill="var(--s8)" opacity="0.55" />
                 <g transform="translate(0 -26)">
                   {[-13, 0, 13].map((x, i) => (
                     <motion.path
                       key={x}
                       d={`M${x} 0 c${i % 2 ? 5 : -5} -7 ${i % 2 ? -5 : 5} -11 0 -18`}
-                      stroke="#d9a441" strokeWidth="2.6" fill="none" strokeLinecap="round"
+                      stroke="var(--gold)" strokeWidth="2.6" fill="none" strokeLinecap="round"
                       style={{ opacity: useTransform(arrival, [0.25, 0.7], [0, 0.55]) }}
                     />
                   ))}

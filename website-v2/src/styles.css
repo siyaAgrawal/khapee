@@ -92,13 +92,17 @@
 :root[data-theme='blackcurrant'] {
   color-scheme: dark;
   --on-paper-rgb: 30 106 128;
-  --s0-rgb: 13 5 18;
-  --s1-rgb: 20 8 24;
-  --s2-rgb: 27 12 34;
-  --s3-rgb: 36 16 45;
-  --s4-rgb: 45 21 57;
-  --s5-rgb: 59 30 74;
-  --s6-rgb: 86 48 105;
+  /* Lifted about a third off the floor. It was dark enough that the purple
+     stopped being a colour and started being a background, and the acid
+     yellow had nothing to be acid against. The accents are untouched — only
+     the ground moved. */
+  --s0-rgb: 20 9 27;
+  --s1-rgb: 29 13 36;
+  --s2-rgb: 39 18 48;
+  --s3-rgb: 52 24 64;
+  --s4-rgb: 63 31 77;
+  --s5-rgb: 80 41 97;
+  --s6-rgb: 110 64 133;
   --accent-rgb: 233 224 79;
   --accent-dim-rgb: 168 161 50;
   --accent2-rgb: 111 208 232;

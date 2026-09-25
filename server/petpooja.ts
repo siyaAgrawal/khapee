@@ -546,7 +546,14 @@ export async function fetchMenu(restaurantId: number): Promise<{ ok: boolean; bo
   if (!linkReady(link)) return { ok: false, error: 'This restaurant is not connected to Petpooja yet.' }
   const reply = await call(
     endpoint('fetchMenu'),
-    { restID: link.restId },
+    {
+      restID: link.restId,
+      /* The menu sharing code, when the restaurant has one. It was collected
+         on the connect form and then never sent anywhere, which is the only
+         request it belongs on. Omitted rather than sent empty, because a blank
+         value is not the same as no value to the other end. */
+      ...(link.menusharingCode ? { menusharingcode: link.menusharingCode } : {}),
+    },
     { 'app-key': link.appKey, 'app-secret': link.appSecret, 'access-token': link.accessToken },
   )
   if (!reply.ok) {

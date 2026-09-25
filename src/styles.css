@@ -4464,7 +4464,10 @@ textarea {
   display: flex;
   gap: 22px;
   margin: 0 calc(var(--gutter) * -1);
-  padding: 0 var(--gutter);
+  /* Clear of the colour block. The row used to start the instant the purple
+     ended, so the first words on the white part of the page looked stuck to
+     the bottom edge of it rather than sitting on a page of their own. */
+  padding: 14px var(--gutter) 0;
   border-bottom: 1px solid var(--line);
   overflow-x: auto;
   /*
@@ -4482,7 +4485,7 @@ textarea {
 }
 .cuisine {
   flex: 0 0 auto;
-  padding: 10px 2px 11px;
+  padding: 4px 2px 12px;
   border: 0;
   border-bottom: 2.5px solid transparent;
   background: transparent;

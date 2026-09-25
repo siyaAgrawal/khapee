@@ -2480,34 +2480,79 @@ textarea {
   flex: 1;
 }
 
+/*
+  The on/off switch, and it has to be findable across a counter.
+
+  It was a 42px grey pill with nothing written on it, and on the dark theme
+  the off state sat at 20% white against a dark card — so the control that
+  opens and closes the restaurant was the least visible thing on the screen,
+  and its two states were told apart by the position of a dot. Somebody
+  looking for it could not find it, which was reported exactly that way.
+
+  Now: bigger, a solid outline in both states, and the word in it. The word is
+  the point. A dot on the left and a dot on the right are the same shape twice
+  unless you already know the convention.
+*/
 .switch {
   position: relative;
-  width: 42px;
-  height: 24px;
+  width: 74px;
+  height: 34px;
+  padding: 0;
   border-radius: 999px;
-  border: 0;
-  background: var(--line-strong);
+  border: 2px solid var(--line-strong);
+  background: var(--bg-tint);
   cursor: pointer;
-  transition: background 0.2s var(--ease);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
   flex: none;
+  font: inherit;
 }
+/* The knob. */
 .switch::after {
   content: '';
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--muted);
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s var(--ease);
+  transition: transform 0.2s var(--ease), background 0.2s var(--ease);
+}
+/* The word, on whichever side the knob is not. */
+.switch::before {
+  content: 'OFF';
+  position: absolute;
+  top: 0;
+  right: 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.switch:hover {
+  border-color: var(--muted);
+}
+.switch:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 .switch.on {
   background: var(--good);
+  border-color: var(--good);
 }
 .switch.on::after {
-  transform: translateX(18px);
+  transform: translateX(40px);
+  background: #fff;
+}
+.switch.on::before {
+  content: 'ON';
+  right: auto;
+  left: 12px;
+  color: #fff;
 }
 
 /* ---------------------------------------------------------------- states */

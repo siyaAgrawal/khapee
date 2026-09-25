@@ -4454,6 +4454,68 @@ async function runTests() {
     ok('and the customer is told it is good news', /answered just now/i.test(String(tooLate.body.error)), tooLate.body.error)
   }
 
+  group('THE MENU IS THE RESTAURANT\'S — editing it, and it staying edited')
+  {
+    // The thing a restaurant does most, after taking orders. Prices move, a
+    // dish gets renamed, something comes off for a week. Every one of these
+    // has to survive the round trip to the customer's phone, because a menu
+    // that shows yesterday's price is a row at the counter.
+    const before = await call('/staff/menu', { token: roadToken })
+    const section = before.body.categories.find((c: any) => c.items.length > 0)
+    const dish = section.items[0]
+
+    const renamed = await call(`/staff/menu/${dish.id}`, {
+      token: roadToken,
+      method: 'PATCH',
+      body: { name: 'Renamed By The Owner', price: '187.50', description: 'Now with a description' },
+    })
+    ok('a dish can be renamed and repriced', renamed.status === 200, renamed.body)
+    ok('the price is stored in paise, not rupees', renamed.body.item.priceCents === 18750, renamed.body.item.priceCents)
+
+    // Read back through the customer's own endpoint, not the dashboard's —
+    // the dashboard agreeing with itself proves nothing.
+    const seen = await call(`/restaurants/${mornington.id}`)
+    const onMenu = seen.body.menu.flatMap((s: any) => s.items).find((i: any) => i.id === dish.id)
+    ok('and the customer sees the new name', onMenu?.name === 'Renamed By The Owner', onMenu?.name)
+    ok('and the new price', onMenu?.priceCents === 18750, onMenu?.priceCents)
+    ok('and the description', onMenu?.description === 'Now with a description', onMenu?.description)
+
+    // The one that matters most: an order is priced from the database, never
+    // from whatever the phone had cached.
+    const ordered = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: dish.id, quantity: 2 }],
+        customerName: 'New price',
+        contactPhone: '9876599999',
+      },
+    })
+    ok('an order charges the new price', ordered.body.order.totalCents === 37500, ordered.body.order.totalCents)
+
+    const nonsense = await call(`/staff/menu/${dish.id}`, { token: roadToken, method: 'PATCH', body: { price: '0' } })
+    ok('a price of nothing is refused', nonsense.status === 400, nonsense.body)
+    const blank = await call(`/staff/menu/${dish.id}`, { token: roadToken, method: 'PATCH', body: { name: '  ' } })
+    ok('so is a nameless dish', blank.status === 400, blank.body)
+
+    const theirs = await call(`/staff/menu/${dish.id}`, {
+      token: otherToken,
+      method: 'PATCH',
+      body: { price: '1' },
+    })
+    ok('and another restaurant cannot touch it', theirs.status === 404, theirs.status)
+
+    // Put it back, so the rest of the suite sees the menu it expects.
+    await call(`/staff/menu/${dish.id}`, {
+      token: roadToken,
+      method: 'PATCH',
+      body: { name: dish.name, price: String(dish.priceCents / 100), description: dish.description },
+    })
+    const restored = await call('/staff/menu', { token: roadToken })
+    const backAgain = restored.body.categories.flatMap((c: any) => c.items).find((i: any) => i.id === dish.id)
+    ok('and it can be put back', backAgain.name === dish.name && backAgain.priceCents === dish.priceCents, backAgain)
+  }
+
   group('SCAN ONLY — a restaurant that hands out no codes')
   {
     // Two ways exist to prove somebody is in the room: they scanned the QR on

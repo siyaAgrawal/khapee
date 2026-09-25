@@ -14,6 +14,31 @@ import {
   type ServiceType,
 } from '../../../shared/orders'
 
+/**
+ * "For 9:30", when the order is not for now.
+ *
+ * The one thing a kitchen must not miss, so it is on the row rather than
+ * inside it — an order booked for half past that looks identical to one
+ * placed thirty seconds ago gets cooked immediately, which is exactly the
+ * waste the pre-order exists to remove.
+ *
+ * Nothing at all on an ordinary order. Most orders are for now, and a badge
+ * saying "for now" on every one of them would be the label nobody reads,
+ * which is how the one that matters gets missed.
+ */
+function WantedFor({ order }: { order: any }) {
+  if (!order.wantedAt) return null
+  const at = new Date(`${String(order.wantedAt).replace(' ', 'T')}Z`)
+  if (Number.isNaN(at.getTime())) return null
+  const mins = Math.round((at.getTime() - Date.now()) / 60_000)
+  return (
+    <span className={`wanted-for ${mins <= 10 ? 'soon' : ''}`}>
+      for {at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+      {mins > 0 ? <em> · in {mins} min</em> : <em> · now</em>}
+    </span>
+  )
+}
+
 /** Keeps each person's items together on a shared group ticket. */
 function groupByPerson(items: any[]): { name: string; items: any[] }[] {
   const buckets = new Map<string, any[]>()
@@ -692,7 +717,10 @@ export default function StaffOrders() {
                     <article key={o.id} className={`qrow ${o.status === 'NEW' ? 'is-new' : ''} ${open ? 'open' : ''}`}>
                       <button className="qrow-main" onClick={() => setOpenId(open ? null : o.id)}>
                         <span className="qrow-where">
-                          <b>{placeOf(o)}</b>
+                          <b>
+                            {placeOf(o)}
+                            <WantedFor order={o} />
+                          </b>
                           <em>
                             #{o.orderNumber} · {o.customerName || 'Guest'}
                           </em>
@@ -827,6 +855,7 @@ export default function StaffOrders() {
                           {o.isGroup && <span className="o-group-tag">GROUP</span>}
                           <span className="spacer" />
                           <span className="tiny muted">{timeAgo(o.createdAt)}</span>
+                          <WantedFor order={o} />
                         </div>
 
                         <div className="o-where">

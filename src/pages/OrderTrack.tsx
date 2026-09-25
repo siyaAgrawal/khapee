@@ -258,6 +258,16 @@ export default function OrderTrack() {
             {order.restaurantName} · {order.customerName}
           </p>
 
+          {/*
+            The promise, in the words it was made in.
+
+            An order placed for later has a moment attached to it, and the
+            whole reason somebody chose that moment is that they will not be
+            there before it. A tracking page that only counts up from "sent"
+            is answering a question they did not ask.
+          */}
+          {order.wantedAt && !done && !cancelled && <ReadyFor at={order.wantedAt} />}
+
           <QRCanvas value={`ORDRO:ORDER:${order.orderNumber}:${order.verifyToken}`} size={168} />
           <p className="tiny muted">
             {order.type === 'pickup' ? 'Show at the counter' : 'Show if asked'}
@@ -455,5 +465,23 @@ export default function OrderTrack() {
         </div>
       </main>
     </div>
+  )
+}
+
+/**
+ * "Ready for 9:30."
+ *
+ * Stated as a time rather than a countdown. A countdown on a page somebody
+ * checks twice while driving is a thing to watch; a time is a thing to plan
+ * around, and planning around it is the entire point of having chosen it.
+ */
+function ReadyFor({ at }: { at: string }) {
+  const when = new Date(`${String(at).replace(' ', 'T')}Z`)
+  if (Number.isNaN(when.getTime())) return null
+  return (
+    <p className="ready-for">
+      Ready for <strong>{when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</strong>
+      <span className="tiny muted">You don’t wait for it. It waits for you.</span>
+    </p>
   )
 }

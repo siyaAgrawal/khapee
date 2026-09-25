@@ -2840,6 +2840,98 @@ textarea {
   box-shadow: var(--shadow-sm);
 }
 
+/* --- When do you want it -------------------------------------------------
+   The one control the whole product is about, so it gets its own card rather
+   than a row inside the details. See WhenPanel in src/pages/Checkout.tsx. */
+.when-panel {
+  margin-bottom: 14px;
+}
+.when-row {
+  display: grid;
+  /* Four across where there is room, two across on a phone — never a single
+     column, because the point is that the choices are compared. */
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+.when-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+.when-btn:hover {
+  border-color: var(--muted);
+}
+.when-btn.active {
+  border-color: var(--accent);
+  background: var(--bg-tint);
+}
+.when-btn strong {
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.when-btn em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--muted);
+}
+.when-btn.active em {
+  color: var(--ink);
+}
+.when-note {
+  margin: 9px 0 0;
+}
+
+/* The kitchen's half of the same idea: when this one is actually for.
+   Only ever drawn on an order that is not for now. */
+.wanted-for {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-tint);
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+/* Ten minutes out is the point it stops being a booking and becomes work. */
+.wanted-for.soon {
+  background: var(--warn-tint, var(--bg-tint));
+  border-color: var(--warn, var(--line));
+  color: var(--warn, inherit);
+}
+.wanted-for em {
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.72;
+}
+
+/* And the customer's half: the time they chose, said back to them. */
+.ready-for {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--bg-tint);
+  font-size: 14px;
+}
+.ready-for strong {
+  font-size: 17px;
+}
+
 .group-head .group-code {
   display: inline-block;
   padding: 7px 14px;

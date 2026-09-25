@@ -4341,6 +4341,78 @@ async function runTests() {
     ok('signed out, it answers nothing at all', (await call('/staff/search?q=Sunita')).status === 401)
   }
 
+  group("THE FOOD WAITS FOR YOU — ordering for a time you're not there yet")
+  {
+    // The whole argument of the product, and until now the app could not carry
+    // it: every order meant "as fast as you can", which is the one thing
+    // Khapee is not for. Somebody leaving work at 9:10 wants it ready at 9:30,
+    // not cooked at 9:11 and left under a lamp.
+    const now = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Right now',
+        contactPhone: '9876500011',
+      },
+    })
+    ok('an ordinary order still carries no time at all', now.body.order.wantedAt === null, now.body.order.wantedAt)
+
+    const later = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'On my way',
+        contactPhone: '9876500022',
+        wantInMinutes: 30,
+      },
+    })
+    ok('an order can be placed for later', later.status === 201, later.body)
+    ok('and comes back with when it is wanted', !!later.body.order.wantedAt, later.body.order.wantedAt)
+    {
+      const at = new Date(`${String(later.body.order.wantedAt).replace(' ', 'T')}Z`).getTime()
+      const mins = (at - Date.now()) / 60_000
+      // The server does the arithmetic, so this is checking the server's clock
+      // and not the request's — a phone with a wrong clock must not be able to
+      // book the kitchen for the middle of the night.
+      ok('thirty minutes from now, by the server’s clock', mins > 28 && mins < 31, mins)
+    }
+
+    const zero = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'As soon as possible',
+        contactPhone: '9876500033',
+        wantInMinutes: 0,
+      },
+    })
+    ok('asking for it now is the same as not asking', zero.body.order.wantedAt === null, zero.body.order.wantedAt)
+
+    const silly = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Next week',
+        contactPhone: '9876500044',
+        wantInMinutes: 60 * 48,
+      },
+    })
+    // Refused rather than quietly clamped: moving somebody's order to a time
+    // they did not choose is worse than telling them no.
+    ok('two days ahead is refused', silly.status === 400, silly.body)
+    ok('and says how far ahead it will go', /six hours/i.test(String(silly.body.error)), silly.body.error)
+
+    const board = await call('/staff/orders?scope=all', { token: roadToken })
+    const booked = board.body.orders.find((o: any) => o.orderNumber === later.body.order.orderNumber)
+    ok('the kitchen is told which order is for later', !!booked?.wantedAt, booked?.wantedAt)
+    const immediate = board.body.orders.find((o: any) => o.orderNumber === now.body.order.orderNumber)
+    ok('and which is for now', immediate && immediate.wantedAt === null, immediate?.wantedAt)
+  }
+
   group('MORE THAN ONE UPI ID, AND ONE OF THEM SHOWN')
   {
     // A counter has the Paytm card propped against the till, the owner's own

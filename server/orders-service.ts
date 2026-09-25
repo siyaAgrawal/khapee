@@ -66,7 +66,28 @@ export type CreateOrderInput = {
   sessionToken?: string | null
   /** What the customer says they have already sent over UPI. */
   paymentClaim?: { amountCents?: number; upiRef?: string; method?: string } | null
+  /**
+   * How many minutes from now the customer wants it ready. Absent or 0 means
+   * as soon as possible, which is what every order was before this existed.
+   *
+   * Minutes rather than a timestamp on purpose: the customer is answering
+   * "when will you be there", and a phone with a wrong clock — or one in
+   * another timezone, which is most of the ones that scan a QR on holiday —
+   * would otherwise order food for the middle of the night. The server owns
+   * the clock and does the arithmetic.
+   */
+  wantInMinutes?: number | null
 }
+
+/**
+ * The furthest ahead an order can be placed.
+ *
+ * Not a policy about how restaurants should work; a guard against a typo or a
+ * fiddled request booking the kitchen for next Tuesday. Six hours covers
+ * ordering breakfast on the way out for lunch, which is the real limit of
+ * what anybody does.
+ */
+const MAX_AHEAD_MINUTES = 6 * 60
 
 export type CreateOrderResult = { ok: true; order: any } | { ok: false; status: number; error: string }
 
@@ -272,6 +293,28 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     }
   }
 
+  /**
+   * When they want it, worked out here rather than taken on trust.
+   *
+   * Anything at or below zero is "as soon as possible" and stored as NULL, so
+   * the ordinary order carries no scheduling at all and every board that has
+   * never heard of this keeps working. Anything beyond the ceiling is refused
+   * rather than clamped: silently moving somebody's 8pm order to 3pm is worse
+   * than telling them no.
+   */
+  const wantIn = Math.round(Number(input.wantInMinutes ?? 0))
+  if (Number.isFinite(wantIn) && wantIn > MAX_AHEAD_MINUTES) {
+    return {
+      ok: false,
+      status: 400,
+      error: 'Orders can be placed up to six hours ahead.',
+    }
+  }
+  const wantedAt =
+    Number.isFinite(wantIn) && wantIn > 0
+      ? (db.prepare(`SELECT datetime('now', '+${wantIn} minutes') AS t`).get() as any).t
+      : null
+
   const run = db.transaction(() => {
     const info = db
       .prepare(
@@ -279,8 +322,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
            status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
            service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone,
-           delivery_fee_cents, precinct_id, spot_id, look_for, contact_phone)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           delivery_fee_cents, precinct_id, spot_id, look_for, contact_phone, wanted_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -330,6 +373,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         liveSession?.service_mode === 'precinct' ? (liveSession.spot_id ?? null) : null,
         liveSession?.service_mode === 'precinct' ? (liveSession.look_for ?? '') : '',
         phone,
+        wantedAt,
       )
     const orderId = Number(info.lastInsertRowid)
 
@@ -569,6 +613,14 @@ export function shapeOrder(row: any) {
      */
     restaurantHasPhone: String(row.restaurant_phone ?? '').replace(/\D/g, '').length >= 10,
     prepMinutes: row.prep_minutes,
+    /**
+     * When the customer asked for it, or null for as soon as possible.
+     *
+     * Both halves of the app read this: the customer's tracking screen says
+     * "ready at 9:30" instead of counting up from nothing, and the kitchen
+     * sorts its queue by it so the 9:30 order is not cooked at 9:05.
+     */
+    wantedAt: row.wanted_at ?? null,
     customerName: row.customer_name,
     type: row.order_type as OrderType,
     serviceType: (row.service_mode === 'car'

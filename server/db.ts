@@ -424,6 +424,25 @@ addColumn('order_items', 'accepted', 'INTEGER')
 // Bill printed / settled at the counter.
 addColumn('orders', 'bill_closed_at', 'TEXT')
 
+/**
+ * When the customer wants it, which is the whole point of Khapee.
+ *
+ * Every order until now meant "as fast as you can", and that is the one thing
+ * the product is not for. Somebody leaving the office at 9:10 does not want
+ * their food ready at 9:11 and sitting under a lamp for twenty minutes; they
+ * want it ready at 9:30, when they walk in. The kitchen wants the same thing
+ * for the opposite reason — knowing an order is for half past lets them cook
+ * it at twenty past instead of dropping what they are doing.
+ *
+ * NULL means as soon as possible, which keeps every order ever placed valid
+ * and keeps the common case free of ceremony. UTC, like every other time in
+ * this database; the display side converts.
+ */
+addColumn('orders', 'wanted_at', 'TEXT')
+// The kitchen's queue is sorted by it, so it is worth an index the moment a
+// restaurant has a day's worth of orders rather than a demo's worth.
+db.exec('CREATE INDEX IF NOT EXISTS idx_orders_wanted ON orders(restaurant_id, wanted_at)')
+
 // --- Billing, tax and invoicing ---------------------------------------------
 //
 // The financial side is deliberately separate from the operational one. An

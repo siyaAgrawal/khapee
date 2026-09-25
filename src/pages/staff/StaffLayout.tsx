@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
+import StaffSearch from '../../components/StaffSearch'
 import { useInstall } from '../../lib/install'
 import { useNewVersion } from '../../lib/version'
 
@@ -52,6 +53,10 @@ export default function StaffLayout() {
           <span className="brand-mark">◗</span> Khapee
         </div>
         <RestaurantSwitcher />
+        {/* One box for the whole dashboard, above the four sections rather
+            than inside one of them — the question "where is table 4's order"
+            should not require knowing which screen answers it. */}
+        <StaffSearch />
         {/* `display: contents` on wide screens, so the sidebar is unchanged;
             on a phone this becomes the one row that scrolls sideways, instead
             of twelve links wrapping into five rows of chrome above the work. */}

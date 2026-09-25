@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { announceOrder, askToNotify, notifyPermission } from '../../lib/notify'
 import { currentEndpoint, enablePush, pushSupported, type AlertState } from '../../lib/push'
 import { thanksText, waAppLink, waLink } from '../../../shared/thanks'
+import { printReceipt, printWord } from '../../lib/receipt'
 import {
   nextStatus,
   SERVICE_LABEL,
@@ -179,6 +180,8 @@ export default function StaffOrders() {
   const [busyId, setBusyId] = useState<number | null>(null)
   /** Work that belongs to the board rather than to one order on it. */
   const [busy, setBusy] = useState('')
+  /** The order whose bill is on its way to the printer. */
+  const [printing, setPrinting] = useState<number | null>(null)
   const [error, setError] = useState('')
   // A board needs five columns of width. On a phone it had one, so the queue
   // is what opens there; anything wide enough for the board gets the board.
@@ -392,6 +395,31 @@ export default function StaffOrders() {
       toast((e as ApiError).message, 'bad')
     } finally {
       setBusyId(null)
+    }
+  }
+
+  /**
+   * Paper, from the screen the kitchen is already on.
+   *
+   * Printing existed, and worked, but only on the bill screen behind
+   * /staff/table/:id — which is two taps away and named after tables, so on a
+   * pickup order nobody went looking for it. From here it looked exactly like
+   * a till that cannot print at all, which is how it was reported.
+   *
+   * The bill is fetched rather than assembled from the row: a row knows the
+   * dishes and the total, but not the tax split, what has already been paid
+   * against it, or anything a waiter added by hand, and a printed bill that
+   * disagrees with the one at the counter is worse than no printing.
+   */
+  const printBill = async (order: Order) => {
+    setPrinting(order.id)
+    try {
+      const { bill } = await api<{ bill: any }>(`/staff/bill/${order.id}`)
+      toast(...printWord(await printReceipt(bill), `Bill ${order.orderNumber ?? ''}`.trim()))
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setPrinting(null)
     }
   }
 
@@ -715,6 +743,13 @@ export default function StaffOrders() {
                             >
                               {o.paymentStatus === 'PAID' ? 'Paid' : 'Mark paid'}
                             </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              disabled={printing === o.id}
+                              onClick={() => void printBill(o)}
+                            >
+                              {printing === o.id ? 'Printing…' : '🖨 Print bill'}
+                            </button>
                             <Link className="btn btn-secondary btn-sm" to={`/staff/table/${o.id}`}>
                               Open bill
                             </Link>
@@ -875,6 +910,13 @@ export default function StaffOrders() {
                           ) : (
                             <span className="badge badge-open">{STATUS_LABEL[o.status as OrderStatus]}</span>
                           )}
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            disabled={printing === o.id}
+                            onClick={() => void printBill(o)}
+                          >
+                            {printing === o.id ? 'Printing…' : '🖨 Print bill'}
+                          </button>
                           <span className="spacer" />
                           {!['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'].includes(o.status) && (
                             <button

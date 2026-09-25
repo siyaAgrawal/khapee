@@ -2260,6 +2260,61 @@ staffRouter.get('/history', (req: any, res) => {
   )
 })
 
+/**
+ * One box that searches the whole dashboard.
+ *
+ * A restaurant looks things up in three ways and the app had a different
+ * search for each: dishes on the Menu screen, past orders on the History
+ * screen, bills in the Till. Which meant that to answer "where is table 4's
+ * order" or "do we still sell the paneer tikka", you first had to know which
+ * of the four screens that question belonged to.
+ *
+ * So all of it answers one query. The shapes are deliberately thin — enough to
+ * recognise the right row and go to it, nothing more, because the destination
+ * screen is about to show the whole thing anyway.
+ */
+staffRouter.get('/search', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const q = String(req.query.q ?? '').trim()
+  if (q.length < 2) return res.json({ orders: [], dishes: [], tables: [] })
+  const like = `%${q}%`
+
+  // Live orders first and history behind them: something on the pass is far
+  // more likely to be what is being looked for than something from March.
+  const { rows } = orderHistory(restaurantId, { q, days: 365, limit: 8 })
+
+  const dishes = db
+    .prepare(
+      `SELECT m.id, m.name, m.price_cents AS priceCents, m.is_available AS isAvailable, c.name AS section
+         FROM menu_items m
+         JOIN menu_categories c ON c.id = m.category_id
+        WHERE m.restaurant_id = ? AND (m.name LIKE ? OR m.description LIKE ? OR c.name LIKE ?)
+        ORDER BY m.name LIMIT 8`,
+    )
+    .all(restaurantId, like, like, like) as any[]
+
+  const tables = db
+    .prepare(
+      `SELECT id, label, seats FROM restaurant_tables
+        WHERE restaurant_id = ? AND label LIKE ? ORDER BY label LIMIT 6`,
+    )
+    .all(restaurantId, like) as any[]
+
+  res.json({
+    orders: rows.map((r) => ({
+      id: r.id,
+      orderNumber: r.orderNumber,
+      status: r.status,
+      place: r.place,
+      customerName: r.customerName,
+      totalCents: r.totalCents,
+      createdAt: r.createdAt,
+    })),
+    dishes: dishes.map((d) => ({ ...d, isAvailable: !!d.isAvailable })),
+    tables,
+  })
+})
+
 // --- Where the money is paid into -------------------------------------------
 //
 // More than one UPI account, one of them shown. See the restaurant_upi table

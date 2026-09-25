@@ -64,8 +64,16 @@ export default function StaffMenu() {
   const [formError, setFormError] = useState('')
   const [newSection, setNewSection] = useState('')
   const [addingSection, setAddingSection] = useState(false)
-  /** Eighty dishes in nineteen sections is not a list anybody scrolls twice. */
-  const [find, setFind] = useState('')
+  /**
+   * Eighty dishes in nineteen sections is not a list anybody scrolls twice.
+   *
+   * Seeded from the address bar so the dashboard's search box can land on a
+   * dish rather than on the top of the menu — arriving at an eighty-row list
+   * having just typed the name of the row you want is not an answer.
+   */
+  const [find, setFind] = useState(
+    () => new URLSearchParams(window.location.search).get('find') ?? '',
+  )
 
   const load = useCallback(() => {
     api<{ restaurant: any; categories: Category[]; writesAreTemporary?: boolean }>('/staff/menu')

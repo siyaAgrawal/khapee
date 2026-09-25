@@ -4314,6 +4314,33 @@ async function runTests() {
     ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
   }
 
+  group('ONE SEARCH BOX FOR THE WHOLE DASHBOARD')
+  {
+    // The dashboard had a search on the menu screen, another on the history
+    // screen and a third in the till, which means the first thing anybody had
+    // to work out was which of them their question belonged to. One box
+    // answers all three kinds.
+    const person = await call('/staff/search?q=Sunita', { token: roadToken })
+    ok('a customer name finds their order', person.body.orders.length > 0, person.body)
+    ok('and nothing is dressed up as a dish', person.body.dishes.length === 0, person.body.dishes)
+
+    const dish = await call(`/staff/search?q=${encodeURIComponent(croissant.name)}`, { token: roadToken })
+    ok('a dish name finds the dish', dish.body.dishes.some((d: any) => d.id === croissant.id), dish.body.dishes)
+    ok('with its section and price on it', !!dish.body.dishes[0]?.section && dish.body.dishes[0]?.priceCents > 0, dish.body.dishes[0])
+    ok('and the orders that had it', dish.body.orders.length > 0, dish.body.orders.length)
+
+    const short = await call('/staff/search?q=a', { token: roadToken })
+    ok('one letter is not a search', short.body.orders.length === 0 && short.body.dishes.length === 0, short.body)
+
+    const nothing = await call('/staff/search?q=zzzznothing', { token: roadToken })
+    ok('and nothing matching comes back empty rather than broken', nothing.status === 200 && nothing.body.dishes.length === 0, nothing.body)
+
+    const nosey = await call('/staff/search?q=Sunita', { token: otherToken })
+    ok('one restaurant cannot search another', nosey.body.orders.length === 0, nosey.body)
+
+    ok('signed out, it answers nothing at all', (await call('/staff/search?q=Sunita')).status === 401)
+  }
+
   group('MORE THAN ONE UPI ID, AND ONE OF THEM SHOWN')
   {
     // A counter has the Paytm card propped against the till, the owner's own

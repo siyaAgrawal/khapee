@@ -6,7 +6,7 @@ import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 import StaffSearch from '../../components/StaffSearch'
 import { useOrderAlerts } from '../../lib/staff-alerts'
 import { useInstall } from '../../lib/install'
-import { useNewVersion } from '../../lib/version'
+import { useAutoReload, useNewVersion } from '../../lib/version'
 
 /**
  * Four places, not twelve.
@@ -30,6 +30,10 @@ export default function StaffLayout() {
   const navigate = useNavigate()
   const install = useInstall()
   const version = useNewVersion()
+  /* Picks the new build up on its own — see useAutoReload. A till nobody is
+     looking at should not be running last week's code because nobody pressed
+     a button on a bar they had stopped seeing. */
+  useAutoReload(version.stale, version.reload)
   const [newCount, setNewCount] = useState(0)
   /* Order alerts, switched on by being signed in rather than by finding a
      button. See src/lib/staff-alerts.ts for why this runs on every load. */
@@ -156,11 +160,11 @@ export default function StaffLayout() {
         {version.stale && (
           <div className="stale-bar">
             <span>
-              <strong>Khapee has been updated.</strong> This computer is still running the old
-              version — reload to pick it up.
+              <strong>Khapee has been updated.</strong> It will pick the new version up by
+              itself in a moment — or now, if you would rather not wait.
             </span>
             <button className="btn btn-accent btn-sm" onClick={version.reload}>
-              Reload now
+              Update now
             </button>
           </div>
         )}

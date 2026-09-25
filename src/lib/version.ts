@@ -89,3 +89,63 @@ export function useNewVersion(): { stale: boolean; reload: () => void } {
     },
   }
 }
+
+/**
+ * Picking the new build up without anybody being asked to.
+ *
+ * The banner was the whole answer and it was the wrong one: the machine this
+ * matters most on is a till nobody is looking at, left open behind a counter
+ * for days, and a message asking somebody to press Reload is a message nobody
+ * presses. Restaurants were running week-old code and being told about it by
+ * a bar they had stopped seeing.
+ *
+ * So it reloads itself, on two rules that between them never interrupt work:
+ *
+ * Nobody is looking — the tab is in the background, or the screen is off.
+ * Reload immediately; there is nothing to lose and nothing to interrupt.
+ *
+ * Somebody is looking — wait until they have not touched anything for a
+ * while, and never while a box has focus. Reloading under somebody's hands is
+ * how a half-typed order disappears, which is a far worse bug than an old
+ * build. The banner stays for the person who would rather not wait.
+ */
+const IDLE_BEFORE_RELOAD = 25_000
+
+export function useAutoReload(stale: boolean, reload: () => void) {
+  useEffect(() => {
+    if (!stale) return
+    let done = false
+    const go = () => {
+      if (done) return
+      // Never out from under a keyboard. A focused field means somebody is
+      // mid-sentence, whatever the idle timer thinks.
+      const el = document.activeElement as HTMLElement | null
+      const typing =
+        !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+      if (typing) return
+      done = true
+      reload()
+    }
+
+    let idle = setTimeout(go, IDLE_BEFORE_RELOAD)
+    const stir = () => {
+      clearTimeout(idle)
+      idle = setTimeout(go, IDLE_BEFORE_RELOAD)
+    }
+    const hidden = () => {
+      if (document.visibilityState === 'hidden') go()
+    }
+
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+    events.forEach((e) => window.addEventListener(e, stir, { passive: true }))
+    document.addEventListener('visibilitychange', hidden)
+    // A tab that is already in the background when the new build lands.
+    if (document.visibilityState === 'hidden') go()
+
+    return () => {
+      clearTimeout(idle)
+      events.forEach((e) => window.removeEventListener(e, stir))
+      document.removeEventListener('visibilitychange', hidden)
+    }
+  }, [stale, reload])
+}

@@ -44,6 +44,17 @@ export type AlertState = {
 export async function workerReady(): Promise<ServiceWorkerRegistration> {
   const existing = await navigator.serviceWorker.getRegistration()
   if (!existing) await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+  /*
+   * Ask whether there is a newer worker, rather than waiting to be told.
+   *
+   * A browser replaces a service worker on its own schedule, and an installed
+   * app on a till is never navigated, so it can run a worker from weeks ago
+   * indefinitely. A worker that predates the push handler receives the push
+   * and shows nothing — the server reports a successful send, the phone stays
+   * silent, and there is no way to tell that from having no orders. Checking
+   * costs one conditional request.
+   */
+  else void existing.update().catch(() => {})
   return await Promise.race([
     navigator.serviceWorker.ready,
     new Promise<ServiceWorkerRegistration>((_, reject) =>
@@ -175,9 +186,32 @@ export async function enablePush(publicKey: string): Promise<{ ok: boolean; erro
 
   try {
     const reg = await workerReady()
-    // A subscription made against an older key cannot be re-used, and the push
-    // service refuses the new one while the old one stands.
     const existing = await reg.pushManager.getSubscription()
+
+    /*
+     * Keep the subscription this device already has.
+     *
+     * This used to unsubscribe and re-subscribe every single time, which was
+     * merely wasteful until the dashboard started calling it on every page
+     * load to repair the server's wiped table — and then it became the bug.
+     * Between the unsubscribe and the server storing the replacement there is
+     * a window with no subscription at all, and an order arriving in it rings
+     * nothing; if the new subscribe or the request after it fails, on a
+     * kitchen's patchy wifi, the device is left worse off than before it
+     * loaded the page. A till reloading all day was tearing down its own
+     * alerts all day.
+     *
+     * An existing subscription made against the same key is perfectly good.
+     * Re-sending it to the server is the whole job — that is what repopulates
+     * the table — and it touches nothing on the device.
+     */
+    if (existing && sameKey(existing, publicKey)) {
+      await api('/staff/alerts/subscribe', { body: { subscription: existing.toJSON() } })
+      return { ok: true }
+    }
+
+    // Only when there is nothing, or it belongs to a key we no longer use:
+    // the push service refuses a new subscription while the old one stands.
     if (existing) await existing.unsubscribe().catch(() => {})
 
     const sub = await reg.pushManager.subscribe({
@@ -188,6 +222,26 @@ export async function enablePush(publicKey: string): Promise<{ ok: boolean; erro
     return { ok: true }
   } catch (e) {
     return { ok: false, error: (e as Error)?.message || 'The browser refused to subscribe.' }
+  }
+}
+
+/**
+ * Whether a subscription belongs to the key the server is signing with.
+ *
+ * A subscription made against an old VAPID key looks perfectly healthy from
+ * the device's side and is silently rejected by the push service, which is the
+ * worst possible failure: everything reports success and nothing ever rings.
+ */
+function sameKey(sub: PushSubscription, publicKey: string): boolean {
+  try {
+    const mine = sub.options?.applicationServerKey
+    if (!mine) return false
+    const a = new Uint8Array(mine)
+    const b = toBytes(publicKey)
+    if (a.length !== b.length) return false
+    return a.every((v, i) => v === b[i])
+  } catch {
+    return false
   }
 }
 

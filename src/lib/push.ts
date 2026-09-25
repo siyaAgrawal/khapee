@@ -17,7 +17,16 @@ export type AlertState = {
     devices: number
     reason: string
     /** Who is signed up, so an owner can see a phone they do not recognise. */
-    list: { id: number; who: string; whose: string; since: string; lastOk: string | null; failing: boolean }[]
+    list: {
+      id: number
+      who: string
+      whose: string
+      since: string
+      lastOk: string | null
+      failing: boolean
+      /** Whether this phone also gets the WhatsApp thank-you prompt. */
+      wants_whatsapp?: number
+    }[]
   }
   /** Links handed out and not yet used. */
   invites: { id: number; code: string; path: string; since: string; until: string }[]

@@ -7,6 +7,7 @@ import { normalizeCode } from '../ids.ts'
 import { upiLink } from '../payments.ts'
 import { sessionByToken } from '../dining.ts'
 import { money } from '../../shared/orders.ts'
+import { pushOrder } from '../petpooja.ts'
 
 export const ordersRouter = Router()
 
@@ -127,7 +128,24 @@ ordersRouter.post('/', (req, res) => {
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({ order: result.order })
+
+  /*
+   * And, for a kitchen that runs Petpooja, onto their till.
+   *
+   * After the response, deliberately. The customer's order is already safe in
+   * Khapee at this point, and nothing about whether a Windows machine in the
+   * back answers in the next twelve seconds should be allowed to change what
+   * they are told. A push that fails records why against the order and the
+   * order carries on existing exactly as it did before any of this.
+   */
+  void pushOrder(result.order.id, originOf(req)).catch(() => {})
 })
+
+/** The host this request actually came in on, so webhooks point back here. */
+function originOf(req: any): string {
+  const proto = String(req.headers['x-forwarded-proto'] ?? req.protocol ?? 'https').split(',')[0]
+  return `${proto}://${req.get('host')}`
+}
 
 /** Customer order history for a signed-in account. */
 ordersRouter.get('/mine', requireAuth, (req, res) => {

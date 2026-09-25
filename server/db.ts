@@ -315,6 +315,21 @@ addColumn('alert_invites', 'reusable', 'INTEGER NOT NULL DEFAULT 0')
 // invite — so an owner reading the list can tell one from the other.
 addColumn('push_subscriptions', 'label', "TEXT NOT NULL DEFAULT ''")
 
+/**
+ * Whether this device also wants the WhatsApp thank-you nudge.
+ *
+ * Two different people are holding these phones. The person running the
+ * business wants both: the order, and the prompt to thank the customer on
+ * WhatsApp afterwards. The kitchen wants the order and nothing else — a
+ * second notification per order, about a message they are never going to
+ * send, is how a counter learns to ignore the first one.
+ *
+ * Off by default, so every restaurant added from here on gets order alerts
+ * only, and the handful of devices that want the WhatsApp prompt turn it on
+ * for themselves.
+ */
+addColumn('push_subscriptions', 'wants_whatsapp', 'INTEGER NOT NULL DEFAULT 0')
+
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because
 // "the one you open the app to see" is a decision somebody makes, not
@@ -439,6 +454,63 @@ addColumn('orders', 'bill_closed_at', 'TEXT')
  * this database; the display side converts.
  */
 addColumn('orders', 'wanted_at', 'TEXT')
+
+/**
+ * Petpooja, the till half the kitchens in Indore already run.
+ *
+ * The integration is deliberately one row per restaurant rather than a global
+ * switch. Petpooja issues one set of application credentials to Khapee and
+ * then maps each restaurant to a restID of its own, so the thing that varies
+ * between two restaurants is the restID and nothing else — and a restaurant
+ * that does not run Petpooja simply has no row here and never touches any of
+ * it.
+ *
+ * The credentials are columns as well as environment variables. They belong
+ * in the environment for a single deployment, but a restaurant occasionally
+ * gets its own key pair from Petpooja, and having nowhere to put it would
+ * mean a redeploy to onboard one kitchen.
+ *
+ * webhook_secret is what makes the endpoints Petpooja calls safe. Their
+ * documentation gives those endpoints no authentication at all — they simply
+ * POST a restID — so the secret lives in the URL we hand them, which means a
+ * stranger who guesses a restID still cannot push a menu or cancel an order.
+ * One per restaurant, so a leak is contained to that one.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS petpooja_links (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id   INTEGER NOT NULL UNIQUE REFERENCES restaurants(id) ON DELETE CASCADE,
+  rest_id         TEXT    NOT NULL,
+  menusharing_code TEXT   NOT NULL DEFAULT '',
+  app_key         TEXT    NOT NULL DEFAULT '',
+  app_secret      TEXT    NOT NULL DEFAULT '',
+  access_token    TEXT    NOT NULL DEFAULT '',
+  webhook_secret  TEXT    NOT NULL UNIQUE,
+  enabled         INTEGER NOT NULL DEFAULT 1,
+  push_orders     INTEGER NOT NULL DEFAULT 1,
+  last_menu_at    TEXT,
+  last_order_at   TEXT,
+  last_error      TEXT    NOT NULL DEFAULT '',
+  created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_petpooja_rest ON petpooja_links(rest_id);
+`)
+
+/**
+ * The other system's ids, kept beside our own.
+ *
+ * An order pushed to Petpooja has to name their item ids, not ours, and a
+ * menu they push back has to update the dish it is actually about rather than
+ * adding a second copy of it every time. So each row that can come from a POS
+ * carries the id it has over there, and nothing else about it changes.
+ */
+addColumn('menu_items', 'pos_item_id', 'TEXT')
+addColumn('menu_items', 'pos_tax_ids', "TEXT NOT NULL DEFAULT ''")
+addColumn('menu_categories', 'pos_category_id', 'TEXT')
+addColumn('orders', 'pos_order_id', 'TEXT')
+addColumn('orders', 'pos_pushed_at', 'TEXT')
+addColumn('orders', 'pos_error', "TEXT NOT NULL DEFAULT ''")
+db.exec('CREATE INDEX IF NOT EXISTS idx_menu_items_pos ON menu_items(restaurant_id, pos_item_id)')
 // The kitchen's queue is sorted by it, so it is worth an index the moment a
 // restaurant has a day's worth of orders rather than a demo's worth.
 db.exec('CREATE INDEX IF NOT EXISTS idx_orders_wanted ON orders(restaurant_id, wanted_at)')

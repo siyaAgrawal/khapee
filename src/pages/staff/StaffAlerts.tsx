@@ -214,6 +214,19 @@ export default function StaffAlerts() {
     }
   }
 
+  /** Whether this one phone also gets the WhatsApp prompt. See the list below. */
+  const setWhatsapp = async (id: number, wants: boolean) => {
+    setBusy('wa')
+    try {
+      await api(`/staff/alerts/devices/${id}/whatsapp`, { body: { wants } })
+      void load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
   const forget = async (id: number, who: string) => {
     if (!window.confirm(`Stop sending alerts to ${who}'s device?`)) return
     setBusy('forget')
@@ -340,9 +353,28 @@ export default function StaffAlerts() {
                     {d.failing ? ' · not answering — probably gone' : ''}
                   </p>
                 </div>
-                <button className="link-btn" onClick={() => forget(d.id, d.who)} disabled={busy === 'forget'}>
-                  Remove
-                </button>
+                <div className="device-acts">
+                  {/*
+                    Order alerts go to every phone here, always. This is the
+                    second notification — the prompt to thank the customer on
+                    WhatsApp — and it belongs only on the phone of whoever
+                    actually sends those messages. On a kitchen phone it is a
+                    second buzz per order about something nobody there will
+                    ever do, which is how the first one stops being read.
+                  */}
+                  <label className="device-wa">
+                    <input
+                      type="checkbox"
+                      checked={!!(d as any).wants_whatsapp}
+                      disabled={busy === 'wa'}
+                      onChange={(e) => void setWhatsapp(d.id, e.target.checked)}
+                    />
+                    <span className="tiny">WhatsApp thank-yous</span>
+                  </label>
+                  <button className="link-btn" onClick={() => forget(d.id, d.who)} disabled={busy === 'forget'}>
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

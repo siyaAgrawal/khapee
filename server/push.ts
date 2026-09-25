@@ -180,6 +180,9 @@ export function saveSubscription(
        auth = excluded.auth,
        label = excluded.label,
        all_restaurants = excluded.all_restaurants,
+       -- Deliberately not reset. A device re-subscribes on every sign-in, and
+       -- silently turning somebody's WhatsApp prompts back off each morning
+       -- is indistinguishable from the feature being broken.
        failures = 0`,
   ).run(userId, restaurantId, endpoint, p256dh, auth, label, allRestaurants ? 1 : 0)
   return { ok: true }
@@ -223,7 +226,7 @@ export function subscriptionCount(restaurantId: number): number {
 export function subscriptionList(restaurantId: number): any[] {
   return db
     .prepare(
-      `SELECT ps.id, ps.endpoint, ps.created_at, ps.last_ok_at, ps.failures, ps.label,
+      `SELECT ps.id, ps.endpoint, ps.created_at, ps.last_ok_at, ps.failures, ps.label, ps.wants_whatsapp,
               u.name AS who, u.email AS whose
          FROM (${DEVICES_FOR}) ps
          LEFT JOIN users u ON u.id = ps.user_id
@@ -233,6 +236,16 @@ export function subscriptionList(restaurantId: number): any[] {
 }
 
 /** Takes one device off, but only one belonging to this restaurant. */
+/** Turn the WhatsApp thank-you prompt on or off for one device. */
+export function setDeviceWhatsapp(restaurantId: number, id: number, wants: boolean): boolean {
+  const mine = db
+    .prepare(`SELECT id FROM (${DEVICES_FOR}) ps WHERE ps.id = ?`)
+    .get(restaurantId, restaurantId, id) as any
+  if (!mine) return false
+  db.prepare('UPDATE push_subscriptions SET wants_whatsapp = ? WHERE id = ?').run(wants ? 1 : 0, id)
+  return true
+}
+
 export function removeSubscription(restaurantId: number, id: number): boolean {
   const mine = db
     .prepare(`SELECT id FROM (${DEVICES_FOR}) ps WHERE ps.id = ?`)
@@ -346,9 +359,21 @@ export type PushResult = {
   why: string
 }
 
-export async function pushToRestaurant(restaurantId: number, note: PushNote): Promise<PushResult> {
+/**
+ * @param onlyWhatsappDevices  Send only to the devices that asked for the
+ *   WhatsApp thank-you prompt. Order alerts go to everything; this one goes to
+ *   the phone belonging to whoever actually sends those messages, because a
+ *   second notification per order about a message the kitchen will never send
+ *   is how a counter learns to ignore the first one.
+ */
+export async function pushToRestaurant(
+  restaurantId: number,
+  note: PushNote,
+  { onlyWhatsappDevices = false }: { onlyWhatsappDevices?: boolean } = {},
+): Promise<PushResult> {
   if (!KEYS) return { sent: 0, failed: 0, devices: 0, why: pushReason() }
-  const rows = db.prepare(DEVICES_FOR).all(restaurantId, restaurantId) as any[]
+  let rows = db.prepare(DEVICES_FOR).all(restaurantId, restaurantId) as any[]
+  if (onlyWhatsappDevices) rows = rows.filter((r) => !!r.wants_whatsapp)
   if (!rows.length) return { sent: 0, failed: 0, devices: 0, why: '' }
 
   const payload = JSON.stringify({

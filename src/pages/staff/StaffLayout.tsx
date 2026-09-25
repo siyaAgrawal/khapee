@@ -4,6 +4,7 @@ import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
 import StaffSearch from '../../components/StaffSearch'
+import { useOrderAlerts } from '../../lib/staff-alerts'
 import { useInstall } from '../../lib/install'
 import { useNewVersion } from '../../lib/version'
 
@@ -30,6 +31,9 @@ export default function StaffLayout() {
   const install = useInstall()
   const version = useNewVersion()
   const [newCount, setNewCount] = useState(0)
+  /* Order alerts, switched on by being signed in rather than by finding a
+     button. See src/lib/staff-alerts.ts for why this runs on every load. */
+  const alerts = useOrderAlerts()
 
   const refresh = () =>
     api<{ summary: any }>('/staff/summary')
@@ -111,6 +115,44 @@ export default function StaffLayout() {
             build it opened with until somebody tells it otherwise — and
             reports faults from code that has not existed for days. This is
             the telling. */}
+        {/*
+          The one tap, and only when the browser genuinely needs one.
+
+          A restaurant that is already ringing sees nothing here, ever. This
+          is at the top of the dashboard rather than inside a settings page
+          because a kitchen that is not being told about orders has a problem
+          worth interrupting them about — and because the whole failure was
+          that the old switch lived somewhere nobody looked.
+        */}
+        {alerts.status === 'ask' && (
+          <div className="alert-bar">
+            <span>
+              <strong>Turn on order alerts for this device.</strong> You&rsquo;ll hear every order,
+              even with Khapee closed.
+              {alerts.error ? ` ${alerts.error}` : ''}
+            </span>
+            <button className="btn btn-accent btn-sm" disabled={alerts.busy} onClick={alerts.turnOn}>
+              {alerts.busy ? 'Turning on…' : '🔔 Turn on alerts'}
+            </button>
+          </div>
+        )}
+        {alerts.status === 'blocked' && (
+          <div className="alert-bar alert-bar-bad">
+            <span>
+              <strong>Order alerts are blocked in this browser.</strong> Allow notifications for this
+              site in your browser settings, then reload — nothing will ring until you do.
+            </span>
+          </div>
+        )}
+        {alerts.status === 'install' && (
+          <div className="alert-bar">
+            <span>
+              <strong>Add Khapee to your Home Screen to get order alerts.</strong> Tap Share, then
+              Add to Home Screen — on iPhone, Apple only allows alerts to an installed app.
+            </span>
+          </div>
+        )}
+
         {version.stale && (
           <div className="stale-bar">
             <span>

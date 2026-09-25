@@ -3,6 +3,7 @@ import { db, WRITES_ARE_TEMPORARY } from '../db.ts'
 import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
 import { publish } from '../events.ts'
+import { applyStatus } from '../order-status.ts'
 import { acceptRemainingItems, createOrder, decideItem, getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
@@ -20,7 +21,7 @@ import {
   setBillingUrl,
   tellBilling,
 } from '../order-feed.ts'
-import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, subscriptionCount, subscriptionList } from '../push.ts'
+import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, setDeviceWhatsapp, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { faultsFor } from '../faults.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
@@ -40,6 +41,7 @@ import { shapeDiningSession, startCarSession } from '../dining.ts'
 import { generateAlertCode, randomToken } from '../ids.ts'
 import { floorBoard, kotById, openKot, settleTable, tableBill } from '../floor.ts'
 import { orderHistory, takings } from '../takings.ts'
+import { applyMenuPush, fetchMenu, linkFor, removeLink, saveLink, webhookUrls } from '../petpooja.ts'
 
 export const staffRouter = Router()
 staffRouter.use(requireStaff)
@@ -167,51 +169,22 @@ staffRouter.post('/orders/:id/status', async (req, res) => {
   }
 
   const to = String(req.body?.status ?? '').toUpperCase() as OrderStatus
-  // A car order has a delivery leg, so the flow comes from where the customer
-  // is rather than from the order_type column, which only knows table/counter.
-  const service =
-    row.service_mode === 'car'
-      ? 'car'
-      : row.service_mode === 'delivery'
-        ? 'delivery'
-        : row.service_mode === 'precinct'
-          ? 'precinct'
-          : row.order_type === 'pickup'
-          ? 'pickup'
-          : row.takeaway
-            ? 'takeaway'
-            : 'dine_in'
-  if (!canTransition(service, row.status, to)) {
-    return res.status(400).json({ error: `Cannot move ${row.status} to ${to}.` })
-  }
 
-  db.transaction(() => {
-    db.prepare(`UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(to, id)
-    db.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (?, ?, 'staff')`).run(id, to)
-    if (row.user_id) {
-      db.prepare(
-        `INSERT INTO notifications (user_id, order_id, restaurant_id, title, body)
-         VALUES (?, ?, ?, ?, ?)`,
-      ).run(row.user_id, id, restaurantId, `Order #${row.order_number} — ${STATUS_LABEL[to]}`, '')
-    }
-  })()
+  /*
+   * One function, two callers.
+   *
+   * All of this used to live here, which was right while a person pressing a
+   * button in this dashboard was the only way an order could move. It is not
+   * any more — a Petpooja kitchen accepts on its own till and the answer
+   * arrives as a webhook — and both routes have to write the same event,
+   * notify the same phone and wake the same stream, or the customer's screen
+   * starts telling a different story depending on which till the restaurant
+   * happens to own. See server/order-status.ts.
+   */
+  const moved = applyStatus(id, to, 'staff')
+  if (!moved.ok) return res.status(moved.status).json({ error: moved.error })
+  const order = moved.order
 
-  // Accept means what it looks like it means, even after some dishes have
-  // been turned down one at a time.
-  if (to === 'ACCEPTED') {
-    if (nothingLeft(id)) {
-      return res.status(400).json({
-        error: 'Every dish on this order has been turned down. Decline the order instead, so the customer is told why.',
-      })
-    }
-    acceptRemainingItems(id)
-  }
-
-  const order = getOrder(id)
-  // The customer's own phone, for nothing — see server/customer-notify.ts.
-  tellCustomer(id, to as OrderStatus)
-  tellBilling(restaurantId, id, 'order.status')
-  publish('order:update', { restaurantId, userId: row.user_id, orderId: id, order })
   // Said back, rather than left to be inferred from a notification that may
   // never come. Accepting an order with no number on it sends no thank-you —
   // there is nowhere to send one — and from the kitchen that looked exactly
@@ -995,6 +968,20 @@ staffRouter.post('/alerts/invite/:id/revoke', (req: any, res) => {
 })
 
 /** Takes one phone off the list — the one place an owner can undo a sign-up. */
+/**
+ * Whether this one phone also gets the WhatsApp thank-you prompt.
+ *
+ * Off everywhere by default, because two notifications per order — one of
+ * which the kitchen will never act on — is how both of them stop being read.
+ * The phone belonging to whoever actually sends those messages turns it on.
+ */
+staffRouter.post('/alerts/devices/:id/whatsapp', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const ok = setDeviceWhatsapp(restaurantId, Number(req.params.id), !!req.body?.wants)
+  if (!ok) return res.status(404).json({ error: 'That device is not on this restaurant.' })
+  res.json({ ok: true, devices: subscriptionList(restaurantId) })
+})
+
 staffRouter.post('/alerts/devices/:id/remove', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   const gone = removeSubscription(restaurantId, Number(req.params.id))
@@ -2229,6 +2216,94 @@ staffRouter.post('/floor/table/:id/settle', (req: any, res) => {
   publish('orders', { restaurantId })
   publish('ops', { restaurantId })
   res.json(result)
+})
+
+/** The host this request came in on, so the webhook URLs point back here. */
+function originOf(req: any): string {
+  const proto = String(req.headers['x-forwarded-proto'] ?? req.protocol ?? 'https').split(',')[0]
+  return `${proto}://${req.get('host')}`
+}
+
+// --- Petpooja ---------------------------------------------------------------
+//
+// Setting this up is four fields and a copy-paste, and that is the whole
+// design: the restaurant reads their restID off their own Petpooja paperwork,
+// pastes it here, and hands the five URLs this hands back to Petpooja support.
+// Everything else — credentials, menu, orders, printing — follows from that.
+
+/** What is connected, plus the URLs Petpooja needs, ready to be copied. */
+staffRouter.get('/petpooja', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const link = linkFor(restaurantId)
+  if (!link) {
+    return res.json({
+      linked: false,
+      // Said here rather than discovered at the first failed order.
+      credentialsPresent: !!(process.env.PETPOOJA_APP_KEY && process.env.PETPOOJA_APP_SECRET && process.env.PETPOOJA_ACCESS_TOKEN),
+    })
+  }
+  res.json({
+    linked: true,
+    restId: link.restId,
+    enabled: link.enabled,
+    pushOrders: link.pushOrders,
+    // Never the secrets themselves, only whether they are there. A dashboard
+    // that prints an access token is a dashboard that leaks one.
+    credentialsPresent: !!(link.appKey && link.appSecret && link.accessToken),
+    ownCredentials: !!(
+      (db.prepare('SELECT app_key FROM petpooja_links WHERE restaurant_id = ?').get(restaurantId) as any)?.app_key
+    ),
+    lastMenuAt: link.lastMenuAt,
+    lastOrderAt: link.lastOrderAt,
+    lastError: link.lastError,
+    urls: webhookUrls(link, originOf(req)),
+    itemsMapped: (db
+      .prepare('SELECT COUNT(*) AS n FROM menu_items WHERE restaurant_id = ? AND pos_item_id IS NOT NULL')
+      .get(restaurantId) as any).n,
+    itemsTotal: (db.prepare('SELECT COUNT(*) AS n FROM menu_items WHERE restaurant_id = ?').get(restaurantId) as any).n,
+  })
+})
+
+staffRouter.post('/petpooja', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const restId = String(req.body?.restId ?? '').trim()
+  if (!restId) return res.status(400).json({ error: 'Enter the Petpooja restaurant ID.' })
+  const link = saveLink(restaurantId, {
+    restId,
+    menusharingCode: req.body?.menusharingCode,
+    appKey: req.body?.appKey,
+    appSecret: req.body?.appSecret,
+    accessToken: req.body?.accessToken,
+    enabled: req.body?.enabled,
+    pushOrders: req.body?.pushOrders,
+  })
+  res.json({ ok: true, urls: webhookUrls(link, originOf(req)) })
+})
+
+staffRouter.delete('/petpooja', (req: any, res) => {
+  removeLink(myRestaurant(req))
+  res.json({ ok: true })
+})
+
+/**
+ * Pull the menu across now, rather than waiting to be pushed one.
+ *
+ * Doubles as the only honest test of the connection: it uses the real
+ * credentials against the real restID and either comes back with a menu or
+ * says exactly why not.
+ */
+staffRouter.post('/petpooja/sync', async (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const link = linkFor(restaurantId)
+  if (!link) return res.status(400).json({ error: 'Connect a Petpooja restaurant ID first.' })
+  const got = await fetchMenu(restaurantId)
+  if (!got.ok) return res.status(502).json({ error: got.error })
+  try {
+    const result = applyMenuPush(link, got.body ?? {})
+    res.json({ ok: true, ...result })
+  } catch (e: any) {
+    res.status(400).json({ error: String(e?.message ?? e) })
+  }
 })
 
 // --- Takings and history ----------------------------------------------------

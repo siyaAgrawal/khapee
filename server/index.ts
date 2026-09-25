@@ -13,6 +13,7 @@ import { staffRouter } from './routes/staff.ts'
 import { orderFeedRouter } from './routes/order-feed.ts'
 import { groupsRouter } from './routes/groups.ts'
 import { sessionsRouter } from './routes/sessions.ts'
+import { petpoojaRouter } from './routes/petpooja.ts'
 import { ensureSeed } from './seed.ts'
 import { injectMeta, metaFor, robotsTxt, sitemapXml, structuredData } from './seo.ts'
 import { thankPage } from './thank-page.ts'
@@ -91,6 +92,10 @@ app.get('/api/network', (req, res) => {
   }
   res.json({ localUrl: `http://localhost:${WEB_PORT}`, networkUrls: urls })
 })
+
+/* Petpooja's servers, which have no session and no account here. The random
+   secret in the path is the whole credential — see server/routes/petpooja.ts. */
+app.use('/api/petpooja', petpoojaRouter)
 
 app.use('/api/auth', authRouter)
 app.use('/api', publicRouter)

@@ -4314,6 +4314,177 @@ async function runTests() {
     ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
   }
 
+  group('ORDER ALERTS EVERYWHERE, WHATSAPP ONLY WHERE ASKED')
+  {
+    // Two different people hold these phones. Whoever runs the business wants
+    // the order and the prompt to thank the customer afterwards; the kitchen
+    // wants the order and nothing else. A second buzz per order about a
+    // message nobody at the counter will ever send is how the first one stops
+    // being read.
+    const devices = await call('/staff/alerts', { token: roadToken })
+    ok('the device list is readable', devices.status === 200, devices.body)
+    ok('and says whether each phone wants WhatsApp', Array.isArray(devices.body.push?.list), devices.body.push)
+
+    const notMine = await call('/staff/alerts/devices/999999/whatsapp', { token: roadToken, body: { wants: true } })
+    ok('a device that is not this restaurant\'s cannot be changed', notMine.status === 404, notMine.status)
+
+    ok('and signed out, nothing can', (await call('/staff/alerts/devices/1/whatsapp', { body: { wants: true } })).status === 401)
+  }
+
+  group('PETPOOJA — the till that is already on the counter')
+  {
+    // Half the kitchens worth having already run Petpooja, and everything
+    // Khapee keeps rebuilding — printing a KOT, printing a bill, keeping a
+    // menu — is solved on that machine already. So the test is not whether we
+    // can talk to Ahmedabad; it is whether the five endpoints Petpooja calls
+    // on us do the right thing, because those run here and are ours to break.
+    const linked = await call('/staff/petpooja', {
+      token: roadToken,
+      body: { restId: 'R156072', appKey: 'k'.repeat(32), appSecret: 's'.repeat(40), accessToken: 't'.repeat(40) },
+    })
+    ok('a restaurant can be connected with its Petpooja ID', linked.status === 200, linked.body)
+    const urls = linked.body.urls
+    ok('and gets back the URLs to hand to Petpooja', !!urls?.menu && !!urls?.callback, urls)
+
+    const secret = String(urls.menu).split('/petpooja/')[1].split('/')[0]
+    ok('whose secret is long enough to be one', secret.length >= 24, secret.length)
+
+    const view = await call('/staff/petpooja', { token: roadToken })
+    ok('the dashboard can see it is connected', view.body.linked === true, view.body)
+    ok('and never prints the access token back', !JSON.stringify(view.body).includes('t'.repeat(40)), view.body)
+
+    // --- The menu they push us ---
+    const menu = await call(`/petpooja/${secret}/menu`, {
+      body: {
+        success: '1',
+        restaurants: [{ restaurantid: 'R156072', details: { minimum_prep_time: '25' } }],
+        categories: [{ categoryid: '900', categoryname: 'Petpooja Specials', categoryrank: '1' }],
+        items: [
+          {
+            itemid: 'PP-1',
+            itemname: 'Paneer Tikka',
+            item_categoryid: '900',
+            price: '240',
+            item_attributeid: '1',
+            in_stock: '1',
+            active: '1',
+            itemdescription: 'From the till',
+          },
+          {
+            itemid: 'PP-2',
+            itemname: 'Chicken Seekh',
+            item_categoryid: '900',
+            price: '310',
+            item_attributeid: '2',
+            in_stock: '1',
+            active: '1',
+          },
+        ],
+      },
+    })
+    ok('a menu push is accepted', menu.status === 200 && menu.body.success === '1', menu.body)
+
+    const after = await call('/staff/menu', { token: roadToken })
+    const specials = after.body.categories.find((c: any) => c.name === 'Petpooja Specials')
+    ok('the section arrives', !!specials, after.body.categories.map((c: any) => c.name))
+    const paneer = specials?.items.find((i: any) => i.name === 'Paneer Tikka')
+    ok('so does the dish', !!paneer, specials?.items)
+    ok('at the price the till says, in paise', paneer?.priceCents === 24000, paneer?.priceCents)
+    ok('and veg is read from their attribute', paneer?.isVeg === true, paneer)
+    const seekh = specials?.items.find((i: any) => i.name === 'Chicken Seekh')
+    ok('anything not plainly veg is shown as non-veg', seekh?.isVeg === false, seekh)
+
+    // Pushed twice, because Petpooja push on every edit and a menu that grows
+    // a second copy of itself each time is worse than no integration at all.
+    await call(`/petpooja/${secret}/menu`, {
+      body: {
+        restaurants: [{ restaurantid: 'R156072' }],
+        categories: [{ categoryid: '900', categoryname: 'Petpooja Specials' }],
+        items: [{ itemid: 'PP-1', itemname: 'Paneer Tikka', item_categoryid: '900', price: '260', item_attributeid: '1' }],
+      },
+    })
+    const twice = await call('/staff/menu', { token: roadToken })
+    const again = twice.body.categories.find((c: any) => c.name === 'Petpooja Specials')
+    ok('pushing again does not duplicate the dish', again.items.filter((i: any) => i.name === 'Paneer Tikka').length === 1, again.items.length)
+    ok('it updates the price instead', again.items.find((i: any) => i.name === 'Paneer Tikka')?.priceCents === 26000)
+    // Dropped from the payload means dropped from the till — taken off the
+    // menu, never deleted, because a truncated push must not cost a year of
+    // somebody's photographs.
+    const retired = again.items.find((i: any) => i.name === 'Chicken Seekh')
+    ok('a dish no longer on the till is taken off, not deleted', retired && retired.isAvailable === false, retired)
+
+    // --- Sold out, from their screen ---
+    await call(`/petpooja/${secret}/item-stock`, {
+      body: { restID: 'R156072', type: 'item', inStock: false, itemID: ['PP-1'] },
+    })
+    const sold = await call('/staff/menu', { token: roadToken })
+    const off = sold.body.categories
+      .flatMap((c: any) => c.items)
+      .find((i: any) => i.name === 'Paneer Tikka')
+    ok('the kitchen marking it sold out reaches Khapee', off?.isAvailable === false, off)
+
+    // --- Open and closed, from their till ---
+    const closed = await call(`/petpooja/${secret}/store-status/update`, {
+      body: { restID: 'R156072', store_status: 0, reason: 'Closing early' },
+    })
+    ok('the till can close the restaurant', closed.status === 200, closed.body)
+    const status = await call(`/petpooja/${secret}/store-status`, { body: { restID: 'R156072' } })
+    ok('and Khapee says so when asked', status.body.store_status === '0', status.body)
+    await call(`/petpooja/${secret}/store-status/update`, { body: { restID: 'R156072', store_status: 1 } })
+
+    // --- The secret is the credential ---
+    const guessed = await call('/petpooja/not-a-real-secret/menu', { body: { restID: 'R156072' } })
+    ok('a wrong URL cannot push a menu', guessed.status === 404, guessed.status)
+    const wrongRest = await call(`/petpooja/${secret}/menu`, { body: { restID: 'SOMEONE-ELSE', items: [] } })
+    ok('nor can a payload claiming another restaurant', wrongRest.status === 403, wrongRest.status)
+
+    // --- Their accept, on the customer's phone ---
+    const order = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Petpooja Kitchen',
+        contactPhone: '9876511111',
+      },
+    })
+    ok('an order to answer', order.status === 201, order.body)
+    ok('which starts unanswered', order.body.order.status === 'REQUESTED', order.body.order.status)
+
+    const accepted = await call(`/petpooja/${secret}/callback`, {
+      body: { restID: 'R156072', orderID: order.body.order.orderNumber, status: '1', minimum_prep_time: 20 },
+    })
+    ok('their Accept comes back to us', accepted.status === 200, accepted.body)
+    const nowAt = await call(`/orders/${order.body.order.orderNumber}?token=${order.body.order.verifyToken}`)
+    ok('and the customer sees it accepted', nowAt.body.order.status === 'ACCEPTED', nowAt.body.order.status)
+    ok('through the normal event log, not a side door', nowAt.body.order.events.some((e: any) => e.status === 'ACCEPTED'), nowAt.body.order.events)
+
+    const ready = await call(`/petpooja/${secret}/callback`, {
+      body: { restID: 'R156072', orderID: order.body.order.orderNumber, status: '5' },
+    })
+    ok('food ready comes across too', ready.status === 200, ready.body)
+    const readyAt = await call(`/orders/${order.body.order.orderNumber}?token=${order.body.order.verifyToken}`)
+    // "Food ready" is one word in Petpooja and three statuses here — a table
+    // order is READY, a counter order is READY_FOR_PICKUP, a delivery is READY
+    // before somebody walks it out. This one was placed for collection.
+    ok('and lands on the right kind of ready for a pickup', readyAt.body.order.status === 'READY_FOR_PICKUP', readyAt.body.order.status)
+    // The step their till never reported is written rather than jumped over,
+    // because the customer's tracker draws that list and a hole in it reads as
+    // a broken order.
+    ok('with the step their till never reports filled in', readyAt.body.order.events.some((e: any) => e.status === 'PREPARING'), readyAt.body.order.events)
+
+    const nonsense = await call(`/petpooja/${secret}/callback`, {
+      body: { restID: 'R156072', orderID: 'NOSUCH', status: '1' },
+    })
+    ok('an order we have never heard of is refused', nonsense.status === 400, nonsense.status)
+
+    // --- And it can be taken away again ---
+    const gone = await call('/staff/petpooja', { token: roadToken, method: 'DELETE' })
+    ok('the link can be removed', gone.status === 200, gone.body)
+    const afterGone = await call(`/petpooja/${secret}/menu`, { body: {} })
+    ok('after which the old URL is dead', afterGone.status === 404, afterGone.status)
+  }
+
   group('ONE SEARCH BOX FOR THE WHOLE DASHBOARD')
   {
     // The dashboard had a search on the menu screen, another on the history

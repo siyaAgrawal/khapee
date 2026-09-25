@@ -93,6 +93,18 @@ export async function thankNudge(orderId: number): Promise<ThankResult> {
     `&text=${encodeURIComponent(message)}`
 
   try {
+    /*
+     * Only to the phones that asked for it.
+     *
+     * This used to go to every device the restaurant had, which meant every
+     * order produced two notifications on the counter phone: the order, and a
+     * prompt to send a WhatsApp message that the person at the counter was
+     * never going to send. Two notifications where one is always ignored is
+     * how both of them end up ignored.
+     *
+     * Order alerts still go everywhere. This one goes to whoever actually
+     * sends the thank-yous, and nobody else.
+     */
     const r = await pushToRestaurant(row.restaurant_id, {
       title: `Thank ${row.customer_name || 'them'} on WhatsApp`,
       body: `#${row.order_number} accepted. Tap to send it — it opens WhatsApp with the message written.`,
@@ -102,7 +114,7 @@ export async function thankNudge(orderId: number): Promise<ThankResult> {
       // actually carries it; on the ones that will, this is the whole journey.
       wa: waAppLink(to, message),
       tag: `khapee-thank-${orderId}`,
-    })
+    }, { onlyWhatsappDevices: true })
     return { to, sent: r.sent, devices: r.devices, why: r.why }
   } catch (e) {
     return { to, sent: 0, devices: 0, why: (e as Error)?.message ?? 'could not be sent' }

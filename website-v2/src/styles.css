@@ -96,13 +96,13 @@
      stopped being a colour and started being a background, and the acid
      yellow had nothing to be acid against. The accents are untouched — only
      the ground moved. */
-  --s0-rgb: 20 9 27;
-  --s1-rgb: 29 13 36;
-  --s2-rgb: 39 18 48;
-  --s3-rgb: 52 24 64;
-  --s4-rgb: 63 31 77;
-  --s5-rgb: 80 41 97;
-  --s6-rgb: 110 64 133;
+  --s0-rgb: 32 15 42;
+  --s1-rgb: 45 21 57;
+  --s2-rgb: 58 28 73;
+  --s3-rgb: 78 40 98;
+  --s4-rgb: 92 49 114;
+  --s5-rgb: 112 62 137;
+  --s6-rgb: 146 90 175;
   --accent-rgb: 233 224 79;
   --accent-dim-rgb: 168 161 50;
   --accent2-rgb: 111 208 232;

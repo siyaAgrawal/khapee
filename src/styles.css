@@ -1,29 +1,44 @@
 /* ============================================================ design tokens */
 :root {
-  /* Editorial monochrome. No brand hue competes with the food — the dish art
-     supplies every bit of colour on the page, and ink does the rest. */
-  --bg: #f6f4f0;
-  --bg-tint: #eceae4;
-  --surface: #ffffff;
-  --surface-2: #faf9f6;
-  --ink: #111110;
-  --ink-2: #3a3936;
-  --muted: #78766f;
-  --line: rgba(17, 17, 16, 0.09);
-  --line-strong: rgba(17, 17, 16, 0.18);
+  /*
+   * The brand the website already settled on, brought to the app.
+   *
+   * Its rule there is worth keeping verbatim: deep jewel beds, terracotta and
+   * gold as the only accents, and cream doing all the talking. What that buys
+   * is a page that is warm without being loud — the food is still the colour
+   * on it, which is why the previous monochrome existed, but the paper it sits
+   * on is now recognisably Khapee rather than anybody's.
+   *
+   * Ink is #191125 rather than black: a purple-black reads warm against cream
+   * where a true black reads like a wireframe.
+   */
+  --bg: #f4ede1;
+  --bg-tint: #ebe1d1;
+  --surface: #fffcf6;
+  --surface-2: #f9f2e6;
+  --ink: #191125;
+  --ink-2: #3f3352;
+  --muted: #6e6479;
+  --line: rgba(25, 17, 37, 0.1);
+  --line-strong: rgba(25, 17, 37, 0.2);
 
-  --accent: #111110;
-  --accent-ink: #ffffff;
-  --accent-soft: #eceae4;
+  /* Terracotta carries every action. Gold is a highlight and never a button —
+     two accents competing for the same job is how the palette stopped looking
+     expensive the first time. */
+  --accent: #b9563c;
+  --accent-ink: #fffcf6;
+  --accent-soft: #f2ddd3;
+  --gold: #d9a441;
+  --sage: #7fae9f;
 
-  --good: #1f6b45;
-  --good-soft: #e6f1ea;
+  --good: #2f6b58;
+  --good-soft: #e0efe8;
   --warn: #8a6417;
-  --warn-soft: #f6efdd;
-  --bad: #a6291d;
-  --bad-soft: #f8e8e6;
-  --info: #2f4f70;
-  --info-soft: #eaf0f5;
+  --warn-soft: #f7eeda;
+  --bad: #a33524;
+  --bad-soft: #f8e6e1;
+  --info: #43356b;
+  --info-soft: #ece7f4;
 
   --r-sm: 10px;
   --r-md: 14px;
@@ -35,8 +50,16 @@
   --shadow-lg: 0 28px 60px rgba(17, 17, 16, 0.15), 0 6px 16px rgba(17, 17, 16, 0.05);
   --shadow-accent: 0 10px 26px rgba(17, 17, 16, 0.2);
 
-  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --serif: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  /* The website's two faces. Space Grotesk sets everything; Bricolage is for
+     names and numbers only — a display face used on body copy is the fastest
+     way to make a menu hard to read. Both fall back to the system stack, so a
+     blocked font request costs weight and nothing else. */
+  --display: 'Bricolage Grotesque', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Headings were a serif and are now the display grotesque. Kept under the
+     old name because twenty-six rules ask for it by that name, and renaming
+     them would be a hundred-line diff that changes nothing on screen. */
+  --serif: var(--display);
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
   --ease: cubic-bezier(0.22, 0.68, 0.32, 1);
@@ -46,28 +69,35 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0e0e0d;
-    --bg-tint: #161615;
-    --surface: #171716;
-    --surface-2: #1d1d1b;
-    --ink: #f4f2ee;
-    --ink-2: #d5d2cb;
-    --muted: #918e86;
-    --line: rgba(244, 242, 238, 0.09);
-    --line-strong: rgba(244, 242, 238, 0.2);
+    /* The jewel bed. Night is a colour, not an absence of one — a dark mode
+       built out of neutral greys throws away the half of this palette that
+       makes it worth having. */
+    --bg: #140e1e;
+    --bg-tint: #191125;
+    --surface: #1e1530;
+    --surface-2: #271640;
+    --ink: #f4ede1;
+    --ink-2: #dfd3c1;
+    --muted: #9a9097;
+    --line: rgba(244, 237, 225, 0.1);
+    --line-strong: rgba(244, 237, 225, 0.22);
 
-    --accent: #f4f2ee;
-    --accent-ink: #0e0e0d;
-    --accent-soft: #232321;
+    /* Terracotta lifted enough to hold its own on aubergine; the light-mode
+       value goes muddy down here. */
+    --accent: #d06a4b;
+    --accent-ink: #191125;
+    --accent-soft: #3a2033;
+    --gold: #e3b45c;
+    --sage: #7fae9f;
 
-    --good: #6ecb9b;
-    --good-soft: #12281d;
-    --warn: #dfb469;
-    --warn-soft: #2a2312;
-    --bad: #ef8b80;
-    --bad-soft: #2e1815;
-    --info: #8fb0ce;
-    --info-soft: #14202b;
+    --good: #8cc9b4;
+    --good-soft: #17302a;
+    --warn: #e3b45c;
+    --warn-soft: #322612;
+    --bad: #e8897a;
+    --bad-soft: #391c1d;
+    --info: #b3a3dd;
+    --info-soft: #241c3c;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
@@ -713,14 +743,31 @@ textarea {
 }
 
 /* ------------------------------------------------------------- food art */
+/*
+ * A dish with no photograph still needs a tile, and that tile used to be a
+ * free hue: 62% saturation anywhere on the wheel, which gave a menu a row of
+ * mint, lilac, hot pink and baby blue. Random full-spectrum pastel is the
+ * single loudest tell of a page nobody art-directed, and it was competing with
+ * the food besides.
+ *
+ * The hue is kept — it is what makes two dishes look different — but folded
+ * into the brand's warm arc, terracotta through gold, and desaturated hard.
+ * 0-360 becomes roughly 14-62 degrees, so tiles still differ from each other
+ * and no longer differ from the brand. The scale is the whole trick; the rest
+ * of this rule is unchanged.
+ */
 .art {
+  /* Unitless, because --art-hue is a bare number and hsl() takes one. Writing
+     this in degrees makes the whole calc invalid, which drops the gradient and
+     leaves a white hole where the dish should be. */
+  --art-warm: calc(14 + var(--art-hue) * 0.133);
   position: relative;
   overflow: hidden;
   background: linear-gradient(
     145deg,
-    hsl(var(--art-hue) 62% 88%) 0%,
-    hsl(calc(var(--art-hue) + 18) 55% 78%) 55%,
-    hsl(calc(var(--art-hue) - 12) 48% 70%) 100%
+    hsl(var(--art-warm) 46% 79%) 0%,
+    hsl(calc(var(--art-warm) + 12) 42% 69%) 55%,
+    hsl(calc(var(--art-warm) - 8) 38% 60%) 100%
   );
   display: grid;
   place-items: center;
@@ -741,11 +788,13 @@ textarea {
 }
 @media (prefers-color-scheme: dark) {
   .art {
+    /* Warm tile over an aubergine page: kept dim so a menu of them reads as
+       one surface rather than a row of lit windows. */
     background: linear-gradient(
       145deg,
-      hsl(var(--art-hue) 42% 34%) 0%,
-      hsl(calc(var(--art-hue) + 18) 38% 26%) 55%,
-      hsl(calc(var(--art-hue) - 12) 34% 20%) 100%
+      hsl(var(--art-warm) 26% 30%) 0%,
+      hsl(calc(var(--art-warm) + 10) 24% 24%) 55%,
+      hsl(calc(var(--art-warm) - 6) 22% 19%) 100%
     );
   }
 }
@@ -3613,7 +3662,16 @@ textarea {
   z-index: 200;
   display: grid;
   place-items: center;
-  background: #0e0e0d;
+  /*
+   * The first thing anybody sees, so it is the brand rather than a black
+   * rectangle. Ink into night, warmed off-centre by the faintest terracotta —
+   * a flat fill at this size reads as a loading screen that failed, and a
+   * gradient with a visible seam reads worse.
+   */
+  background:
+    radial-gradient(120% 90% at 26% 18%, rgba(185, 86, 60, 0.16), transparent 62%),
+    radial-gradient(90% 80% at 82% 92%, rgba(39, 22, 64, 0.85), transparent 70%),
+    linear-gradient(162deg, #191125 0%, #221436 52%, #140e1e 100%);
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.75s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.55s ease 0.2s;

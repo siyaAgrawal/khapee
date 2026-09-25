@@ -18,27 +18,36 @@
    * the page itself rather than in a tint laid over it, and the accents are
    * then free to be rare.
    */
-  --bg: #f4ede1;
-  --bg-tint: #eae1d1;
+  --bg: #f7f6f3;
+  --bg-tint: #edebe6;
   --surface: #ffffff;
-  --surface-2: #fbf8f2;
+  --surface-2: #faf9f7;
   --ink: #191125;
   --ink-2: #453e52;
   --muted: #7c7482;
   --line: rgba(25, 17, 37, 0.09);
   --line-strong: rgba(25, 17, 37, 0.17);
 
-  /* Deep enough to carry white text at any size — the website's night is
-     beautiful and unreadable as a button. */
-  --accent: #3a2363;
+  /*
+   * The brand purple, set where a food brand sets its colour.
+   *
+   * Zomato's red is 55% lightness and about 70% saturation; so is this. That
+   * is not a coincidence — an app you order lunch from is bright, and the
+   * near-black aubergine this used to be looked like a bank. Mixed to the
+   * same recipe in purple it still carries white text at 5.9:1, so it can be
+   * both the big block at the top of the page and the word on a button.
+   */
+  --accent: #7a3fd9;
   --accent-ink: #ffffff;
-  --accent-soft: #ebe5f4;
+  --accent-soft: #f1eafd;
+  --accent-dark: #5f2cb4;
   --gold: #d9a441;
   --gold-soft: #f7ecd6;
-  /* The website's cream and night, held at these values in both themes, for
-     the few surfaces that are lit the same way whatever the phone is set to. */
+  /* Held at these values in both themes, for the few surfaces that are the
+     same colour whatever the phone is set to — the block at the top of the
+     page, the app icon, the title card. */
   --cream-fixed: #f4ede1;
-  --night-fixed: #271640;
+  --brand-fixed: #7a3fd9;
 
   --good: #1f6b45;
   --good-soft: #e6f1ea;
@@ -533,42 +542,31 @@ textarea {
   border-bottom: 1px solid var(--line);
 }
 
+/*
+ * The wordmark, alone.
+ *
+ * It used to be a lockup: a rounded purple tile holding a crescent, then the
+ * word beside it. The tile is now the app icon and the icon has the word
+ * written on it, the way a food app's icon does — so keeping the tile here
+ * set the name twice in one line, once as a picture and once as text.
+ *
+ * Lowercase, because that is how a name people say out loud is drawn; a
+ * capital turns it into a company. Heavy and tight in the display face, and
+ * ending in the gold full stop, which is the whole logo in one character.
+ */
 .brand {
   display: flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--serif);
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-
-/*
- * The lockup: white on the brand purple, as the logo has it.
- *
- * The mark keeps the purple in both themes rather than following the page —
- * a logo that is near-black on one screen and cream on another is not a logo.
- * The wordmark beside it stays ink, because white lettering is the version for
- * a purple field and the header is a white one.
- */
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
-  background: #2b1a3d;
-  color: #ffffff;
-  font-size: 15px;
-  box-shadow: var(--shadow-sm);
+  align-items: baseline;
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
 }
 
 /* The full stop the logo ends on. Gold, because it is the one mark on the
-   page that is allowed to be. It is a flex child of .brand, so the row's own
-   9px gap has to be taken back out or the logo reads "Khapee ." */
+   page that is allowed to be. */
 .brand-dot {
   color: var(--gold);
-  margin-left: calc(-9px - 0.04em);
 }
 
 .header-spacer {
@@ -1015,29 +1013,86 @@ textarea {
  */
 .hero {
   margin: -32px calc(var(--gutter) * -1) 0;
-  padding: 32px var(--gutter) 30px;
-  /* One flat colour. A gradient with a glow banked into one corner is the
-     tell — no ordering app anyone actually uses has a light source in its
-     header. The brand's night, painted on, and nothing else. */
-  background: var(--night-fixed);
-  color: var(--cream-fixed);
+  padding: 26px var(--gutter) 24px;
+  /* One flat colour, no gradient. Every food app worth copying paints this
+     block in the brand and stops — the light source banked into a corner is
+     the thing that gives a page away. */
+  background: var(--brand-fixed);
+  color: #ffffff;
 }
 .hero .kicker {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  /* Gold on this purple is muddy; white at half strength is the label every
+     app of this kind actually uses over its colour block. */
+  color: rgba(255, 255, 255, 0.72);
 }
 .hero h1 {
-  margin-bottom: 12px;
-  color: var(--cream-fixed);
+  margin-bottom: 8px;
+  color: #ffffff;
+  font-size: clamp(28px, 4.6vw, 40px);
 }
-/* The full stop the wordmark ends on, on the line that opens the app. */
-.hero h1::after {
-  content: '.';
-  color: var(--gold);
-}
+/*
+ * No gold full stop on this line. It belongs to the wordmark, which is in the
+ * header two centimetres above and on the icon that opened the app; repeated
+ * out here, at this size, against the purple, it stopped reading as a full
+ * stop and started reading as a speck on the screen.
+ */
 .hero p {
-  color: rgba(244, 237, 225, 0.62);
+  color: rgba(255, 255, 255, 0.78);
   max-width: 34ch;
-  font-size: 15.5px;
+  font-size: 14.5px;
+}
+
+/*
+ * Search lives inside the block, not under it.
+ *
+ * This is the arrangement every ordering app has converged on, and it is not
+ * a style choice: the colour block is the one part of the page that never
+ * scrolls away in memory, so the thing you came to do belongs in it. It also
+ * buys back the sixty pixels the band costs.
+ */
+.hero .search-row {
+  margin: 18px 0 0;
+}
+.hero .search-input {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.26);
+  color: #ffffff;
+}
+.hero .search-input::placeholder {
+  color: rgba(255, 255, 255, 0.72);
+}
+.hero .search-input:focus {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+.hero .search-input:focus::placeholder {
+  color: var(--muted);
+}
+.hero .btn-secondary,
+.hero .veg-toggle {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.26);
+  color: #ffffff;
+  box-shadow: none;
+}
+.hero .btn-secondary:hover,
+.hero .veg-toggle:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+/* On, the toggles go solid white — the state has to be readable at a glance
+   against a field that is already coloured. */
+.hero .btn-accent,
+.hero .veg-toggle.on {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--accent);
+  box-shadow: none;
+}
+.hero .tiny {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 /*
@@ -1093,11 +1148,24 @@ textarea {
   border-color: var(--ink);
 }
 
+/* The line above the list. The kicker names the city, the heading asks the
+   question — which is what somebody opening a food app at seven in the
+   evening is actually turning over. */
+.list-head {
+  margin: 26px 0 0;
+}
+.list-head .kicker {
+  margin-bottom: 7px;
+}
+.list-head h2 {
+  font-size: 25px;
+}
+
 .grid {
   display: grid;
   gap: 22px;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  margin-top: 28px;
+  margin-top: 18px;
 }
 
 /*
@@ -1202,13 +1270,22 @@ textarea {
   justify-content: center;
   gap: 7px;
   padding: 16px 18px 18px;
-  /* The website's own night, flat. It is also the hero's, so this is kept to
-     a band rather than a block — two full-height purple panels stacked down
-     one screen is the "purple purple" nobody asked for. */
-  background: var(--night-fixed);
+  /*
+   * Gold, not purple.
+   *
+   * These were the brand purple, directly under a brand-purple block at the
+   * top of the page — which is how a two-colour brand turns into one colour
+   * and then into too much of it. Gold is the other half of the palette and
+   * had nothing to do but underline headings, so the areas take it: purple is
+   * the app, gold is a street you can order a whole dinner off, and the
+   * difference is visible from across the room.
+   */
+  background: var(--gold);
 }
+/* Ink on gold, in both themes: the band is the same colour whatever the phone
+   is set to, so the type on it has to be too. */
 .area-art .badge-area {
-  color: rgba(244, 237, 225, 0.55);
+  color: rgba(25, 17, 37, 0.62);
 }
 .area-mark {
   font-family: var(--display);
@@ -1216,7 +1293,7 @@ textarea {
   font-size: 23px;
   line-height: 1.04;
   letter-spacing: -0.032em;
-  color: var(--gold);
+  color: #191125;
   text-wrap: balance;
 }
 .area-card .r-card-body {
@@ -3877,9 +3954,9 @@ textarea {
   z-index: 200;
   display: grid;
   place-items: center;
-  /* The brand's night, flat — the same colour the home screen opens on, so
-     the title card and the page behind it are one surface. */
-  background: var(--night-fixed);
+  /* The brand, flat — the same colour the home screen opens on, so the title
+     card and the block behind it are one surface. */
+  background: var(--brand-fixed);
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.75s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.55s ease 0.2s;
@@ -3950,53 +4027,18 @@ textarea {
   padding: 0 24px;
 }
 
-/* The mark draws itself: a tile snaps in, then the dot lands inside it. */
-.splash-mark {
-  position: relative;
-  width: 76px;
-  height: 76px;
-  border-radius: 24px;
-  /* The logo's own field, so the one full-screen moment Khapee gets is the
-     lockup exactly as drawn: white on purple. */
-  background: #2b1a3d;
-  display: grid;
-  place-items: center;
-  transform: scale(0.4) rotate(-24deg);
-  opacity: 0;
-  animation: splash-mark-in 0.72s var(--spring) 0.1s forwards;
-  box-shadow: 0 18px 44px rgba(43, 26, 61, 0.55);
-}
 .splash-dot-mark {
   color: var(--gold);
-}
-.splash-mark-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  transform: scale(0);
-  animation: splash-dot-in 0.5s var(--spring) 0.5s forwards;
-}
-@keyframes splash-mark-in {
-  to {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
-}
-@keyframes splash-dot-in {
-  to {
-    transform: scale(1);
-  }
 }
 
 .splash-word {
   display: flex;
   gap: 0.01em;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: clamp(46px, 12vw, 84px);
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: -0.045em;
-  color: #f4f2ee;
+  color: #ffffff;
   line-height: 1;
   margin: 0;
 }
@@ -4018,7 +4060,7 @@ textarea {
   font-size: clamp(13px, 3.4vw, 15.5px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(244, 242, 238, 0.55);
+  color: rgba(255, 255, 255, 0.72);
   opacity: 0;
   animation: splash-fade 0.7s var(--ease) 0.95s forwards;
 }
@@ -4353,10 +4395,13 @@ textarea {
 .cuisine:hover {
   border-color: var(--ink-2);
 }
+/* The chosen filter takes the brand rather than plain black — it is the one
+   piece of state on this screen and the colour is what makes it visible at a
+   glance while you are scrolling past it. */
 .cuisine.active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
 }
 

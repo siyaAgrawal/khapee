@@ -53,7 +53,7 @@ export default function RegisterRestaurant() {
     <div className="auth-wrap">
       <div className="auth-card" style={{ width: 'min(100%, 460px)' }}>
         <Link to="/" className="brand" style={{ marginBottom: 18 }}>
-          <span className="brand-mark">◗</span> Khapee
+          khapee<span className="brand-dot" aria-hidden>.</span>
         </Link>
         <h1>{adding ? 'Add a restaurant' : 'List your restaurant'}</h1>
         {adding && <p>On {user!.name}&rsquo;s account</p>}

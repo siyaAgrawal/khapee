@@ -6,8 +6,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0e0e0d",
-  "theme_color": "#0e0e0d",
+  "background_color": "#7a3fd9",
+  "theme_color": "#7a3fd9",
   "categories": [
     "food",
     "shopping"
@@ -26,7 +26,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

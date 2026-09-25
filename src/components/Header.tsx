@@ -31,9 +31,12 @@ export default function Header() {
           ‹
         </button>
       )}
+      {/* The wordmark alone. The icon is the same word in a purple tile, so
+          setting the tile next to the word spelt Khapee twice in one lockup —
+          which is exactly what the home-screen icon is for and the header
+          is not. */}
       <Link to="/" className="brand">
-        <span className="brand-mark">◗</span>
-        Khapee<span className="brand-dot" aria-hidden>.</span>
+        khapee<span className="brand-dot" aria-hidden>.</span>
       </Link>
       <div className="header-spacer" />
       <nav className="header-nav">

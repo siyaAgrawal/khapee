@@ -225,56 +225,61 @@ export default function Home() {
         {/* The name says it: kha-pee, eat and drink. The line under it stays in
             plain English so the page still explains itself to someone who does
             not read the joke. */}
+        {/* Search lives inside the colour block, the way it does in every app
+            people already order from: the block is the part of a page nobody
+            forgets, so the thing they came to do belongs in it. */}
         <div className="hero">
-          {/* The full stop is the wordmark's, so the stylesheet sets it in
-              gold rather than the sentence carrying a grey one. */}
-          <span className="kicker">Indore · Order where you are</span>
-          <h1 className="hero-line">Kuch khapee lo</h1>
-          <p>Order at the table, from your car, or to your door.</p>
-        </div>
+          {/* Aao khao jao is the whole product in three words, and it is the
+              register people here actually order in. The line under it stays
+              plain English — the joke is allowed to be the headline and is not
+              allowed to be the instructions. */}
+          <span className="kicker">Aao · Khao · Jao</span>
+          <h1 className="hero-line">Kuch khapee lo.</h1>
+          <p>At your table, in your car, or at your door.</p>
 
-        <div className="search-row">
-          <input
-            className="search-input"
-            placeholder="Search restaurants or dishes…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search restaurants"
-          />
-          <button
-            className={`btn ${coords ? 'btn-accent' : 'btn-secondary'}`}
-            onClick={coords ? () => setCoords(null) : findNearMe}
-            disabled={locating}
-          >
-            {locating ? (
-              <Spinner />
-            ) : (
-              <>
-                <PinIcon size={15} />
-                {coords ? 'Nearest first' : 'Near me'}
-              </>
-            )}
-          </button>
-          <button
-            className={`veg-toggle ${veg ? 'on' : ''}`}
-            onClick={() => setVeg(!veg)}
-            aria-pressed={veg}
-            aria-label="Veg only"
-          >
-            <span className="veg-mark" aria-hidden />
-            Veg
-          </button>
+          <div className="search-row">
+            <input
+              className="search-input"
+              placeholder="Search restaurants or dishes…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search restaurants"
+            />
+            <button
+              className={`btn ${coords ? 'btn-accent' : 'btn-secondary'}`}
+              onClick={coords ? () => setCoords(null) : findNearMe}
+              disabled={locating}
+            >
+              {locating ? (
+                <Spinner />
+              ) : (
+                <>
+                  <PinIcon size={15} />
+                  {coords ? 'Nearest first' : 'Near me'}
+                </>
+              )}
+            </button>
+            <button
+              className={`veg-toggle ${veg ? 'on' : ''}`}
+              onClick={() => setVeg(!veg)}
+              aria-pressed={veg}
+              aria-label="Veg only"
+            >
+              <span className="veg-mark" aria-hidden />
+              Veg
+            </button>
+          </div>
+          {coords && nearestCity && (
+            <p className="tiny" style={{ marginTop: 10 }}>
+              Near <strong>{nearestCity}</strong>
+            </p>
+          )}
+          {locationNote && (
+            <p className="tiny" style={{ marginTop: 10 }}>
+              {locationNote}
+            </p>
+          )}
         </div>
-        {coords && nearestCity && (
-          <p className="tiny muted" style={{ marginTop: 8 }}>
-            Near <strong>{nearestCity}</strong>
-          </p>
-        )}
-        {locationNote && (
-          <p className="tiny muted" style={{ marginTop: 8 }}>
-            {locationNote}
-          </p>
-        )}
 
         {tiles.length > 0 && (
           <div className="cuisine-bar">
@@ -327,7 +332,16 @@ export default function Home() {
         )}
 
         {restaurants && visible.length > 0 && (
-          <div className="grid">
+          <>
+            {/* The list had no heading, so the page went from a row of filters
+                straight into cards. Every app of this kind puts a line here,
+                and it is the cheapest place in the product to sound like a
+                person rather than a directory. */}
+            <div className="list-head">
+              <span className="kicker">{nearestCity || 'Indore'}</span>
+              <h2>Aaj kya khaana hai?</h2>
+            </div>
+            <div className="grid">
             {!query.trim() &&
               filter === 'All' &&
               precincts.map((p) => (
@@ -380,7 +394,8 @@ export default function Home() {
                 </div>
               </Link>
             ))}
-          </div>
+            </div>
+          </>
         )}
 
         {/* The way in that does not depend on being guessed right.

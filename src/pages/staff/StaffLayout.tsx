@@ -58,7 +58,7 @@ export default function StaffLayout() {
     <div className="staff-shell">
       <aside className="staff-side">
         <div className="brand">
-          <span className="brand-mark">◗</span> Khapee
+          khapee<span className="brand-dot" aria-hidden>.</span>
         </div>
         <RestaurantSwitcher />
         {/* One box for the whole dashboard, above the four sections rather

@@ -33,7 +33,7 @@ export default function Register() {
     <div className="auth-wrap">
       <div className="auth-card">
         <Link to="/" className="brand" style={{ marginBottom: 18 }}>
-          <span className="brand-mark">◗</span> Khapee
+          khapee<span className="brand-dot" aria-hidden>.</span>
         </Link>
         <h1>Create your account</h1>
 

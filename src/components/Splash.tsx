@@ -39,11 +39,10 @@ export default function Splash({ onDone }: { onDone: () => void }) {
       </div>
 
       <div className="splash-core">
-        <span className="splash-mark" aria-hidden>
-          <span className="splash-mark-dot" />
-        </span>
-        <h1 className="splash-word" aria-label="Khapee">
-          {'Khapee'.split('').map((c, i) => (
+        {/* The word is the logo, so the title card is the word — there is no
+            separate mark to snap in ahead of it any more. */}
+        <h1 className="splash-word" aria-label="khapee">
+          {'khapee'.split('').map((c, i) => (
             <span key={i} style={{ '--c': i } as React.CSSProperties}>
               {c}
             </span>

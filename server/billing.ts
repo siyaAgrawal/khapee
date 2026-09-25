@@ -251,6 +251,20 @@ export function finaliseInvoice(input: FinaliseInput): FinaliseResult {
       line.run(invoiceId, c.name, '', 1, c.amountCents, c.amountCents, 0, c.amountCents, c.rateBp, 0, 0, 0, c.amountCents + c.taxCents)
     }
 
+    /*
+     * Money already taken against this order belongs on its invoice.
+     *
+     * A customer who paid by UPI when they ordered leaves a payment row with no
+     * invoice — the invoice did not exist yet. Without adopting those rows the
+     * bill that is finally raised reads UNPAID for money that is sitting in the
+     * restaurant's account, and the counter asks for it a second time.
+     * Refunds are left alone: they are settled against whatever they refunded.
+     */
+    db.prepare(
+      `UPDATE payments SET invoice_id = ?
+        WHERE order_id = ? AND invoice_id IS NULL AND refund_of IS NULL AND status <> 'REJECTED'`,
+    ).run(invoiceId, order.id)
+
     db.prepare("UPDATE orders SET invoice_id = ?, bill_status = 'BILLED', updated_at = datetime('now') WHERE id = ?").run(
       invoiceId,
       order.id,

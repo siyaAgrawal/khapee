@@ -2240,6 +2240,9 @@ staffRouter.post('/floor/table/:id/settle', (req: any, res) => {
     Number(req.params.id),
     String(req.body?.method ?? 'cash'),
     String(req.body?.payerName ?? ''),
+    // Whoever is at the counter, so the invoice and its audit line name them
+    // rather than "Counter".
+    actorOf(req),
   )
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   publish('orders', { restaurantId })

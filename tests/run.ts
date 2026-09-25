@@ -9,6 +9,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
+import net from 'node:net'
 import Database from 'better-sqlite3'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -82,6 +83,30 @@ async function waitForServer(tries = 60) {
 }
 
 /* -------------------------------------------------------------------------- */
+
+/*
+ * Nobody else may be on our port.
+ *
+ * When a run is interrupted its server survives, and the next run's server
+ * then dies instantly on EADDRINUSE while the ORPHAN answers every request —
+ * against the database the new run has just deleted. The symptom is a dozen
+ * passes followed by "no such table: users", which reads like a broken schema
+ * and sends you looking at migrations. It is worth the four lines to say so.
+ */
+await new Promise<void>((resolve) => {
+  const probe = net.createServer()
+  probe.once('error', (e: any) => {
+    if (e?.code !== 'EADDRINUSE') return resolve()
+    console.error(
+      `\n  Port ${PORT} is already in use — almost certainly a server left behind by an\n` +
+        `  interrupted test run. Nothing here is broken; clear it and run again:\n\n` +
+        `      pkill -9 -f "server/index.ts"\n`,
+    )
+    process.exit(1)
+  })
+  probe.once('listening', () => probe.close(() => resolve()))
+  probe.listen(PORT, '127.0.0.1')
+})
 
 for (const suffix of ['', '-wal', '-shm']) {
   const f = DB_PATH + suffix
@@ -4165,6 +4190,25 @@ async function runTests() {
     })
     ok('settling closes every round at once', settled.body?.settled === 2, settled.body)
     ok('taking the whole amount', settled.body?.amountCents === 3 * croissant.priceCents, settled.body)
+
+    /*
+     * And it produces real invoices.
+     *
+     * This route used to write a payment row straight against each order and
+     * close the bill — the money was right and there was no tax invoice at
+     * all. Dine-in is the path that uses this screen, so a GST restaurant was
+     * taking money all evening against no numbered document.
+     */
+    ok(
+      'settling a table raises a numbered invoice for every order on it',
+      Array.isArray(settled.body?.invoices) && settled.body.invoices.length === 2,
+      settled.body?.invoices,
+    )
+    ok(
+      'and the numbers are distinct and out of the restaurant\'s own series',
+      new Set(settled.body?.invoices).size === 2 && settled.body.invoices.every((n: string) => /\/\d{4}-\d{2}\/\d{6}$/.test(n)),
+      settled.body?.invoices,
+    )
 
     const after = await call('/staff/floor', { token: roadToken })
     const empty = after.body.tables.find((t: any) => t.id === floorTable.id)

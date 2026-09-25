@@ -41,7 +41,7 @@ services:
       # The container's filesystem starts empty, so seed the catalogue and its
       # photos from the committed snapshot on boot. Without this the app comes
       # up with no restaurants at all.
-      - key: ORDRO_SEED
+      - key: KHAPEE_SEED
         value: snapshot
 
       # Signs login tokens. Render generates it once and keeps it across
@@ -84,11 +84,11 @@ services:
     # Set plan: starter above, then uncomment both of these.
     #
     #   envVars:
-    #     - key: TABLO_DB
-    #       value: /var/data/ordro.db
+    #     - key: KHAPEE_DB
+    #       value: /var/data/khapee.db
     #
     # disk:
-    #   name: ordro-data
+    #   name: khapee-data
     #   mountPath: /var/data
     #   sizeGB: 1
 

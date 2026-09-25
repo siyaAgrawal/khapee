@@ -5,7 +5,7 @@
  *
  * iOS insists on PNG for `apple-touch-icon`, and this machine has no image
  * tooling, so the pixels are written directly: a rounded dark tile with the
- * Ordro mark on it, encoded as a PNG by hand. Deterministic, and no dependency
+ * Khapee mark on it, encoded as a PNG by hand. Deterministic, and no dependency
  * to install for a file that changes about once a year.
  */
 import fs from 'node:fs'

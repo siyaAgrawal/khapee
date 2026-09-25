@@ -1,4 +1,4 @@
-const KEY = 'tablo.dining'
+const KEY = 'khapee.dining'
 
 export type DiningSession = {
   token: string

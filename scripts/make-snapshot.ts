@@ -18,7 +18,11 @@ import path from 'node:path'
 import Database from 'better-sqlite3'
 
 const dataDir = path.resolve(import.meta.dirname, '..', 'data')
-const source = process.env.TABLO_DB ? path.resolve(process.env.TABLO_DB) : path.join(dataDir, 'tablo.db')
+const chosen = process.env.KHAPEE_DB ?? process.env.TABLO_DB
+const source = chosen
+  ? path.resolve(chosen)
+  : [path.join(dataDir, 'khapee.db'), path.join(dataDir, 'tablo.db')].find((f) => fs.existsSync(f)) ??
+    path.join(dataDir, 'khapee.db')
 const snapshot = path.join(dataDir, 'snapshot.db')
 const uploads = path.join(dataDir, 'uploads')
 const snapshotUploads = path.join(dataDir, 'snapshot-uploads')

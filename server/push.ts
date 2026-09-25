@@ -36,7 +36,8 @@ const KEY_FILE = path.resolve(import.meta.dirname, '..', 'data', '.vapid.json')
  * that had subscribed is silently unsubscribed with nothing to show for it.
  * Better to say push is not configured than to let it rot that way.
  */
-const DISK_IS_TEMPORARY = !!process.env.VERCEL || process.env.ORDRO_SEED === 'snapshot'
+const DISK_IS_TEMPORARY =
+  !!process.env.VERCEL || (process.env.KHAPEE_SEED ?? process.env.ORDRO_SEED) === 'snapshot'
 
 /** Why push is off, when it is. Empty when it is on. */
 let reason = ''

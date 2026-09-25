@@ -6,7 +6,12 @@ import { SessionProvider } from './lib/session'
 import { CartProvider } from './lib/cart'
 import { ToastProvider } from './components/ui'
 import { keepAlertsAlive } from './lib/push'
+import { adoptOldKeys } from './lib/renamed-storage'
 import './styles.css'
+
+// Before anything reads a key: the old names still hold real state on every
+// phone that has used Khapee before today. See renamed-storage.
+adoptOldKeys()
 
 // A phone that was set up for order alerts checks, quietly, that the server
 // still knows about it — see keepAlertsAlive. Also whenever the app is brought

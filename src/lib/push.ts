@@ -64,7 +64,7 @@ export async function workerReady(): Promise<ServiceWorkerRegistration> {
 }
 
 /** What the service worker on this phone says it is, or '' if it will not say. */
-export const SW_WANTED = 7
+export const SW_WANTED = 8
 
 /**
  * Asks the installed worker its version, and gives up quickly.

@@ -3,7 +3,7 @@
  * Notification API and a synthesised chime, no push service and nothing sent
  * anywhere.
  */
-const SEEN = 'ordro.notified'
+const SEEN = 'khapee.notified'
 
 export function canNotify(): boolean {
   return typeof Notification !== 'undefined'

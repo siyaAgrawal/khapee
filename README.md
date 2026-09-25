@@ -1,4 +1,4 @@
-# Ordro — cafe & restaurant ordering
+# Khapee — cafe & restaurant ordering
 
 A complete ordering system for cafes and restaurants: customers browse a menu, say where they
 are, and order. Staff watch orders land on a live board and move them through to completion.
@@ -19,7 +19,7 @@ npm run dev
 - Customer app + staff dashboard: <http://localhost:5273>
 - API (started automatically alongside it): <http://localhost:4273>
 
-The database is created and seeded on first boot at `data/ordro.db`.
+The database is created and seeded on first boot at `data/khapee.db`.
 
 ### Demo accounts
 
@@ -111,7 +111,7 @@ to it, and it stays in everyone's order history.
 
 ## Payment (UPI, no payment provider)
 
-The restaurant enters its own UPI ID under *Restaurant → UPI*. Ordro then builds a standard
+The restaurant enters its own UPI ID under *Restaurant → UPI*. Khapee then builds a standard
 `upi://pay` request — rendered as a QR locally — so money moves **directly from the customer's UPI
 app to the restaurant's account**. There is no Razorpay, no PhonePe SDK, no API key, and no
 account in the middle.

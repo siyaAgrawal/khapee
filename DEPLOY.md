@@ -1,4 +1,4 @@
-# Putting Ordro online
+# Putting Khapee online
 
 The app is one Node process: it serves the API and the built React app on a
 single port, and keeps its data in a SQLite file plus an uploads folder next to
@@ -29,14 +29,14 @@ what the host is.
 
 Keep the Vercel link for showing the app off. Do not run a restaurant on it.
 
-## Live: https://ordro.onrender.com
+## Live: https://khapee.com
 
 Render free instance, deployed from `render.yaml`, connected to this GitHub
 repo. **It redeploys on every push to main**, so shipping is `git push` and
 nothing else — no dashboard, no CLI, no account access needed.
 
     git push origin main          # Render builds and deploys
-    curl https://ordro.onrender.com/api/health
+    curl https://khapee.com/api/health
 
 Verified end to end against the live site:
 
@@ -76,11 +76,11 @@ Both work the same way — a Node service plus a volume:
 
 - Build: `npm install && npm run build`
 - Start: `npm start`
-- Volume mounted at `/var/data`, and `TABLO_DB=/var/data/ordro.db`
+- Volume mounted at `/var/data`, and `KHAPEE_DB=/var/data/khapee.db`
 
 ## Moving your existing data up
 
-The restaurants and menus already imported live in `data/ordro.db`. To carry
+The restaurants and menus already imported live in `data/khapee.db`. To carry
 them over, copy that file onto the host's disk (Render and Railway both offer a
 shell), or re-run the importers against the deployed instance:
 

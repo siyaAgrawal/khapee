@@ -387,7 +387,7 @@ export default function OrderTrack() {
           */}
           {order.wantedAt && !done && !cancelled && <ReadyFor at={order.wantedAt} />}
 
-          <QRCanvas value={`ORDRO:ORDER:${order.orderNumber}:${order.verifyToken}`} size={168} />
+          <QRCanvas value={`KHAPEE:ORDER:${order.orderNumber}:${order.verifyToken}`} size={168} />
           <p className="tiny muted">
             {order.type === 'pickup' ? 'Show at the counter' : 'Show if asked'}
           </p>

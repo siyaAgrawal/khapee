@@ -15,7 +15,7 @@ export type CartState = {
   lines: CartLine[]
 }
 
-const KEY = 'tablo.cart'
+const KEY = 'khapee.cart'
 const EMPTY: CartState = { restaurantId: null, restaurantName: '', lines: [] }
 
 function load(): CartState {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from './api'
 
-const KEY = 'tablo.group'
+const KEY = 'khapee.group'
 
 export type GroupHandle = { token: string; code: string; restaurantId: number }
 

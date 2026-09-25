@@ -25,7 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // the web server, and the API would steal Vite's port. In production the app is
 // served from this one process, so we honour the host's PORT.
 const IS_PROD = process.env.NODE_ENV === 'production'
-const PORT = Number(process.env.TABLO_PORT ?? (IS_PROD ? process.env.PORT ?? 4273 : 4273))
+const PORT = Number((process.env.KHAPEE_PORT ?? process.env.TABLO_PORT) ?? (IS_PROD ? process.env.PORT ?? 4273 : 4273))
 // Where customers reach the app (Vite in dev, this server once built).
 const WEB_PORT = Number(process.env.TABLO_WEB_PORT ?? 5273)
 
@@ -281,7 +281,7 @@ app.use((err: any, req: any, res: any, _next: any) => {
 // On serverless the platform owns the listener; everywhere else we bind here.
 if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n  ▲ Ordro API  →  http://localhost:${PORT}`)
+    console.log(`\n  ▲ Khapee API  →  http://localhost:${PORT}`)
     console.log(`    database   →  ${path.relative(process.cwd(), db.name)}\n`)
   })
 }

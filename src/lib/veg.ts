@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-const KEY = 'ordro.veg'
+const KEY = 'khapee.veg'
 
 /**
  * Veg mode is a preference, not a filter you re-apply on every screen: turn it

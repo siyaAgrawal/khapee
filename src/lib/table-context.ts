@@ -17,7 +17,7 @@ export type TableContext = {
  */
 const VALID_HOURS = 12
 
-const KEY = 'tablo.table'
+const KEY = 'khapee.table'
 
 /**
  * Remembered when a customer scans a table QR, so nothing else is ever asked
@@ -63,7 +63,7 @@ export function clearTableContext() {
 }
 
 /** Guest order receipts, so a signed-out customer can still reopen them. */
-const RECEIPTS = 'tablo.receipts'
+const RECEIPTS = 'khapee.receipts'
 
 export function rememberReceipt(orderNumber: string, token: string) {
   try {

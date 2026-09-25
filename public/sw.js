@@ -8,7 +8,7 @@
  * they always go to the network, because a cached menu price or order status
  * would be worse than a slow one.
  */
-const SHELL = 'ordro-assets-v6'
+const SHELL = 'khapee-assets-v7'
 
 /**
  * Which version of this file a phone is actually running.
@@ -20,7 +20,7 @@ const SHELL = 'ordro-assets-v6'
  *
  * Raise it whenever the behaviour below changes.
  */
-const SW_VERSION = 7
+const SW_VERSION = 8
 
 self.addEventListener('message', (event) => {
   if (event.data === 'version') event.ports?.[0]?.postMessage(SW_VERSION)

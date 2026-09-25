@@ -235,7 +235,9 @@ staffRouter.post('/verify-order', (req, res) => {
 
   let orderNumber = raw
   let token: string | null = null
-  const match = raw.match(/(?:ORDRO|TABLO):ORDER:([A-Za-z0-9]+):([a-f0-9]+)/i)
+  // Every name this app has been published under. A receipt QR printed or
+  // screenshotted under an older one still has to scan.
+  const match = raw.match(/(?:KHAPEE|ORDRO|TABLO):ORDER:([A-Za-z0-9]+):([a-f0-9]+)/i)
   if (match) {
     orderNumber = match[1]
     token = match[2].toLowerCase()

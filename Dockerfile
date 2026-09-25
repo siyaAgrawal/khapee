@@ -24,7 +24,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 # A container's filesystem starts empty, so seed the catalogue and its photos
 # from the committed snapshot on boot. Without this the app comes up blank.
-ENV ORDRO_SEED=snapshot
+ENV KHAPEE_SEED=snapshot
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'tablo.token'
+const TOKEN_KEY = 'khapee.token'
 
 export function getToken(): string | null {
   try {

@@ -24,15 +24,36 @@ const SNAPSHOT = path.join(dataDir, 'snapshot.db')
  * persists normally. Opt-in (render.yaml sets it) so tests and local dev, which
  * want a clean database, are never seeded behind their back.
  */
-const SEED_FROM_SNAPSHOT = SERVERLESS || process.env.ORDRO_SEED === 'snapshot'
+/*
+ * Every name this app has been deployed under is still read.
+ *
+ * The variable is set on the live host, not in this repository, so renaming it
+ * here and nowhere else would mean the next deploy came up with no
+ * restaurants at all — an empty app behind a working domain. The new name is
+ * preferred and the old one still answers, so the two can be changed on
+ * different days without an outage in between.
+ */
+const SEED_FLAG = process.env.KHAPEE_SEED ?? process.env.ORDRO_SEED
+const SEED_FROM_SNAPSHOT = SERVERLESS || SEED_FLAG === 'snapshot'
 
 function resolveDbPath(): string {
-  if (process.env.TABLO_DB) return path.resolve(process.env.TABLO_DB)
-  return SERVERLESS ? '/tmp/tablo.db' : path.join(dataDir, 'tablo.db')
+  const set = process.env.KHAPEE_DB ?? process.env.TABLO_DB
+  if (set) return path.resolve(set)
+  if (SERVERLESS) return '/tmp/khapee.db'
+  /*
+   * The file was called tablo.db for as long as the app was called Tablo. A
+   * machine that already has one keeps using it rather than waking up to an
+   * empty database beside its real one — the rename is of the name, not of
+   * anybody's data.
+   */
+  const now = path.join(dataDir, 'khapee.db')
+  const before = path.join(dataDir, 'tablo.db')
+  if (!fs.existsSync(now) && fs.existsSync(before)) return before
+  return now
 }
 
 export const DB_PATH = resolveDbPath()
-export const IS_EPHEMERAL = SERVERLESS && !process.env.TABLO_DB
+export const IS_EPHEMERAL = SERVERLESS && !(process.env.KHAPEE_DB ?? process.env.TABLO_DB)
 
 /**
  * Whether anything written here outlives the container.
@@ -41,10 +62,10 @@ export const IS_EPHEMERAL = SERVERLESS && !process.env.TABLO_DB
  * no disk mounted: the filesystem comes back empty on the next deploy, and on
  * a free plan every time the service wakes from sleeping. Menu edits made in
  * the dashboard are then quietly undone hours later, which is the worst way
- * for this to be found out. TABLO_DB pointing at a mounted disk is what makes
+ * for this to be found out. KHAPEE_DB pointing at a mounted disk is what makes
  * it permanent, so that is exactly the test.
  */
-export const WRITES_ARE_TEMPORARY = SEED_FROM_SNAPSHOT && !process.env.TABLO_DB
+export const WRITES_ARE_TEMPORARY = SEED_FROM_SNAPSHOT && !(process.env.KHAPEE_DB ?? process.env.TABLO_DB)
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 

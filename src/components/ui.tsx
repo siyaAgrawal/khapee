@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { AlertIcon } from './icons'
 
 /* ------------------------------------------------------------------ toasts */
 
@@ -69,19 +70,22 @@ export function LoadingBlock({ label = 'Loading…' }: { label?: string }) {
 
 export function EmptyState({
   emoji = '🍽️',
+  mark,
   title,
   body,
   action,
 }: {
   emoji?: string
+  /** A drawn mark, for the screens customers see. Wins over `emoji`. */
+  mark?: ReactNode
   title: string
   body?: string
   action?: ReactNode
 }) {
   return (
     <div className="state-block">
-      <div className="state-emoji" aria-hidden>
-        {emoji}
+      <div className={mark ? 'state-mark' : 'state-emoji'} aria-hidden>
+        {mark ?? emoji}
       </div>
       <h3>{title}</h3>
       {body && <p>{body}</p>}
@@ -93,8 +97,8 @@ export function EmptyState({
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="state-block state-error">
-      <div className="state-emoji" aria-hidden>
-        ⚠️
+      <div className="state-mark" aria-hidden>
+        <AlertIcon size={22} />
       </div>
       <h3>Something went wrong</h3>
       <p>{message}</p>

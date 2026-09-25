@@ -4,6 +4,7 @@ import { useSession } from '../lib/session'
 import { useCart } from '../lib/cart'
 import JoinRoom from './JoinRoom'
 import { useInstall } from '../lib/install'
+import { DownloadIcon } from './icons'
 
 export default function Header() {
   const { user, logout } = useSession()
@@ -55,7 +56,8 @@ export default function Header() {
             works and nowhere else. */}
         {install.canInstall && (
           <button className="nav-link nav-install" onClick={() => void install.install()}>
-            ⬇ Install
+            <DownloadIcon size={14} />
+            Install
           </button>
         )}
         <button className="nav-link" onClick={() => setJoining(true)}>

@@ -9,6 +9,7 @@ import { readTableContext } from '../lib/table-context'
 import { useSession } from '../lib/session'
 import { QRCanvas } from '../lib/qr'
 import { Art, EmptyState, Modal, money, Spinner, useToast } from '../components/ui'
+import { PeopleIcon } from '../components/icons'
 
 export default function Cart() {
   const { cart, count, totalCents, setQuantity, clear } = useCart()
@@ -136,7 +137,14 @@ export default function Cart() {
                     onClick={roomCode ? () => setShareOpen(true) : invite}
                     disabled={opening}
                   >
-                    {opening ? <Spinner /> : roomCode ? `👥 ${roomCode}` : '👥 Invite'}
+                    {opening ? (
+                      <Spinner />
+                    ) : (
+                      <>
+                        <PeopleIcon size={15} />
+                        {roomCode ?? 'Invite'}
+                      </>
+                    )}
                   </button>
                 )}
               </div>

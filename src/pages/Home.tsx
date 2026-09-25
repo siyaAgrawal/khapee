@@ -4,8 +4,8 @@ import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { useVegMode } from '../lib/veg'
 import { alertsLive, pushSupported } from '../lib/push'
-import { cuisineBackground, cuisineEmoji } from '../lib/cuisine-art'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
+import { ArrowRightIcon, BellIcon, PinIcon, SearchIcon } from '../components/icons'
 
 type Precinct = { id: number; slug: string; name: string; city: string; note: string; restaurants: number }
 
@@ -202,7 +202,9 @@ export default function Home() {
       {(!staffStripGone || halfDone) && !alertsOn && (
         <div className="staff-strip">
           <Link to="/alerts">
-            🔔 {halfDone ? 'Order alerts are off — turn them back on' : 'Work here? Turn on order alerts'} →
+            <BellIcon size={14} />
+            {halfDone ? 'Order alerts are off — turn them back on' : 'Work here? Turn on order alerts'}
+            <ArrowRightIcon size={14} />
           </Link>
           <button
             aria-label="Hide this"
@@ -224,7 +226,10 @@ export default function Home() {
             plain English so the page still explains itself to someone who does
             not read the joke. */}
         <div className="hero">
-          <h1 className="hero-line">Kuch khapee lo.</h1>
+          {/* The full stop is the wordmark's, so the stylesheet sets it in
+              gold rather than the sentence carrying a grey one. */}
+          <span className="kicker">Indore · Order where you are</span>
+          <h1 className="hero-line">Kuch khapee lo</h1>
           <p>Order at the table, from your car, or to your door.</p>
         </div>
 
@@ -241,7 +246,14 @@ export default function Home() {
             onClick={coords ? () => setCoords(null) : findNearMe}
             disabled={locating}
           >
-            {locating ? <Spinner /> : coords ? '📍 Nearest first' : '📍 Near me'}
+            {locating ? (
+              <Spinner />
+            ) : (
+              <>
+                <PinIcon size={15} />
+                {coords ? 'Nearest first' : 'Near me'}
+              </>
+            )}
           </button>
           <button
             className={`veg-toggle ${veg ? 'on' : ''}`}
@@ -272,9 +284,6 @@ export default function Home() {
                 className={`cuisine ${filter === c.name ? 'active' : ''}`}
                 onClick={() => setFilter(c.name)}
               >
-                <span className="cuisine-art" style={{ background: cuisineBackground(c.name) }} aria-hidden>
-                  {cuisineEmoji(c.name)}
-                </span>
                 {c.name}
               </button>
             ))}
@@ -300,7 +309,7 @@ export default function Home() {
 
         {restaurants && visible.length === 0 && (
           <EmptyState
-            emoji="🔍"
+            mark={<SearchIcon size={22} />}
             title="No restaurants match that"
             body="Try a different search term or clear the filter."
             action={
@@ -323,14 +332,15 @@ export default function Home() {
               filter === 'All' &&
               precincts.map((p) => (
                 <Link key={`p-${p.id}`} to={`/p/${p.slug}`} className="r-card area-card">
-                  <div className="r-card-art area-art">
-                    <span className="area-mark">{p.name}</span>
+                  {/* A street has no dish to photograph, so its name is the
+                      picture — set once, on the brand's night, in gold. The
+                      body used to repeat it underneath as a heading, which
+                      read as a mistake rather than as emphasis. */}
+                  <div className="area-art">
+                    <span className="badge badge-area">Area</span>
+                    <h3 className="area-mark">{p.name}</h3>
                   </div>
                   <div className="r-card-body">
-                    <div className="r-card-title">
-                      <h3>{p.name}</h3>
-                      <span className="badge badge-accent">Area</span>
-                    </div>
                     <p>{p.note || 'Order from any kitchen here and they bring it to you.'}</p>
                     <div className="r-card-meta">
                       <span>
@@ -361,7 +371,7 @@ export default function Home() {
                   <p>{r.description}</p>
                   <div className="r-card-meta">
                     {r.distanceKm != null && <span className="badge badge-info">{r.distanceKm} km</span>}
-                    {r.rating ? <span>★ {r.rating.toFixed(1)}</span> : null}
+                    {r.rating ? <span className="rating">★ {r.rating.toFixed(1)}</span> : null}
                     <span className={r.rating || r.distanceKm != null ? 'dot-sep' : ''}>
                       {r.categories.join(' · ')}
                     </span>
@@ -383,7 +393,10 @@ export default function Home() {
             stopped ringing. This is small, it is at the bottom, and it is
             always here. */}
         <footer className="home-foot">
-          <Link to="/alerts">🔔 Work here? Turn on order alerts</Link>
+          <Link to="/alerts">
+            <BellIcon size={14} />
+            Work here? Turn on order alerts
+          </Link>
         </footer>
       </main>
     </div>

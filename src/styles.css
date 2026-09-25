@@ -10,23 +10,35 @@
    * white-and-near-black page: purple on what you press, gold on what is worth
    * noticing. Two, and no more, or it stops reading as a choice.
    */
-  --bg: #f6f4f0;
-  --bg-tint: #eceae4;
+  /*
+   * The paper and the ink are the website's own, to the digit: #f4ede1 is the
+   * cream every scene on khapee-site is printed on, and #191125 is the black
+   * it is printed in — a black with a little purple still in it. Neither reads
+   * as "a colour" at arm's length, which is the point: the brand arrives in
+   * the page itself rather than in a tint laid over it, and the accents are
+   * then free to be rare.
+   */
+  --bg: #f4ede1;
+  --bg-tint: #eae1d1;
   --surface: #ffffff;
-  --surface-2: #faf9f6;
-  --ink: #111110;
-  --ink-2: #3a3936;
-  --muted: #78766f;
-  --line: rgba(17, 17, 16, 0.09);
-  --line-strong: rgba(17, 17, 16, 0.18);
+  --surface-2: #fbf8f2;
+  --ink: #191125;
+  --ink-2: #453e52;
+  --muted: #7c7482;
+  --line: rgba(25, 17, 37, 0.09);
+  --line-strong: rgba(25, 17, 37, 0.17);
 
   /* Deep enough to carry white text at any size — the website's night is
      beautiful and unreadable as a button. */
-  --accent: #4a2f7a;
+  --accent: #3a2363;
   --accent-ink: #ffffff;
-  --accent-soft: #ece7f5;
+  --accent-soft: #ebe5f4;
   --gold: #d9a441;
-  --gold-soft: #fbf1d9;
+  --gold-soft: #f7ecd6;
+  /* The website's cream and night, held at these values in both themes, for
+     the few surfaces that are lit the same way whatever the phone is set to. */
+  --cream-fixed: #f4ede1;
+  --night-fixed: #271640;
 
   --good: #1f6b45;
   --good-soft: #e6f1ea;
@@ -42,10 +54,12 @@
   --r-lg: 20px;
   --r-xl: 26px;
 
-  --shadow-sm: 0 1px 2px rgba(17, 17, 16, 0.04), 0 1px 6px rgba(17, 17, 16, 0.03);
-  --shadow-md: 0 8px 24px rgba(17, 17, 16, 0.07), 0 2px 6px rgba(17, 17, 16, 0.03);
-  --shadow-lg: 0 28px 60px rgba(17, 17, 16, 0.15), 0 6px 16px rgba(17, 17, 16, 0.05);
-  --shadow-accent: 0 10px 26px rgba(17, 17, 16, 0.2);
+  /* Cast in the ink rather than in grey, so a raised thing looks lifted off
+     this paper and not off a different, colder one. */
+  --shadow-sm: 0 1px 2px rgba(25, 17, 37, 0.04), 0 1px 6px rgba(25, 17, 37, 0.03);
+  --shadow-md: 0 8px 24px rgba(25, 17, 37, 0.07), 0 2px 6px rgba(25, 17, 37, 0.03);
+  --shadow-lg: 0 22px 48px rgba(25, 17, 37, 0.13), 0 5px 14px rgba(25, 17, 37, 0.05);
+  --shadow-accent: 0 10px 26px rgba(25, 17, 37, 0.2);
 
   /* The website's two faces. Space Grotesk sets everything; Bricolage is for
      names and numbers only — a display face used on body copy is the fastest
@@ -62,6 +76,16 @@
   --ease: cubic-bezier(0.22, 0.68, 0.32, 1);
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --header-h: 68px;
+  /*
+   * The page margin, as a number anything can read.
+   *
+   * A strip that scrolls sideways has to bleed to the screen edge, which means
+   * cancelling this margin and then putting it back inside itself. Both halves
+   * were written as literals, and the phone breakpoint narrowed one of them —
+   * so on a phone every such strip overshot by the difference and its first
+   * chip was sliced off at the left edge. One name, set once per width.
+   */
+  --gutter: 22px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -72,11 +96,13 @@
     --bg-tint: #161615;
     --surface: #171716;
     --surface-2: #1d1d1b;
-    --ink: #f4f2ee;
-    --ink-2: #d5d2cb;
-    --muted: #918e86;
-    --line: rgba(244, 242, 238, 0.09);
-    --line-strong: rgba(244, 242, 238, 0.2);
+    /* The text is the website's cream, which is the one place the warmth can
+       come back at night without dyeing a single panel to get it. */
+    --ink: #f4ede1;
+    --ink-2: #d3cdc2;
+    --muted: #918d85;
+    --line: rgba(244, 237, 225, 0.09);
+    --line-strong: rgba(244, 237, 225, 0.2);
 
     /* The light-mode purple disappears into black, so it is lifted until it
        carries near-black text instead of white. */
@@ -138,13 +164,35 @@ h4 {
 
 h1 {
   font-family: var(--serif);
-  font-size: clamp(30px, 5vw, 44px);
-  letter-spacing: -0.035em;
-  line-height: 1.06;
+  /* The website sets its display face at 800 with the tracking pulled right
+     in, and that setting is most of why a Khapee page looks like one. At 600
+     with looser tracking it was the same typeface doing none of the work. */
+  font-weight: 800;
+  font-size: clamp(31px, 5.2vw, 46px);
+  letter-spacing: -0.042em;
+  line-height: 0.98;
 }
 h2 {
   font-family: var(--serif);
+  font-weight: 700;
   font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+/*
+ * The label above a thing, straight off the website: small, wide, gold, and
+ * sitting on its own line rather than floating in grey. It is the cheapest
+ * piece of the brand to carry across — one line of type and the page stops
+ * being a generic white app.
+ */
+.kicker {
+  display: block;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--gold);
 }
 
 p {
@@ -180,7 +228,7 @@ textarea {
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 26px 20px 132px;
+  padding: 32px var(--gutter) 136px;
   flex: 1;
   animation: rise 0.34s var(--ease) both;
 }
@@ -622,6 +670,25 @@ textarea {
   --btn-fg: var(--ink);
   border-color: var(--line-strong);
 }
+/*
+ * Add, the way every menu in the country draws it: outlined in the brand's
+ * colour, with the word in that colour too. It was a plain grey-bordered
+ * button, indistinguishable from Clear or Cancel — and the one control on the
+ * page that every single order goes through should not be the quietest thing
+ * on the card.
+ */
+.btn-add {
+  --btn-bg: var(--surface);
+  --btn-fg: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding-inline: 22px;
+}
+.btn-add:hover:not(:disabled) {
+  --btn-bg: var(--accent);
+  --btn-fg: var(--accent-ink);
+}
 .btn-ghost {
   --btn-bg: transparent;
   --btn-fg: var(--ink);
@@ -762,42 +829,34 @@ textarea {
  * loud enough to compete with the actual food photography beside it. Muted,
  * the same variety reads as a set rather than a paint chart.
  */
+/*
+ * The tile a dish sits on: one flat colour, from the dish's own hue.
+ *
+ * It used to be a three-stop diagonal gradient with a white sheen raked across
+ * the top corner and a shadow pooled in the opposite one — a lit, glassy
+ * lozenge. Nobody's delivery app looks like that. They put a flat photograph
+ * in a rectangle, and where there is no photograph the honest version is a
+ * flat colour, not a rendering of a light that is not there. The hue wheel
+ * stays, so the menu still reads as varied; the gloss goes.
+ */
 .art {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    145deg,
-    hsl(var(--art-hue) 32% 87%) 0%,
-    hsl(calc(var(--art-hue) + 18) 28% 79%) 55%,
-    hsl(calc(var(--art-hue) - 12) 24% 72%) 100%
-  );
+  background: hsl(var(--art-hue) 30% 86%);
   display: grid;
   place-items: center;
   isolation: isolate;
 }
-.art::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.55), transparent 60%),
-    radial-gradient(80% 70% at 85% 100%, rgba(0, 0, 0, 0.14), transparent 65%);
-}
 .art-glyph {
   font-size: 2.6em;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.18));
   z-index: 1;
   transition: transform 0.35s var(--ease);
 }
 @media (prefers-color-scheme: dark) {
   .art {
-    /* Warm tile over an aubergine page: kept dim so a menu of them reads as
+    /* Warm tile over a near-black page: kept dim so a menu of them reads as
        one surface rather than a row of lit windows. */
-    background: linear-gradient(
-      145deg,
-      hsl(var(--art-hue) 24% 32%) 0%,
-      hsl(calc(var(--art-hue) + 18) 22% 25%) 55%,
-      hsl(calc(var(--art-hue) - 12) 20% 19%) 100%
-    );
+    background: hsl(var(--art-hue) 22% 26%);
   }
 }
 
@@ -943,25 +1002,61 @@ textarea {
 }
 
 /* ------------------------------------------------------- restaurant grid */
+/*
+ * The way in, lit.
+ *
+ * The website is a film shot at night: every scene is a dark stage with the
+ * food as the light source, and the one thing it never does is open on white.
+ * The app opened on white — a headline and a grey subtitle on paper, which is
+ * clean and says nothing about whose app it is. This is that opening frame,
+ * bled to the edges so it reads as a band rather than as another card, and it
+ * is the only night surface on the page: the rest stays paper, so this one
+ * carries the whole brand and nothing else has to shout.
+ */
 .hero {
-  padding: 10px 2px 4px;
+  margin: -32px calc(var(--gutter) * -1) 0;
+  padding: 32px var(--gutter) 30px;
+  /* One flat colour. A gradient with a glow banked into one corner is the
+     tell — no ordering app anyone actually uses has a light source in its
+     header. The brand's night, painted on, and nothing else. */
+  background: var(--night-fixed);
+  color: var(--cream-fixed);
+}
+.hero .kicker {
+  margin-bottom: 14px;
 }
 .hero h1 {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  color: var(--cream-fixed);
+}
+/* The full stop the wordmark ends on, on the line that opens the app. */
+.hero h1::after {
+  content: '.';
+  color: var(--gold);
 }
 .hero p {
-  color: var(--muted);
-  max-width: 52ch;
+  color: rgba(244, 237, 225, 0.62);
+  max-width: 34ch;
   font-size: 15.5px;
 }
 
+/*
+ * Search, then the two things that narrow it.
+ *
+ * These three sat in one unbreakable row. On a phone that row was about sixty
+ * pixels wider than the screen, so the veg toggle hung off the right edge and
+ * the whole page could be dragged sideways — the first thing you touched on
+ * the home screen was broken. The search line now takes the width it needs and
+ * the two toggles sit under it, which is also simply the calmer arrangement.
+ */
 .search-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  margin: 20px 0 6px;
+  margin: 28px 0 6px;
 }
 .search-input {
-  flex: 1;
+  flex: 1 1 260px;
   padding: 13px 16px;
   border-radius: 999px;
   border: 1px solid var(--line-strong);
@@ -1000,11 +1095,18 @@ textarea {
 
 .grid {
   display: grid;
-  gap: 18px;
+  gap: 22px;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  margin-top: 18px;
+  margin-top: 28px;
 }
 
+/*
+ * A card on this paper needs an edge or a shadow, and it had both. Two ways of
+ * saying the same thing is how a list of eight starts to look like a control
+ * panel: the page fills up with outlines before it has any food on it. The
+ * hairline stays, the resting shadow goes, and the shadow comes back only
+ * under the finger.
+ */
 .r-card {
   display: flex;
   flex-direction: column;
@@ -1012,12 +1114,13 @@ textarea {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.24s var(--ease), box-shadow 0.24s var(--ease);
+  transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease),
+    border-color 0.28s var(--ease);
   animation: pop 0.3s var(--ease) both;
 }
 .r-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
+  border-color: transparent;
   box-shadow: var(--shadow-lg);
 }
 .r-card:hover .art-glyph {
@@ -1068,39 +1171,101 @@ textarea {
   margin-right: 10px;
 }
 
+/* A rating is the one number on a card worth catching the eye, and gold is
+   what the brand catches it with. */
+.rating {
+  /* inline-block, not inline: ::first-letter is ignored on an inline box, so
+     as a flex row the star simply never took the gold. */
+  display: inline-block;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.rating::first-letter {
+  color: var(--gold);
+}
+
+/*
+ * An area is not a restaurant, and its card should say so before the label
+ * does. Where a kitchen has a dish, a street has its name — set large in the
+ * display face, in gold, on the brand's own night. It is the one gold moment
+ * in the list, which is what makes an area read as a different kind of thing
+ * rather than as a restaurant with a badge stuck on it.
+ *
+ * These three rules did not exist at all. The markup had been asking for them
+ * since the areas went in, so every area card rendered as a blank panel with
+ * its name spilling out of the top-left corner, clipped by the card it was
+ * supposed to be inside.
+ */
+.area-art {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 16px 18px 18px;
+  /* The website's own night, flat. It is also the hero's, so this is kept to
+     a band rather than a block — two full-height purple panels stacked down
+     one screen is the "purple purple" nobody asked for. */
+  background: var(--night-fixed);
+}
+.area-art .badge-area {
+  color: rgba(244, 237, 225, 0.55);
+}
+.area-mark {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 23px;
+  line-height: 1.04;
+  letter-spacing: -0.032em;
+  color: var(--gold);
+  text-wrap: balance;
+}
+.area-card .r-card-body {
+  gap: 9px;
+}
+
+/*
+ * A label, not a pill.
+ *
+ * These used to be filled lozenges: a coloured capsule on every card, three of
+ * them in a row on some. Six saturated fills on one screen is what makes a
+ * page look generated — the colour stops meaning anything and just makes
+ * noise. The website sets its labels the other way, as small wide caps sitting
+ * in their own colour with nothing behind them, and that is what this is now.
+ * The word still carries the meaning; it just no longer shouts it.
+ */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  background: var(--bg-tint);
   color: var(--muted);
   white-space: nowrap;
 }
 .badge-open {
-  background: var(--good-soft);
   color: var(--good);
 }
+.badge-open::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
 .badge-closed {
-  background: var(--bad-soft);
-  color: var(--bad);
+  color: var(--muted);
 }
 .badge-warn {
-  background: var(--warn-soft);
   color: var(--warn);
 }
 .badge-info {
-  background: var(--info-soft);
-  color: var(--info);
+  color: var(--ink-2);
 }
+/* The one label that is worth noticing gets the gold. */
 .badge-accent {
-  background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--gold);
 }
 .badge-live::before {
   content: '';
@@ -1161,13 +1326,14 @@ textarea {
 }
 .menu-find-mark {
   position: absolute;
-  left: 13px;
-  font-size: 17px;
+  left: 15px;
+  display: grid;
+  place-items: center;
   color: var(--muted);
   pointer-events: none;
 }
 .menu-find-input {
-  padding-left: 34px;
+  padding-left: 40px;
   padding-right: 38px;
 }
 /* Safari draws its own clear button on type=search, which lands on top of ours. */
@@ -1224,6 +1390,21 @@ textarea {
 }
 .menu-section h2 {
   margin-bottom: 12px;
+}
+/*
+ * A short gold rule under a course name. The website marks a new scene with a
+ * gold label; a menu does not need the label, but it does need the mark — and
+ * a page of unaccented black headings is where "this could be any ordering
+ * app" comes from.
+ */
+.menu-section h2::after {
+  content: '';
+  display: block;
+  width: 34px;
+  height: 2px;
+  margin-top: 9px;
+  border-radius: 2px;
+  background: var(--gold);
 }
 
 .item-grid {
@@ -1429,7 +1610,7 @@ textarea {
   justify-content: space-between;
   padding-top: 13px;
   margin-top: 6px;
-  border-top: 1px dashed var(--line-strong);
+  border-top: 1px solid var(--line-strong);
   font-size: 18px;
   font-weight: 700;
   color: var(--ink);
@@ -2629,6 +2810,22 @@ textarea {
   font-size: 36px;
   opacity: 0.85;
 }
+/* The drawn version: a mark in a ring, rather than a big emoji floating in
+   the middle of an empty screen. */
+.state-mark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--ink-2);
+}
+.state-error .state-mark {
+  border-color: transparent;
+  background: var(--bad-soft);
+  color: var(--bad);
+}
 .state-error h3 {
   color: var(--bad);
 }
@@ -2863,8 +3060,20 @@ textarea {
 }
 
 @media (max-width: 560px) {
+  :root {
+    --gutter: 18px;
+  }
   .page {
-    padding: 16px 14px 130px;
+    padding: 22px var(--gutter) 130px;
+  }
+  /* On a phone the search line takes the whole width and the two toggles
+     share the line beneath it, rather than one of them hanging off-screen. */
+  .search-input {
+    flex-basis: 100%;
+  }
+  .search-row .btn,
+  .search-row .veg-toggle {
+    flex: 1 1 0;
   }
   .item-grid {
     grid-template-columns: 1fr;
@@ -3241,7 +3450,11 @@ textarea {
   width: 100%;
   padding: 13px 15px;
   border-radius: var(--r-lg);
-  border: 1px dashed var(--line-strong);
+  /* Was dashed. A dashed box says "placeholder" — it is the border every
+     unfinished mock-up uses — and this is a real, permanent way into the
+     menu. A hairline and a warm panel say the same thing without apologising
+     for itself. */
+  border: 1px solid var(--line);
   background: var(--surface-2);
   color: inherit;
   font: inherit;
@@ -3664,15 +3877,9 @@ textarea {
   z-index: 200;
   display: grid;
   place-items: center;
-  /*
-   * Near-black, with the two accents barely present at the corners — enough
-   * that the first screen is Khapee's and not a black rectangle, far short of
-   * a coloured panel.
-   */
-  background:
-    radial-gradient(110% 80% at 22% 14%, rgba(122, 92, 186, 0.14), transparent 60%),
-    radial-gradient(90% 70% at 84% 92%, rgba(217, 164, 65, 0.08), transparent 66%),
-    #0e0e0d;
+  /* The brand's night, flat — the same colour the home screen opens on, so
+     the title card and the page behind it are one surface. */
+  background: var(--night-fixed);
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.75s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.55s ease 0.2s;
@@ -4097,13 +4304,31 @@ textarea {
 }
 
 /* Cuisines: one sideways strip of pictures, scrolled with a thumb. */
+/*
+ * The cuisines, as words.
+ *
+ * This strip used to be a row of hundred-pixel emoji, each floating in a
+ * radial glow of its own hue — twelve saturated colours in a band directly
+ * above the dish art, which is the one thing on the page that is supposed to
+ * be colourful. It competed with the food, it pushed the actual restaurants a
+ * screen further down, and a row of oversized emoji is the single clearest
+ * tell that nobody drew a page. Set as type it costs a quarter of the height,
+ * matches the filters on the menu page exactly, and leaves the colour to the
+ * food.
+ */
 .cuisine-bar {
   display: flex;
-  gap: 18px;
-  margin: 18px -20px 6px;
-  padding: 4px 20px 10px;
+  gap: 8px;
+  margin: 22px calc(var(--gutter) * -1) 4px;
+  padding: 2px var(--gutter) 8px;
   overflow-x: auto;
-  scroll-snap-type: x proximity;
+  /*
+   * No snapping. Snap points aligned to the scrollport rather than to this
+   * strip's padding, so the browser opened the page already scrolled by one
+   * gutter and sliced the first chip against the left edge. They also made a
+   * flick down the row catch on every chip, which is the opposite of what a
+   * filter strip should feel like.
+   */
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -4112,45 +4337,27 @@ textarea {
 }
 .cuisine {
   flex: 0 0 auto;
-  width: 104px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 0 0 8px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
+  padding: 9px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.2;
-  text-align: center;
+  white-space: nowrap;
   cursor: pointer;
-  scroll-snap-align: start;
-  transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
+  transition: color 0.18s var(--ease), background 0.18s var(--ease),
+    border-color 0.18s var(--ease);
 }
-.cuisine-art {
-  display: grid;
-  place-items: center;
-  width: 100px;
-  height: 92px;
-  font-size: 58px;
-  line-height: 1;
-  /* The glow is wider than the box so it fades out rather than stopping. */
-  background-size: 150% 150%;
-  background-position: center;
-  background-repeat: no-repeat;
-  transition: transform 0.18s var(--ease);
-}
-.cuisine:hover .cuisine-art,
-.cuisine.active .cuisine-art {
-  transform: scale(1.06);
+.cuisine:hover {
+  border-color: var(--ink-2);
 }
 .cuisine.active {
-  color: var(--ink);
-  border-bottom-color: var(--ink);
-  font-weight: 650;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
 }
 
 /* Veg only, next to "near me". The mark is the Indian veg symbol. */
@@ -5703,9 +5910,40 @@ button.nav-link {
   font-size: 13px;
 }
 .staff-strip a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--ink-2);
   text-decoration: none;
   font-weight: 600;
+}
+/* The pin on the way-in strip, given a quiet disc to sit in so the line reads
+   as heading-plus-mark rather than as a sentence with something stuck on it. */
+.dining-bar-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-tint);
+  color: var(--accent);
+}
+
+/* The bell is the only thing in this line worth a colour, and gold is what
+   the brand uses for the one mark worth noticing. */
+.staff-strip a svg:first-child {
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+.staff-strip a svg:last-child {
+  opacity: 0.5;
+  flex: 0 0 auto;
+}
+.home-foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 .staff-strip a:hover {
   color: var(--ink);
@@ -6078,7 +6316,11 @@ button.nav-link {
 /* The install offer in the header: a nav link that looks like the others, so
    it reads as part of the bar rather than a banner asking for something. */
 .nav-install {
-  border: 1px dashed var(--line-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Solid, like everything else that is real. */
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   padding-inline: 12px;
 }

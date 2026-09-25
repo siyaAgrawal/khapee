@@ -10,6 +10,7 @@ import { readTableContext } from '../lib/table-context'
 import { ownOrderOnly, readDining } from '../lib/dining'
 import { useGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
+import { PeopleIcon, SearchIcon } from '../components/icons'
 import NoirMenu from '../components/NoirMenu'
 import { applyTheme } from '../lib/themes'
 import { NoirMark, NoirWordmark } from '../components/NoirBrand'
@@ -324,7 +325,7 @@ export default function Restaurant() {
                   {data.restaurant.description}
                 </p>
                 <div className="r-card-meta">
-                  {data.restaurant.rating ? <span>★ {data.restaurant.rating.toFixed(1)}</span> : null}
+                  {data.restaurant.rating ? <span className="rating">★ {data.restaurant.rating.toFixed(1)}</span> : null}
                   <span className={data.restaurant.rating ? 'dot-sep' : ''}>
                     {data.restaurant.categories.join(' · ')}
                   </span>
@@ -393,7 +394,8 @@ export default function Restaurant() {
                 {inThisGroup && (
                   <div className="row row-wrap" style={{ marginTop: 12 }}>
                     <Link className="btn btn-secondary btn-sm" to="/group">
-                      👥 You&rsquo;re at table {activeGroup!.code} — add to it
+                      <PeopleIcon size={15} />
+                      You&rsquo;re at table {activeGroup!.code} — add to it
                     </Link>
                   </div>
                 )}
@@ -425,7 +427,7 @@ export default function Restaurant() {
                 there. */}
             <div className="menu-find">
               <span className="menu-find-mark" aria-hidden>
-                ⌕
+                <SearchIcon size={16} />
               </span>
               <input
                 className="input menu-find-input"
@@ -541,7 +543,7 @@ export default function Restaurant() {
                               </div>
                             ) : (
                               <button
-                                className="btn btn-secondary btn-sm"
+                                className="btn btn-add btn-sm"
                                 onClick={() => onAdd(item)}
                                 disabled={!data.restaurant.isOpen}
                               >

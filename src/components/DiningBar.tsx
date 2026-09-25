@@ -3,6 +3,7 @@ import VerifyModal from './VerifyModal'
 import { api } from '../lib/api'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext } from '../lib/table-context'
+import { PinIcon } from './icons'
 
 /**
  * Persistent "you're here" strip. Shows the open session, or offers to start
@@ -99,7 +100,9 @@ export default function DiningBar({
         </div>
       ) : (
         <button className="dining-bar" onClick={() => setOpen(true)}>
-          <span aria-hidden>📍</span>
+          <span className="dining-bar-mark" aria-hidden>
+            <PinIcon size={16} />
+          </span>
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <strong>Already at the restaurant?</strong>
             <span className="tiny">

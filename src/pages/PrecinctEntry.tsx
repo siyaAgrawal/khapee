@@ -111,7 +111,7 @@ export default function PrecinctEntry() {
                   </div>
                   <p>{r.description}</p>
                   <div className="r-card-meta">
-                    {r.rating ? <span>★ {r.rating.toFixed(1)}</span> : null}
+                    {r.rating ? <span className="rating">★ {r.rating.toFixed(1)}</span> : null}
                     <span className={r.rating ? 'dot-sep' : ''}>{r.categories.join(' · ')}</span>
                     <span className="dot-sep">{r.prepMinutes} min</span>
                   </div>

@@ -34,6 +34,8 @@ const SNAPSHOT = path.join(dataDir, 'snapshot.db')
  * different days without an outage in between.
  */
 const SEED_FLAG = process.env.KHAPEE_SEED ?? process.env.ORDRO_SEED
+/** Whoever is running this pointed us at a particular file. */
+const DB_CHOSEN = process.env.KHAPEE_DB ?? process.env.TABLO_DB
 const SEED_FROM_SNAPSHOT = SERVERLESS || SEED_FLAG === 'snapshot'
 
 function resolveDbPath(): string {
@@ -69,7 +71,22 @@ export const WRITES_ARE_TEMPORARY = SEED_FROM_SNAPSHOT && !(process.env.KHAPEE_D
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
 
-if (SEED_FROM_SNAPSHOT && !fs.existsSync(DB_PATH) && fs.existsSync(SNAPSHOT)) {
+/**
+ * A fresh clone comes up with the catalogue, not with nothing.
+ *
+ * Cloning this repository and running it gave an app with no restaurants at
+ * all, because the working database is deliberately not committed — only the
+ * snapshot is. That looks exactly like a broken checkout, and the fix is a
+ * line in a README that whoever hit it has not read yet.
+ *
+ * So: no database at all, and a snapshot sitting right there, means copy it.
+ * Only when nothing has chosen a database file — tests point at their own and
+ * want it empty, and this must never quietly fill one of those with
+ * twenty-seven restaurants.
+ */
+const FIRST_RUN = !DB_CHOSEN && !fs.existsSync(DB_PATH) && fs.existsSync(SNAPSHOT)
+
+if ((SEED_FROM_SNAPSHOT || FIRST_RUN) && !fs.existsSync(DB_PATH) && fs.existsSync(SNAPSHOT)) {
   fs.copyFileSync(SNAPSHOT, DB_PATH)
 }
 

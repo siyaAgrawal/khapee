@@ -98,8 +98,32 @@ const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
  * and "Accepted" on a thing that has not been accepted reads as a label
  * somebody forgot to make into a button.
  */
-function goLabel(o: Order, next: OrderStatus): string {
-  return o.status === 'REQUESTED' && next === 'ACCEPTED' ? 'Accept' : STATUS_LABEL[next]
+/**
+ * What the button does, said as the thing you are about to do.
+ *
+ * It used to be the name of the status it would move to — so the button on an
+ * accepted order read "Preparing", which is a description of a state and not
+ * an instruction. Behind a counter that reads as a label: this order is
+ * preparing. People stopped pressing it, and orders sat in ACCEPTED all
+ * service while the food went out anyway.
+ *
+ * Every one of these is now a verb, and the verb is the real-world action the
+ * person is taking at the moment they press it.
+ */
+const GO_WORDS: Partial<Record<OrderStatus, string>> = {
+  ACCEPTED: 'Accept',
+  PREPARING: 'Start cooking',
+  READY: 'Food is ready',
+  READY_FOR_PICKUP: 'Ready to collect',
+  COMPLETED: 'Handed over',
+  PICKED_UP: 'They collected it',
+  DELIVERING: 'Send it out',
+  OUT_FOR_DELIVERY: 'Send it out',
+  DELIVERED: 'Delivered',
+}
+
+function goLabel(_o: Order, next: OrderStatus): string {
+  return GO_WORDS[next] ?? STATUS_LABEL[next]
 }
 
 
@@ -573,8 +597,18 @@ export default function StaffOrders() {
         )}
       </div>
 
+      {/*
+        Five numbers, on one line.
+
+        These were five cards the height of a thumb, which put the least
+        urgent thing on the screen — how much came in today — above the most
+        urgent, which is the order nobody has accepted yet. On a laptop at a
+        counter that was the top third of the window before a single ticket.
+        They are still here and still tap to filter; they are just no longer
+        the headline.
+      */}
       {summary && (
-        <div className="stat-row">
+        <div className="stat-row stat-row-thin">
           {(
             [
               ['new', 'New', summary.newOrders, null],
@@ -714,8 +748,29 @@ export default function StaffOrders() {
                   const next = nextStatus(o.serviceType ?? o.type, o.status)
                   const open = openId === o.id
                   return (
-                    <article key={o.id} className={`qrow ${o.status === 'NEW' ? 'is-new' : ''} ${open ? 'open' : ''}`}>
-                      <button className="qrow-main" onClick={() => setOpenId(open ? null : o.id)}>
+                    <article
+                      key={o.id}
+                      className={[
+                        'qrow',
+                        // Waiting on a decision, in either of the two ways an
+                        // order can be: never looked at, or looked at and not
+                        // yet answered.
+                        o.status === 'NEW' || o.status === 'REQUESTED' ? 'needs-you' : '',
+                        done ? 'is-done' : '',
+                        open ? 'open' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <button
+                        className="qrow-main"
+                        aria-expanded={open}
+                        /* Says what it opens, now that it no longer hides the
+                           dishes — "expand" is not a thing anybody behind a
+                           counter is looking for; paying and printing are. */
+                        aria-label={`${placeOf(o)} — payment, bill and more`}
+                        onClick={() => setOpenId(open ? null : o.id)}
+                      >
                         <span className="qrow-where">
                           <b>
                             {placeOf(o)}
@@ -733,6 +788,11 @@ export default function StaffOrders() {
                           </em>
                         </span>
                         {o.paymentState === 'unpaid' && <span className="qrow-dot" title="Not paid" />}
+                        {/* An affordance, because the row no longer hides the
+                            dishes and nothing else says there is more here. */}
+                        <span className="qrow-caret" aria-hidden>
+                          {open ? '⌃' : '⌄'}
+                        </span>
                       </button>
 
                       {next && (
@@ -745,23 +805,37 @@ export default function StaffOrders() {
                         </button>
                       )}
 
+                      {/*
+                        What is actually in the order, on every order, always.
+
+                        This was behind the tap that opens the row, which meant
+                        the one thing a kitchen needs — what to cook — was the
+                        one thing the board would not tell it. Eight tickets on
+                        a Friday meant eight taps to read eight orders, and then
+                        eight more to close them again. A ticket that does not
+                        say what is on it is not a ticket.
+
+                        The note rides with it for the same reason: "no onion,
+                        allergy" is not a detail to go looking for.
+                      */}
+                      <ul className="qrow-items">
+                        {o.items.map((i: any) => (
+                          <li key={i.id} className={i.accepted === false ? 'item-off' : ''}>
+                            <b>{i.quantity}×</b> {i.name}
+                            {i.memberName ? <em> · {i.memberName}</em> : null}
+                            <ItemCall
+                              order={o}
+                              item={i}
+                              busy={busyId === o.id}
+                              decide={(yes) => void decideItem(o, i, yes)}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                      {o.note && <p className="qrow-note">“{o.note}”</p>}
+
                       {open && (
                         <div className="qrow-body">
-                          <ul className="qrow-items">
-                            {o.items.map((i: any) => (
-                              <li key={i.id} className={i.accepted === false ? 'item-off' : ''}>
-                                <b>{i.quantity}×</b> {i.name}
-                                {i.memberName ? <em> · {i.memberName}</em> : null}
-                                <ItemCall
-                                  order={o}
-                                  item={i}
-                                  busy={busyId === o.id}
-                                  decide={(yes) => void decideItem(o, i, yes)}
-                                />
-                              </li>
-                            ))}
-                          </ul>
-                          {o.note && <p className="qrow-note">“{o.note}”</p>}
                           <div className="qrow-actions">
                             <button
                               className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}

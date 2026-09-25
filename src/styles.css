@@ -1998,9 +1998,26 @@ textarea {
   border-radius: var(--r-lg);
   background: var(--surface);
 }
-.qrow.is-new {
+/*
+  An order waiting on a yes looked exactly like one that went out an hour ago.
+
+  Every ticket was the same weight, so the board gave no answer to the only
+  question being asked of it at a rush — which of these needs me now. The one
+  that does gets a heavier edge and a tinted ground; everything else stays
+  quiet, because a board where everything shouts says nothing.
+*/
+.qrow.is-new,
+.qrow.needs-you {
   border-color: var(--accent, var(--ink));
-  box-shadow: inset 3px 0 0 var(--accent, var(--ink));
+  box-shadow: inset 4px 0 0 var(--accent, var(--ink));
+  background: var(--bg-tint);
+}
+/* Done is done: still readable, no longer competing. */
+.qrow.is-done {
+  opacity: 0.62;
+}
+.qrow.is-done .qrow-items {
+  display: none;
 }
 .qrow-main {
   display: flex;
@@ -2051,14 +2068,44 @@ textarea {
   background: var(--warn, #b45309);
   flex: 0 0 auto;
 }
+.qrow-caret {
+  flex: 0 0 auto;
+  width: 22px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--muted);
+}
+/*
+  The next step, sized like something you press with a thumb while holding a
+  plate. It was a btn-sm, which is a size for a form on a laptop, and this is
+  the single most-pressed control in the building.
+*/
 .qrow-go {
   grid-column: 2;
+  grid-row: 1;
   white-space: nowrap;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 650;
+  border-radius: var(--r-md);
+  min-height: 44px;
 }
 .qrow-body {
   grid-column: 1 / -1;
   padding-top: 10px;
   margin-top: 2px;
+  border-top: 1px dashed var(--line);
+}
+/* The dishes are part of the ticket now rather than something behind a tap,
+   so they run the full width of it under the header. */
+.qrow > .qrow-items,
+.qrow > .qrow-note {
+  grid-column: 1 / -1;
+}
+.qrow > .qrow-items {
+  margin: 2px 0 0;
+  padding-top: 8px;
   border-top: 1px dashed var(--line);
 }
 .qrow-items {
@@ -2068,6 +2115,18 @@ textarea {
   display: grid;
   gap: 3px;
   font-size: 13.5px;
+}
+.qrow-items li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* The quantity is what gets read first and misread most, so it is the one
+   thing on the line that is bigger than the rest of it. */
+.qrow-items b {
+  font-variant-numeric: tabular-nums;
+  font-size: 14.5px;
+  min-width: 2.4em;
 }
 .qrow-items em {
   font-style: normal;
@@ -2117,6 +2176,47 @@ textarea {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
+}
+
+/*
+  The same five numbers, on one line instead of five cards.
+
+  They are context, not work. As cards they took the top third of a counter
+  screen and pushed the order nobody has accepted yet below the fold, which is
+  the wrong way round by every measure that matters during a service. They
+  still tap to filter — they are just no longer the first thing read.
+*/
+.stat-row-thin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.stat-row-thin .stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  /* .stat-btn is width:100% for the card layout; on a chip that makes five
+     chips into five rows. */
+  width: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.stat-row-thin .stat span {
+  display: inline;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.stat-row-thin .stat strong {
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+}
+/* The second line on a chip is a line too many. */
+.stat-row-thin .stat-note {
+  display: none;
 }
 .stat {
   padding: 14px 16px;
@@ -5932,54 +6032,114 @@ button.nav-link {
   A table with nothing on it is still drawn, because an empty table is the
   answer to a question asked more often than any other here.
 */
-.floor-tabs {
+/* --- The floor, as a plan of the room ------------------------------------
+   A grid of tables coloured by state, which is the shape every till in every
+   restaurant already uses. See stateOf() in src/pages/staff/StaffFloor.tsx —
+   the five states are the five different jobs a table can be waiting on. */
+.floor-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px 16px;
+  margin-bottom: 12px;
+  font-size: 11.5px;
+  color: var(--muted);
 }
-.floor-tab {
+.floor-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.floor-chip {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong, var(--line));
+}
+.floor-chip-free { background: var(--surface); }
+.floor-chip-running { background: var(--accent-soft); border-color: var(--accent); }
+.floor-chip-unsent { background: var(--warn); border-color: var(--warn); }
+.floor-chip-waiting { background: var(--bad); border-color: var(--bad); }
+.floor-chip-settled { background: var(--good); border-color: var(--good); }
+
+.floor-grid {
+  display: grid;
+  /* Wide enough for a two-digit number, a total and a word under it, and no
+     wider — the point of a plan is seeing the whole room at once. */
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.floor-cell {
   position: relative;
   display: grid;
+  align-content: center;
+  justify-items: center;
   gap: 2px;
-  min-width: 92px;
-  padding: 10px 14px;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  min-height: 82px;
+  padding: 10px 8px;
+  border: 1.5px solid var(--line);
   border-radius: var(--r-md);
-  cursor: pointer;
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.12s ease, border-color 0.12s ease;
 }
-.floor-tab:hover { border-color: var(--line-strong); }
-.floor-tab.busy { background: var(--accent-soft); }
-.floor-tab.on {
-  background: var(--accent);
-  color: var(--accent-ink);
+.floor-cell:hover { transform: translateY(-1px); border-color: var(--line-strong); }
+.floor-cell.on {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.floor-cell-name {
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.1;
+}
+.floor-cell-money {
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.floor-cell-note {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* An empty table stays quiet — it is the default, and most of the room is it
+   for most of the night. */
+.floor-cell-free {
+  border-style: dashed;
+  color: var(--muted);
+}
+.floor-cell-running {
   border-color: var(--accent);
+  background: var(--accent-soft);
 }
-.floor-tab-name { font-weight: 650; font-size: 14px; }
-.floor-tab-sub { font-size: 11px; opacity: 0.7; }
-/* Something on this table is waiting on a person. Deliberately loud, and
-   deliberately only on that table rather than across the whole screen. */
-.floor-tab.waiting { border-color: var(--warn); }
-.floor-tab-dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--warn);
-  animation: floor-pulse 1.6s ease-in-out infinite;
+/* Ordered and never sent to the range: the waiter's job, and the one that
+   costs a table its evening if it is missed. */
+.floor-cell-unsent {
+  border-color: var(--warn);
+  box-shadow: inset 0 -4px 0 var(--warn);
 }
+/* Nobody has answered the kitchen yet. The only one that moves. */
+.floor-cell-waiting {
+  border-color: var(--bad);
+  box-shadow: inset 0 -4px 0 var(--bad);
+  animation: floor-pulse 1.8s ease-in-out infinite;
+}
+.floor-cell-settled {
+  border-color: var(--good);
+  box-shadow: inset 0 -4px 0 var(--good);
+}
+.floor-cell-counter { grid-column: span 2; }
+
 @keyframes floor-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.35); opacity: 0.55; }
+  0%, 100% { border-color: var(--bad); }
+  50% { border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .floor-tab-dot { animation: none; }
+  .floor-cell-waiting { animation: none; }
 }
 
 .floor-body {

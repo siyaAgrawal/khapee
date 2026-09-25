@@ -55,6 +55,26 @@ type Spot = {
   since: string | null
 }
 type FloorTable = Spot & { id: number; label: string; seats: number }
+
+/**
+ * What colour a table is, in the order the colours matter.
+ *
+ * Only five states, and each is a different job for a different person, which
+ * is the whole reason to colour them: waiting is the kitchen's, not sent is
+ * the waiter's, paid is the counter's. A sixth would be a colour nobody could
+ * name from across the room.
+ *
+ * Every one of these is read from what the table actually has on it. There is
+ * no state here the database cannot prove — a tile that says "paid" when it
+ * is not is worse than a tile with no colour at all.
+ */
+function stateOf(t: FloorTable): 'free' | 'waiting' | 'unsent' | 'settled' | 'running' {
+  if (!t.orders.length) return 'free'
+  if (t.waiting) return 'waiting'
+  if (t.unsent) return 'unsent'
+  if (t.dueCents === 0) return 'settled'
+  return 'running'
+}
 type Board = { tables: FloorTable[]; elsewhere: Spot }
 
 type MenuItem = { id: number; name: string; section: string; priceCents: number }
@@ -260,33 +280,78 @@ export default function StaffFloor() {
         </div>
       )}
 
-      {/* Every table, always, whether or not anything is on it. An empty table
-          is the answer to "where do these four people go", which is asked more
-          often than anything else on this screen. */}
-      <div className="floor-tabs" role="tablist" aria-label="Tables">
+      {/*
+        The room, as a plan of it.
+
+        This was a strip of tabs you scrolled sideways through, which is a
+        shape that answers "which table am I on" and nothing else. Twenty-five
+        tables meant twenty-five chips in a line, most of them off the edge of
+        the screen, and the state of the room — which tables are busy, which
+        are waiting on the kitchen, which have paid — could only be found by
+        visiting each one.
+
+        A grid, coloured by state, answers all of it without a tap. That is how
+        every till in every restaurant in India already does it, which matters
+        more than whether it is the shape I would have chosen: the person using
+        this has used one of those for years, and the thing they already know
+        is worth more than anything I could teach them.
+
+        An empty table is drawn too, always, because "where do these four go"
+        is asked more often than anything else on this screen.
+      */}
+      <div className="floor-legend" aria-hidden>
+        {(
+          [
+            ['free', 'Empty'],
+            ['running', 'Eating'],
+            ['unsent', 'Not sent to kitchen'],
+            ['waiting', 'Waiting on you'],
+            ['settled', 'Paid'],
+          ] as const
+        ).map(([key, label]) => (
+          <span key={key} className="floor-legend-item">
+            <i className={`floor-chip floor-chip-${key}`} />
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <div className="floor-grid" role="tablist" aria-label="Tables">
         {board.tables.map((t) => (
           <button
             key={t.id}
             role="tab"
             aria-selected={tab === t.id}
-            className={`floor-tab ${tab === t.id ? 'on' : ''} ${t.orders.length ? 'busy' : ''} ${t.waiting ? 'waiting' : ''}`}
+            className={`floor-cell floor-cell-${stateOf(t)} ${tab === t.id ? 'on' : ''}`}
             onClick={() => setTab(t.id)}
           >
-            <span className="floor-tab-name">{t.label}</span>
-            <span className="floor-tab-sub">
-              {t.orders.length ? money(t.totalCents) : `${t.seats} seats`}
-            </span>
-            {t.waiting > 0 && <span className="floor-tab-dot" aria-label={`${t.waiting} waiting`} />}
+            <span className="floor-cell-name">{t.label}</span>
+            {t.orders.length ? (
+              <>
+                <span className="floor-cell-money">{money(t.dueCents || t.totalCents)}</span>
+                <span className="floor-cell-note">
+                  {t.waiting
+                    ? `${t.waiting} to accept`
+                    : t.unsent
+                      ? `${t.unsent} not sent`
+                      : t.dueCents === 0
+                        ? 'Paid'
+                        : timeAgo(t.since ?? '')}
+                </span>
+              </>
+            ) : (
+              <span className="floor-cell-note">{t.seats} seats</span>
+            )}
           </button>
         ))}
         <button
           role="tab"
           aria-selected={tab === ELSEWHERE}
-          className={`floor-tab ${tab === ELSEWHERE ? 'on' : ''} ${board.elsewhere.orders.length ? 'busy' : ''}`}
+          className={`floor-cell floor-cell-counter ${board.elsewhere.orders.length ? 'floor-cell-running' : 'floor-cell-free'} ${tab === ELSEWHERE ? 'on' : ''}`}
           onClick={() => setTab(ELSEWHERE)}
         >
-          <span className="floor-tab-name">Counter</span>
-          <span className="floor-tab-sub">
+          <span className="floor-cell-name">Counter</span>
+          <span className="floor-cell-note">
             {board.elsewhere.orders.length ? money(board.elsewhere.totalCents) : 'Takeaway'}
           </span>
         </button>

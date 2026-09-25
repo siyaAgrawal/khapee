@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { db } from './db.ts'
 import { flowFor } from '../shared/orders.ts'
 import { serviceOf } from './order-status.ts'
+import { computeBill } from './tax.ts'
 
 /**
  * Petpooja, the till that is already on the counter.
@@ -262,6 +263,9 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
             packing_charges: '0.00',
             pc_tax_amount: '0.00',
             pc_tax_percentage: '0',
+            /* The tax the customer is actually being charged.
+               See the note on taxOf below for why this is not simply left to
+               their till to work out. */
             order_type: dineIn ? 'D' : 'P',
             /* Their name for the table when we know it, ours only as a last
                resort — a table_no their till does not recognise is an order
@@ -274,7 +278,7 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
             table_no: dineIn ? String(order.pos_table_id || order.table_label || '') : '',
             no_of_persons: '',
             discount_total: '0.00',
-            tax_total: '0.00',
+            tax_total: money(order.tax_total_cents ?? 0),
             discount_type: 'F',
             total: money(order.total_cents ?? 0),
             description: order.note ?? '',
@@ -290,7 +294,10 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
               id: String(i.pos_item_id),
               name: i.name,
               gst_liability: 'restaurant',
-              item_tax: [],
+              /* Keyed by their own tax ids, which arrive on the menu push.
+                 An amount with no id for it is an amount their till cannot
+                 file, so a dish we have no mapping for sends none. */
+              item_tax: Array.isArray(i.item_tax) ? i.item_tax : [],
               item_discount: '0.00',
               price: money(i.unit_price_cents),
               final_price: money(i.unit_price_cents * i.quantity),
@@ -298,7 +305,7 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
               description: '',
             })),
           },
-          Tax: { details: [] },
+          Tax: { details: Array.isArray(order.tax_details) ? order.tax_details : [] },
           Discount: { details: [] },
         },
       },
@@ -314,6 +321,80 @@ function minutesUntil(wantedAt: string | null): number {
   const at = Date.parse(`${String(wantedAt).replace(' ', 'T')}Z`)
   if (Number.isNaN(at)) return 0
   return Math.max(0, Math.round((at - Date.now()) / 60_000))
+}
+
+/**
+ * The tax on the round being sent, in the shape their till files it under.
+ *
+ * Khapee used to send zero here and leave their POS to work it out. That is
+ * fine for an unpaid order and wrong for a paid one: the customer has already
+ * been charged our total, tax included, and a till that recomputes tax on top
+ * of a price it believes is net prints a different number to the one taken.
+ * For a prepaid dine-in order that is the customer being asked for the
+ * difference at the counter.
+ *
+ * So the amounts sent are the ones actually charged, computed by the same
+ * engine that prints Khapee's own GST invoice, and filed under Petpooja's own
+ * tax ids — which arrive on the menu push and are kept on menu_items as
+ * pos_tax_ids. A dish with no mapping sends no tax rather than an amount their
+ * till cannot account for.
+ *
+ * A restaurant with tax switched off sends nothing at all, which is the
+ * correct bill for them.
+ */
+function taxOf(order: any, items: any[], restaurant: any) {
+  if (!restaurant?.tax_enabled) return { totalCents: 0, byItem: new Map<number, any[]>(), details: [] as any[] }
+
+  const bill = computeBill({
+    lines: items.map((i) => ({
+      name: i.name,
+      hsnSac: '',
+      quantity: i.quantity,
+      unitPriceCents: i.unit_price_cents,
+      rateBp: i.tax_rate_bp ?? 0,
+      inclusive: i.tax_inclusive !== 0,
+    })),
+    billDiscountCents: 0,
+    charges: [],
+    // CGST and SGST split, or one IGST line, exactly as the invoice does it.
+    interState: !!order.inter_state,
+    roundToRupee: false,
+  })
+
+  const byItem = new Map<number, any[]>()
+  let totalCents = 0
+  bill.lines.forEach((line: any, n: number) => {
+    const item = items[n]
+    const cents = line.cgstCents + line.sgstCents + line.igstCents
+    totalCents += cents
+    const ids = String(item?.pos_tax_ids ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (!ids.length || cents <= 0) return
+    // Split evenly across their ids, with the remainder on the first, so the
+    // parts add back up to the amount charged.
+    const each = Math.floor(cents / ids.length)
+    byItem.set(
+      item.id,
+      ids.map((id, k) => ({ id, amount: money(k === 0 ? cents - each * (ids.length - 1) : each) })),
+    )
+  })
+
+  const details = totalCents > 0
+    ? [
+        {
+          id: '',
+          title: order.inter_state ? 'IGST' : 'GST',
+          type: 'P',
+          price: '',
+          tax: money(totalCents),
+          restaurant_liable_amt: money(totalCents),
+        },
+      ]
+    : []
+
+  return { totalCents, byItem, details }
 }
 
 export type PushResult = { ok: boolean; skipped?: string; posOrderId?: string; error?: string }
@@ -354,13 +435,19 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
    */
   const items = db
     .prepare(
-      `SELECT oi.id, oi.name, oi.quantity, oi.unit_price_cents, m.pos_item_id
-         FROM order_items oi LEFT JOIN menu_items m ON m.id = oi.menu_item_id
+      `SELECT oi.id, oi.name, oi.quantity, oi.unit_price_cents,
+              m.pos_item_id, m.pos_tax_ids,
+              COALESCE(t.rate_bp, d.rate_bp, 0)     AS tax_rate_bp,
+              COALESCE(t.inclusive, d.inclusive, 1) AS tax_inclusive
+         FROM order_items oi
+         LEFT JOIN menu_items m ON m.id = oi.menu_item_id
+         LEFT JOIN tax_rates  t ON t.id = m.tax_rate_id AND t.restaurant_id = ?
+         LEFT JOIN tax_rates  d ON d.restaurant_id = ? AND d.is_default = 1
         WHERE oi.order_id = ? AND oi.pos_order_id IS NULL
           AND (oi.accepted IS NULL OR oi.accepted = 1)
         ORDER BY oi.id`,
     )
-    .all(orderId) as any[]
+    .all(order.restaurant_id, order.restaurant_id, orderId) as any[]
 
   if (!items.length) {
     return order.pos_order_id
@@ -388,10 +475,17 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
       .get(orderId) as any)?.n ?? 0) + 1
   const clientOrderId = roundNo === 1 ? order.order_number : `${order.order_number}-${roundNo}`
 
+  const tax = taxOf(order, items, restaurant)
   const payload = orderPayload(
     link,
-    { ...order, order_number: clientOrderId, pos_table_id: posTableId },
-    items,
+    {
+      ...order,
+      order_number: clientOrderId,
+      pos_table_id: posTableId,
+      tax_total_cents: tax.totalCents,
+      tax_details: tax.details,
+    },
+    items.map((i) => ({ ...i, item_tax: tax.byItem.get(i.id) ?? [] })),
     restaurant,
     `${origin}/api/petpooja/${link.webhookSecret}/callback`,
   )

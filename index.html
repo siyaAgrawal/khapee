@@ -11,14 +11,26 @@
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#7a3fd9" />
     <title>Khapee — order at the table</title>
 
-    <!-- The brand's two faces, same as the website. preconnect first so the
-         first paint is not waiting on a DNS lookup, and display=swap so a slow
-         font never leaves a customer looking at a blank menu. -->
+    <!--
+      Inter sets everything, and Archivo sets the one line that shouts.
+
+      The app used to be Space Grotesk over Bricolage Grotesque — two faces
+      with a lot of personality in the letterforms themselves, which is
+      wonderful on a poster and tiring on a menu you read for twenty minutes.
+      Every app people actually order food from uses a plain, wide-aperture
+      sans and spends its personality on colour, photographs and one big
+      headline instead. Inter is that plain face. Archivo appears once, at
+      900 italic, on the line at the top of the home screen.
+
+      preconnect first so the first paint is not waiting on a DNS lookup, and
+      display=swap so a slow font never leaves a customer looking at a blank
+      menu.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Space+Grotesk:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,800;1,900&family=Inter:wght@400;500;600;700;800;900&display=swap"
     />
 
     <!-- Added to the home screen, this opens as its own app: no browser bars,

@@ -222,43 +222,36 @@ export default function Home() {
         </div>
       )}
       <main className="page">
-        {/* The name says it: kha-pee, eat and drink. The line under it stays in
-            plain English so the page still explains itself to someone who does
-            not read the joke. */}
-        {/* Search lives inside the colour block, the way it does in every app
-            people already order from: the block is the part of a page nobody
-            forgets, so the thing they came to do belongs in it. */}
+        {/*
+          Where you are, then the one loud line, then search — which is the
+          order every app people already order from puts them in, and the
+          reason those apps are easy: the block at the top holds the two
+          things you always want, and the rest of the page is only food.
+        */}
         <div className="hero">
-          {/* Aao khao jao is the whole product in three words, and it is the
-              register people here actually order in. The line under it stays
-              plain English — the joke is allowed to be the headline and is not
-              allowed to be the instructions. */}
-          <span className="kicker">Aao · Khao · Jao</span>
-          <h1 className="hero-line">Kuch khapee lo.</h1>
-          <p>At your table, in your car, or at your door.</p>
+          <div className="hero-place">
+            <PinIcon size={17} />
+            <span>
+              <strong>{nearestCity || 'Indore'}</strong>
+              <small>Madhya Pradesh, India</small>
+            </span>
+          </div>
+
+          {/* The app's name, said out loud. The only line in the product set
+              in the loud face, which is what lets it be this loud. */}
+          <h1 className="hero-line">kuch khapee lo.</h1>
 
           <div className="search-row">
+            <span className="search-mark" aria-hidden>
+              <SearchIcon size={18} />
+            </span>
             <input
               className="search-input"
-              placeholder="Search restaurants or dishes…"
+              placeholder="Restaurant name or a dish…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               aria-label="Search restaurants"
             />
-            <button
-              className={`btn ${coords ? 'btn-accent' : 'btn-secondary'}`}
-              onClick={coords ? () => setCoords(null) : findNearMe}
-              disabled={locating}
-            >
-              {locating ? (
-                <Spinner />
-              ) : (
-                <>
-                  <PinIcon size={15} />
-                  {coords ? 'Nearest first' : 'Near me'}
-                </>
-              )}
-            </button>
             <button
               className={`veg-toggle ${veg ? 'on' : ''}`}
               onClick={() => setVeg(!veg)}
@@ -269,18 +262,11 @@ export default function Home() {
               Veg
             </button>
           </div>
-          {coords && nearestCity && (
-            <p className="tiny" style={{ marginTop: 10 }}>
-              Near <strong>{nearestCity}</strong>
-            </p>
-          )}
-          {locationNote && (
-            <p className="tiny" style={{ marginTop: 10 }}>
-              {locationNote}
-            </p>
-          )}
         </div>
 
+        {/* Cuisines as tabs with a rule under the chosen one, not as a row of
+            filled pills. A pill is a thing you switch on; a tab is a place you
+            are standing, which is what choosing a cuisine actually is. */}
         {tiles.length > 0 && (
           <div className="cuisine-bar">
             {[{ name: 'All', count: 0 }, ...tiles].map((c) => (
@@ -293,6 +279,24 @@ export default function Home() {
               </button>
             ))}
           </div>
+        )}
+
+        {/* The filters, under the tabs — one outlined row, the way every app
+            of this kind arranges the same two ideas. */}
+        <div className="filter-row">
+          <button
+            className={`filter-chip ${coords ? 'on' : ''}`}
+            onClick={coords ? () => setCoords(null) : findNearMe}
+            disabled={locating}
+          >
+            {locating ? <Spinner /> : <PinIcon size={15} />}
+            {coords ? 'Nearest first' : 'Near me'}
+          </button>
+        </div>
+        {locationNote && (
+          <p className="tiny muted" style={{ marginTop: 10 }}>
+            {locationNote}
+          </p>
         )}
 
         {error && <ErrorState message={error} onRetry={() => load(coords)} />}
@@ -331,41 +335,43 @@ export default function Home() {
           />
         )}
 
+        {/*
+          Areas, as a rail rather than as cards in the list.
+          An area is not a restaurant and there are two or three of them, so as
+          full-height cards they were two enormous purple blocks that pushed
+          every actual restaurant off the first screen. A short sideways rail
+          is what this kind of "a whole street at once" row is in any app that
+          has one: available, obviously different, and out of the way.
+        */}
+        {!query.trim() && filter === 'All' && precincts.length > 0 && (
+          <section className="area-section">
+            <div className="list-head">
+              <h2>Order from a whole area</h2>
+            </div>
+            <div className="area-rail">
+              {precincts.map((p) => (
+                <Link key={`p-${p.id}`} to={`/p/${p.slug}`} className="area-tile">
+                  <span className="area-tile-kicker">Area</span>
+                  <span className="area-tile-name">{p.name}</span>
+                  <span className="area-tile-meta">
+                    {p.restaurants} place{p.restaurants === 1 ? '' : 's'} · they come to you
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {restaurants && visible.length > 0 && (
           <>
             {/* The list had no heading, so the page went from a row of filters
-                straight into cards. Every app of this kind puts a line here,
-                and it is the cheapest place in the product to sound like a
-                person rather than a directory. */}
+                straight into cards. Plain words: the headline at the top of
+                the screen is where the app is allowed to have a voice, and a
+                list of restaurants is a list of restaurants. */}
             <div className="list-head">
-              <span className="kicker">{nearestCity || 'Indore'}</span>
-              <h2>Aaj kya khaana hai?</h2>
+              <h2>{visible.length} places near you</h2>
             </div>
             <div className="grid">
-            {!query.trim() &&
-              filter === 'All' &&
-              precincts.map((p) => (
-                <Link key={`p-${p.id}`} to={`/p/${p.slug}`} className="r-card area-card">
-                  {/* A street has no dish to photograph, so its name is the
-                      picture — set once, on the brand's night, in gold. The
-                      body used to repeat it underneath as a heading, which
-                      read as a mistake rather than as emphasis. */}
-                  <div className="area-art">
-                    <span className="badge badge-area">Area</span>
-                    <h3 className="area-mark">{p.name}</h3>
-                  </div>
-                  <div className="r-card-body">
-                    <p>{p.note || 'Order from any kitchen here and they bring it to you.'}</p>
-                    <div className="r-card-meta">
-                      <span>
-                        {p.restaurants} place{p.restaurants === 1 ? '' : 's'}
-                      </span>
-                      <span className="dot-sep">{p.city}</span>
-                      <span className="dot-sep">They come to you</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
             {visible.map((r, i) => (
               <Link key={r.id} to={`/r/${r.id}`} className="r-card" style={{ animationDelay: `${i * 45}ms` }}>
                 <Art
@@ -376,20 +382,22 @@ export default function Home() {
                   className={`r-card-art ${r.isOpen ? '' : 'closed-art'}`}
                 />
                 <div className="r-card-body">
+                  {/* Name and rating on one line, the way every list of
+                      places to eat sets them: the score is what the eye goes
+                      to first and it belongs beside the name, not buried in
+                      the row of metadata underneath. */}
                   <div className="r-card-title">
                     <h3>{r.name}</h3>
-                    <span className={`badge ${r.isOpen ? 'badge-open' : 'badge-closed'}`}>
-                      {r.isOpen ? 'Open' : 'Closed'}
-                    </span>
+                    {r.rating ? <span className="rating">★ {r.rating.toFixed(1)}</span> : null}
                   </div>
                   <p>{r.description}</p>
                   <div className="r-card-meta">
-                    {r.distanceKm != null && <span className="badge badge-info">{r.distanceKm} km</span>}
-                    {r.rating ? <span className="rating">★ {r.rating.toFixed(1)}</span> : null}
-                    <span className={r.rating || r.distanceKm != null ? 'dot-sep' : ''}>
-                      {r.categories.join(' · ')}
+                    <span className={`badge ${r.isOpen ? 'badge-open' : 'badge-closed'}`}>
+                      {r.isOpen ? 'Open' : 'Closed'}
                     </span>
+                    <span className="dot-sep">{r.categories.join(' · ')}</span>
                     <span className="dot-sep">{r.prepMinutes} min</span>
+                    {r.distanceKm != null && <span className="dot-sep">{r.distanceKm} km</span>}
                   </div>
                 </div>
               </Link>

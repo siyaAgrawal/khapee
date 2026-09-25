@@ -74,8 +74,22 @@
      names and numbers only — a display face used on body copy is the fastest
      way to make a menu hard to read. Both fall back to the system stack, so a
      blocked font request costs weight and nothing else. */
-  --display: 'Bricolage Grotesque', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --sans: 'Space Grotesk', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /*
+   * One plain face for everything, and one loud one for a single line.
+   *
+   * Space Grotesk and Bricolage were the website's, and the website is a
+   * poster — you look at it once. A menu is read for twenty minutes under a
+   * restaurant's lights by somebody who is hungry, and a face with character
+   * in every letterform is work to read at that length. Inter is the plain,
+   * wide, boring one, which is what every app people order food from actually
+   * uses; the personality goes into colour, pictures and one headline.
+   */
+  --display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* The one that shouts. Used on the home screen's headline and nowhere else,
+     because a thing that appears twice is a typeface and a thing that appears
+     once is a logo. */
+  --shout: 'Archivo', 'Inter', ui-sans-serif, system-ui, sans-serif;
   /* Headings were a serif and are now the display grotesque. Kept under the
      old name because twenty-six rules ask for it by that name, and renaming
      them would be a hundred-line diff that changes nothing on screen. */
@@ -173,19 +187,18 @@ h4 {
 
 h1 {
   font-family: var(--serif);
-  /* The website sets its display face at 800 with the tracking pulled right
-     in, and that setting is most of why a Khapee page looks like one. At 600
-     with looser tracking it was the same typeface doing none of the work. */
   font-weight: 800;
-  font-size: clamp(31px, 5.2vw, 46px);
-  letter-spacing: -0.042em;
-  line-height: 0.98;
+  font-size: clamp(27px, 4.6vw, 38px);
+  /* Inter is already a tight face; the −0.042em that suited a display
+     grotesque closes it into a smear. */
+  letter-spacing: -0.022em;
+  line-height: 1.12;
 }
 h2 {
   font-family: var(--serif);
   font-weight: 700;
-  font-size: 22px;
-  letter-spacing: -0.03em;
+  font-size: 21px;
+  letter-spacing: -0.018em;
 }
 
 /*
@@ -201,7 +214,7 @@ h2 {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--gold);
+  color: var(--accent);
 }
 
 p {
@@ -563,10 +576,17 @@ textarea {
   letter-spacing: -0.045em;
 }
 
-/* The full stop the logo ends on. Gold, because it is the one mark on the
-   page that is allowed to be. */
+/*
+ * The full stop the logo ends on, in the brand purple.
+ *
+ * It was gold — and gold was the second brand colour everywhere: this dot,
+ * the rules under section headings, the "AREA" labels, the bell in the staff
+ * line. Against a bright purple and a white page it reads as mustard, and it
+ * was the thing that made the app look like a different app from its own
+ * icon. The palette is purple and ink now; the dot is the purple.
+ */
 .brand-dot {
-  color: var(--gold);
+  color: var(--accent);
 }
 
 .header-spacer {
@@ -1020,16 +1040,43 @@ textarea {
   background: var(--brand-fixed);
   color: #ffffff;
 }
-.hero .kicker {
-  margin-bottom: 12px;
-  /* Gold on this purple is muddy; white at half strength is the label every
-     app of this kind actually uses over its colour block. */
+/* Where you are, the way the top of an ordering app always opens. */
+.hero-place {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+.hero-place small {
+  /* block, or the state runs straight on from the city: "IndoreMadhya
+     Pradesh, India". */
+  display: block;
+  font-size: 12.5px;
+  font-weight: 400;
   color: rgba(255, 255, 255, 0.72);
 }
+
+/*
+ * The one loud thing in the whole app.
+ *
+ * Everything else is set in a plain face on purpose, which is exactly what
+ * makes this affordable: 900 weight, italic, tight, big. It is the app's
+ * name said out loud, and it is the only place any of this happens — twice
+ * and it is a typeface, once and it is a logo.
+ */
 .hero h1 {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #ffffff;
-  font-size: clamp(28px, 4.6vw, 40px);
+  font-family: var(--shout);
+  font-style: italic;
+  font-weight: 900;
+  font-size: clamp(36px, 9vw, 52px);
+  letter-spacing: -0.03em;
+  line-height: 0.96;
+  text-transform: lowercase;
 }
 /*
  * No gold full stop on this line. It belongs to the wordmark, which is in the
@@ -1051,48 +1098,66 @@ textarea {
  * scrolls away in memory, so the thing you came to do belongs in it. It also
  * buys back the sixty pixels the band costs.
  */
+/*
+ * A white field on the colour, with the magnifier inside it.
+ *
+ * Every app of this kind draws search exactly this way, and it is worth
+ * copying precisely: the field is white so it reads as a place to type rather
+ * than as another button on a coloured bar, and the mark sits inside the
+ * field rather than beside it so the row stays one object.
+ */
 .hero .search-row {
+  position: relative;
   margin: 18px 0 0;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+.search-mark {
+  position: absolute;
+  left: 17px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 1;
 }
 .hero .search-input {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.26);
-  color: #ffffff;
-}
-.hero .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.72);
-}
-.hero .search-input:focus {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 14px 16px 14px 46px;
   background: #ffffff;
   border-color: #ffffff;
   color: var(--ink);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+  font-size: 15px;
 }
-.hero .search-input:focus::placeholder {
+.hero .search-input::placeholder {
   color: var(--muted);
 }
-.hero .btn-secondary,
+.hero .search-input:focus {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
 .hero .veg-toggle {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.26);
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.34);
   color: #ffffff;
   box-shadow: none;
 }
-.hero .btn-secondary:hover,
 .hero .veg-toggle:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.26);
 }
-/* On, the toggles go solid white — the state has to be readable at a glance
-   against a field that is already coloured. */
-.hero .btn-accent,
+/* On, it goes solid white — the state has to be readable at a glance against
+   a field that is already coloured. */
 .hero .veg-toggle.on {
   background: #ffffff;
   border-color: #ffffff;
-  color: var(--accent);
+  /* The fixed brand purple, not --accent: --accent lightens to a lavender in
+     dark mode, and this sits on white in both. */
+  color: var(--brand-fixed);
   box-shadow: none;
-}
-.hero .tiny {
-  color: rgba(255, 255, 255, 0.75);
 }
 
 /*
@@ -1154,11 +1219,9 @@ textarea {
 .list-head {
   margin: 26px 0 0;
 }
-.list-head .kicker {
-  margin-bottom: 7px;
-}
 .list-head h2 {
-  font-size: 25px;
+  font-size: 19px;
+  color: var(--ink-2);
 }
 
 .grid {
@@ -1217,12 +1280,41 @@ textarea {
 }
 .r-card-title h3 {
   font-family: var(--serif);
-  font-size: 18.5px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .r-card p {
   color: var(--muted);
   font-size: 13.5px;
   line-height: 1.45;
+}
+
+/*
+ * The rating, as a filled green pill with a star in it.
+ *
+ * This is the one badge worth drawing rather than setting: it is the number
+ * everybody's eye goes to first on a list of places to eat, it is the same
+ * shape in every app that shows one, and as bare grey text it disappeared
+ * into the row of metadata underneath.
+ */
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 3px 8px 3px 7px;
+  border-radius: 7px;
+  /* Fixed, not --good: that lightens to a mint in dark mode and this pill
+     carries white text in both. */
+  background: #1f7a4a;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.rating::first-letter {
+  color: #ffffff;
 }
 .r-card-meta {
   display: flex;
@@ -1239,18 +1331,6 @@ textarea {
   margin-right: 10px;
 }
 
-/* A rating is the one number on a card worth catching the eye, and gold is
-   what the brand catches it with. */
-.rating {
-  /* inline-block, not inline: ::first-letter is ignored on an inline box, so
-     as a flex row the star simply never took the gold. */
-  display: inline-block;
-  color: var(--ink-2);
-  font-weight: 600;
-}
-.rating::first-letter {
-  color: var(--gold);
-}
 
 /*
  * An area is not a restaurant, and its card should say so before the label
@@ -1264,40 +1344,69 @@ textarea {
  * its name spilling out of the top-left corner, clipped by the card it was
  * supposed to be inside.
  */
-.area-art {
+/*
+ * Areas: a short sideways rail of small purple tiles.
+ *
+ * These were full cards in the restaurant grid — first with no styling at all
+ * (an empty panel with the name spilling out of the corner), then as gold
+ * bands, then as purple blocks 172px tall. Each version had the same problem
+ * underneath: there are two or three areas and a dozen restaurants, so giving
+ * an area the same footprint as a restaurant spent the entire first screen on
+ * them. A rail says "these exist, they are a different kind of thing, they
+ * are over here" in about a fifth of the height.
+ *
+ * A deeper mix of the brand purple rather than gold: purple with purple is a
+ * family, purple with gold was two loud colours arguing down one screen.
+ */
+.area-section {
+  margin-top: 26px;
+}
+.area-rail {
+  display: flex;
+  gap: 12px;
+  margin: 14px calc(var(--gutter) * -1) 0;
+  padding: 2px var(--gutter);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.area-rail::-webkit-scrollbar {
+  display: none;
+}
+.area-tile {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 7px;
-  padding: 16px 18px 18px;
-  /*
-   * Gold, not purple.
-   *
-   * These were the brand purple, directly under a brand-purple block at the
-   * top of the page — which is how a two-colour brand turns into one colour
-   * and then into too much of it. Gold is the other half of the palette and
-   * had nothing to do but underline headings, so the areas take it: purple is
-   * the app, gold is a street you can order a whole dinner off, and the
-   * difference is visible from across the room.
-   */
-  background: var(--gold);
+  gap: 4px;
+  width: 208px;
+  padding: 15px 16px 16px;
+  border-radius: var(--r-lg);
+  background: var(--accent-dark);
+  color: #ffffff;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-/* Ink on gold, in both themes: the band is the same colour whatever the phone
-   is set to, so the type on it has to be too. */
-.area-art .badge-area {
-  color: rgba(25, 17, 37, 0.62);
+.area-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
-.area-mark {
+.area-tile-kicker {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.64);
+}
+.area-tile-name {
   font-family: var(--display);
-  font-weight: 800;
-  font-size: 23px;
-  line-height: 1.04;
-  letter-spacing: -0.032em;
-  color: #191125;
-  text-wrap: balance;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
-.area-card .r-card-body {
-  gap: 9px;
+.area-tile-meta {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /*
@@ -1340,9 +1449,9 @@ textarea {
 .badge-info {
   color: var(--ink-2);
 }
-/* The one label that is worth noticing gets the gold. */
+/* The one label worth noticing gets the brand. */
 .badge-accent {
-  color: var(--gold);
+  color: var(--accent);
 }
 .badge-live::before {
   content: '';
@@ -1469,20 +1578,12 @@ textarea {
   margin-bottom: 12px;
 }
 /*
- * A short gold rule under a course name. The website marks a new scene with a
- * gold label; a menu does not need the label, but it does need the mark — and
- * a page of unaccented black headings is where "this could be any ordering
- * app" comes from.
+ * No rule under a course name.
+ *
+ * There was a short gold one. Underlining every heading on a long menu draws
+ * sixteen coloured dashes down a page whose job is to show food, and it was
+ * the most visible piece of the gold that had to go.
  */
-.menu-section h2::after {
-  content: '';
-  display: block;
-  width: 34px;
-  height: 2px;
-  margin-top: 9px;
-  border-radius: 2px;
-  background: var(--gold);
-}
 
 .item-grid {
   display: grid;
@@ -4028,7 +4129,8 @@ textarea {
 }
 
 .splash-dot-mark {
-  color: var(--gold);
+  /* White on the purple title card: the wordmark is one colour there. */
+  color: #ffffff;
 }
 
 .splash-word {
@@ -4360,9 +4462,10 @@ textarea {
  */
 .cuisine-bar {
   display: flex;
-  gap: 8px;
-  margin: 22px calc(var(--gutter) * -1) 4px;
-  padding: 2px var(--gutter) 8px;
+  gap: 22px;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+  border-bottom: 1px solid var(--line);
   overflow-x: auto;
   /*
    * No snapping. Snap points aligned to the scrollport rather than to this
@@ -4379,30 +4482,67 @@ textarea {
 }
 .cuisine {
   flex: 0 0 auto;
-  padding: 9px 16px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink-2);
-  font-size: 13.5px;
-  font-weight: 500;
+  padding: 10px 2px 11px;
+  border: 0;
+  border-bottom: 2.5px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
-  transition: color 0.18s var(--ease), background 0.18s var(--ease),
-    border-color 0.18s var(--ease);
+  transition: color 0.18s var(--ease), border-color 0.18s var(--ease);
 }
 .cuisine:hover {
+  color: var(--ink-2);
+}
+/* A rule under the one you are standing on. The chosen cuisine used to be a
+   filled pill, which reads as a switch you turned on rather than as a place
+   in a list — and a row of pills with one solid is busier than a row of words
+   with one underlined. */
+.cuisine.active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+/*
+ * The filters, in their own outlined row beneath the tabs. Two rows, two
+ * jobs: the tabs say what kind of food, these say how to narrow it.
+ */
+.filter-row {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: 14px 0 0;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.18s var(--ease), color 0.18s var(--ease),
+    background 0.18s var(--ease);
+}
+.filter-chip:hover:not(:disabled) {
   border-color: var(--ink-2);
 }
-/* The chosen filter takes the brand rather than plain black — it is the one
-   piece of state on this screen and the colour is what makes it visible at a
-   glance while you are scrolling past it. */
-.cuisine.active {
-  background: var(--accent);
+.filter-chip.on {
   border-color: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.filter-chip:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* Veg only, next to "near me". The mark is the Indian veg symbol. */
@@ -5975,10 +6115,9 @@ button.nav-link {
   color: var(--accent);
 }
 
-/* The bell is the only thing in this line worth a colour, and gold is what
-   the brand uses for the one mark worth noticing. */
+/* The bell takes the brand purple, like everything else that is marked. */
 .staff-strip a svg:first-child {
-  color: var(--gold);
+  color: var(--accent);
   flex: 0 0 auto;
 }
 .staff-strip a svg:last-child {

@@ -6,10 +6,10 @@
  * abstract crescent, which is a fine shape and tells somebody scrolling their
  * phone nothing at all about what they are about to open.
  *
- * Rendered rather than drawn by hand because the letterforms are Bricolage
- * Grotesque at a weight no SVG path in this repo carries, and because the four
- * sizes have to be the same picture. Run it after changing the brand colour or
- * the wordmark:
+ * Rendered rather than drawn by hand because the letterforms are Inter at a
+ * weight no SVG path in this repo carries, and because the sizes all have to
+ * be the same picture. Run it after changing the brand colour or the
+ * wordmark:
  *
  *     node scripts/make-icons.mjs
  *
@@ -24,9 +24,8 @@ import { dirname, join } from 'node:path'
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 
-/** Kept in step with --brand-fixed and --gold in src/styles.css. */
+/** Kept in step with --brand-fixed in src/styles.css. */
 const BRAND = '#7a3fd9'
-const GOLD = '#d9a441'
 
 /**
  * `maskable` leaves a ring of bare purple around the word, because Android
@@ -43,7 +42,7 @@ const page = (size, { maskable = false } = {}) => {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=block"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@800&display=block"
       rel="stylesheet"
     />
     <style>
@@ -64,19 +63,20 @@ const page = (size, { maskable = false } = {}) => {
         overflow: hidden;
       }
       .word {
-        font-family: 'Bricolage Grotesque', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-weight: 800;
-        font-variation-settings: 'opsz' 96;
         /* Sized off the tile so every icon is the same picture, and off the
            padding so the maskable one simply sets the word smaller rather
            than being a different drawing. */
-        font-size: ${size * (1 - pad * 2) * 0.295}px;
-        letter-spacing: -0.045em;
+        font-size: ${size * (1 - pad * 2) * 0.285}px;
+        letter-spacing: -0.04em;
         line-height: 1;
         color: #ffffff;
         white-space: nowrap;
       }
-      .dot { color: ${GOLD}; }
+      /* One colour. The dot was gold; on a bright purple it read as
+         mustard and made the icon a different brand from the app. */
+      .dot { color: #ffffff; }
     </style>
   </head>
   <body>

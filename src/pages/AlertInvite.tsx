@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { ErrorState, LoadingBlock, Spinner, useToast } from '../components/ui'
-import { needsHomeScreen, pushFacts, pushSupported, workerReady } from '../lib/push'
+import { enablePush, needsHomeScreen, pushFacts, pushSupported, workerReady, type AlertState } from '../lib/push'
+import { useSession } from '../lib/session'
 
 /**
  * Putting order alerts on one phone, without handing over the password.
@@ -33,6 +34,9 @@ export default function AlertInvite() {
   })
   const token = fromLink || typed
   const toast = useToast()
+  /* Whether whoever is holding this phone already runs a restaurant here. */
+  const { user } = useSession()
+  const ownRestaurant = user?.restaurants?.[0]?.name ?? (user?.restaurants?.length ? 'your restaurant' : '')
   const [invite, setInvite] = useState<{
     restaurant: string
     everywhere?: boolean
@@ -180,6 +184,23 @@ export default function AlertInvite() {
     )
   }
 
+  /*
+   * Already signed in to a restaurant? Then there is nothing to prove.
+   *
+   * The six-character code exists for a phone that is NOT signed in — a
+   * kitchen handset, somebody's partner, a waiter — so that a restaurant can
+   * put alerts on a phone without handing over the password, which would be
+   * the whole dashboard and every customer's number with it.
+   *
+   * None of that reasoning applies to the owner, signed in, on their own
+   * phone. Asking them to go and find a code they would be generating for
+   * themselves is a lock with the key taped to it, and it was the first thing
+   * anybody hit.
+   */
+  if (!invite && !fromLink && ownRestaurant) {
+    return <AllowHere restaurant={ownRestaurant} />
+  }
+
   // No code in the link: ask for one.
   if (!invite) {
     if (fromLink) {
@@ -223,6 +244,13 @@ export default function AlertInvite() {
             >
               {busy ? <Spinner /> : 'Continue'}
             </button>
+            {/* The other way in, for whoever this actually is. A code is for a
+                phone that should not have the password; somebody who has it
+                should never be hunting for a code. */}
+            <p className="tiny muted" style={{ marginTop: 12 }}>
+              Run this restaurant?{' '}
+              <Link to="/login">Sign in</Link> and the button appears here instead — no code.
+            </p>
           </div>
         </main>
       </div>
@@ -354,6 +382,89 @@ export default function AlertInvite() {
               </dl>
             </details>
           )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+
+/**
+ * The whole page, for somebody who is already signed in: one button.
+ *
+ * Deliberately its own component rather than another branch in the one above,
+ * because it shares none of that page's state — no code, no invite, no
+ * spending a token. It asks the browser, tells the server, and says which
+ * restaurant it just switched on for, so a person with two places knows which
+ * one this phone will ring for.
+ */
+function AllowHere({ restaurant }: { restaurant: string }) {
+  const toast = useToast()
+  const [busy, setBusy] = useState(false)
+  const [on, setOn] = useState(false)
+  const [error, setError] = useState('')
+
+  const allow = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      const state = await api<AlertState>('/staff/alerts')
+      if (!state.push?.available || !state.push.publicKey) {
+        setError(state.push?.reason || 'Alerts are not switched on for this server.')
+        return
+      }
+      const r = await enablePush(state.push.publicKey)
+      if (r.ok) {
+        setOn(true)
+        toast('This phone will ring for every order.', 'good')
+      } else setError(r.error ?? 'The browser refused.')
+    } catch (e) {
+      setError((e as ApiError).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="app">
+      <Header />
+      <main className="page page-narrow">
+        <div className="card card-pad invite">
+          <span className="invite-bell" aria-hidden>
+            🔔
+          </span>
+          <h1>{on ? 'This phone is on' : 'Turn on order alerts'}</h1>
+          <p className="muted">
+            {on ? (
+              <>It will ring for every order at <strong>{restaurant}</strong>, even with Khapee closed.</>
+            ) : (
+              <>You&rsquo;re signed in to <strong>{restaurant}</strong>. One tap and this phone rings for
+              every order, even with Khapee closed.</>
+            )}
+          </p>
+
+          {!on && (
+            <button className="btn btn-accent btn-lg btn-block" disabled={busy} onClick={allow}>
+              {busy ? <Spinner /> : 'Allow notifications'}
+            </button>
+          )}
+
+          {!!error && (
+            <p className="tiny" style={{ color: 'var(--bad)' }}>
+              {error}
+            </p>
+          )}
+
+          {needsHomeScreen() && !on && (
+            <p className="tiny muted">
+              On iPhone, add Khapee to your Home Screen first — tap Share, then Add to Home Screen.
+              Apple only allows alerts to an installed app.
+            </p>
+          )}
+
+          <Link className="btn btn-ghost btn-block" to="/staff/orders">
+            {on ? 'Back to orders' : 'Skip for now'}
+          </Link>
         </div>
       </main>
     </div>

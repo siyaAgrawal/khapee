@@ -92,23 +92,26 @@
 :root[data-theme='blackcurrant'] {
   color-scheme: dark;
   --on-paper-rgb: 30 106 128;
-  /* Lifted about a third off the floor. It was dark enough that the purple
-     stopped being a colour and started being a background, and the acid
-     yellow had nothing to be acid against. The accents are untouched — only
-     the ground moved. */
-  /* Bright violet, not dark plum.
-     Lifting the old value only ever made a muddy purple paler, because the
-     problem was never how dark it was — blackcurrant sits at about 285 degrees,
-     which is red-purple, and red-purple goes grey as it lightens. This is back
-     around 268, where the first aubergine was, and where purple stays purple.
-     Saturation is up with it, which is what "bright" actually means here. */
-  --s0-rgb: 28 12 46;
-  --s1-rgb: 38 16 62;
-  --s2-rgb: 50 21 82;
-  --s3-rgb: 81 35 133;
-  --s4-rgb: 96 43 154;
-  --s5-rgb: 117 56 182;
-  --s6-rgb: 150 95 212;
+  /*
+    Matched to the colour asked for: rgb(102 4 184), which is hue 273 at 96%
+    saturation. Every previous attempt moved the lightness, and lightness was
+    never the problem — the shades before this one all sat between 31% and 58%
+    saturation, and a purple at half saturation reads as plum however bright
+    you make it. Nothing in this project has ever been this saturated; the
+    closest was the step above the old surface, and it was still 40 points of
+    saturation short.
+
+    So the whole scale is pinned to one hue and one high saturation, and only
+    the lightness moves down it. Type still clears: cream 8.1:1 on the surface,
+    acid 6.7:1, ice 5.2:1.
+  */
+  --s0-rgb: 33 4 57;
+  --s1-rgb: 47 4 82;
+  --s2-rgb: 67 4 119;
+  --s3-rgb: 102 4 184;
+  --s4-rgb: 120 9 211;
+  --s5-rgb: 143 25 240;
+  --s6-rgb: 176 95 241;
   --accent-rgb: 233 224 79;
   --accent-dim-rgb: 168 161 50;
   --accent2-rgb: 111 208 232;

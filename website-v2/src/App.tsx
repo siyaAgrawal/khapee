@@ -11,9 +11,14 @@ import { Palette } from './components/Palette'
  * Khapee, in three sections and no more.
  *
  * One: the film. Somebody orders on the way home, the kitchen starts while
- * they travel, and they walk in to food already waiting. Two: what that is
- * worth to a restaurant, in three numbers. Three: the two things a visitor
- * might want to do.
+ * they travel, and they walk in to food already waiting. Two: the two things
+ * a visitor might want to do. Three: what this is worth to a restaurant.
+ *
+ * The two doors come straight after "That's Khapee" rather than at the very
+ * bottom. The punchline is the moment somebody has decided, and making them
+ * read a commercial argument aimed at restaurant owners before they are
+ * offered a way in wastes it. "I run a restaurant" now walks down to that
+ * argument, so the people who read it are the people who asked for it.
  *
  * Everything else that was here — a takeaway scene, an interactive phone, a
  * finale with a logo the size of a poster — has gone. Each was defensible on
@@ -24,8 +29,8 @@ const CHAPTERS = [
   { id: 'cover', label: 'Khapee' },
   { id: 'journey', label: 'The wait' },
   { id: 'end', label: 'Already ready' },
-  { id: 'restaurants', label: 'For restaurants' },
   { id: 'start', label: 'Start' },
+  { id: 'restaurants', label: 'For restaurants' },
 ]
 
 export default function App() {
@@ -37,8 +42,8 @@ export default function App() {
         <Cover next="journey" />
         <Journey />
         <Arrival />
-        <Advantages />
         <Close />
+        <Advantages />
       </main>
       <Ledger />
       <Palette />

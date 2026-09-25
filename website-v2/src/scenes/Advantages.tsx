@@ -115,7 +115,10 @@ export function Close() {
           <a className="cta cta-primary" href="https://khapee.com">
             Order with Khapee
           </a>
-          <a className="cta cta-ghost" href="https://khapee.com/for-restaurants">
+          {/* Down the page rather than off it: the argument for restaurants
+              is the next section, and sending somebody to the app to read it
+              throws away the one they are already on. */}
+          <a className="cta cta-ghost" href="#restaurants">
             I run a restaurant
           </a>
         </div>

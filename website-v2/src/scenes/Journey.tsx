@@ -65,7 +65,9 @@ export function Journey() {
       </Shot>
 
       <Cue t={t} a={-0.06} b={0} c={0.07} d={0.12}>
-        <span className="chip mb-5 block">Vijay Nagar, 9:10pm</span>
+        {/* The place-and-time chip has gone. It dated the scene to one
+            evening in one part of Indore, and the line underneath already
+            says everything it was there to say. */}
         <span className="display block" style={{ fontSize: 'clamp(26px, min(5.2vw, 7.4vh), 74px)' }}>
           The work is over.
           <br />

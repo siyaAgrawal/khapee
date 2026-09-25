@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 export const PALETTES = [
   { id: 'aubergine', name: 'Aubergine & Gold — as it is', dot: '#271640', ring: '#d9a441' },
   { id: 'pistachio', name: 'Aubergine, Honey & Pistachio', dot: '#2e1842', ring: '#a8c66c' },
-  { id: 'blackcurrant', name: 'Blackcurrant, Acid & Ice', dot: '#24102d', ring: '#e9e04f' },
+  { id: 'blackcurrant', name: 'Violet, Acid & Ice', dot: '#6604b8', ring: '#e9e04f' },
   { id: 'mulberry', name: 'Mulberry & Apricot', dot: '#38142a', ring: '#f0a95c' },
 ] as const
 

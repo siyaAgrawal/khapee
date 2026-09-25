@@ -5,7 +5,6 @@ import { Cover } from './scenes/Cover'
 import { Journey } from './scenes/Journey'
 import { Arrival } from './scenes/Arrival'
 import { Advantages, Close } from './scenes/Advantages'
-import { Palette } from './components/Palette'
 
 /**
  * Khapee, in three sections and no more.
@@ -46,7 +45,6 @@ export default function App() {
         <Advantages />
       </main>
       <Ledger />
-      <Palette />
       <div className="grain" aria-hidden />
     </>
   )

@@ -17,27 +17,24 @@
 */
 
 /*
-  Purple and yellow, three ways, none of them Zepto.
+  Aubergine & Gold — the palette this site started on, and the one it keeps.
   ------------------------------------------------------------------
-  Purple with a bright yellow is Zepto's palette and there is no arguing with
-  that — deep blue-violet, flat lemon, two colours and no others. The pairing
-  is still the right one for Khapee, so the job is to keep the energy and move
-  out of their register.
+  Four alternatives were built and looked at on the real page; this is the one
+  that was already here. The switcher and the other three have gone with it,
+  because a stylesheet carrying four palettes invites a fifth.
 
-  Three ways to do it, and the options below use all three: take the purple
-  warmer (towards aubergine, mulberry) or far darker (blackcurrant); take the
-  yellow off lemon (honey, apricot, acid-green); and add a third accent, which
-  is the strongest of the three, because a two-colour brand stops looking like
-  another two-colour brand the moment it has a third.
-
-  Also avoided throughout: Zomato's red, Swiggy's orange, Deliveroo's teal,
-  foodpanda's pink, Uber Eats' green.
+  The values are unchanged from before any of that: #191125 ink, #271640
+  night, #d9a441 gold, #b9563c clay, #f4ede1 cream. They are written as raw
+  channels now rather than hex so that Tailwind can put an opacity on them and
+  the SVG artwork can share them, which is the only thing that changed.
 
   --s0..--s6 run darkest to lightest. --accent carries light and food,
-  --accent2 objects and emphasis, --paper is what type is set in.
+  --accent2 objects and emphasis, --paper is what type is set in. --on-paper
+  is the one colour that only exists for the white section, where gold on
+  white would be unreadable: the clay, taken down until it clears 4.5:1.
 */
-/* 1. Aubergine & Gold — the one this started on, kept for comparison. */
-:root[data-theme='aubergine'] {
+:root {
+  color-scheme: dark;
   --on-paper-rgb: 150 63 40;
   --s0-rgb: 20 13 32;
   --s1-rgb: 25 17 37;
@@ -56,101 +53,6 @@
   --cloth1-rgb: 109 122 88;
   --cloth2-rgb: 138 154 85;
   --cloth3-rgb: 127 174 159;
-}
-
-/* 2. Aubergine, Honey & Pistachio — purple and yellow with a green in
-   it. Zepto is two colours and only two; a third that is neither warm
-   nor brand-shaped breaks the resemblance faster than any amount of
-   shifting the other two. Pistachio also reads as food, which yellow
-   on purple never does on its own. */
-:root[data-theme='pistachio'] {
-  --on-paper-rgb: 90 112 46;
-  --s0-rgb: 22 12 30;
-  --s1-rgb: 28 16 39;
-  --s2-rgb: 36 21 54;
-  --s3-rgb: 46 24 66;
-  --s4-rgb: 55 30 78;
-  --s5-rgb: 67 39 99;
-  --s6-rgb: 95 63 133;
-  --accent-rgb: 232 185 68;
-  --accent-dim-rgb: 176 138 43;
-  --accent2-rgb: 168 198 108;
-  --accent2-dim-rgb: 125 154 72;
-  --paper-rgb: 246 240 226;
-  --paper-dim-rgb: 221 212 193;
-  --ash-rgb: 156 146 166;
-  --cloth1-rgb: 168 198 108;
-  --cloth2-rgb: 232 185 68;
-  --cloth3-rgb: 127 154 176;
-}
-
-/* 3. Blackcurrant, Acid & Ice — the crazy one. Far darker than Zepto's
-   flat bright violet, with a yellow pushed towards green until it is
-   acid rather than lemon, and a cold blue against it. Electric, and
-   nobody in the category is anywhere near it. */
-:root,
-:root[data-theme='blackcurrant'] {
-  color-scheme: dark;
-  --on-paper-rgb: 30 106 128;
-  /*
-    Matched to the colour asked for: rgb(102 4 184), which is hue 273 at 96%
-    saturation. Every previous attempt moved the lightness, and lightness was
-    never the problem — the shades before this one all sat between 31% and 58%
-    saturation, and a purple at half saturation reads as plum however bright
-    you make it. Nothing in this project has ever been this saturated; the
-    closest was the step above the old surface, and it was still 40 points of
-    saturation short.
-
-    So the whole scale is pinned to one hue and one high saturation, and only
-    the lightness moves down it.
-
-    Then lifted again, from 37% lightness to 44%, which is a step past the
-    reference itself. This is about as far as it goes: cream is 6.4:1 on the
-    surface and the acid yellow 5.3:1, and another step of this size would put
-    the yellow under the line where it stops being readable on the purple.
-  */
-  --s0-rgb: 42 5 72;
-  --s1-rgb: 58 5 102;
-  --s2-rgb: 84 5 148;
-  --s3-rgb: 123 4 220;
-  --s4-rgb: 144 19 246;
-  --s5-rgb: 164 67 244;
-  --s6-rgb: 194 132 245;
-  --accent-rgb: 233 224 79;
-  --accent-dim-rgb: 168 161 50;
-  --accent2-rgb: 111 208 232;
-  --accent2-dim-rgb: 63 147 168;
-  --paper-rgb: 242 239 244;
-  --paper-dim-rgb: 210 204 216;
-  --ash-rgb: 142 132 160;
-  --cloth1-rgb: 111 208 232;
-  --cloth2-rgb: 233 224 79;
-  --cloth3-rgb: 154 127 192;
-}
-
-/* 4. Mulberry & Apricot — the purple pulled towards red and the yellow
-   towards orange, so the pair sits in a warmer register entirely.
-   Reads as a dining room rather than a delivery app, and is the
-   furthest of the three from a blue-violet and a lemon. */
-:root[data-theme='mulberry'] {
-  --on-paper-rgb: 158 66 38;
-  --s0-rgb: 23 8 17;
-  --s1-rgb: 31 11 23;
-  --s2-rgb: 42 15 31;
-  --s3-rgb: 56 20 42;
-  --s4-rgb: 67 26 51;
-  --s5-rgb: 85 35 65;
-  --s6-rgb: 119 57 94;
-  --accent-rgb: 240 169 92;
-  --accent-dim-rgb: 184 124 60;
-  --accent2-rgb: 217 87 122;
-  --accent2-dim-rgb: 163 61 88;
-  --paper-rgb: 247 237 228;
-  --paper-dim-rgb: 222 210 198;
-  --ash-rgb: 165 143 155;
-  --cloth1-rgb: 217 87 122;
-  --cloth2-rgb: 240 169 92;
-  --cloth3-rgb: 143 127 168;
 }
 
 /*
@@ -450,29 +352,3 @@ html.lenis, html.lenis body { height: auto; }
 }
 .split > * { position: relative; overflow: hidden; }
 .split > * + * { border-left: 1px solid rgba(244, 237, 225, 0.07); }
-
-
-/* The palette switcher: temporary, for choosing. Delete with its component. */
-.swatches {
-  position: fixed;
-  left: 16px;
-  bottom: 22px;
-  z-index: 60;
-  display: flex;
-  gap: 7px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(12px);
-}
-.swatch {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  cursor: pointer;
-  transition: transform 0.16s ease, border-color 0.16s ease;
-}
-.swatch:hover { transform: scale(1.14); }
-.swatch[aria-pressed='true'] { border-color: #fff; transform: scale(1.2); }

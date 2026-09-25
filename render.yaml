@@ -53,6 +53,22 @@ services:
       - key: KHAPEE_SECRET
         generateValue: true
 
+      # Whose phone rings for every restaurant rather than one.
+      #
+      # A comma-separated list of account emails. Anyone on it who turns
+      # notifications on gets every order on Khapee, on any device they sign in
+      # from; everybody else keeps getting only the places they work at. It is
+      # an environment variable rather than a column because it must outlive
+      # the database, which a free instance rebuilds from the snapshot on every
+      # wake — a grant that had to be re-made after each one is a grant nobody
+      # would trust.
+      #
+      # Left unset, nothing changes and no account gains anybody else's
+      # customer names. Set it under Environment on the service if you would
+      # rather the address were not in the repository.
+      - key: KHAPEE_OWNER_EMAILS
+        sync: false
+
       # --- Order alerts (optional; add these in the Render dashboard) --------
       #
       # Both are off unless set, and the app runs exactly as before without

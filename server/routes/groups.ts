@@ -11,6 +11,7 @@ import {
   shapeSession,
 } from '../groups.ts'
 import { getOrder } from '../orders-service.ts'
+import { alertRestaurant } from '../alerts.ts'
 import { syncOrderPayment, upiLink } from '../payments.ts'
 
 export const groupsRouter = Router()
@@ -134,6 +135,36 @@ groupsRouter.post('/session/items', (req, res) => {
     orderId: order.id,
     order: getOrder(order.id),
   })
+
+  /*
+   * A later round is food somebody is waiting for, so it is told the same way
+   * a first order is.
+   *
+   * The notifications row above is read by the dashboard, and the dashboard is
+   * shut for most of an evening. Everything after the first round arrived on a
+   * screen nobody was looking at — the kitchen found out when a customer asked
+   * where their second drink was. Push and email are how the first order gets
+   * through, and there is no reason the third should be told any differently.
+   */
+  const alertFor = db
+    .prepare('SELECT name FROM restaurants WHERE id = ?')
+    .get(ctx.session.restaurant_id) as any
+  alertRestaurant({
+    restaurantId: ctx.session.restaurant_id,
+    restaurantName: String(alertFor?.name ?? ''),
+    orderNumber: order.order_number,
+    where: String(ctx.session.table_label ?? 'Table'),
+    customerName: `${ctx.member.display_name} (added to the table)`,
+    customerPhone: '',
+    total: `₹${(priced.reduce((n, l) => n + l.item.price_cents * l.quantity, 0) / 100).toFixed(0)}`,
+    items: priced.map((l) => `${l.quantity} × ${l.item.name}`).join('\n'),
+    // The table already said yes when it opened. This is more food, not a new
+    // decision, so it must not read as something waiting to be accepted.
+    needsAccepting: false,
+    paid: false,
+    moreItems: true,
+  })
+
   res.status(201).json({ session })
 })
 

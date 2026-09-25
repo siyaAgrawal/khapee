@@ -21,7 +21,7 @@ import {
   setBillingUrl,
   tellBilling,
 } from '../order-feed.ts'
-import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, setDeviceWhatsapp, subscriptionCount, subscriptionList } from '../push.ts'
+import { dropSubscription, followsEveryRestaurant, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, setDeviceWhatsapp, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { faultsFor } from '../faults.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
@@ -920,16 +920,34 @@ staffRouter.post('/alerts/test-email', async (req: any, res) => {
   res.json({ ok: true, to })
 })
 
-/** This device would like to be told. */
+/**
+ * This device would like to be told.
+ *
+ * Called on every page load, not just when the switch is tapped — it is what
+ * repairs the server's subscription table after a host has rebuilt the
+ * database from the snapshot. That makes it the only place the "every
+ * restaurant" grant can live: a flag set once and then cleared by the next
+ * reload is a flag that does not exist, which is exactly how this behaved.
+ */
 staffRouter.post('/alerts/subscribe', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   if (!pushConfigured()) {
     return res.status(503).json({ error: pushReason() })
   }
-  const result = saveSubscription(req.user.id, restaurantId, req.body?.subscription ?? req.body)
+  // Decided here from the account rather than taken from the request, because
+  // a body that could ask for every restaurant's orders is a body that would
+  // be asked for by anybody who runs one restaurant on Khapee.
+  const everywhere = followsEveryRestaurant(req.user.id)
+  const result = saveSubscription(
+    req.user.id,
+    restaurantId,
+    req.body?.subscription ?? req.body,
+    everywhere ? 'Owner phone — every restaurant' : '',
+    everywhere,
+  )
   if (!result.ok) return res.status(400).json({ error: result.error })
-  audit(restaurantId, actorOf(req), 'alerts.subscribe', 'restaurant', restaurantId, {})
-  res.json({ ok: true, devices: subscriptionCount(restaurantId) })
+  audit(restaurantId, actorOf(req), 'alerts.subscribe', 'restaurant', restaurantId, { everywhere })
+  res.json({ ok: true, devices: subscriptionCount(restaurantId), everywhere })
 })
 
 /** And this one would like to stop. */

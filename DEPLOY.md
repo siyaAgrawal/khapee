@@ -52,6 +52,57 @@ Verified end to end against the live site:
 
 Two phones on different networks now work, which was the whole point.
 
+### Making alerts reliable without paying
+
+Three things, in the order they matter.
+
+**1. Turn email on.** It is the only channel that survives a rebuild. A push
+subscription lives in the database, and a free instance rebuilds the database
+from the snapshot every time it wakes — so the phone that was signed up last
+night is not signed up this morning. The email address is not runtime data: it
+is `restaurants.order_email`, or the owner's account, both of which come back
+with the snapshot. So email is the one route that cannot be silently lost.
+
+Free through Gmail with an app password. Add under Environment on the service:
+
+    SMTP_HOST  smtp.gmail.com
+    SMTP_PORT  465
+    SMTP_USER  the full Gmail address
+    SMTP_PASS  the 16-character app password
+
+Without these, `mailConfigured()` is false and order emails never send — which
+looks exactly like a quiet evening.
+
+**2. Push repairs itself, but only while somebody has the dashboard open.**
+The dashboard re-sends its subscription on every page load, which is what
+repopulates the wiped table. That covers a till that is open all service. It
+does not cover an order arriving after a sleep with every dashboard shut —
+nothing is subscribed at that moment, and only the email gets through.
+
+**3. Keep it awake, so the rebuild stops happening.** The wipe is a symptom of
+spinning down. An uptime pinger hitting `/api/health` every 10 minutes keeps
+one instance up, and then the database simply persists between customers —
+orders and access codes included. Free pingers that do this: cron-job.org,
+UptimeRobot.
+
+> Worth checking before relying on it: a free Render service is capped at a
+> monthly pool of instance-hours, and a service kept awake all month spends
+> nearly all of it. Confirm the current allowance covers a 31-day month
+> (744 hours) on Render's own pricing page — if it does not, the pinger should
+> run only during opening hours, which is the same fix and costs nothing.
+
+None of this is as good as a disk. It is what works at zero cost.
+
+### Every order, on every restaurant
+
+An owner with more than one place wants one phone for all of them. Set
+`KHAPEE_OWNER_EMAILS` to a comma-separated list of account emails; anyone on
+it who turns notifications on gets every order on Khapee, from any device they
+sign in on. Everyone else keeps getting only the places they work at.
+
+It is an environment variable rather than a database column deliberately — it
+has to outlive the rebuild described above.
+
 ### What free costs
 
 No disk, and the instance sleeps after ~15 minutes idle — the first request

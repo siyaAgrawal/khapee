@@ -51,14 +51,26 @@ export type OrderAlert = {
   items: string
   needsAccepting: boolean
   paid: boolean
+  /**
+   * More food on a table that is already open, rather than a new order.
+   *
+   * It needs its own wording because the other two flags cannot express it: a
+   * later round needs no yes, which used to make it read "Paid order" on a
+   * lock screen while the line underneath said unpaid.
+   */
+  moreItems?: boolean
 }
 
 /** The subject line has to answer, on a lock screen, "does this need me?" */
 function title(a: OrderAlert): string {
+  if (a.moreItems) return `#${a.orderNumber} ordered more`
   return a.needsAccepting ? `#${a.orderNumber} needs your yes` : `Paid order #${a.orderNumber}`
 }
 
 function summary(a: OrderAlert): string {
+  // A round's total is the round, not the table, so saying it is unpaid would
+  // be answering a question about money that this alert is not about.
+  if (a.moreItems) return `${a.where} · ${a.customerName} · ${a.total} this round`
   return `${a.where} · ${a.customerName} · ${a.total}${a.paid ? ' · paid in the app' : ' · unpaid'}`
 }
 
@@ -82,9 +94,11 @@ export function alertRestaurant(a: OrderAlert): void {
     to,
     subject: `${title(a)} — ${a.restaurantName}`,
     text: [
-      a.needsAccepting
-        ? 'A new order is waiting for you to accept it.'
-        : 'A new order has come in, already paid.',
+      a.moreItems
+        ? 'A table that is already open has ordered more.'
+        : a.needsAccepting
+          ? 'A new order is waiting for you to accept it.'
+          : 'A new order has come in, already paid.',
       '',
       `Order   #${a.orderNumber}`,
       `Where   ${a.where}`,

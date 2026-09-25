@@ -2,13 +2,14 @@ import { Router } from 'express'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
 import { requireAuth } from '../auth.ts'
-import { checkAccessCode, createOrder, getOrder, shapeOrder } from '../orders-service.ts'
+import { checkAccessCode, createOrder, customerAgrees, getOrder, shapeOrder } from '../orders-service.ts'
 import { normalizeCode } from '../ids.ts'
 import { upiLink } from '../payments.ts'
 import { sessionByToken } from '../dining.ts'
 import { money } from '../../shared/orders.ts'
 import { pushOrder } from '../petpooja.ts'
 import { limitedState } from '../limited.ts'
+import { publish } from '../events.ts'
 
 export const ordersRouter = Router()
 
@@ -217,6 +218,137 @@ ordersRouter.get('/:orderNumber', (req, res) => {
  * messaged you first is billed per order by Meta; a push notification costs
  * nothing, now or ever, and goes through the browser the customer already has.
  */
+/** Proves the person asking is the one who placed it. */
+function ownsOrder(req: any, row: any): boolean {
+  const token = String(req.body?.token ?? req.query.token ?? '')
+  return (req.user && row.user_id === req.user.id) || token === row.verify_token
+}
+
+/**
+ * "They can't make one thing — go ahead with the rest."
+ *
+ * The other half of a kitchen turning down a single dish. Until the customer
+ * answers this, the order sits saying so on both screens; answering it puts
+ * the order back where it was, waiting on the kitchen, with fewer dishes and
+ * a total that already matches.
+ */
+ordersRouter.post('/:orderNumber/agree', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db
+    .prepare('SELECT id, user_id, verify_token FROM orders WHERE order_number = ?')
+    .get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+  const r = customerAgrees(row.id)
+  if (!r.ok) return res.status(400).json({ error: r.error })
+  res.json({ order: r.order })
+})
+
+/**
+ * "Then don't bother."
+ *
+ * The other answer to a refused dish, and the only route a customer has to
+ * call off their own order. Deliberately narrow: only while the kitchen has
+ * not started, and never once money has been claimed against it, because a
+ * cancellation that leaves a payment behind is a refund nobody has recorded.
+ */
+ordersRouter.post('/:orderNumber/cancel', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db.prepare('SELECT * FROM orders WHERE order_number = ?').get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+
+  if (!['REQUESTED', 'NEW', 'ACCEPTED'].includes(row.status)) {
+    return res.status(409).json({ error: 'This one is too far along to cancel here — please ring the restaurant.' })
+  }
+  if (row.payment_status === 'PAID') {
+    return res.status(409).json({
+      error: 'This order is paid for, so it has to be cancelled by the restaurant — they will refund you.',
+    })
+  }
+
+  db.prepare(
+    `UPDATE orders SET status = 'CANCELLED', needs_customer_ok = NULL,
+            declined_reason = 'Cancelled by the customer', updated_at = datetime('now')
+      WHERE id = ?`,
+  ).run(row.id)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'CANCELLED', 'customer')").run(row.id)
+  publish('order:update', { restaurantId: row.restaurant_id, orderId: row.id, order: getOrder(row.id) })
+  res.json({ order: getOrder(row.id) })
+})
+
+/**
+ * Nobody answered, so send it again.
+ *
+ * A restaurant that has not looked at an order for two minutes is, from the
+ * customer's side, indistinguishable from one that never received it — and
+ * the worst thing the app can do is leave somebody watching a spinner
+ * wondering whether to ring. So after two minutes the tracking page offers
+ * this: the same dishes, the same table, the same everything, sent again as a
+ * new order.
+ *
+ * Rebuilding the basket by hand would be the obvious way to do it and the
+ * wrong one. Nobody who has already chosen five things and paid attention to
+ * a spinner for two minutes wants to be told to start over; the order is
+ * copied, not retyped.
+ *
+ * The old one is cancelled in the same breath. Two live copies of the same
+ * order is how a table gets two dinners and one bill, and the race is real —
+ * a kitchen can press Accept while the customer is pressing this. Whoever
+ * gets there first wins, and if the restaurant did, this refuses and says so
+ * rather than cancelling an order that is already being cooked.
+ */
+ordersRouter.post('/:orderNumber/resend', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db.prepare('SELECT * FROM orders WHERE order_number = ?').get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+
+  if (row.status !== 'REQUESTED' && row.status !== 'NEW') {
+    return res.status(409).json({
+      error:
+        row.status === 'DECLINED'
+          ? 'They could not take this one. Nothing was sent again.'
+          : 'Good news — they answered just now. Your order is going ahead.',
+      order: getOrder(row.id),
+    })
+  }
+  if (row.resent_as) {
+    return res.status(409).json({ error: 'This one was already sent again.', orderNumber: row.resent_as })
+  }
+
+  const items = db
+    .prepare('SELECT menu_item_id, quantity FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)')
+    .all(row.id) as any[]
+  if (!items.length) return res.status(409).json({ error: 'There is nothing on this order to send again.' })
+
+  const again = createOrder({
+    restaurantId: row.restaurant_id,
+    type: row.order_type,
+    items: items.map((i) => ({ menuItemId: i.menu_item_id, quantity: i.quantity })),
+    customerName: row.customer_name,
+    contactPhone: row.contact_phone,
+    requirePhone: false,
+    userId: row.user_id,
+    note: row.note,
+    // Deliberately not carried over: a claim of payment belongs to the order
+    // it was made against, and copying one would tell the kitchen money had
+    // arrived twice.
+    tableId: row.table_id,
+    takeaway: !!row.takeaway,
+  })
+  if (!again.ok) return res.status(again.status).json({ error: again.error })
+
+  db.prepare(
+    `UPDATE orders SET status = 'CANCELLED', resent_as = ?, declined_reason = 'No answer — sent again',
+            updated_at = datetime('now') WHERE id = ?`,
+  ).run(again.order.orderNumber, row.id)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'CANCELLED', 'customer')").run(row.id)
+  publish('order:update', { restaurantId: row.restaurant_id, orderId: row.id, order: getOrder(row.id) })
+
+  res.status(201).json({ order: again.order })
+})
+
 ordersRouter.post('/:orderNumber/notify', (req, res) => {
   const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
   const row = db

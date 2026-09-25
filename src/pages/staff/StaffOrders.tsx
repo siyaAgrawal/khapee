@@ -775,6 +775,14 @@ export default function StaffOrders() {
                           <b>
                             {placeOf(o)}
                             <WantedFor order={o} />
+                            {/* Turned round: this one is not waiting on the
+                                kitchen any more, and a board that does not
+                                say so looks like an order nobody has touched. */}
+                            {o.needsCustomerOk && (
+                              <span className="waiting-them" title={`Asked about ${o.declinedItems}`}>
+                                waiting on the customer
+                              </span>
+                            )}
                           </b>
                           <em>
                             #{o.orderNumber} · {o.customerName || 'Guest'}

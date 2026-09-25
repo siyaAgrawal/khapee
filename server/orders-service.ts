@@ -6,6 +6,7 @@ import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
 import { alertRestaurant } from './alerts.ts'
+import { askCustomer } from './customer-notify.ts'
 import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
 
@@ -584,7 +585,50 @@ export function decideItem(orderId: number, itemId: number, accepted: boolean): 
   const left = db
     .prepare('SELECT COUNT(*) n FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)')
     .get(orderId) as any
-  return { ok: true, order: getOrder(orderId), allDeclined: Number(left.n) === 0 }
+  const allDeclined = Number(left.n) === 0
+
+  /*
+   * And now the customer has to agree to it.
+   *
+   * They placed one order and are about to be handed a smaller one with a
+   * different total, having never been asked — which is somebody else editing
+   * your order after you placed it. So a refused dish turns the order round:
+   * it stops waiting on the kitchen and starts waiting on the person who
+   * ordered it.
+   *
+   * Not asked when everything has gone, because "do you accept nothing" is
+   * not a question; the kitchen declines the order outright and says why.
+   */
+  const refused = db
+    .prepare('SELECT name, quantity FROM order_items WHERE order_id = ? AND accepted = 0 ORDER BY id')
+    .all(orderId) as any[]
+
+  if (!allDeclined && refused.length) {
+    db.prepare(
+      "UPDATE orders SET needs_customer_ok = datetime('now'), declined_items = ? WHERE id = ?",
+    ).run(refused.map((r) => `${r.quantity}× ${r.name}`).join(', ').slice(0, 300), orderId)
+    askCustomer(orderId, refused.map((r) => r.name))
+  } else if (!refused.length) {
+    // The kitchen changed its mind and put the dish back on. Nothing to ask.
+    db.prepare("UPDATE orders SET needs_customer_ok = NULL, declined_items = '' WHERE id = ?").run(orderId)
+  }
+
+  return { ok: true, order: getOrder(orderId), allDeclined }
+}
+
+/**
+ * The customer agreeing to the smaller order.
+ *
+ * Clears the question and leaves the order exactly where it was — waiting on
+ * the kitchen, with fewer dishes on it and a total that already matches.
+ */
+export function customerAgrees(orderId: number): { ok: boolean; order?: any; error?: string } {
+  const row = db.prepare('SELECT needs_customer_ok FROM orders WHERE id = ?').get(orderId) as any
+  if (!row) return { ok: false, error: 'That order no longer exists.' }
+  if (!row.needs_customer_ok) return { ok: true, order: getOrder(orderId) }
+  db.prepare("UPDATE orders SET needs_customer_ok = NULL, updated_at = datetime('now') WHERE id = ?").run(orderId)
+  publish('order:update', { restaurantId: (db.prepare('SELECT restaurant_id FROM orders WHERE id = ?').get(orderId) as any)?.restaurant_id, orderId, order: getOrder(orderId) })
+  return { ok: true, order: getOrder(orderId) }
 }
 
 /**
@@ -651,6 +695,18 @@ export function shapeOrder(row: any) {
      * sorts its queue by it so the 9:30 order is not cooked at 9:05.
      */
     wantedAt: row.wanted_at ?? null,
+    /**
+     * Waiting on the customer rather than on the kitchen.
+     *
+     * Set when the restaurant refuses one dish out of several. Both screens
+     * read it: the customer's tracking page turns into a question, and the
+     * kitchen's board says it is waiting on an answer rather than looking
+     * like an order nobody has touched.
+     */
+    needsCustomerOk: row.needs_customer_ok ?? null,
+    declinedItems: row.declined_items ?? '',
+    /** If this one went unanswered and was sent again, the new number. */
+    resentAs: row.resent_as ?? null,
     customerName: row.customer_name,
     type: row.order_type as OrderType,
     serviceType: (row.service_mode === 'car'

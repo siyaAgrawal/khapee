@@ -4331,6 +4331,129 @@ async function runTests() {
     ok('and signed out, nothing can', (await call('/staff/alerts/devices/1/whatsapp', { body: { wants: true } })).status === 401)
   }
 
+  group('ONE DISH REFUSED — the order turns round and waits on the customer')
+  {
+    // A restaurant can turn down one dish out of five and until now that
+    // happened silently: the customer agreed to one order and was going to be
+    // handed a smaller one, with a different total, having never been asked.
+    const menu = await call('/staff/menu', { token: roadToken })
+    const two = menu.body.categories.flatMap((c: any) => c.items).filter((i: any) => i.isAvailable).slice(0, 2)
+    ok('two dishes to order', two.length === 2, two.length)
+
+    const placed = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: two.map((i: any) => ({ menuItemId: i.id, quantity: 1 })),
+        customerName: 'Half a dinner',
+        contactPhone: '9876555555',
+      },
+    })
+    ok('an order with two dishes on it', placed.status === 201, placed.body)
+    const num = placed.body.order.orderNumber
+    const tok = placed.body.order.verifyToken
+    const itemToRefuse = placed.body.order.items[0]
+
+    const refuse = await call(`/staff/orders/${placed.body.order.id}/items/${itemToRefuse.id}/decide`, {
+      token: roadToken,
+      body: { accepted: false },
+    })
+    ok('the kitchen can refuse one of them', refuse.status === 200, refuse.body)
+
+    const seen = await call(`/orders/${num}?token=${tok}`)
+    ok('and the order now waits on the customer', !!seen.body.order.needsCustomerOk, seen.body.order.needsCustomerOk)
+    ok('saying which dish it was', seen.body.order.declinedItems.includes(itemToRefuse.name), seen.body.order.declinedItems)
+    ok('with the total already lowered', seen.body.order.totalCents < placed.body.order.totalCents, {
+      was: placed.body.order.totalCents,
+      now: seen.body.order.totalCents,
+    })
+
+    const nosey = await call(`/orders/${num}/agree`, { body: { token: 'not-the-token' } })
+    ok('somebody else cannot answer for them', nosey.status === 403, nosey.status)
+
+    const agreed = await call(`/orders/${num}/agree`, { body: { token: tok } })
+    ok('the customer agrees', agreed.status === 200, agreed.body)
+    ok('and it goes back to waiting on the kitchen', !agreed.body.order.needsCustomerOk, agreed.body.order)
+
+    // The other answer.
+    const second = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: two.map((i: any) => ({ menuItemId: i.id, quantity: 1 })),
+        customerName: 'No thanks then',
+        contactPhone: '9876566666',
+      },
+    })
+    await call(`/staff/orders/${second.body.order.id}/items/${second.body.order.items[0].id}/decide`, {
+      token: roadToken,
+      body: { accepted: false },
+    })
+    const called = await call(`/orders/${second.body.order.orderNumber}/cancel`, {
+      body: { token: second.body.order.verifyToken },
+    })
+    ok('or calls the whole thing off', called.body.order.status === 'CANCELLED', called.body.order.status)
+  }
+
+  group('NOBODY ANSWERED — sending it again without rebuilding the basket')
+  {
+    // Two minutes of a spinner is about how long somebody watches before
+    // deciding the restaurant never saw it. The answer is the same dishes
+    // sent again, not "start over".
+    const menu = await call('/staff/menu', { token: roadToken })
+    const dish = menu.body.categories.flatMap((c: any) => c.items).find((i: any) => i.isAvailable)
+
+    const first = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: dish.id, quantity: 2 }],
+        customerName: 'Still waiting',
+        contactPhone: '9876577777',
+      },
+    })
+    ok('an order nobody has answered', first.body.order.status === 'REQUESTED', first.body.order.status)
+
+    const stranger = await call(`/orders/${first.body.order.orderNumber}/resend`, { body: { token: 'nope' } })
+    ok('a stranger cannot send it again', stranger.status === 403, stranger.status)
+
+    const again = await call(`/orders/${first.body.order.orderNumber}/resend`, {
+      body: { token: first.body.order.verifyToken },
+    })
+    ok('the customer can', again.status === 201, again.body)
+    ok('with the same dishes, nothing retyped', again.body.order.items[0].quantity === 2, again.body.order.items)
+    ok('and the same name on it', again.body.order.customerName === 'Still waiting', again.body.order.customerName)
+    ok('as a genuinely new order', again.body.order.orderNumber !== first.body.order.orderNumber)
+
+    // Two live copies is how a table gets two dinners and one bill.
+    const old = await call(`/orders/${first.body.order.orderNumber}?token=${first.body.order.verifyToken}`)
+    ok('the old one is cancelled in the same breath', old.body.order.status === 'CANCELLED', old.body.order.status)
+    ok('and points at its replacement', old.body.order.resentAs === again.body.order.orderNumber, old.body.order.resentAs)
+
+    const twice = await call(`/orders/${first.body.order.orderNumber}/resend`, {
+      body: { token: first.body.order.verifyToken },
+    })
+    ok('it cannot be sent again twice', twice.status === 409, twice.status)
+
+    // The race that actually happens: the kitchen presses Accept while the
+    // customer is pressing this. Whoever gets there first wins.
+    const accepted = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Beaten to it',
+        contactPhone: '9876588888',
+      },
+    })
+    await call(`/staff/orders/${accepted.body.order.id}/status`, { token: roadToken, body: { status: 'ACCEPTED' } })
+    const tooLate = await call(`/orders/${accepted.body.order.orderNumber}/resend`, {
+      body: { token: accepted.body.order.verifyToken },
+    })
+    ok('an order accepted in the meantime is not sent again', tooLate.status === 409, tooLate.status)
+    ok('and the customer is told it is good news', /answered just now/i.test(String(tooLate.body.error)), tooLate.body.error)
+  }
+
   group('HALF OPEN — the kitchen has gone home, the fridge has not')
   {
     // A restaurant has two closing times: the one the chef leaves at and the

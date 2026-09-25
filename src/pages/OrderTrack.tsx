@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError, openStream } from '../lib/api'
-import { Art, ErrorState, LoadingBlock, clockTime, money } from '../components/ui'
+import { Art, ErrorState, LoadingBlock, Spinner, clockTime, money } from '../components/ui'
 import { QRCanvas } from '../lib/qr'
-import { receiptToken } from '../lib/table-context'
+import { receiptToken, rememberReceipt } from '../lib/table-context'
 import { currentEndpoint, followOrder, needsHomeScreen, pushSupported } from '../lib/push'
 import { useToast } from '../components/ui'
 import { flowFor, isAccepted, STATUS_LABEL, type OrderStatus } from '../../shared/orders'
 
 export default function OrderTrack() {
   const { orderNumber = '' } = useParams()
+  const navigate = useNavigate()
   const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState('')
   const toast = useToast()
@@ -60,6 +61,20 @@ export default function OrderTrack() {
    * off — which arrives here on its own over the live stream.
    */
   const [celebrate, setCelebrate] = useState<'accepted' | 'paid' | null>(null)
+  /** Which of the two answers on this page is in flight. */
+  const [busy, setBusy] = useState('')
+  /**
+   * Two minutes with no answer.
+   *
+   * Kept as a ticking clock rather than worked out once on load, because the
+   * page is usually opened the second the order is placed and then watched —
+   * so the moment that matters always arrives while somebody is looking at it.
+   */
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5000)
+    return () => clearInterval(id)
+  }, [])
   const [confirmedNow, setConfirmedNow] = useState(false)
   const waitingOnPayment = !!placed.justPlaced && !!placed.paid && order?.paymentState === 'sent'
 
@@ -199,6 +214,68 @@ export default function OrderTrack() {
     toast(`We'll tell you when ${order.restaurantName} has it ready.`, 'good')
   }
 
+  /*
+   * Two minutes is not an arbitrary number: it is about how long somebody
+   * will watch a spinner before deciding the restaurant has not seen it and
+   * reaching for the phone. Offering the answer at that moment is the whole
+   * point; offering it at thirty seconds would send orders again that were
+   * about to be accepted.
+   */
+  const placedAt = Date.parse(`${String(order.createdAt ?? '').replace(' ', 'T')}Z`)
+  const noAnswer =
+    (order.status === 'REQUESTED' || order.status === 'NEW') &&
+    !order.needsCustomerOk &&
+    Number.isFinite(placedAt) &&
+    now - placedAt > 120_000
+
+  const agree = async () => {
+    setBusy('agree')
+    try {
+      const r = await api<{ order: any }>(`/orders/${order.orderNumber}/agree`, {
+        body: { token: receiptToken(order.orderNumber) },
+      })
+      setOrder(r.order)
+      toast('Thanks — they can carry on.', 'good')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const callOff = async () => {
+    if (!window.confirm('Cancel the whole order?')) return
+    setBusy('cancel')
+    try {
+      await api(`/orders/${order.orderNumber}/cancel`, { body: { token: receiptToken(order.orderNumber) } })
+      toast('Cancelled.', 'info')
+      load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const resend = async () => {
+    setBusy('resend')
+    try {
+      const r = await api<{ order: any }>(`/orders/${order.orderNumber}/resend`, {
+        body: { token: receiptToken(order.orderNumber) },
+      })
+      rememberReceipt(r.order.orderNumber, r.order.verifyToken)
+      toast('Sent again.', 'good')
+      navigate(`/order/${r.order.orderNumber}`, { replace: true, state: { justPlaced: true } })
+    } catch (e) {
+      // The restaurant may have answered in the same second. That is good
+      // news, not an error, so the page simply catches up.
+      toast((e as ApiError).message, 'info')
+      load()
+    } finally {
+      setBusy('')
+    }
+  }
+
   const canFollow = pushSupported() && !!followKey?.available && !done && !cancelled
 
   return (
@@ -223,15 +300,57 @@ export default function OrderTrack() {
       )}
       {/* Unfinished on purpose, and it stays until the kitchen answers. The
           honest picture of an order nobody has said yes to yet. */}
-      {!accepted && !cancelled && order.status !== 'DECLINED' && (
+      {/*
+        The kitchen cannot make something, and is waiting on an answer.
+
+        Ahead of the "sent, waiting" strip, because this order is no longer
+        waiting on them — it is waiting on the person reading this, and until
+        they answer nothing else on the page is the point.
+      */}
+      {order.needsCustomerOk && !cancelled && (
+        <div className="decided" role="alert">
+          <div>
+            <strong>
+              {order.restaurantName} can&rsquo;t make {order.declinedItems || 'one of your items'}
+            </strong>
+            <p className="tiny">
+              Everything else is fine, and your total is now {money(order.totalCents)}. Shall they go
+              ahead without it?
+            </p>
+          </div>
+          <div className="decided-acts">
+            <button className="btn btn-accent" disabled={busy !== ''} onClick={agree}>
+              {busy === 'agree' ? <Spinner /> : 'Yes, go ahead'}
+            </button>
+            <button className="btn btn-ghost" disabled={busy !== ''} onClick={callOff}>
+              Cancel the order
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!accepted && !cancelled && order.status !== 'DECLINED' && !order.needsCustomerOk && (
         <div className="paying" role="status" aria-live="polite">
           <span className="paying-spin" aria-hidden />
           <div>
             <strong>Sent to {order.restaurantName}</strong>
             <p className="tiny">
-              Waiting for them to accept it. You&rsquo;ll see a tick here the moment they do — this
-              page updates itself.
+              {noAnswer
+                ? `${order.restaurantName} hasn't answered for two minutes. They may not be at the screen.`
+                : 'Waiting for them to accept it. You\u2019ll see a tick here the moment they do — this page updates itself.'}
             </p>
+            {/*
+              Two minutes of a spinner is the point at which somebody starts
+              wondering whether to ring the restaurant. Sending it again is
+              the same dishes, the same table, nothing retyped — because
+              anybody who has already chosen five things and then watched a
+              spinner has done their part twice already.
+            */}
+            {noAnswer && (
+              <button className="btn btn-accent btn-sm" disabled={busy !== ''} onClick={resend}>
+                {busy === 'resend' ? <Spinner /> : 'Send it again'}
+              </button>
+            )}
           </div>
         </div>
       )}

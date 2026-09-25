@@ -354,6 +354,26 @@ addColumn('push_subscriptions', 'wants_whatsapp', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('restaurants', 'limited_mode', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('menu_categories', 'limited_ok', 'INTEGER NOT NULL DEFAULT 0')
 
+/**
+ * The order is now waiting on the customer, not on the kitchen.
+ *
+ * A restaurant can turn down one dish out of five — the paneer has gone, the
+ * rest is fine — and until now that happened silently. The customer had
+ * agreed to one order and was going to be handed a different, smaller one,
+ * with a different total, having never been asked. That is somebody else
+ * editing your order after you placed it.
+ *
+ * Set when a dish is refused, cleared when the customer says go ahead. While
+ * it is set the order says so on every screen it appears on, and the customer
+ * gets a notification, because the one person who has to agree to this is the
+ * one who is not in the building.
+ */
+addColumn('orders', 'needs_customer_ok', 'TEXT')
+/** What they are being asked about, so the question survives a page reload. */
+addColumn('orders', 'declined_items', "TEXT NOT NULL DEFAULT ''")
+/** Set when an unanswered order was sent again, pointing at its replacement. */
+addColumn('orders', 'resent_as', 'TEXT')
+
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because
 // "the one you open the app to see" is a decision somebody makes, not

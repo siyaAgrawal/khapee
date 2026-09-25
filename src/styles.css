@@ -6056,6 +6056,46 @@ button.nav-link {
   color: var(--muted);
 }
 
+/* On the board: this order is waiting on an answer from the customer. */
+.waiting-them {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* The kitchen cannot make one thing, and the order is now waiting on the
+   customer. Drawn as a question, not a status — it needs an answer. */
+.decided {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 auto 16px;
+  max-width: 560px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--ink);
+}
+.decided strong {
+  font-size: 15px;
+}
+.decided p {
+  margin: 4px 0 0;
+}
+.decided-acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* What a customer sees when the kitchen has gone home. */
 .half-open-notice {
   display: flex;

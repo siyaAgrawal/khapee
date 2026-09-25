@@ -128,6 +128,33 @@ export async function thankNudge(orderId: number): Promise<ThankResult> {
  * push service answered has nothing to do with whether the kitchen has moved
  * the order along.
  */
+/**
+ * "They can't make one thing — is the rest still alright?"
+ *
+ * The one moment in the whole flow where the order is waiting on the customer
+ * rather than on the kitchen, and the customer is the one person not in the
+ * building. So it goes to their phone: a notification that opens the order,
+ * where there is a button to agree or to call the whole thing off.
+ *
+ * Never throws and never blocks the kitchen. A restaurant marking a dish off
+ * has done its part whether or not a push service answered.
+ */
+export function askCustomer(orderId: number, declined: string[]): void {
+  const row = db
+    .prepare('SELECT order_number, restaurant_id FROM orders WHERE id = ?')
+    .get(orderId) as any
+  if (!row) return
+  const name = (db.prepare('SELECT name FROM restaurants WHERE id = ?').get(row.restaurant_id) as any)?.name ?? 'The restaurant'
+  const what = declined.length === 1 ? declined[0] : `${declined.length} things`
+
+  void pushToCustomer(orderId, {
+    title: `${name} can't make ${what}`,
+    body: 'Tap to see the rest of your order and say whether to go ahead.',
+    url: `/order/${row.order_number}`,
+    tag: `khapee-declined-${orderId}`,
+  }).catch(() => {})
+}
+
 export function tellCustomer(orderId: number, status: OrderStatus): void {
   const row = db
     .prepare(

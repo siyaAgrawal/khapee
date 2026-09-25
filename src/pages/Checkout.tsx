@@ -184,6 +184,19 @@ export default function Checkout() {
   // code. Holding its token is the same evidence scanning it again would give.
   const verified = !!dining?.active || !!scannedTable
   const canPayInApp = !!options?.acceptsUpi
+  /*
+   * Half open: the kitchen has gone home, so the order has to be paid for.
+   *
+   * Read before the payment choice is drawn rather than discovered when the
+   * order is refused — offering "pay at the restaurant" on an order the
+   * server will turn down for exactly that reason is the worst version of
+   * this feature.
+   */
+  const prepaidOnly = !!options?.prepaidOnly
+  useEffect(() => {
+    // Nothing to choose when there is only one way to pay.
+    if (prepaidOnly && !payNow) setPayNow(true)
+  }, [prepaidOnly]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /** The line under the choice — what it actually means for this order. */
   const paySub = !canPayInApp
@@ -619,16 +632,19 @@ export default function Checkout() {
 
             <button
               type="button"
-              className={`pay-pick ${payNow ? '' : 'on'}`}
-              onClick={() => setPayNow(false)}
-              aria-pressed={!payNow}
+              className={`pay-pick ${payNow ? '' : 'on'} ${prepaidOnly ? 'off' : ''}`}
+              onClick={() => !prepaidOnly && setPayNow(false)}
+              disabled={prepaidOnly}
+              aria-pressed={!payNow && !prepaidOnly}
             >
               <span className="pay-pick-icon" aria-hidden>
                 💵
               </span>
               <strong>{payLaterLabel}</strong>
               <span className="pay-pick-sub">
-                {isDelivery
+                {prepaidOnly
+                  ? 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
+                  : isDelivery
                   ? 'Cash or UPI when it reaches you'
                   : isCar
                     ? 'Cash or UPI at the car'

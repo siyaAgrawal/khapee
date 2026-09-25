@@ -6056,6 +6056,52 @@ button.nav-link {
   color: var(--muted);
 }
 
+/* What a customer sees when the kitchen has gone home. */
+.half-open-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 11px 15px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* Half open: the switch, and which sections survive it. */
+.half-open-live {
+  border-color: var(--warn);
+}
+.half-open-now {
+  margin: 12px 0 0;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  background: var(--warn-soft);
+  color: var(--ink);
+}
+.half-open-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.half-open-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.half-open-chip.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
 /* Petpooja setup: the numbers, and the URLs that go to their support team. */
 .pp-stats {
   display: flex;

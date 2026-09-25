@@ -4331,6 +4331,90 @@ async function runTests() {
     ok('and signed out, nothing can', (await call('/staff/alerts/devices/1/whatsapp', { body: { wants: true } })).status === 401)
   }
 
+  group('HALF OPEN — the kitchen has gone home, the fridge has not')
+  {
+    // A restaurant has two closing times: the one the chef leaves at and the
+    // one the door locks at. Between them the only thing servable is what
+    // comes ready out of the fridge, and Khapee had no way to say so — open
+    // meant the whole menu and closed meant losing the dessert trade.
+    const menu = await call('/staff/menu', { token: roadToken })
+    const sweet = menu.body.categories.find((c: any) => c.items.length > 0)
+    const other = menu.body.categories.find((c: any) => c.id !== sweet.id && c.items.length > 0)
+    ok('two sections to work with', !!sweet && !!other, menu.body.categories.map((c: any) => c.name))
+
+    const naked = await call('/staff/limited', { token: roadToken, body: { on: true } })
+    // Turning it on with nothing ticked would close the restaurant without
+    // saying so: every dish unavailable behind an open sign.
+    ok('it cannot be switched on with nothing left to sell', naked.status === 400, naked.body)
+
+    await call(`/staff/limited/sections/${sweet.id}`, { token: roadToken, body: { stillOn: true } })
+    const on = await call('/staff/limited', { token: roadToken, body: { on: true } })
+    ok('with a section kept, it switches on', on.status === 200 && on.body.on === true, on.body)
+
+    const seen = await call(`/restaurants/${mornington.id}`)
+    ok('the customer is told at the top of the menu', seen.body.limited?.on === true, seen.body.limited)
+    ok('and which sections are still going', seen.body.limited.sections.includes(sweet.name), seen.body.limited)
+
+    const stillThere = seen.body.menu.flatMap((s: any) => s.items)
+    const keptItem = stillThere.find((i: any) => i.id === sweet.items[0].id)
+    const droppedItem = stillThere.find((i: any) => i.id === other.items[0].id)
+    ok('a kept dish can still be ordered', keptItem?.isAvailable === true, keptItem)
+    // Shown, not hidden. A menu that loses two thirds of itself at ten looks
+    // broken; somebody who came for the pasta should see it is off tonight.
+    ok('a dish from a closed section is still listed', !!droppedItem, droppedItem)
+    ok('but reads as unavailable', droppedItem?.isAvailable === false, droppedItem)
+
+    const refused = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: other.items[0].id, quantity: 1 }],
+        customerName: 'Too late',
+        contactPhone: '9876522222',
+        paymentClaim: { upiRef: '123456789012' },
+      },
+    })
+    ok('and the server refuses it, not just the screen', refused.status === 409, refused.body)
+    ok('naming the dish and what is still on', /no longer available/i.test(String(refused.body.error)), refused.body.error)
+
+    const unpaid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: sweet.items[0].id, quantity: 1 }],
+        customerName: 'Pay later',
+        contactPhone: '9876533333',
+      },
+    })
+    // The second half of the same switch: a place running on one person and a
+    // fridge cannot carry somebody who orders and never comes.
+    ok('an unpaid order is refused even for a kept dish', unpaid.status === 402, unpaid.body)
+
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: sweet.items[0].id, quantity: 1 }],
+        customerName: 'Paid up',
+        contactPhone: '9876544444',
+        paymentClaim: { upiRef: '123456789012' },
+      },
+    })
+    ok('a paid order for a kept dish goes through', paid.status === 201, paid.body)
+
+    const opts = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and the checkout is told to stop offering the counter', opts.body.prepaidOnly === true, opts.body)
+
+    const off = await call('/staff/limited', { token: roadToken, body: { on: false } })
+    ok('it switches off again', off.body.on === false, off.body)
+    const back = await call(`/restaurants/${mornington.id}`)
+    ok('and the whole menu comes back', back.body.limited?.on === false, back.body.limited)
+    const backItem = back.body.menu.flatMap((s: any) => s.items).find((i: any) => i.id === other.items[0].id)
+    ok('including the dishes that were off', backItem?.isAvailable === true, backItem)
+
+    ok('another restaurant cannot switch mine', (await call('/staff/limited', { token: otherToken })).body.on === false)
+  }
+
   group('PETPOOJA — the till that is already on the counter')
   {
     // Half the kitchens worth having already run Petpooja, and everything

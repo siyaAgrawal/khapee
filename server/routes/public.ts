@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushToRestaurant, saveSubscription } from '../push.ts'
+import { limitedNotice, limitedState, orderableNow } from '../limited.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
 import { normalizeCode } from '../ids.ts'
 import { checkAccessCode } from '../orders-service.ts'
@@ -174,18 +175,37 @@ publicRouter.get('/restaurants/:id', (req, res) => {
 
   // This month's specials ride at the top of the menu as a section of their own.
   // The dishes stay in their real section too — this is a shortcut, not a move.
+  /*
+   * Half open: the kitchen has shut but the fridge has not.
+   *
+   * Everything outside the sections that are still going reads as
+   * unavailable, exactly as a sold-out dish does — not hidden. A menu that
+   * quietly loses two thirds of itself at ten o'clock looks broken, and
+   * somebody who came for the pasta deserves to see that it exists and is off
+   * tonight rather than to wonder whether they imagined it.
+   */
+  const limited = limitedState(id)
+  const shape = (i: any) => ({ ...shapeMenuItem(i), isAvailable: orderableNow(i, limited) })
+
   const specials = items.filter((i) => i.is_special && i.is_available)
   const sections = categories.map((c) => ({
     id: c.id,
     name: c.name,
-    items: items.filter((i) => i.category_id === c.id).map(shapeMenuItem),
+    items: items.filter((i) => i.category_id === c.id).map(shape),
   }))
   if (specials.length) {
-    sections.unshift({ id: SPECIALS_SECTION_ID, name: 'This month', items: specials.map(shapeMenuItem) })
+    sections.unshift({ id: SPECIALS_SECTION_ID, name: 'This month', items: specials.map(shape) })
   }
 
   // An empty section is noise once veg mode has filtered the menu down.
-  res.json({ restaurant: shapeRestaurant(row), menu: sections.filter((s) => s.items.length > 0) })
+  res.json({
+    restaurant: shapeRestaurant(row),
+    menu: sections.filter((s) => s.items.length > 0),
+    // Said once, at the top, so nobody fills a basket they cannot order.
+    limited: limited.on
+      ? { on: true, sections: limited.sectionNames, notice: limitedNotice(limited), prepaidOnly: true }
+      : { on: false },
+  })
 })
 
 /**

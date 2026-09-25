@@ -6,6 +6,7 @@ import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
 import { alertRestaurant } from './alerts.ts'
+import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
 
 export type CodeCheck =
@@ -227,7 +228,15 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   }
 
   // --- Price the cart from the database, never from the client -------------
+  /*
+   * Half open, which is a rule about what the kitchen can still make and a
+   * rule about paying, and both are checked here rather than in the screens.
+   * A cart is filled at nine and submitted at ten past ten, so this is not an
+   * edge case — it is the normal way somebody meets the closing kitchen.
+   */
+  const limited = limitedState(input.restaurantId)
   const priced: { item: any; quantity: number }[] = []
+  const closedOut: string[] = []
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line.menuItemId)) as any
     if (!item || item.restaurant_id !== input.restaurantId) {
@@ -236,8 +245,29 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     if (!item.is_available) {
       return { ok: false, status: 409, error: `${item.name} just sold out. Remove it to continue.` }
     }
+    if (!orderableNow(item, limited)) {
+      closedOut.push(item.name)
+      continue
+    }
     const quantity = Math.min(50, Math.max(1, Math.floor(Number(line.quantity))))
     priced.push({ item, quantity })
+  }
+  if (closedOut.length) {
+    return { ok: false, status: 409, error: limitedRefusal(limited, closedOut) }
+  }
+  /*
+   * And paid for. A place running on one person and a fridge cannot carry
+   * somebody who orders and never comes; the margin that makes staying half
+   * open worth doing is exactly the margin a no-show destroys. Refused with
+   * the reason, so the checkout can move them to the UPI button rather than
+   * leaving them staring at a button that will not work.
+   */
+  if (limited.on && !input.paymentClaim) {
+    return {
+      ok: false,
+      status: 402,
+      error: 'The kitchen has closed for the night, so these have to be paid for in the app. Pay by UPI to place the order.',
+    }
   }
   const subtotalCents = priced.reduce((sum, l) => sum + l.item.price_cents * l.quantity, 0)
 

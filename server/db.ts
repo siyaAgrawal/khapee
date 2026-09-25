@@ -330,6 +330,30 @@ addColumn('push_subscriptions', 'label', "TEXT NOT NULL DEFAULT ''")
  */
 addColumn('push_subscriptions', 'wants_whatsapp', 'INTEGER NOT NULL DEFAULT 0')
 
+/**
+ * Half open.
+ *
+ * A kitchen closes before the room does. The chef goes home, the espresso
+ * machine is cleaned down, and for the last two hours the only thing anybody
+ * can still be served is something out of the fridge. Until now Khapee had two
+ * states for that — open, and closed — so a restaurant in exactly this
+ * position either turned everything off and lost the dessert trade, or left
+ * everything on and spent the evening ringing people to say no.
+ *
+ * Switched on, two things change together, and they belong together: only the
+ * sections marked as still available can be ordered, and the order has to be
+ * paid for in the app. The second is not an afterthought. A kitchen with no
+ * kitchen staff left cannot afford somebody who ordered and never came, and
+ * the whole reason a place stays half open is that the margin is thin enough
+ * to matter.
+ *
+ * Which sections survive is the restaurant's choice, not a hardcoded idea of
+ * what a dessert is. For Revery it is the dessert menu; for somebody else it
+ * is drinks, or the bakery counter.
+ */
+addColumn('restaurants', 'limited_mode', 'INTEGER NOT NULL DEFAULT 0')
+addColumn('menu_categories', 'limited_ok', 'INTEGER NOT NULL DEFAULT 0')
+
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because
 // "the one you open the app to see" is a decision somebody makes, not

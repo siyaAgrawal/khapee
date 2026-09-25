@@ -65,7 +65,12 @@ export default function Restaurant() {
   const { add, quantityOf, setQuantity, count, totalCents, cart } = useCart()
   const [veg, setVeg] = useVegMode()
 
-  const [data, setData] = useState<{ restaurant: RestaurantCard; menu: Category[] } | null>(null)
+  const [data, setData] = useState<{
+    restaurant: RestaurantCard
+    menu: Category[]
+    /** Half open: the kitchen has shut but some of the menu is still going. */
+    limited?: { on: boolean; sections?: string[]; notice?: string; prepaidOnly?: boolean }
+  } | null>(null)
   const [error, setError] = useState('')
   const tableCtx = readTableContext(restaurantId)
   const dining = readDining(restaurantId)
@@ -84,9 +89,11 @@ export default function Restaurant() {
   const load = (quietly = false) => {
     setError('')
     if (!quietly) setData(null)
-    api<{ restaurant: RestaurantCard; menu: Category[] }>(
-      `/restaurants/${restaurantId}${veg ? '?veg=1' : ''}`,
-    )
+    api<{
+      restaurant: RestaurantCard
+      menu: Category[]
+      limited?: { on: boolean; sections?: string[]; notice?: string; prepaidOnly?: boolean }
+    }>(`/restaurants/${restaurantId}${veg ? '?veg=1' : ''}`)
       .then(setData)
       .catch((e: ApiError) => setError(e.message))
   }
@@ -179,6 +186,19 @@ export default function Restaurant() {
 
         {data && (
           <>
+            {/*
+              Said before anything is chosen, not after.
+
+              The alternative is somebody filling a basket at ten past ten and
+              being told at the checkout that none of it can be made — which is
+              the same information delivered at the worst possible moment.
+            */}
+            {data.limited?.on && (
+              <div className="half-open-notice" role="status">
+                <span aria-hidden>🌙</span>
+                <span>{data.limited.notice}</span>
+              </div>
+            )}
             {themed ? (
               <header className="noir-hero">
                 <div className="noir-hero-art">

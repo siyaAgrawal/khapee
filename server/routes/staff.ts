@@ -2218,6 +2218,62 @@ staffRouter.post('/floor/table/:id/settle', (req: any, res) => {
   res.json(result)
 })
 
+// --- Half open --------------------------------------------------------------
+//
+// One switch for "the kitchen has gone home but we are still serving pudding",
+// and a tick against each section saying what survives it. See
+// server/limited.ts for why paying in the app is part of the same switch and
+// not a separate setting.
+
+staffRouter.get('/limited', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const row = db.prepare('SELECT limited_mode FROM restaurants WHERE id = ?').get(restaurantId) as any
+  res.json({
+    on: !!row?.limited_mode,
+    sections: db
+      .prepare('SELECT id, name, limited_ok FROM menu_categories WHERE restaurant_id = ? ORDER BY sort_order, id')
+      .all(restaurantId)
+      .map((c: any) => ({ id: c.id, name: c.name, stillOn: !!c.limited_ok })),
+  })
+})
+
+staffRouter.post('/limited', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const on = !!req.body?.on
+
+  /*
+   * Turning it on with nothing left to sell would close the restaurant
+   * without saying so — every dish unavailable, an open sign, and a customer
+   * who cannot work out what they did wrong. Refused, with what to do.
+   */
+  if (on) {
+    const left = (db
+      .prepare('SELECT COUNT(*) AS n FROM menu_categories WHERE restaurant_id = ? AND limited_ok = 1')
+      .get(restaurantId) as any).n
+    if (!left) {
+      return res.status(400).json({
+        error: 'Tick at least one section to keep serving first — otherwise this closes you completely.',
+      })
+    }
+  }
+
+  db.prepare('UPDATE restaurants SET limited_mode = ? WHERE id = ?').run(on ? 1 : 0, restaurantId)
+  publish('orders', { restaurantId })
+  res.json({ ok: true, on })
+})
+
+/** Which sections survive. Editable while it is off, and while it is on. */
+staffRouter.post('/limited/sections/:id', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const id = Number(req.params.id)
+  const owned = db
+    .prepare('SELECT id FROM menu_categories WHERE id = ? AND restaurant_id = ?')
+    .get(id, restaurantId) as any
+  if (!owned) return res.status(404).json({ error: 'That section is not on this menu.' })
+  db.prepare('UPDATE menu_categories SET limited_ok = ? WHERE id = ?').run(req.body?.stillOn ? 1 : 0, id)
+  res.json({ ok: true })
+})
+
 /** The host this request came in on, so the webhook URLs point back here. */
 function originOf(req: any): string {
   const proto = String(req.headers['x-forwarded-proto'] ?? req.protocol ?? 'https').split(',')[0]

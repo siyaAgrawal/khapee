@@ -8,6 +8,7 @@ import { upiLink } from '../payments.ts'
 import { sessionByToken } from '../dining.ts'
 import { money } from '../../shared/orders.ts'
 import { pushOrder } from '../petpooja.ts'
+import { limitedState } from '../limited.ts'
 
 export const ordersRouter = Router()
 
@@ -45,6 +46,12 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
     acceptsPickup: !!r.accepts_pickup,
     acceptsTakeaway: !!r.accepts_takeaway,
     acceptsGroups: !!r.accepts_groups,
+    /*
+     * Half open. The checkout needs this before it draws the payment choice,
+     * or it offers "pay at the restaurant" on an order the server is about to
+     * refuse for exactly that reason. See server/limited.ts.
+     */
+    prepaidOnly: limitedState(Number(req.params.restaurantId)).on,
   })
 })
 

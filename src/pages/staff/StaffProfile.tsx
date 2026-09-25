@@ -7,6 +7,7 @@ import { useInstall } from '../../lib/install'
 import { Art, LoadingBlock, Spinner, useToast } from '../../components/ui'
 import { printTestSlip, printWord } from '../../lib/receipt'
 import PetpoojaPanel from '../../components/PetpoojaPanel'
+import HalfOpen from '../../components/HalfOpen'
 
 type Profile = {
   id: number
@@ -505,6 +506,9 @@ export default function StaffProfile() {
           <InstallPanel />
 
           <PrinterPanel restaurantName={form.name} />
+
+          {/* The hours after the chef goes home. See HalfOpen. */}
+          <HalfOpen />
 
           {/* The till half the kitchens already own. See PetpoojaPanel. */}
           <PetpoojaPanel />

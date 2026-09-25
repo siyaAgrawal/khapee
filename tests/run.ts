@@ -4454,6 +4454,31 @@ async function runTests() {
     ok('and the customer is told it is good news', /answered just now/i.test(String(tooLate.body.error)), tooLate.body.error)
   }
 
+  group('SCAN ONLY — a restaurant that hands out no codes')
+  {
+    // Two ways exist to prove somebody is in the room: they scanned the QR on
+    // their table, or a staff member read them six characters. The code was
+    // built for a counter with no printed QR, and it costs something real — a
+    // member of staff has to be found, and the code works for somebody who is
+    // not there. A restaurant with a QR on every table does not want it.
+    const before = await call(`/restaurants/${mornington.id}`)
+    ok('codes are on by default', before.body.restaurant.codesEnabled === true, before.body.restaurant.codesEnabled)
+
+    const off = await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { codesEnabled: false } })
+    ok('and can be switched off', off.status === 200, off.body)
+
+    const after = await call(`/restaurants/${mornington.id}`)
+    ok('which the customer app is told', after.body.restaurant.codesEnabled === false, after.body.restaurant)
+    const opts = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and so is the checkout', opts.body.codesEnabled === false, opts.body)
+
+    // Switched off in the interface only would be decoration: the point is
+    // that a QR still works and nothing else is offered.
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { codesEnabled: true } })
+    const back = await call(`/restaurants/${mornington.id}`)
+    ok('and back on again', back.body.restaurant.codesEnabled === true, back.body.restaurant.codesEnabled)
+  }
+
   group('HALF OPEN — the kitchen has gone home, the fridge has not')
   {
     // A restaurant has two closing times: the one the chef leaves at and the

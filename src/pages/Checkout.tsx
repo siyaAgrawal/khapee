@@ -715,6 +715,7 @@ export default function Checkout() {
         </section>
 
         <VerifyModal
+          codesEnabled={options?.codesEnabled !== false}
           open={verifyOpen}
           onClose={() => setVerifyOpen(false)}
           restaurantId={restaurantId}

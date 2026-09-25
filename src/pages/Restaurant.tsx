@@ -295,7 +295,7 @@ export default function Restaurant() {
                 )}
                 {data.restaurant.isOpen && (
                   <div className="noir-hero-dining">
-                    <DiningBar restaurantId={restaurantId} />
+                    <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
                   </div>
                 )}
                 {inThisGroup && (
@@ -382,7 +382,7 @@ export default function Restaurant() {
                 )}
                 {data.restaurant.isOpen && (
                   <div style={{ marginTop: 14 }}>
-                    <DiningBar restaurantId={restaurantId} />
+                    <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
                   </div>
                 )}
                 {tableCtx && (

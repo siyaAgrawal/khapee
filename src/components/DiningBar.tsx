@@ -10,9 +10,12 @@ import { clearTableContext, readTableContext } from '../lib/table-context'
  */
 export default function DiningBar({
   restaurantId,
+  codesEnabled = true,
   onChange,
 }: {
   restaurantId: number
+  /** Whether this restaurant hands out typed codes beside the QR. */
+  codesEnabled?: boolean
   onChange?: (session: DiningSession | null) => void
 }) {
   const [session, setSession] = useState<DiningSession | null>(() => readDining(restaurantId))
@@ -99,7 +102,11 @@ export default function DiningBar({
           <span aria-hidden>📍</span>
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <strong>Already at the restaurant?</strong>
-            <span className="tiny">Scan the table QR or enter the staff code to start ordering.</span>
+            <span className="tiny">
+              {codesEnabled
+                ? 'Scan the table QR or enter the staff code to start ordering.'
+                : 'Scan the QR on your table to start ordering.'}
+            </span>
           </div>
           <span className="dining-bar-go">Start →</span>
         </button>
@@ -109,6 +116,7 @@ export default function DiningBar({
         open={open}
         onClose={() => setOpen(false)}
         restaurantId={restaurantId}
+        codesEnabled={codesEnabled}
         onVerified={(s) => {
           setSession(s)
           onChange?.(s)

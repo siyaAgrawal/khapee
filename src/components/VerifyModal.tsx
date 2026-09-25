@@ -13,16 +13,27 @@ export default function VerifyModal({
   open,
   onClose,
   restaurantId,
+  codesEnabled,
   onVerified,
 }: {
   open: boolean
   onClose: () => void
   /** Restricts the code to one restaurant. Omit to accept any. */
   restaurantId?: number
+  /**
+   * Whether this restaurant hands out typed codes at all.
+   *
+   * A place with a QR on every table does not need them, and offering the
+   * worse path beside the better one only sends people looking for a member
+   * of staff they did not need to find. False here means the scanner is the
+   * whole modal — no tabs, no "type it instead", nothing to choose.
+   */
+  codesEnabled?: boolean
   onVerified?: (session: DiningSession) => void
 }) {
   const toast = useToast()
-  const [tab, setTab] = useState<'code' | 'scan'>('code')
+  const codes = codesEnabled !== false
+  const [tab, setTab] = useState<'code' | 'scan'>(codes ? 'code' : 'scan')
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -56,22 +67,26 @@ export default function VerifyModal({
   return (
     <Modal open={open} onClose={onClose} title="You're at the restaurant">
       <p className="tiny muted mb-2">
-        Scan the QR on your table, or enter the code a staff member gives you. Do it whenever you
-        like — once it's accepted you can order all through your meal without entering it again.
+        {codes
+          ? "Scan the QR on your table, or enter the code a staff member gives you. Do it whenever you like — once it's accepted you can order all through your meal without entering it again."
+          : "Scan the QR on your table. Do it whenever you like — once it's accepted you can order all through your meal without scanning again."}
       </p>
 
       {error && <div className="form-error">{error}</div>}
 
-      <div className="tabs">
-        <button className={`tab ${tab === 'code' ? 'active' : ''}`} onClick={() => setTab('code')}>
-          Enter code
-        </button>
-        <button className={`tab ${tab === 'scan' ? 'active' : ''}`} onClick={() => setTab('scan')}>
-          Scan QR
-        </button>
-      </div>
+      {/* No tabs when there is nothing to choose between. */}
+      {codes && (
+        <div className="tabs">
+          <button className={`tab ${tab === 'code' ? 'active' : ''}`} onClick={() => setTab('code')}>
+            Enter code
+          </button>
+          <button className={`tab ${tab === 'scan' ? 'active' : ''}`} onClick={() => setTab('scan')}>
+            Scan QR
+          </button>
+        </div>
+      )}
 
-      {tab === 'code' ? (
+      {codes && tab === 'code' ? (
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -99,12 +114,21 @@ export default function VerifyModal({
       ) : (
         <>
           <QRScanner onResult={submit} />
-          <p className="tiny muted center">
-            Camera blocked?{' '}
-            <button className="btn btn-ghost btn-sm" onClick={() => setTab('code')}>
-              Type the code instead
-            </button>
-          </p>
+          {codes ? (
+            <p className="tiny muted center">
+              Camera blocked?{' '}
+              <button className="btn btn-ghost btn-sm" onClick={() => setTab('code')}>
+                Type the code instead
+              </button>
+            </p>
+          ) : (
+            /* No code to fall back on, so the honest answer is the one thing
+               that does work: ask at the counter rather than hunt for a
+               button that is not there. */
+            <p className="tiny muted center">
+              Camera blocked? Allow the camera for this site, or ask at the counter.
+            </p>
+          )}
         </>
       )}
     </Modal>

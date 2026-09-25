@@ -374,6 +374,21 @@ addColumn('orders', 'declined_items', "TEXT NOT NULL DEFAULT ''")
 /** Set when an unanswered order was sent again, pointing at its replacement. */
 addColumn('orders', 'resent_as', 'TEXT')
 
+/**
+ * Whether this restaurant hands out typed codes at all.
+ *
+ * Two ways exist to prove somebody is actually in the room: they scanned the
+ * QR on their table, or a staff member read them a six-character code. The
+ * code was built for a counter with no printed QR on the tables, and it costs
+ * something real — a member of staff has to be found, and the code can be
+ * passed to somebody who is not there.
+ *
+ * A restaurant with a QR on every table does not need it, and for them the
+ * second option is a worse path offered beside a better one. Off here means
+ * the customer is only ever shown the scanner.
+ */
+addColumn('restaurants', 'codes_enabled', 'INTEGER NOT NULL DEFAULT 1')
+
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because
 // "the one you open the app to see" is a decision somebody makes, not

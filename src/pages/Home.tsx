@@ -31,6 +31,8 @@ export type RestaurantCard = {
   acceptsTakeaway?: boolean
   acceptsGroups?: boolean
   acceptsUpi?: boolean
+  /** Whether a typed staff code is offered beside the table QR. */
+  codesEnabled?: boolean
   /** Whether this restaurant serves customers parked outside. */
   acceptsCar?: boolean
   /** Areas this restaurant will carry an order out into. */

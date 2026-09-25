@@ -35,6 +35,12 @@ function shapeRestaurant(row: any) {
     topRank: row.top_rank ?? 0,
     acceptsPickup: !!row.accepts_pickup,
     acceptsTakeaway: !!row.accepts_takeaway,
+    /**
+     * Whether typed codes exist here at all. A restaurant with a QR on every
+     * table does not need them, and offering the worse path beside the better
+     * one only sends people looking for a member of staff.
+     */
+    codesEnabled: row.codes_enabled === undefined ? true : !!row.codes_enabled,
     acceptsGroups: !!row.accepts_groups,
     acceptsUpi: !!String(row.upi_vpa ?? '').trim(),
     acceptsCar: !!row.accepts_car,

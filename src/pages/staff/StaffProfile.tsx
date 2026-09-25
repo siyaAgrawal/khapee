@@ -30,6 +30,7 @@ type Profile = {
   acceptsPickup: boolean
   acceptsTakeaway: boolean
   acceptsGroups: boolean
+  codesEnabled: boolean
   publishedAt: string | null
   itemCount: number
   isListed: boolean
@@ -338,6 +339,7 @@ export default function StaffProfile() {
           acceptsPickup: form.acceptsPickup,
           acceptsTakeaway: form.acceptsTakeaway,
           acceptsGroups: form.acceptsGroups,
+          codesEnabled: form.codesEnabled,
           lat: form.lat,
           lng: form.lng,
         },
@@ -536,6 +538,11 @@ export default function StaffProfile() {
                 ['acceptsTakeaway', 'Takeaway at the counter'],
                 ['acceptsPickup', 'Order ahead for pickup'],
                 ['acceptsGroups', 'Shared group tables'],
+                // Off means the customer is only ever shown the scanner. A
+                // restaurant with a QR on every table does not need a code,
+                // and offering the worse path beside the better one sends
+                // people looking for a member of staff they did not need.
+                ['codesEnabled', 'Staff codes as well as the table QR'],
               ] as const
             ).map(([key, label]) => (
               <div key={key} className="list-row">

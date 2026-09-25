@@ -53,6 +53,8 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
      * refuse for exactly that reason. See server/limited.ts.
      */
     prepaidOnly: limitedState(Number(req.params.restaurantId)).on,
+    /** Whether a typed code is offered beside the scanner. */
+    codesEnabled: r.codes_enabled === undefined ? true : !!r.codes_enabled,
   })
 })
 

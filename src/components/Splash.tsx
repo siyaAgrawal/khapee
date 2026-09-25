@@ -48,6 +48,10 @@ export default function Splash({ onDone }: { onDone: () => void }) {
               {c}
             </span>
           ))}
+          {/* The logo's full stop, arriving last and in gold. */}
+          <span className="splash-dot-mark" style={{ '--c': 6 } as React.CSSProperties}>
+            .
+          </span>
         </h1>
         <p className="splash-tag">Your table is already ordering</p>
       </div>

@@ -1,44 +1,41 @@
 /* ============================================================ design tokens */
 :root {
   /*
-   * The brand the website already settled on, brought to the app.
+   * Paper and ink, with the brand kept to the things you press.
    *
-   * Its rule there is worth keeping verbatim: deep jewel beds, terracotta and
-   * gold as the only accents, and cream doing all the talking. What that buys
-   * is a page that is warm without being loud — the food is still the colour
-   * on it, which is why the previous monochrome existed, but the paper it sits
-   * on is now recognisably Khapee rather than anybody's.
-   *
-   * Ink is #191125 rather than black: a purple-black reads warm against cream
-   * where a true black reads like a wireframe.
+   * The surfaces are deliberately colourless. A menu is read for twenty
+   * minutes under a restaurant's lights, and tinting every panel — however
+   * good the colour — is tiring long before it is distinctive; the dish art is
+   * meant to be the colour on the page. So Khapee shows up as two accents on a
+   * white-and-near-black page: purple on what you press, gold on what is worth
+   * noticing. Two, and no more, or it stops reading as a choice.
    */
-  --bg: #f4ede1;
-  --bg-tint: #ebe1d1;
-  --surface: #fffcf6;
-  --surface-2: #f9f2e6;
-  --ink: #191125;
-  --ink-2: #3f3352;
-  --muted: #6e6479;
-  --line: rgba(25, 17, 37, 0.1);
-  --line-strong: rgba(25, 17, 37, 0.2);
+  --bg: #f6f4f0;
+  --bg-tint: #eceae4;
+  --surface: #ffffff;
+  --surface-2: #faf9f6;
+  --ink: #111110;
+  --ink-2: #3a3936;
+  --muted: #78766f;
+  --line: rgba(17, 17, 16, 0.09);
+  --line-strong: rgba(17, 17, 16, 0.18);
 
-  /* Terracotta carries every action. Gold is a highlight and never a button —
-     two accents competing for the same job is how the palette stopped looking
-     expensive the first time. */
-  --accent: #b9563c;
-  --accent-ink: #fffcf6;
-  --accent-soft: #f2ddd3;
+  /* Deep enough to carry white text at any size — the website's night is
+     beautiful and unreadable as a button. */
+  --accent: #4a2f7a;
+  --accent-ink: #ffffff;
+  --accent-soft: #ece7f5;
   --gold: #d9a441;
-  --sage: #7fae9f;
+  --gold-soft: #fbf1d9;
 
-  --good: #2f6b58;
-  --good-soft: #e0efe8;
+  --good: #1f6b45;
+  --good-soft: #e6f1ea;
   --warn: #8a6417;
-  --warn-soft: #f7eeda;
-  --bad: #a33524;
-  --bad-soft: #f8e6e1;
-  --info: #43356b;
-  --info-soft: #ece7f4;
+  --warn-soft: #f6efdd;
+  --bad: #a6291d;
+  --bad-soft: #f8e8e6;
+  --info: #2f4f70;
+  --info-soft: #eaf0f5;
 
   --r-sm: 10px;
   --r-md: 14px;
@@ -69,35 +66,34 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* The jewel bed. Night is a colour, not an absence of one — a dark mode
-       built out of neutral greys throws away the half of this palette that
-       makes it worth having. */
-    --bg: #140e1e;
-    --bg-tint: #191125;
-    --surface: #1e1530;
-    --surface-2: #271640;
-    --ink: #f4ede1;
-    --ink-2: #dfd3c1;
-    --muted: #9a9097;
-    --line: rgba(244, 237, 225, 0.1);
-    --line-strong: rgba(244, 237, 225, 0.22);
+    /* Near-black, not aubergine. The accents do the identifying; a dyed
+       surface at this size only makes the screen harder to sit in front of. */
+    --bg: #0e0e0d;
+    --bg-tint: #161615;
+    --surface: #171716;
+    --surface-2: #1d1d1b;
+    --ink: #f4f2ee;
+    --ink-2: #d5d2cb;
+    --muted: #918e86;
+    --line: rgba(244, 242, 238, 0.09);
+    --line-strong: rgba(244, 242, 238, 0.2);
 
-    /* Terracotta lifted enough to hold its own on aubergine; the light-mode
-       value goes muddy down here. */
-    --accent: #d06a4b;
-    --accent-ink: #191125;
-    --accent-soft: #3a2033;
+    /* The light-mode purple disappears into black, so it is lifted until it
+       carries near-black text instead of white. */
+    --accent: #b9a3e8;
+    --accent-ink: #14101f;
+    --accent-soft: #241d33;
     --gold: #e3b45c;
-    --sage: #7fae9f;
+    --gold-soft: #2a2312;
 
-    --good: #8cc9b4;
-    --good-soft: #17302a;
-    --warn: #e3b45c;
-    --warn-soft: #322612;
-    --bad: #e8897a;
-    --bad-soft: #391c1d;
-    --info: #b3a3dd;
-    --info-soft: #241c3c;
+    --good: #6ecb9b;
+    --good-soft: #12281d;
+    --warn: #dfb469;
+    --warn-soft: #2a2312;
+    --bad: #ef8b80;
+    --bad-soft: #2e1815;
+    --info: #8fb0ce;
+    --info-soft: #14202b;
 
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
@@ -499,16 +495,32 @@ textarea {
   letter-spacing: -0.03em;
 }
 
+/*
+ * The lockup: white on the brand purple, as the logo has it.
+ *
+ * The mark keeps the purple in both themes rather than following the page —
+ * a logo that is near-black on one screen and cream on another is not a logo.
+ * The wordmark beside it stays ink, because white lettering is the version for
+ * a purple field and the header is a white one.
+ */
 .brand-mark {
   width: 30px;
   height: 30px;
   border-radius: 9px;
   display: grid;
   place-items: center;
-  background: var(--ink);
-  color: var(--bg);
+  background: #2b1a3d;
+  color: #ffffff;
   font-size: 15px;
   box-shadow: var(--shadow-sm);
+}
+
+/* The full stop the logo ends on. Gold, because it is the one mark on the
+   page that is allowed to be. It is a flex child of .brand, so the row's own
+   9px gap has to be taken back out or the logo reads "Khapee ." */
+.brand-dot {
+  color: var(--gold);
+  margin-left: calc(-9px - 0.04em);
 }
 
 .header-spacer {
@@ -744,30 +756,20 @@ textarea {
 
 /* ------------------------------------------------------------- food art */
 /*
- * A dish with no photograph still needs a tile, and that tile used to be a
- * free hue: 62% saturation anywhere on the wheel, which gave a menu a row of
- * mint, lilac, hot pink and baby blue. Random full-spectrum pastel is the
- * single loudest tell of a page nobody art-directed, and it was competing with
- * the food besides.
- *
- * The hue is kept — it is what makes two dishes look different — but folded
- * into the brand's warm arc, terracotta through gold, and desaturated hard.
- * 0-360 becomes roughly 14-62 degrees, so tiles still differ from each other
- * and no longer differ from the brand. The scale is the whole trick; the rest
- * of this rule is unchanged.
+ * A dish with no photograph still needs a tile, and the hue is what makes two
+ * of them look different — so the full wheel stays. What comes down is the
+ * saturation: at 62% a menu was a row of mint, lilac, hot pink and baby blue,
+ * loud enough to compete with the actual food photography beside it. Muted,
+ * the same variety reads as a set rather than a paint chart.
  */
 .art {
-  /* Unitless, because --art-hue is a bare number and hsl() takes one. Writing
-     this in degrees makes the whole calc invalid, which drops the gradient and
-     leaves a white hole where the dish should be. */
-  --art-warm: calc(14 + var(--art-hue) * 0.133);
   position: relative;
   overflow: hidden;
   background: linear-gradient(
     145deg,
-    hsl(var(--art-warm) 46% 79%) 0%,
-    hsl(calc(var(--art-warm) + 12) 42% 69%) 55%,
-    hsl(calc(var(--art-warm) - 8) 38% 60%) 100%
+    hsl(var(--art-hue) 32% 87%) 0%,
+    hsl(calc(var(--art-hue) + 18) 28% 79%) 55%,
+    hsl(calc(var(--art-hue) - 12) 24% 72%) 100%
   );
   display: grid;
   place-items: center;
@@ -792,9 +794,9 @@ textarea {
        one surface rather than a row of lit windows. */
     background: linear-gradient(
       145deg,
-      hsl(var(--art-warm) 26% 30%) 0%,
-      hsl(calc(var(--art-warm) + 10) 24% 24%) 55%,
-      hsl(calc(var(--art-warm) - 6) 22% 19%) 100%
+      hsl(var(--art-hue) 24% 32%) 0%,
+      hsl(calc(var(--art-hue) + 18) 22% 25%) 55%,
+      hsl(calc(var(--art-hue) - 12) 20% 19%) 100%
     );
   }
 }
@@ -3663,15 +3665,14 @@ textarea {
   display: grid;
   place-items: center;
   /*
-   * The first thing anybody sees, so it is the brand rather than a black
-   * rectangle. Ink into night, warmed off-centre by the faintest terracotta —
-   * a flat fill at this size reads as a loading screen that failed, and a
-   * gradient with a visible seam reads worse.
+   * Near-black, with the two accents barely present at the corners — enough
+   * that the first screen is Khapee's and not a black rectangle, far short of
+   * a coloured panel.
    */
   background:
-    radial-gradient(120% 90% at 26% 18%, rgba(185, 86, 60, 0.16), transparent 62%),
-    radial-gradient(90% 80% at 82% 92%, rgba(39, 22, 64, 0.85), transparent 70%),
-    linear-gradient(162deg, #191125 0%, #221436 52%, #140e1e 100%);
+    radial-gradient(110% 80% at 22% 14%, rgba(122, 92, 186, 0.14), transparent 60%),
+    radial-gradient(90% 70% at 84% 92%, rgba(217, 164, 65, 0.08), transparent 66%),
+    #0e0e0d;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.75s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.55s ease 0.2s;
@@ -3748,19 +3749,24 @@ textarea {
   width: 76px;
   height: 76px;
   border-radius: 24px;
-  background: #f4f2ee;
+  /* The logo's own field, so the one full-screen moment Khapee gets is the
+     lockup exactly as drawn: white on purple. */
+  background: #2b1a3d;
   display: grid;
   place-items: center;
   transform: scale(0.4) rotate(-24deg);
   opacity: 0;
   animation: splash-mark-in 0.72s var(--spring) 0.1s forwards;
-  box-shadow: 0 18px 44px rgba(244, 242, 238, 0.16);
+  box-shadow: 0 18px 44px rgba(43, 26, 61, 0.55);
+}
+.splash-dot-mark {
+  color: var(--gold);
 }
 .splash-mark-dot {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #0e0e0d;
+  background: #ffffff;
   transform: scale(0);
   animation: splash-dot-in 0.5s var(--spring) 0.5s forwards;
 }

@@ -32,7 +32,7 @@ export default function Header() {
       )}
       <Link to="/" className="brand">
         <span className="brand-mark">◗</span>
-        Khapee
+        Khapee<span className="brand-dot" aria-hidden>.</span>
       </Link>
       <div className="header-spacer" />
       <nav className="header-nav">

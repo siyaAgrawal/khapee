@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { api, openStream } from '../../lib/api'
 import { useSession } from '../../lib/session'
 import RestaurantSwitcher from '../../components/RestaurantSwitcher'
@@ -61,6 +61,17 @@ export default function StaffLayout() {
           khapee<span className="brand-dot" aria-hidden>.</span>
         </div>
         <RestaurantSwitcher />
+        {/* Phones only: the way out of the dashboard, folded behind one round
+            button beside the restaurant, instead of a Sign out button stranded
+            on a line of its own. The sidebar footer does this on wide screens. */}
+        <AccountMenu
+          email={user?.email ?? ''}
+          name={user?.name ?? ''}
+          onSignOut={async () => {
+            await logout()
+            navigate('/login', { replace: true })
+          }}
+        />
         {/* One box for the whole dashboard, above the four sections rather
             than inside one of them — the question "where is table 4's order"
             should not require knowing which screen answers it. */}
@@ -170,6 +181,46 @@ export default function StaffLayout() {
         )}
         <Outlet />
       </main>
+    </div>
+  )
+}
+
+function AccountMenu({ name, email, onSignOut }: { name: string; email: string; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false)
+  const wrap = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e: PointerEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [open])
+  const initial = (name || email).trim().charAt(0).toUpperCase() || '·'
+  return (
+    <div className="staff-account" ref={wrap}>
+      <button
+        className="staff-account-btn"
+        aria-label="Account"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {initial}
+      </button>
+      {open && (
+        <div className="staff-account-menu" role="menu">
+          <div className="staff-account-who">
+            {name && <strong>{name}</strong>}
+            <span className="tiny muted">{email}</span>
+          </div>
+          <Link to="/" className="switcher-item" role="menuitem">
+            <span aria-hidden>🍽️</span> Customer view
+          </Link>
+          <button className="switcher-item staff-account-out" role="menuitem" onClick={onSignOut}>
+            <span aria-hidden>↩</span> Sign out
+          </button>
+        </div>
+      )}
     </div>
   )
 }

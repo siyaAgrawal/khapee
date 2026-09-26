@@ -3294,16 +3294,17 @@ textarea {
   .side-links::-webkit-scrollbar {
     display: none;
   }
-  /* Sign out stays reachable in the compact bar. */
+  /* On a phone the account button beside the restaurant does this job, so
+     the footer (Customer view, Sign out) is folded away rather than left as
+     a stranded row of its own. */
   .side-foot {
-    order: 1;
-    margin: 0 0 0 auto;
-    padding: 0 0 0 8px;
-    border-top: 0;
-    border-left: 1px solid var(--line);
+    display: none;
   }
-  .side-foot .btn-block {
-    width: auto;
+  /* Search on its own full-width line under the restaurant. */
+  .staff-side .staff-search {
+    order: 0;
+    flex: 1 0 100%;
+    margin-bottom: 0;
   }
   .staff-main {
     padding: 16px 14px 60px;
@@ -3866,6 +3867,61 @@ textarea {
   font-weight: 700;
 }
 
+/* The phone's account button. Hidden on wide screens, where the sidebar
+   footer carries the same two actions. */
+.staff-account {
+  display: none;
+  position: relative;
+}
+.staff-account-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+.staff-account-btn[aria-expanded='true'] {
+  border-color: var(--ink);
+}
+.staff-account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  width: min(250px, calc(100vw - 24px));
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-lg);
+  animation: pop 0.16s var(--ease) both;
+}
+.staff-account-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.staff-account-who .tiny {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.staff-account-menu .switcher-item {
+  text-decoration: none;
+  font-size: 14.5px;
+}
+.staff-account-out {
+  color: var(--danger, #b3261e);
+}
+
 .side-user {
   margin-top: 10px;
   padding-top: 10px;
@@ -3915,6 +3971,12 @@ textarea {
   }
   .side-user .btn {
     white-space: nowrap;
+  }
+  /* After the base .staff-account rule, which hides it on wide screens. */
+  .staff-account {
+    display: block;
+    order: -1;
+    flex: 0 0 auto;
   }
 }
 

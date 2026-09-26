@@ -325,6 +325,35 @@ export async function alertsLive(): Promise<boolean> {
 }
 
 /**
+ * The same repair, for a device that is signed in rather than invited.
+ *
+ * Silent throughout. It never raises a permission prompt — if permission was
+ * never granted there is nothing here to restore and asking would be a prompt
+ * on a page nobody expected one on — and it says nothing when it works, which
+ * is the point: the owner should never learn that this was needed.
+ */
+async function restoreStaffAlerts(): Promise<void> {
+  if (!pushSupported()) return
+  try {
+    if (Notification.permission !== 'granted') return
+    if (!localStorage.getItem('khapee.token')) return
+  } catch {
+    return
+  }
+  try {
+    // Only a staff session can read this; a customer's token gets a 401 and
+    // this stops, which is correct — customers are told about their own order
+    // through a different subscription entirely.
+    const state = await api<AlertState>('/staff/alerts')
+    const key = state?.push?.publicKey
+    if (!state?.push?.available || !key) return
+    await enablePush(key)
+  } catch {
+    /* signed out, a customer, or a server still waking: nothing to repair */
+  }
+}
+
+/**
  * Puts this phone's alerts back after the server has forgotten them.
  *
  * The database is rebuilt from the published copy whenever the service
@@ -339,6 +368,23 @@ export async function alertsLive(): Promise<boolean> {
  * used and this does nothing, which is the ordinary case.
  */
 export async function keepAlertsAlive(): Promise<void> {
+  /*
+   * A signed-in account is a grant of its own.
+   *
+   * Everything below was written for a phone set up from an invite code, and
+   * it checks for that code before doing anything. Which meant the one device
+   * that most needs repairing — the owner's, signed in, alerts switched on
+   * from the dashboard — was never repaired at all: it holds no code, so this
+   * returned on the first line. After a restart wiped the device table, that
+   * phone stayed silent until somebody happened to open the dashboard, and if
+   * nobody did, every order that night rang nowhere.
+   *
+   * Being signed in is exactly the same claim as holding an invite: this
+   * account may be told about this restaurant's orders. So it is honoured the
+   * same way, on every open of any page, not only the dashboard.
+   */
+  await restoreStaffAlerts()
+
   let grant = ''
   try {
     // Either key. A phone set up before the grant was being kept still has the

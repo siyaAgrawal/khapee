@@ -427,6 +427,22 @@ addColumn('orders', 'resent_as', 'TEXT')
  */
 addColumn('restaurants', 'codes_enabled', 'INTEGER NOT NULL DEFAULT 1')
 
+/**
+ * What a sign-in is tied to, instead of the password itself.
+ *
+ * A session token was signed over the account's password hash, so that
+ * changing a password threw every other device off. Good property, wrong
+ * ingredient — on this deployment the database is rebuilt from the committed
+ * snapshot on every restart, and if the live hash had moved on from the
+ * snapshot's, every token for that account stopped verifying. Restaurants
+ * were being signed out mid-service by a deploy, with nothing to explain it.
+ *
+ * A number that only changes when somebody deliberately changes their
+ * password keeps the property and survives the rebuild, because it is a
+ * column in the snapshot like any other.
+ */
+addColumn('users', 'session_epoch', 'INTEGER NOT NULL DEFAULT 1')
+
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because
 // "the one you open the app to see" is a decision somebody makes, not
@@ -607,6 +623,23 @@ addColumn('menu_categories', 'pos_category_id', 'TEXT')
 addColumn('orders', 'pos_order_id', 'TEXT')
 addColumn('orders', 'pos_pushed_at', 'TEXT')
 addColumn('orders', 'pos_error', "TEXT NOT NULL DEFAULT ''")
+/*
+ * Which Petpooja order carried this line.
+ *
+ * Their API is one KOT per order, confirmed by Petpooja directly: a table that
+ * orders again later becomes a second order over there, against the same
+ * table. Ours is the other way round — one order accumulates rounds all
+ * evening — so the two only line up if the unit we send is the round rather
+ * than the order. Stamped per line because the round is exactly "the lines
+ * that have not gone yet", and anything coarser sends somebody's starters to
+ * the kitchen twice.
+ */
+addColumn('order_items', 'pos_order_id', 'TEXT')
+addColumn('order_items', 'pos_pushed_at', 'TEXT')
+/* Their name for the table, which is the one their till knows it by. A dine-in
+   order names a table in table_no, and a name we invented is a table they do
+   not have. */
+addColumn('restaurant_tables', 'pos_table_id', 'TEXT')
 db.exec('CREATE INDEX IF NOT EXISTS idx_menu_items_pos ON menu_items(restaurant_id, pos_item_id)')
 // The kitchen's queue is sorted by it, so it is worth an index the moment a
 // restaurant has a day's worth of orders rather than a demo's worth.

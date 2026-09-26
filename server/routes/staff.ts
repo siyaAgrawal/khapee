@@ -41,7 +41,7 @@ import { shapeDiningSession, startCarSession } from '../dining.ts'
 import { generateAlertCode, randomToken } from '../ids.ts'
 import { floorBoard, kotById, openKot, settleTable, tableBill } from '../floor.ts'
 import { orderHistory, takings } from '../takings.ts'
-import { applyMenuPush, fetchMenu, linkFor, removeLink, saveLink, webhookUrls } from '../petpooja.ts'
+import { applyMenuPush, fetchMenu, linkFor, pushOrder, removeLink, saveLink, webhookUrls } from '../petpooja.ts'
 
 export const staffRouter = Router()
 staffRouter.use(requireStaff)
@@ -1435,6 +1435,12 @@ staffRouter.post('/orders/:id/items', (req: any, res) => {
 
   const updated = getOrder(order.id)
   publish('order:update', { restaurantId, userId: order.user_id, orderId: order.id, order: updated })
+
+  /* A waiter's round is a round like any other, so it goes to the till too.
+     They do not get an alert for it — they are the person who just typed it —
+     but the kitchen on the other side of the wall still has to be told. */
+  void pushOrder(order.id, originOf(req)).catch(() => {})
+
   res.status(201).json({ order: updated })
 })
 
@@ -2234,6 +2240,9 @@ staffRouter.post('/floor/table/:id/settle', (req: any, res) => {
     Number(req.params.id),
     String(req.body?.method ?? 'cash'),
     String(req.body?.payerName ?? ''),
+    // Whoever is at the counter, so the invoice and its audit line name them
+    // rather than "Counter".
+    actorOf(req),
   )
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   publish('orders', { restaurantId })

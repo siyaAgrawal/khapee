@@ -75,12 +75,34 @@ const SECRET = (() => {
   }
 })()
 
-/** Ties a token to one account, one expiry, and that account's password. */
+/** The old scheme: tied to the account's password hash. Still verified. */
 function signature(userId: number, expiresMs: number, passwordHash: string): string {
   return crypto
     .createHmac('sha256', SECRET)
     .update(`${userId}.${expiresMs}.${passwordHash}`)
     .digest('base64url')
+}
+
+/**
+ * The scheme every new session uses.
+ *
+ * Signed over a number that changes only when somebody changes their
+ * password, rather than over the password hash itself. Same property — a
+ * password change throws every other device off — without the accident that
+ * a database rebuilt from the published snapshot silently invalidated every
+ * token belonging to anyone whose password had moved on since.
+ */
+function signatureV2(userId: number, expiresMs: number, epoch: number): string {
+  return crypto
+    .createHmac('sha256', SECRET)
+    .update(`${userId}.${expiresMs}.epoch${epoch}`)
+    .digest('base64url')
+}
+
+/** Ends every session on an account. Called when the password changes. */
+export function endAllSessions(userId: number): void {
+  db.prepare('UPDATE users SET session_epoch = session_epoch + 1 WHERE id = ?').run(userId)
+  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId)
 }
 
 export function hashPassword(plain: string): string {
@@ -96,10 +118,11 @@ export function verifyPassword(plain: string, hash: string): boolean {
 }
 
 export function createSession(userId: number): string {
-  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId) as any
+  const row = db.prepare('SELECT session_epoch FROM users WHERE id = ?').get(userId) as any
   if (!row) throw new Error(`No user ${userId} to open a session for`)
   const expiresMs = Date.now() + SESSION_DAYS * 86_400_000
-  const token = `v1.${userId}.${expiresMs}.${signature(userId, expiresMs, row.password_hash)}`
+  const epoch = Number(row.session_epoch ?? 1)
+  const token = `v2.${userId}.${expiresMs}.${signatureV2(userId, expiresMs, epoch)}`
 
   // Still recorded. The row is what lets a signed-out token be turned away
   // while this process is alive, and what purgeExpiredSessions tidies up.
@@ -120,16 +143,22 @@ export function destroySession(token: string) {
 /** Reads a signed token, or nothing if it was not one or does not hold up. */
 function verifySigned(token: string): number | null {
   const parts = token.split('.')
-  if (parts.length !== 4 || parts[0] !== 'v1') return null
+  // v1 is still accepted so that nobody signed in today is thrown out by
+  // this change; every session opened from now on is v2 and survives a
+  // database rebuilt from the snapshot.
+  if (parts.length !== 4 || (parts[0] !== 'v1' && parts[0] !== 'v2')) return null
   const userId = Number(parts[1])
   const expiresMs = Number(parts[2])
   if (!Number.isInteger(userId) || !Number.isFinite(expiresMs)) return null
   if (Date.now() > expiresMs) return null
 
-  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId) as any
+  const row = db.prepare('SELECT password_hash, session_epoch FROM users WHERE id = ?').get(userId) as any
   if (!row) return null
 
-  const expected = signature(userId, expiresMs, row.password_hash)
+  const expected =
+    parts[0] === 'v2'
+      ? signatureV2(userId, expiresMs, Number(row.session_epoch ?? 1))
+      : signature(userId, expiresMs, row.password_hash)
   const a = Buffer.from(expected)
   const b = Buffer.from(parts[3])
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null

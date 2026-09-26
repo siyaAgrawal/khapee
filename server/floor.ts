@@ -16,6 +16,7 @@
  */
 import { db } from './db.js'
 import { paidCents, claimedCents } from './payments.js'
+import { type Actor, finaliseInvoice, paidOnInvoice, takePayment } from './billing.js'
 
 /** Anything still being eaten: not cancelled, not billed, not closed. */
 const OPEN_SQL = `
@@ -307,7 +308,8 @@ export function settleTable(
   tableId: number,
   method: string,
   payerName: string,
-): { ok: true; settled: number; amountCents: number } | { ok: false; status: number; error: string } {
+  actor: Actor = { id: null, name: 'Counter' },
+): { ok: true; settled: number; amountCents: number; invoices: string[] } | { ok: false; status: number; error: string } {
   const bill = tableBill(restaurantId, tableId)
   if (!bill) return { ok: false, status: 404, error: 'No such table.' }
   if (!bill.orderIds.length) return { ok: false, status: 409, error: 'Nothing open on that table.' }
@@ -316,21 +318,59 @@ export function settleTable(
     .prepare(`SELECT * FROM orders WHERE id IN (${bill.orderIds.map(() => '?').join(',')})`)
     .all(...bill.orderIds) as any[]
 
+  /*
+   * Every order on the table becomes a real invoice before a rupee is taken.
+   *
+   * This used to write a payment row straight against the order and close the
+   * bill, which took the money correctly and produced no tax invoice at all —
+   * no number, no tax lines, nothing that survives the menu being edited. The
+   * per-order route had done it properly all along; the table route, which is
+   * the one dine-in actually uses, had never been connected to it.
+   *
+   * finaliseInvoice is idempotent, so a table settled twice — a cashier
+   * tapping again, a dropped connection retried — reuses the invoice it
+   * already has rather than taking a second number out of the series.
+   */
   let taken = 0
+  const numbers: string[] = []
+  const failed: string[] = []
+
+  for (const o of orders) {
+    const made = finaliseInvoice({ orderId: o.id, actor, customerName: payerName || o.customer_name })
+    if (!made.ok) {
+      // An order with nothing on it cannot be billed, and must not stop the
+      // rest of the table being settled.
+      failed.push(`${o.order_number}: ${made.error}`)
+      continue
+    }
+    const invoice = made.invoice
+    numbers.push(invoice.number)
+
+    /* The invoice total, not the order's — it is the one carrying tax and
+       rounding, and the customer is paying what the printed bill says. */
+    const due = Math.max(0, invoice.total_cents - paidOnInvoice(invoice.id))
+    if (due > 0) {
+      const took = takePayment({
+        invoiceId: invoice.id,
+        amountCents: due,
+        method,
+        actor,
+        payerName: payerName || o.customer_name,
+      })
+      if (took.ok) taken += due
+      else failed.push(`${o.order_number}: ${took.error}`)
+    }
+  }
+
+  if (!numbers.length) {
+    return { ok: false, status: 400, error: failed[0] ?? 'Nothing on this table could be billed.' }
+  }
+
   db.transaction(() => {
     for (const o of orders) {
-      const due = Math.max(0, o.total_cents - paidCents(o.id))
-      if (due > 0) {
-        db.prepare(
-          `INSERT INTO payments (order_id, payer_name, amount_cents, method, status, covers, settled_at)
-           VALUES (?, ?, ?, ?, 'CONFIRMED', 'all', datetime('now'))`,
-        ).run(o.id, payerName || o.customer_name, due, method)
-        taken += due
-      }
       db.prepare("UPDATE order_items SET paid_at = datetime('now') WHERE order_id = ? AND paid_at IS NULL").run(o.id)
       db.prepare(
-        `UPDATE orders SET payment_status = 'PAID', bill_closed_at = datetime('now'),
-           updated_at = datetime('now') WHERE id = ?`,
+        `UPDATE orders SET bill_closed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`,
       ).run(o.id)
       // The shared ticket this order opened goes with it. A room left open on
       // a table somebody has paid for and left is exactly the stale handle
@@ -342,5 +382,5 @@ export function settleTable(
     }
   })()
 
-  return { ok: true, settled: orders.length, amountCents: taken }
+  return { ok: true, settled: orders.length, amountCents: taken, invoices: numbers }
 }

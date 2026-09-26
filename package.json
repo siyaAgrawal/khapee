@@ -16,7 +16,9 @@
     "deploy:build": "npm run build",
     "build:api": "esbuild server/index.ts --bundle --platform=node --format=esm --target=node20 --outfile=api/_bundle.mjs --external:better-sqlite3 --external:bcryptjs --banner:js=\"import{createRequire as __cr}from'node:module';const require=__cr(import.meta.url);\" --log-level=warning",
     "snapshot": "tsx scripts/make-snapshot.ts",
-    "vercel-build": "npm run build && npm run build:api"
+    "vercel-build": "npm run build && npm run build:api",
+    "probe:mail": "tsx scripts/probe-mail.ts",
+    "probe:push": "tsx scripts/probe-push.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

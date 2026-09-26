@@ -4,7 +4,7 @@ import os from 'node:os'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
-import { db, UPLOAD_DIR } from './db.ts'
+import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
 import { authRouter } from './routes/auth.ts'
 import { publicRouter } from './routes/public.ts'
@@ -282,7 +282,32 @@ app.use((err: any, req: any, res: any, _next: any) => {
 if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  ▲ Khapee API  →  http://localhost:${PORT}`)
-    console.log(`    database   →  ${path.relative(process.cwd(), db.name)}\n`)
+    console.log(`    database   →  ${path.relative(process.cwd(), db.name)}`)
+
+    /*
+     * The one misconfiguration that looks like a bug in the product.
+     *
+     * Login tokens are signed so they outlive the database being rebuilt from
+     * the snapshot. The signing key is KHAPEE_SECRET; without it the fallback
+     * writes a key next to the database, which on a host with no disk is a new
+     * key on every boot — and a new key signs every phone and every till out,
+     * silently, several times a day. Nothing in the app misbehaves, so it gets
+     * reported as "it keeps logging me out" and looked for in the wrong place.
+     */
+    if (!process.env.KHAPEE_SECRET && WRITES_ARE_TEMPORARY) {
+      console.warn(
+        [
+          '',
+          '  ⚠  KHAPEE_SECRET is not set, and this host keeps no disk.',
+          '     Every restart makes a new signing key, so everyone signed in is',
+          '     signed out again. Set KHAPEE_SECRET on the service — any long',
+          '     random string, kept the same — and logins last a year.',
+          '',
+        ].join('\n'),
+      )
+    } else {
+      console.log('')
+    }
   })
 }
 

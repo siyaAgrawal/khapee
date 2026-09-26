@@ -2557,6 +2557,30 @@ textarea {
   line-height: 1;
   color: var(--muted);
 }
+/* Yes and no together, on the order that is still asking. */
+.qrow-answer {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.qrow-answer .qrow-go {
+  grid-column: auto;
+  grid-row: auto;
+}
+/* Deliberately quieter than Accept. Both are one tap, but only one of them
+   is the answer a kitchen gives ninety-nine times out of a hundred. */
+.qrow-no {
+  white-space: nowrap;
+  min-height: 44px;
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+}
+
 /*
   The next step, sized like something you press with a thumb while holding a
   plate. It was a btn-sm, which is a size for a form on a laptop, and this is

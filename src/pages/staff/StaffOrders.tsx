@@ -181,7 +181,19 @@ function ItemCall({
   if (settled || order.paymentStatus === 'PAID') {
     return item.accepted === false ? <span className="item-call-off">off</span> : null
   }
-  const on = item.accepted === true
+  /*
+   * One button, not two.
+   *
+   * There was a tick beside the cross, and the tick never had anything to do:
+   * accepting the order accepts every dish on it, which is what Accept has
+   * always meant. So the tick said yes to something that was already yes, and
+   * put a second control on every line of every ticket for it — on a screen
+   * where the whole point is reading eight tickets at a glance.
+   *
+   * The cross is the only real decision here: we have run out of this one.
+   * Pressing it again undoes it, which is the only thing the tick was ever
+   * genuinely needed for.
+   */
   const off = item.accepted === false
   return (
     <span className="item-call">
@@ -190,20 +202,10 @@ function ItemCall({
         className={`item-call-btn ${off ? 'is-off' : ''}`}
         disabled={busy}
         aria-pressed={off}
-        title={`We have run out of ${item.name}`}
-        onClick={() => decide(off ? true : false)}
+        title={off ? `Put ${item.name} back on this order` : `We have run out of ${item.name}`}
+        onClick={() => decide(off)}
       >
         ✕
-      </button>
-      <button
-        type="button"
-        className={`item-call-btn ${on ? 'is-on' : ''}`}
-        disabled={busy}
-        aria-pressed={on}
-        title={`We can make ${item.name}`}
-        onClick={() => decide(true)}
-      >
-        ✓
       </button>
     </span>
   )
@@ -803,15 +805,41 @@ export default function StaffOrders() {
                         </span>
                       </button>
 
-                      {next && (
-                        <button
-                          className="btn btn-accent btn-sm qrow-go"
-                          disabled={busyId === o.id}
-                          onClick={() => advance(o, next)}
-                        >
-                          {goLabel(o, next)}
-                        </button>
-                      )}
+                      {/*
+                        Yes and no, side by side, on the order that is asking.
+
+                        Accept stood alone here, so the only answer the board
+                        offered was yes — and no lived behind the tap that
+                        opens the row, which is the wrong place for it. A
+                        kitchen that is full, or has run out of the one thing
+                        somebody ordered, has to be able to say so in the same
+                        breath and from the same place.
+
+                        Only while the question is open. Once an order is
+                        accepted it can still be cancelled, but that is a
+                        different act with a different weight and it stays
+                        where it was, inside the row.
+                      */}
+                      <span className="qrow-answer">
+                        {(o.status === 'REQUESTED' || o.status === 'NEW') && (
+                          <button
+                            className="btn btn-danger btn-sm qrow-no"
+                            disabled={busyId === o.id}
+                            onClick={() => void decline(o)}
+                          >
+                            Can’t take it
+                          </button>
+                        )}
+                        {next && (
+                          <button
+                            className="btn btn-accent btn-sm qrow-go"
+                            disabled={busyId === o.id}
+                            onClick={() => advance(o, next)}
+                          >
+                            {goLabel(o, next)}
+                          </button>
+                        )}
+                      </span>
 
                       {/*
                         What is actually in the order, on every order, always.

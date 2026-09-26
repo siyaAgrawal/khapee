@@ -50,6 +50,18 @@
   --cream-fixed: #f4ede1;
   --brand-fixed: #682cc2;
 
+  /*
+   * The logo's purple, one step brighter than the interface's.
+   *
+   * A deliberate difference, not a mistake. The icon competes on a home
+   * screen against every other app's colour and wants the brighter mix; the
+   * interface is a surface you sit in front of for twenty minutes and wants
+   * the calmer one. A shade between them is close enough to read as the same
+   * brand and far enough to do each job. It is used by the mark and by
+   * scripts/make-icons.mjs, and nowhere else.
+   */
+  --brand-logo: #7135ce;
+
   --good: #1f6b45;
   --good-soft: #e6f1ea;
   --warn: #8a6417;
@@ -585,9 +597,13 @@ textarea {
  * line. Against a bright purple and a white page it reads as mustard, and it
  * was the thing that made the app look like a different app from its own
  * icon. The palette is purple and ink now; the dot is the purple.
+ *
+ * The logo's purple rather than the interface's: this dot is part of the
+ * mark, so it matches the icon on the home screen rather than the buttons
+ * further down the page.
  */
 .brand-dot {
-  color: var(--accent);
+  color: var(--brand-logo);
 }
 
 .header-spacer {

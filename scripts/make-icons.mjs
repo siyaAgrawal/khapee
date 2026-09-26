@@ -24,8 +24,14 @@ import { dirname, join } from 'node:path'
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 
-/** Kept in step with --brand-fixed in src/styles.css. */
-const BRAND = '#682cc2'
+/**
+ * The logo's purple, kept in step with --brand-logo in src/styles.css.
+ *
+ * One step brighter than the interface's --brand-fixed, on purpose: an icon
+ * competes on a home screen against every other app's colour and wants the
+ * brighter mix, while a screen you sit in front of wants the calmer one.
+ */
+const BRAND = '#7135ce'
 
 /**
  * `maskable` leaves a ring of bare purple around the word, because Android

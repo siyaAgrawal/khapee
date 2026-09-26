@@ -147,11 +147,11 @@ export function Owners() {
       {/* ============ 3. the queue that never forms ============ */}
       <Shot t={t} a={0.62} b={0.68} c={0.97} d={1.02} from={1.06} to={1}>
         <svg viewBox="0 0 900 420" className="w-full h-full" aria-hidden>
-          <rect width="900" height="420" fill="var(--s1)" />
-          <rect y="330" width="900" height="90" fill="var(--s2)" />
+          <rect width="900" height="420" fill="#191125" />
+          <rect y="330" width="900" height="90" fill="#211539" />
           {/* the door */}
-          <rect x="560" y="96" width="280" height="234" rx="5" fill="var(--s4)" />
-          <rect x="590" y="126" width="220" height="120" rx="4" fill="var(--s1)" />
+          <rect x="560" y="96" width="280" height="234" rx="5" fill="#2b1b49" />
+          <rect x="590" y="126" width="220" height="120" rx="4" fill="#140d20" />
           <motion.rect
             x="590" y="126" width="220" height="120" rx="4" fill="var(--gold)"
             style={{ opacity: useTransform(queue, [0, 1], [0.05, 0.16]) }}

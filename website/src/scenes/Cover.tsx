@@ -68,23 +68,23 @@ export function Cover({ next }: { next: string }) {
         {/* the clock and the phone, as a pair */}
         <div className="flex items-center gap-[4vw] justify-self-center">
           <svg viewBox="0 0 220 220" className="w-[20vw] min-w-[130px] max-w-[250px] h-auto" aria-hidden>
-            <circle cx="110" cy="110" r="88" fill="var(--s2)" />
-            <circle cx="110" cy="110" r="88" fill="none" stroke="var(--s6)" strokeWidth="3" />
+            <circle cx="110" cy="110" r="88" fill="#211539" />
+            <circle cx="110" cy="110" r="88" fill="none" stroke="#452c68" strokeWidth="3" />
             {Array.from({ length: 12 }).map((_, i) => (
               <rect
                 key={i}
-                x="108" y="30" width="4" height="13" rx="2" fill="var(--s7)"
+                x="108" y="30" width="4" height="13" rx="2" fill="#5c3d84"
                 transform={`rotate(${i * 30} 110 110)`}
               />
             ))}
-            <line x1="110" y1="110" x2="110" y2="58" stroke="var(--fg)" strokeWidth="5" strokeLinecap="round" />
-            <line x1="110" y1="110" x2="146" y2="128" stroke="var(--fg)" strokeWidth="5" strokeLinecap="round" />
+            <line x1="110" y1="110" x2="110" y2="58" stroke="#f4ede1" strokeWidth="5" strokeLinecap="round" />
+            <line x1="110" y1="110" x2="146" y2="128" stroke="#f4ede1" strokeWidth="5" strokeLinecap="round" />
             <motion.line
               x1="110" y1="110" x2="110" y2="44"
               stroke="#b9563c" strokeWidth="2.4" strokeLinecap="round"
               style={{ rotate: hand, originX: '110px', originY: '110px' }}
             />
-            <circle cx="110" cy="110" r="5" fill="var(--fg)" />
+            <circle cx="110" cy="110" r="5" fill="#f4ede1" />
           </svg>
 
           <div className="hidden sm:block">

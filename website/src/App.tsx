@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useScroll, useMotionValueEvent } from 'framer-motion'
 import { useSmoothScroll } from './lib/scene'
-import { useTheme, type Theme } from './lib/theme'
 import { Cover } from './scenes/Cover'
 import { Journey } from './scenes/Journey'
 import { Pickup } from './scenes/Pickup'
@@ -36,7 +35,6 @@ const OWNERS_HASH = '#for-restaurants'
 
 export default function App() {
   useSmoothScroll()
-  const { theme, toggle } = useTheme()
 
   /*
    * Two views, chosen by the address bar.
@@ -65,7 +63,7 @@ export default function App() {
   if (owners) {
     return (
       <>
-        <OwnersMasthead theme={theme} onToggle={toggle} />
+        <OwnersMasthead />
         <main>
           <Owners />
         </main>
@@ -76,7 +74,7 @@ export default function App() {
 
   return (
     <>
-      <Masthead theme={theme} onToggle={toggle} />
+      <Masthead />
       <main>
         <Cover next="journey" />
         <Journey />
@@ -97,7 +95,7 @@ export default function App() {
  * start, when somebody needs to know whose site this is, and it leaves as soon
  * as the first scene starts playing.
  */
-function Masthead({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
+function Masthead() {
   const { scrollY } = useScroll()
   const [gone, setGone] = useState(false)
   useMotionValueEvent(scrollY, 'change', (v) => setGone(v > 240))
@@ -113,7 +111,6 @@ function Masthead({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
     >
       <Wordmark />
       <span className="flex-1" />
-      <ThemeToggle theme={theme} onToggle={onToggle} />
       <a className="cta cta-ghost !py-2 !px-4 !text-[12px]" href={OWNERS_HASH}>
         For restaurants
       </a>
@@ -125,12 +122,11 @@ function Masthead({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
 }
 
 /** The restaurants view keeps its header, because there is a way back. */
-function OwnersMasthead({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
+function OwnersMasthead() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 flex items-center gap-3 px-6 py-5">
       <Wordmark />
       <span className="flex-1" />
-      <ThemeToggle theme={theme} onToggle={onToggle} />
       <a className="cta cta-ghost !py-2 !px-4 !text-[12px]" href="#">
         Back to the film
       </a>
@@ -141,52 +137,17 @@ function OwnersMasthead({ theme, onToggle }: { theme: Theme; onToggle: () => voi
   )
 }
 
-/**
- * The wordmark.
- *
- * It used to be a crescent in a white square with "Khapee" set beside it. The
- * crescent was a good shape and told nobody what the app was; the icon on a
- * phone's home screen is now the word itself in a purple tile, the way an app
- * you order food from draws its icon. So the site's mark is the same word,
- * lowercase, ending in the same full stop — one logo in both places rather
- * than a picture here and a word there.
- */
 function Wordmark() {
   return (
-    <a href="#" className="flex items-baseline no-underline brand">
-      khapee<span className="brand-dot" aria-hidden>.</span>
+    <a href="#" className="flex items-center gap-3 no-underline">
+      <span
+        className="grid place-items-center w-9 h-9 bg-white text-ink text-[15px]"
+        style={{ borderRadius: 3 }}
+      >
+        ◗
+      </span>
+      <span className="display text-[22px] tracking-[-0.04em]">Khapee</span>
     </a>
-  )
-}
-
-/**
- * Daylight or night.
- *
- * Small, at the end of the header, and it names the thing it will switch to
- * rather than the thing you are looking at — which is the only version of
- * this control nobody has to think about.
- */
-function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
-  const dark = theme === 'dark'
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="theme-toggle"
-      aria-label={dark ? 'Switch to the light theme' : 'Switch to the dark theme'}
-      title={dark ? 'Daylight' : 'Night'}
-    >
-      {dark ? (
-        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-          <circle cx="8" cy="8" r="3.1" />
-          <path d="M8 1.4v1.6M8 13v1.6M1.4 8h1.6M13 8h1.6M3.3 3.3l1.2 1.2M11.5 11.5l1.2 1.2M12.7 3.3l-1.2 1.2M4.5 11.5l-1.2 1.2" strokeLinecap="round" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-          <path d="M13.4 9.6A5.8 5.8 0 0 1 6.4 2.6a5.9 5.9 0 1 0 7 7Z" strokeLinejoin="round" />
-        </svg>
-      )}
-    </button>
   )
 }
 
@@ -223,7 +184,7 @@ function Ledger() {
           key={c.id}
           href={`#${c.id}`}
           className="transition-colors flex items-center gap-1.5"
-          style={{ color: i === at ? 'var(--accent)' : undefined }}
+          style={{ color: i === at ? '#d9a441' : undefined }}
         >
           <span style={{ opacity: 0.55 }}>{String(i + 1).padStart(2, '0')}</span>
           {i === at ? <b>{c.label}</b> : <span className="hidden xl:inline">{c.label}</span>}

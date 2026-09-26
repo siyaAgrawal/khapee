@@ -37,40 +37,40 @@ export function Pickup() {
       </Cue>
 
       <Shot t={t} a={0.14} b={0.22} c={0.86} d={0.95} from={1.08} to={1}>
-        <div className="absolute inset-0 flex flex-col" style={{ background: 'var(--s2)' }}>
+        <div className="absolute inset-0 flex flex-col" style={{ background: '#1e1636' }}>
           <div className="h-[16vh] shrink-0" />
           <div className="flex-1 grid place-items-center min-h-0 px-[4vw] pb-[10vh]">
             <svg viewBox="0 0 940 420" className="w-full h-full" preserveAspectRatio="xMidYMid meet" aria-hidden>
-              <rect width="940" height="420" fill="var(--s2)" />
-              <rect y="320" width="940" height="100" fill="var(--s2)" />
-              <rect y="317" width="940" height="3" fill="var(--s5)" />
+              <rect width="940" height="420" fill="#1e1636" />
+              <rect y="320" width="940" height="100" fill="#241735" />
+              <rect y="317" width="940" height="3" fill="#33215a" />
 
               {/* the shelf, and the bag with a name on it */}
               <g transform="translate(700 104)">
                 <rect x="-118" y="-46" width="236" height="32" rx="3" fill="#b9563c" />
                 <text x="0" y="-24" textAnchor="middle" fontSize="13" letterSpacing="4"
-                      fontWeight="700" fill="var(--porcelain)">PICK UP</text>
-                <rect x="-118" y="0" width="236" height="150" rx="4" fill="var(--s4)" />
-                <rect x="-118" y="70" width="236" height="6" fill="var(--s6)" />
-                <rect x="-118" y="144" width="236" height="6" fill="var(--s6)" />
+                      fontWeight="700" fill="#f4ede1">PICK UP</text>
+                <rect x="-118" y="0" width="236" height="150" rx="4" fill="#2b1b49" />
+                <rect x="-118" y="70" width="236" height="6" fill="#3a2560" />
+                <rect x="-118" y="144" width="236" height="6" fill="#3a2560" />
 
                 {/* yours, until you take it */}
                 <motion.g style={{ opacity: useTransform(collect, [0.42, 0.52], [1, 0]) }}>
                   <g transform="translate(-58 34)">
-                    <path d="M-22 -50 h44 l5 50 h-54 z" fill="var(--gold)" />
+                    <path d="M-22 -50 h44 l5 50 h-54 z" fill="#d9a441" />
                     <path d="M-11 -50 q11 -13 22 0" fill="none" stroke="#a87c26" strokeWidth="3.4" strokeLinecap="round" />
-                    <rect x="-15" y="-26" width="30" height="14" rx="2" fill="var(--porcelain)" />
+                    <rect x="-15" y="-26" width="30" height="14" rx="2" fill="#f4ede1" />
                   </g>
                   <motion.ellipse
-                    cx="-58" cy="34" rx="58" ry="17" fill="var(--gold)"
+                    cx="-58" cy="34" rx="58" ry="17" fill="#d9a441"
                     style={{ opacity: useTransform(collect, [0, 0.42], [0.26, 0]) }}
                   />
                 </motion.g>
                 <g transform="translate(52 34)">
-                  <path d="M-22 -50 h44 l5 50 h-54 z" fill="var(--s6)" />
+                  <path d="M-22 -50 h44 l5 50 h-54 z" fill="#3a2560" />
                 </g>
                 <g transform="translate(-4 108)">
-                  <path d="M-22 -50 h44 l5 50 h-54 z" fill="var(--s6)" />
+                  <path d="M-22 -50 h44 l5 50 h-54 z" fill="#3a2560" />
                 </g>
               </g>
 
@@ -83,7 +83,7 @@ export function Pickup() {
                   <Walker mood={useTransform(collect, () => 0.1)} look={q.look} />
                 </g>
               ))}
-              <rect x="96" y="286" width="230" height="8" rx="4" fill="var(--s6)" />
+              <rect x="96" y="286" width="230" height="8" rx="4" fill="#3a2560" />
 
               {/* and you, going straight to the shelf and out again */}
               <motion.g style={{ x: useTransform(collect, [0, 0.5, 1], [-230, 0, 300]) }}>
@@ -100,9 +100,9 @@ export function Pickup() {
                   transform="translate(506 250)"
                   style={{ opacity: useTransform(collect, [0.46, 0.54], [0, 1]) }}
                 >
-                  <path d="M-17 -38 h34 l4 38 h-42 z" fill="var(--gold)" />
+                  <path d="M-17 -38 h34 l4 38 h-42 z" fill="#d9a441" />
                   <path d="M-8 -38 q8 -10 16 0" fill="none" stroke="#a87c26" strokeWidth="3" strokeLinecap="round" />
-                  <rect x="-11" y="-20" width="22" height="11" rx="2" fill="var(--porcelain)" />
+                  <rect x="-11" y="-20" width="22" height="11" rx="2" fill="#f4ede1" />
                 </motion.g>
               </motion.g>
             </svg>

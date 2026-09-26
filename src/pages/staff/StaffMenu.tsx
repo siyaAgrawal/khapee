@@ -339,7 +339,7 @@ export default function StaffMenu() {
 
       {sections.map((c, ci) => (
         <section key={c.id} className="card card-pad mt-3">
-          <div className="row" style={{ marginBottom: 6 }}>
+          <div className="row menu-head" style={{ marginBottom: 6 }}>
             <h2>{c.name}</h2>
             <span className="spacer" style={{ flex: 1 }} />
             {/* Hidden while a search is on: the arrows move a section within
@@ -390,7 +390,7 @@ export default function StaffMenu() {
             </p>
           ) : (
             c.items.map((item, ii) => (
-              <div key={item.id} className="list-row">
+              <div key={item.id} className="list-row menu-row">
                 <Art
                   emoji={item.emoji}
                   hue={item.hue}

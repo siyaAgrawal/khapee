@@ -7292,3 +7292,47 @@ button.nav-link {
     flex: 1 1 0;
   }
 }
+
+/* --- The menu editor, on a screen narrower than a laptop -----------------
+   A dish row is a photo, a name, a price and up to six controls. On a
+   handset that is more than fits: the name wrapped into the move arrows,
+   the availability switch went off the right-hand edge entirely, and the
+   page grew a sideways scrollbar. A restaurant could see Edit and still not
+   reach the switch beside it.
+
+   The row is allowed to wrap, and the flexible gap is turned into a line
+   break, so the dish is one line and its controls are the next — each of
+   them big enough to hit with a thumb. Above this width nothing changes. */
+@media (max-width: 720px) {
+  .menu-row,
+  .menu-head {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  /* The gap that pushed the controls right now ends the line instead. */
+  .menu-row > .spacer,
+  .menu-head > .spacer {
+    flex: 1 0 100% !important;
+    height: 0;
+    margin: 0;
+  }
+  .menu-head h2 {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  /* Controls share the width evenly rather than each taking what it likes,
+     so the row reads as one set of choices and every target is the same. */
+  .menu-row > .btn,
+  .menu-head > .btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+  .menu-row > .badge {
+    align-self: center;
+  }
+  /* The name and price keep the whole first line, beside the photo. */
+  .menu-row > div:not([class]) {
+    flex: 1 1 auto;
+  }
+}

@@ -64,22 +64,37 @@ export function useOrderAlerts() {
       return
     }
 
+    /*
+     * Allowed once, allowed for good.
+     *
+     * A device whose owner has already said yes is never asked again. What
+     * used to happen: every dashboard open re-registered the device, and if
+     * that one request failed — the server mid-restart, a wifi blip in the
+     * kitchen — the "Turn on order alerts" bar came back, asking somebody who
+     * had already said yes. The answer is on the device and it is still yes;
+     * what failed was a request, and a request can simply be tried again.
+     */
+    const granted = Notification.permission === 'granted'
+    if (granted) setStatus('on')
+
     let state: AlertState | null = null
     try {
       state = await api<AlertState>('/staff/alerts')
     } catch {
       /* Signed out, or the server is waking. Either way this is not the
          moment to tell somebody their alerts are broken. */
-      setStatus('checking')
+      if (granted) retryLater()
+      else setStatus('checking')
       return
     }
     key.current = state?.push?.publicKey ?? ''
     if (!state?.push?.available || !key.current) {
-      setStatus('unsupported')
+      if (!granted) setStatus('unsupported')
       return
     }
 
-    if (Notification.permission !== 'granted') {
+    // Never answered on this device: the one case a person has to be asked.
+    if (!granted) {
       setStatus('ask')
       return
     }
@@ -87,11 +102,32 @@ export function useOrderAlerts() {
     /*
      * Granted. Register again anyway — see the note at the top. Silent on
      * purpose: no prompt appears, nothing is shown, and the person who
-     * switched this on months ago never learns it needed doing.
+     * switched this on months ago never learns it needed doing. If it fails,
+     * it is tried again shortly, still silently.
      */
     const r = await enablePush(key.current)
-    setStatus(r.ok ? 'on' : 'ask')
-    if (!r.ok && r.error) setError(r.error)
+    if (r.ok) attempts.current = 0
+    else retryLater()
+  }, [])
+
+  /* A failed re-registration is tried again — after 10 s, 30 s, 1 min, then
+     every 2 min — rather than handed to the person as a question. */
+  const attempts = useRef(0)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const settleRef = useRef(settle)
+  settleRef.current = settle
+  function retryLater() {
+    if (timer.current) return
+    const waits = [10_000, 30_000, 60_000]
+    const wait = waits[attempts.current] ?? 120_000
+    attempts.current += 1
+    timer.current = setTimeout(() => {
+      timer.current = null
+      void settleRef.current()
+    }, wait)
+  }
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current)
   }, [])
 
   useEffect(() => {

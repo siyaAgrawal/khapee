@@ -155,6 +155,21 @@ export function askCustomer(orderId: number, declined: string[]): void {
   }).catch(() => {})
 }
 
+/** The kitchen wants this car order paid online before it goes ahead. */
+export function askToPrepay(orderId: number): void {
+  const row = db
+    .prepare('SELECT order_number, restaurant_id FROM orders WHERE id = ?')
+    .get(orderId) as any
+  if (!row) return
+  const name = (db.prepare('SELECT name FROM restaurants WHERE id = ?').get(row.restaurant_id) as any)?.name ?? 'The restaurant'
+  void pushToCustomer(orderId, {
+    title: `${name} is only taking online payment right now`,
+    body: 'Tap to pay by UPI and send your order, or cancel it.',
+    url: `/order/${row.order_number}`,
+    tag: `khapee-prepay-${orderId}`,
+  }).catch(() => {})
+}
+
 export function tellCustomer(orderId: number, status: OrderStatus): void {
   const row = db
     .prepare(

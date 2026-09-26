@@ -6,7 +6,8 @@ import { sessionByToken, sessionIsValid, startPaidSession } from './dining.ts'
 import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
 import { alertRestaurant } from './alerts.ts'
-import { askCustomer } from './customer-notify.ts'
+import { askCustomer, askToPrepay } from './customer-notify.ts'
+import { claimedCents, outstandingCents } from './payments.ts'
 import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
 
@@ -654,6 +655,84 @@ export function customerAgrees(orderId: number): { ok: boolean; order?: any; err
 }
 
 /**
+ * "Only if you pay first."
+ *
+ * The same shape as a refused dish, for money instead of food. A car order
+ * can be placed as pay-at-the-car; a kitchen that would rather not carry the
+ * risk on this one presses a single button, and the order turns round to wait
+ * on the customer, whose screen offers two things: pay online now, or cancel.
+ * Nothing is cooked or accepted until one of those happens.
+ */
+export function askForPrepay(orderId: number): { ok: boolean; status?: number; error?: string; order?: any } {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any
+  if (!order) return { ok: false, status: 404, error: 'That order no longer exists.' }
+  if (order.service_mode !== 'car') {
+    return { ok: false, status: 409, error: 'Prepaid only is for orders brought out to a car.' }
+  }
+  if (isTerminal('car', order.status as OrderStatus) || !['REQUESTED', 'NEW'].includes(order.status)) {
+    return { ok: false, status: 409, error: 'This order is already under way — ask for payment when you hand it over.' }
+  }
+  if (order.payment_status === 'PAID' || claimedCents(orderId) > 0) {
+    return { ok: false, status: 409, error: 'This order has already been paid online.' }
+  }
+  const restaurant = db.prepare('SELECT upi_vpa FROM restaurants WHERE id = ?').get(order.restaurant_id) as any
+  if (!String(restaurant?.upi_vpa ?? '').trim()) {
+    return { ok: false, status: 409, error: 'Set up UPI in Settings first — the customer needs somewhere to pay.' }
+  }
+  db.prepare("UPDATE orders SET needs_prepay = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(orderId)
+  db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'PREPAY_ASKED', 'staff')").run(orderId)
+  askToPrepay(orderId)
+  return { ok: true, order: getOrder(orderId) }
+}
+
+/**
+ * Paying for an order that already exists, by UPI.
+ *
+ * The same claim checkout makes — the 12-digit reference from the customer's
+ * UPI app, for the restaurant to match against their own — for whatever is
+ * still owed. Answers a kitchen's request for prepayment, and clears it.
+ */
+export function payOrderByUpi(orderId: number, upiRef: string): { ok: boolean; status?: number; error?: string; order?: any } {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as any
+  if (!order) return { ok: false, status: 404, error: 'That order no longer exists.' }
+  if (['CANCELLED', 'DECLINED'].includes(order.status)) {
+    return { ok: false, status: 409, error: 'This order was cancelled, so there is nothing to pay.' }
+  }
+  const ref = String(upiRef ?? '').replace(/\D/g, '')
+  if (ref.length < 12) {
+    return { ok: false, status: 400, error: 'Enter the 12-digit UPI reference so the restaurant can find your payment.' }
+  }
+  const owed = outstandingCents(orderId)
+  if (owed <= 0) return { ok: false, status: 409, error: 'This order is already paid for.' }
+
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO payments (order_id, payer_name, amount_cents, method, status, upi_ref, covers)
+       VALUES (?, ?, ?, 'upi', 'CLAIMED', ?, 'all')`,
+    ).run(orderId, order.customer_name ?? '', owed, String(upiRef).trim().slice(0, 40))
+    db.prepare("UPDATE orders SET needs_prepay = NULL, updated_at = datetime('now') WHERE id = ?").run(orderId)
+    db.prepare(
+      `INSERT INTO notifications (restaurant_id, order_id, title, body) VALUES (?, ?, ?, ?)`,
+    ).run(order.restaurant_id, orderId, `#${order.order_number} paid online`, `${order.customer_name ?? ''} · ${money(owed)} by UPI · ref ${ref}`)
+  })()
+
+  const r = db.prepare('SELECT name FROM restaurants WHERE id = ?').get(order.restaurant_id) as any
+  alertRestaurant({
+    restaurantId: order.restaurant_id,
+    restaurantName: r?.name ?? '',
+    orderNumber: order.order_number,
+    where: order.table_label || 'Car',
+    customerName: order.customer_name ?? '',
+    customerPhone: order.contact_phone ?? '',
+    total: money(owed),
+    items: '',
+    needsAccepting: order.status === 'REQUESTED',
+    paid: true,
+  })
+  return { ok: true, order: getOrder(orderId) }
+}
+
+/**
  * Everything nobody has ruled on is in.
  *
  * Run when the order is accepted, so that "Accept" means what it looks like
@@ -726,6 +805,8 @@ export function shapeOrder(row: any) {
      * like an order nobody has touched.
      */
     needsCustomerOk: row.needs_customer_ok ?? null,
+    /** Set while the kitchen is waiting for this car order to be paid online. */
+    needsPrepay: row.needs_prepay ?? null,
     declinedItems: row.declined_items ?? '',
     /** Set when the customer agreed to go ahead without the refused dishes. */
     customerOkAt: row.customer_ok_at ?? null,

@@ -461,6 +461,23 @@ export default function StaffOrders() {
     }
   }
 
+  /**
+   * "Prepaid only" — the car order's other answer besides Accept. The customer
+   * is asked to pay online or cancel; the order waits on them until then.
+   */
+  const askPrepay = async (order: Order) => {
+    setBusyId(order.id)
+    try {
+      const r = await api<{ order: Order }>(`/staff/orders/${order.id}/prepay`, { body: {} })
+      setOrders((prev) => prev?.map((o) => (o.id === r.order.id ? r.order : o)) ?? null)
+      toast('Asked the customer to pay online first. The order waits until they pay or cancel.', 'info')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const togglePaid = async (order: Order) => {
     setBusyId(order.id)
     try {
@@ -811,6 +828,11 @@ export default function StaffOrders() {
                                 waiting on the customer
                               </span>
                             )}
+                            {o.needsPrepay && (
+                              <span className="waiting-them" title="Asked to pay online before it goes ahead">
+                                waiting for online payment
+                              </span>
+                            )}
                             {/*
                               And their answer, once it comes.
 
@@ -880,6 +902,20 @@ export default function StaffOrders() {
                             Can’t take it
                           </button>
                         )}
+                        {/* A car order that could be paid at the car: the kitchen
+                            can ask for it to be paid online first instead. */}
+                        {(o.serviceMode === 'car' || o.serviceType === 'car') &&
+                          (o.status === 'REQUESTED' || o.status === 'NEW') &&
+                          o.paymentState === 'unpaid' &&
+                          !o.needsPrepay && (
+                            <button
+                              className="btn btn-secondary btn-sm qrow-prepay"
+                              disabled={busyId === o.id}
+                              onClick={() => void askPrepay(o)}
+                            >
+                              Prepaid only
+                            </button>
+                          )}
                         {next && (
                           <button
                             className="btn btn-accent btn-sm qrow-go"

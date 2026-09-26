@@ -2,9 +2,9 @@ import { Router } from 'express'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
 import { requireAuth } from '../auth.ts'
-import { checkAccessCode, createOrder, customerAgrees, getOrder, shapeOrder } from '../orders-service.ts'
+import { checkAccessCode, createOrder, customerAgrees, getOrder, payOrderByUpi, shapeOrder } from '../orders-service.ts'
 import { normalizeCode } from '../ids.ts'
-import { upiLink } from '../payments.ts'
+import { claimedCents, outstandingCents, upiLink } from '../payments.ts'
 import { sessionByToken } from '../dining.ts'
 import { money } from '../../shared/orders.ts'
 import { pushOrder } from '../petpooja.ts'
@@ -249,6 +249,45 @@ ordersRouter.post('/:orderNumber/agree', (req, res) => {
 })
 
 /**
+ * The UPI request for an order that already exists — for whatever is still
+ * owed on it. Used when the kitchen asks for payment before a car order goes
+ * ahead.
+ */
+ordersRouter.post('/:orderNumber/payment-request', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db.prepare('SELECT * FROM orders WHERE order_number = ?').get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+  const r = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(row.restaurant_id) as any
+  if (!String(r?.upi_vpa ?? '').trim()) {
+    return res.status(409).json({ error: `${r?.name ?? 'The restaurant'} has not set up UPI.` })
+  }
+  const amountCents = outstandingCents(row.id)
+  if (amountCents <= 0) return res.status(409).json({ error: 'This order is already paid for.' })
+  const ref = `KHAPEE${row.order_number}`
+  res.json({
+    amountCents,
+    vpa: r.upi_vpa,
+    payeeName: r.upi_name || r.name,
+    reference: ref,
+    upiLink: upiLink({ vpa: r.upi_vpa, name: r.upi_name || r.name, amountCents, note: `${r.name} #${row.order_number}`, ref }),
+  })
+})
+
+/** "I've paid" — the UPI reference for an order that already exists. */
+ordersRouter.post('/:orderNumber/pay', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db.prepare('SELECT id, user_id, verify_token, restaurant_id FROM orders WHERE order_number = ?').get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+  const r = payOrderByUpi(row.id, String(req.body?.upiRef ?? ''))
+  if (!r.ok) return res.status(r.status ?? 400).json({ error: r.error })
+  publish('order:update', { restaurantId: row.restaurant_id, orderId: row.id, order: r.order })
+  publish('orders', { restaurantId: row.restaurant_id })
+  res.json({ order: r.order })
+})
+
+/**
  * "Then don't bother."
  *
  * The other answer to a refused dish, and the only route a customer has to
@@ -265,14 +304,15 @@ ordersRouter.post('/:orderNumber/cancel', (req, res) => {
   if (!['REQUESTED', 'NEW', 'ACCEPTED'].includes(row.status)) {
     return res.status(409).json({ error: 'This one is too far along to cancel here — please ring the restaurant.' })
   }
-  if (row.payment_status === 'PAID') {
+  // Sent by UPI counts: the money has left their bank either way.
+  if (row.payment_status === 'PAID' || claimedCents(row.id) > 0) {
     return res.status(409).json({
       error: 'This order is paid for, so it has to be cancelled by the restaurant — they will refund you.',
     })
   }
 
   db.prepare(
-    `UPDATE orders SET status = 'CANCELLED', needs_customer_ok = NULL,
+    `UPDATE orders SET status = 'CANCELLED', needs_customer_ok = NULL, needs_prepay = NULL,
             declined_reason = 'Cancelled by the customer', updated_at = datetime('now')
       WHERE id = ?`,
   ).run(row.id)

@@ -33,7 +33,7 @@ export function metaFor(pathname: string, origin: string): PageMeta {
         .split(',')
         .map((c: string) => c.trim())
         .filter(Boolean)
-      const where = [r.city, 'Indore'].find(Boolean)
+      const where = placeName(r.city) || 'Indore'
       const ways = [
         'order at your table',
         r.accepts_car ? 'from your car' : null,
@@ -118,6 +118,27 @@ export function robotsTxt(origin: string): string {
   ].join('\n')
 }
 
+/**
+ * A place name as a place name, whatever case it was typed in.
+ *
+ * The city is a free text box in the dashboard, and two restaurants had typed
+ * "indore". That went straight into the description Google prints under the
+ * link and into the address in the structured data — so the one line a
+ * stranger reads about the restaurant had its city in lower case. Fixing the
+ * two rows would not stop the third person typing it that way, and the value
+ * now lives on the live server rather than in this repository, so it has to
+ * be handled where it is shown.
+ *
+ * Hyphens and spaces both start a word, so "navi-mumbai" and "new delhi"
+ * come out right rather than only the first letter being lifted.
+ */
+function placeName(value: string | null | undefined): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/(^|[\s-])([a-z])/g, (_, before, letter) => before + letter.toUpperCase())
+}
+
 /** Every page worth indexing: the front page and each restaurant with a menu. */
 export function sitemapXml(origin: string): string {
   const rows = db
@@ -188,7 +209,7 @@ export function structuredData(pathname: string, origin: string): string | null 
       .split(',')
       .map((c: string) => c.trim())
       .filter(Boolean),
-    address: { '@type': 'PostalAddress', addressLocality: r.city || 'Indore', addressCountry: 'IN' },
+    address: { '@type': 'PostalAddress', addressLocality: placeName(r.city) || 'Indore', addressCountry: 'IN' },
     telephone: r.phone || undefined,
     openingHours: r.hours || undefined,
     acceptsReservations: false,

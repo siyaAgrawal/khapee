@@ -4885,6 +4885,23 @@ async function runTests() {
     ok('and it can be put back', backAgain.name === dish.name && backAgain.priceCents === dish.priceCents, backAgain)
   }
 
+  group('A CITY IS A CITY, however it was typed')
+  {
+    // The city is a free text box in the dashboard, and two restaurants had
+    // typed it in lower case. That went straight into the line Google prints
+    // under the link and into the address in the structured data, so the one
+    // sentence a stranger reads about the place had its city in lower case.
+    // Fetched over HTTP, like the other crawler checks: these read the
+    // database, and the test process opens a different one from the server.
+    const site = BASE.replace(/\/api$/, '')
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { city: 'indore' } })
+    const html = await (await fetch(`${site}/r/${mornington.id}`)).text()
+    ok('the description says Indore, not indore', / in Indore\./.test(html), html.match(/content="[^"]{0,90}/)?.[0])
+    ok('and never in lower case', !/ in indore/.test(html))
+    ok('the address does too', html.includes('"addressLocality":"Indore"'), html.match(/"addressLocality":"[^"]*"/)?.[0])
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { city: 'Indore' } })
+  }
+
   group('TO A CAR, PAID FIRST')
   {
     // Every other way of ordering ends with the customer inside the building.

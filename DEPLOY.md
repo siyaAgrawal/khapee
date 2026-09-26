@@ -11,6 +11,40 @@ npm run build && npm start
 
 That serves everything on `PORT` (default 4273). Verified working locally.
 
+## Oracle Cloud Always Free — the host to use
+
+Render's free plan sleeps and rebuilds the database on every wake, which wipes
+every push subscription: an order placed after a quiet spell reaches no phone,
+and the customer waits for a kitchen that never heard about it. An Oracle
+Always Free VM never sleeps and has a real disk, so subscriptions, orders and
+codes stay put. Free for good, not a trial.
+
+1. Sign up at cloud.oracle.com (a card is asked for identity; Always Free
+   resources are never charged).
+2. **Compute → Instances → Create**. Image: Ubuntu 22.04 or 24.04. Shape:
+   `VM.Standard.A1.Flex` (ARM, 1 OCPU / 6 GB is plenty) — or
+   `VM.Standard.E2.1.Micro` if A1 is out of capacity. Add your SSH key.
+3. **Networking → the VM's subnet → Security list → Add ingress rules**:
+   source `0.0.0.0/0`, TCP, destination ports `80` and `443`.
+4. SSH in and run:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/siyaAgrawal/khapee/main/deploy/oracle/setup.sh | DOMAIN=khapee.com WWW=1 bash
+   ```
+
+5. Point `khapee.com` and `www` (A records) at the VM's public IP. HTTPS is
+   issued automatically by Caddy once DNS resolves — push needs HTTPS.
+6. Once it answers on khapee.com, suspend the Render service so two copies are
+   not running.
+
+After that, **every push to main deploys itself within 2 minutes** (a timer on
+the VM pulls and rebuilds; `deploy/oracle/update.sh`). Settings live in
+`/etc/khapee.env` on the VM; the database is `/var/lib/khapee/khapee.db`,
+outside the checkout, so no deploy or reboot touches it.
+
+Moving hosts gives a new `KHAPEE_SECRET`, so everyone signs in once more and
+each owner turns notifications on again, once. After that they stay on.
+
 ## Why the current Vercel link cannot work for two phones
 
 Vercel runs the app as serverless functions. Each one boots its own private copy

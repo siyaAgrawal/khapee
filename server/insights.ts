@@ -54,6 +54,9 @@ for (const [col, def] of [
   ['order_number', "TEXT NOT NULL DEFAULT ''"],
   ['customer_name', "TEXT NOT NULL DEFAULT ''"],
   ['customer_phone', "TEXT NOT NULL DEFAULT ''"],
+  // Taken out of the numbers by whoever runs insights — a test order, say.
+  // Kept, not deleted, so it can be put back.
+  ['hidden', 'INTEGER NOT NULL DEFAULT 0'],
 ] as const) {
   const have = (db.prepare('PRAGMA table_info(order_facts)').all() as any[]).some((c) => c.name === col)
   if (!have) db.exec(`ALTER TABLE order_facts ADD COLUMN ${col} ${def}`)
@@ -157,7 +160,10 @@ export function canSeeInsights(user: { id: number; email?: string } | undefined)
 /** India time, as SQLite reads it. */
 const IST = `datetime(f.created_at, '+330 minutes')`
 /** An order that happened, as opposed to one called off. */
-const REAL = `f.status NOT IN ('CANCELLED', 'DECLINED')`
+/** Not taken out of the numbers (see `hidden`). */
+const SHOWN = `f.hidden = 0`
+/** An order that happened, as opposed to one called off — and still counted. */
+const REAL = `(${SHOWN} AND f.status NOT IN ('CANCELLED', 'DECLINED'))`
 
 /** The number on the wall: everyone who has ever ordered, updated with every order. */
 export function liveCount() {
@@ -170,7 +176,7 @@ export function liveCount() {
         WHERE ${REAL} AND date(${IST}) = date('now', '+330 minutes')`,
     )
     .get() as any
-  const last = db.prepare(`SELECT MAX(created_at) AS at FROM order_facts`).get() as any
+  const last = db.prepare(`SELECT MAX(created_at) AS at FROM order_facts f WHERE ${SHOWN}`).get() as any
   return {
     orders: Number(all.orders),
     people: Number(all.people),
@@ -188,7 +194,7 @@ export function liveCount() {
  */
 export function insights(opts: { days: number; restaurantId?: number | null }) {
   const days = Math.max(0, Math.min(3650, Math.floor(opts.days || 0)))
-  const where: string[] = []
+  const where: string[] = [SHOWN]
   const params: any[] = []
   if (days) where.push(`f.created_at >= datetime('now', '-${days} days')`)
   if (opts.restaurantId) {
@@ -426,7 +432,7 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
 export function orderList(opts: {
   days: number
   restaurantId?: number | null
-  which?: 'all' | 'ahead' | 'off'
+  which?: 'all' | 'ahead' | 'off' | 'hidden'
   limit?: number
   offset?: number
 }) {
@@ -438,8 +444,10 @@ export function orderList(opts: {
     where.push('f.restaurant_id = ?')
     params.push(opts.restaurantId)
   }
+  if (opts.which === 'hidden') where.push('f.hidden = 1')
+  else where.push(SHOWN)
   if (opts.which === 'ahead') where.push(REAL)
-  if (opts.which === 'off') where.push(`NOT (${REAL})`)
+  if (opts.which === 'off') where.push(`f.status IN ('CANCELLED', 'DECLINED')`)
   const W = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const limit = Math.max(1, Math.min(200, Math.floor(opts.limit ?? 50)))
   const offset = Math.max(0, Math.floor(opts.offset ?? 0))
@@ -471,6 +479,7 @@ export function orderList(opts: {
       paid: o.payment_status === 'PAID',
       mode: o.service_mode === 'car' ? 'Car' : o.service_mode === 'delivery' ? 'Delivery' : o.order_type === 'pickup' ? 'Pickup' : 'Table',
       removedFromHistory: !o.still_there,
+      hidden: !!o.hidden,
       items: (itemsOf.all(o.order_id) as any[]).map((i) => ({
         name: i.name,
         quantity: i.quantity,
@@ -479,4 +488,14 @@ export function orderList(opts: {
       })),
     })),
   }
+}
+
+/** Take one order out of the numbers, or put it back. */
+export function setHidden(orderId: number, hidden: boolean): boolean {
+  return db.prepare('UPDATE order_facts SET hidden = ? WHERE order_id = ?').run(hidden ? 1 : 0, orderId).changes > 0
+}
+
+/** How many orders have been taken out, so the page can offer them back. */
+export function hiddenCount(): number {
+  return Number((db.prepare('SELECT COUNT(*) AS n FROM order_facts WHERE hidden = 1').get() as any).n)
 }

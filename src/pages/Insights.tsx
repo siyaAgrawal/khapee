@@ -319,14 +319,42 @@ function OrdersSheet({
   restaurant,
   which,
   onClose,
+  onChanged,
 }: {
   title: string
   days: number
   restaurant: string
-  which: 'all' | 'ahead' | 'off'
+  which: 'all' | 'ahead' | 'off' | 'hidden'
   onClose: () => void
+  onChanged: () => void
 }) {
   const [rows, setRows] = useState<any[] | null>(null)
+  const [busy, setBusy] = useState<number | null>(null)
+
+  /** Out of the numbers, or back in. The order itself is never deleted. */
+  const setHidden = async (o: any, hidden: boolean) => {
+    if (
+      hidden &&
+      !window.confirm(
+        `Remove order #${o.orderNumber || '—'} (${o.customerName || 'Guest'}, ${rupees(o.totalCents)}) from insights?\n\n` +
+          'It stops counting in every number and chart here. You can put it back from "Removed orders".',
+      )
+    ) {
+      return
+    }
+    setBusy(o.id)
+    try {
+      await api(`/insights/orders/${o.id}/hide`, { body: { hidden } })
+      setRows((prev) => prev?.filter((r) => r.id !== o.id) ?? null)
+      setTotal((n) => Math.max(0, n - 1))
+      setOpen(null)
+      onChanged()
+    } catch (e) {
+      setError((e as ApiError).message)
+    } finally {
+      setBusy(null)
+    }
+  }
   const [total, setTotal] = useState(0)
   const [open, setOpen] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -415,6 +443,13 @@ function OrdersSheet({
                     </a>
                   )}
                   {o.removedFromHistory && <p className="ins-note">Removed from the café’s own history; kept here.</p>}
+                  <button
+                    className="ins-hide"
+                    disabled={busy === o.id}
+                    onClick={() => void setHidden(o, which !== 'hidden')}
+                  >
+                    {busy === o.id ? 'Saving…' : which === 'hidden' ? 'Put back in insights' : 'Remove from insights'}
+                  </button>
                 </div>
               )}
             </li>
@@ -447,7 +482,7 @@ export default function Insights() {
   const [restaurant, setRestaurant] = useState('')
   const tip = useTip()
   const lastCount = useRef<number | null>(null)
-  const [sheet, setSheet] = useState<null | { title: string; which: 'all' | 'ahead' | 'off' }>(null)
+  const [sheet, setSheet] = useState<null | { title: string; which: 'all' | 'ahead' | 'off' | 'hidden' }>(null)
 
   useEffect(() => {
     const prev = document.title
@@ -568,9 +603,13 @@ export default function Insights() {
         <OrdersSheet
           title={sheet.title}
           which={sheet.which}
-          days={sheet.which === 'all' && sheet.title === 'Every order' ? 0 : days}
-          restaurant={sheet.title === 'Every order' ? '' : restaurant}
+          days={sheet.title === 'Every order' || sheet.which === 'hidden' ? 0 : days}
+          restaurant={sheet.title === 'Every order' || sheet.which === 'hidden' ? '' : restaurant}
           onClose={() => setSheet(null)}
+          onChanged={() => {
+            lastCount.current = null
+            void load()
+          }}
         />
       )}
 
@@ -601,6 +640,11 @@ export default function Insights() {
             </option>
           ))}
         </select>
+        {data?.hiddenOrders > 0 && (
+          <button className="ins-link" onClick={() => setSheet({ title: 'Removed from insights', which: 'hidden' })}>
+            Removed orders ({num(data.hiddenOrders)})
+          </button>
+        )}
       </div>
 
       {error && <p className="ins-error">{error}</p>}

@@ -4,7 +4,7 @@ import os from 'node:os'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
-import { canSeeInsights, insights, liveCount, orderList } from './insights.ts'
+import { canSeeInsights, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
 import { keepAwake } from './keep-awake.ts'
@@ -137,21 +137,28 @@ app.get('/api/insights/orders', (req: any, res) => {
     orderList({
       days: Number(req.query.days ?? 30),
       restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
-      which: which === 'ahead' || which === 'off' ? which : 'all',
+      which: which === 'ahead' || which === 'off' || which === 'hidden' ? which : 'all',
       limit: req.query.limit ? Number(req.query.limit) : 50,
       offset: req.query.offset ? Number(req.query.offset) : 0,
     }),
   )
 })
+app.post('/api/insights/orders/:id/hide', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  const ok = setHidden(Number(req.params.id), req.body?.hidden !== false)
+  if (!ok) return res.status(404).json({ error: 'That order is not in insights.' })
+  res.json({ ok: true, hidden: hiddenCount() })
+})
 app.get('/api/insights', (req: any, res) => {
   if (!insightsGate(req, res)) return
   res.set('Cache-Control', 'no-store')
-  res.json(
-    insights({
+  res.json({
+    ...insights({
       days: Number(req.query.days ?? 30),
       restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
     }),
-  )
+    hiddenOrders: hiddenCount(),
+  })
 })
 
 /** Server-sent events keep the staff board live without any polling loop. */

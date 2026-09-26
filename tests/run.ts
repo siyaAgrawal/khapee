@@ -4885,6 +4885,63 @@ async function runTests() {
     ok('and it can be put back', backAgain.name === dish.name && backAgain.priceCents === dish.priceCents, backAgain)
   }
 
+  group('TO A CAR, PAID FIRST')
+  {
+    // Every other way of ordering ends with the customer inside the building.
+    // A car is the one place the food is carried out to somebody already
+    // sitting in the thing they will leave in, and a kitchen that has cooked
+    // it has no way to be made whole.
+    const off = await call(`/orders/payment-options/${mornington.id}`)
+    ok('off by default', off.body.carPrepaidOnly === false, off.body.carPrepaidOnly)
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { carPrepaidOnly: true } })
+    const on = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and can be switched on', on.body.carPrepaidOnly === true, on.body)
+
+    // The rule has to hold against a request, not only against the screen —
+    // an interface can be told not to offer paying at the car and a request
+    // can still be made without it.
+    const zone = await call('/staff/zones', { token: roadToken, body: { name: 'Kerbside' } })
+    ok('a zone to park in', zone.status === 201 || zone.status === 200, zone.body)
+    const parked = await call('/sessions/car', {
+      body: { restaurantId: mornington.id, zoneId: zone.body?.zone?.id, vehicle: 'White Swift', phone: '9876514141' },
+    })
+    ok('somebody parks outside', parked.status === 201, parked.body)
+
+    // A car order rides on a dining session, like a table does — the session
+    // is what says the food is going out to the kerb rather than to a seat.
+    const unpaid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'In the car',
+        contactPhone: '9876514141',
+        sessionToken: parked.body.session.token,
+      },
+    })
+    ok('and cannot order without paying', unpaid.status === 402, unpaid.body)
+    ok('told why, by name', /in the app/i.test(String(unpaid.body.error)), unpaid.body.error)
+
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'In the car',
+        contactPhone: '9876514141',
+        sessionToken: parked.body.session.token,
+        paymentClaim: { upiRef: '123456789012' },
+      },
+    })
+    ok('paying in the app goes through', paid.status === 201, paid.body)
+
+    // And it is one restaurant's rule, not everybody's.
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { carPrepaidOnly: false } })
+    const back = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and switches off again', back.body.carPrepaidOnly === false, back.body.carPrepaidOnly)
+  }
+
   group('SCAN ONLY — a restaurant that hands out no codes')
   {
     // Two ways exist to prove somebody is in the room: they scanned the QR on

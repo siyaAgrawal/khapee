@@ -446,6 +446,21 @@ addColumn('orders', 'resent_as', 'TEXT')
 addColumn('restaurants', 'codes_enabled', 'INTEGER NOT NULL DEFAULT 1')
 
 /**
+ * Whether an order to a car has to be paid for before it is made.
+ *
+ * Every other way of ordering ends with the customer inside the building: a
+ * table has to be settled before anybody leaves, a counter order is handed
+ * over in exchange for the money. A car is the one place where the food is
+ * carried out to somebody already sitting in the thing they will leave in,
+ * and a kitchen that has cooked it has no way to be made whole.
+ *
+ * Off by default, because most restaurants are happy to take the money at
+ * the window and a rule imposed on all of them would be a rule none of them
+ * asked for.
+ */
+addColumn('restaurants', 'car_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
+
+/**
  * What a sign-in is tied to, instead of the password itself.
  *
  * A session token was signed over the account's password hash, so that

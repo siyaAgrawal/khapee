@@ -263,6 +263,26 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * the reason, so the checkout can move them to the UPI button rather than
    * leaving them staring at a button that will not work.
    */
+  /*
+   * A car order that has to be paid for first.
+   *
+   * Checked here rather than only in the screens: the interface can be told
+   * not to offer paying at the car, and a request can still be made without
+   * it. The person who pays for that is the kitchen that cooked the food.
+   */
+  if (!input.paymentClaim && liveSession?.service_mode === 'car') {
+    const rule = db
+      .prepare('SELECT car_prepaid_only FROM restaurants WHERE id = ?')
+      .get(input.restaurantId) as any
+    if (rule?.car_prepaid_only) {
+      return {
+        ok: false,
+        status: 402,
+        error: `${restaurant.name} takes payment in the app for orders brought out to your car. Pay by UPI to place the order.`,
+      }
+    }
+  }
+
   if (limited.on && !input.paymentClaim) {
     return {
       ok: false,

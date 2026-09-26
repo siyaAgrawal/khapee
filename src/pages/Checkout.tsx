@@ -183,7 +183,15 @@ export default function Checkout() {
    * server will turn down for exactly that reason is the worst version of
    * this feature.
    */
-  const prepaidOnly = !!options?.prepaidOnly
+  /*
+   * Paying afterwards is not on offer here.
+   *
+   * Two reasons it can be true: the kitchen has gone home and is serving a
+   * short menu it will not carry a no-show on, or this is an order to a car
+   * — the one place the food is taken out to somebody already sitting in the
+   * thing they will leave in.
+   */
+  const prepaidOnly = !!options?.prepaidOnly || (isCar && !!options?.carPrepaidOnly)
   useEffect(() => {
     // Nothing to choose when there is only one way to pay.
     if (prepaidOnly && !payNow) setPayNow(true)
@@ -632,7 +640,9 @@ export default function Checkout() {
               <strong>{payLaterLabel}</strong>
               <span className="pay-pick-sub">
                 {prepaidOnly
-                  ? 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
+                  ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
+                    ? 'Orders brought out to your car are paid for in the app'
+                    : 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
                   : isDelivery
                   ? 'Cash or UPI when it reaches you'
                   : isCar

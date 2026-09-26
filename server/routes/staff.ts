@@ -698,6 +698,8 @@ function shapeOwnRestaurant(row: any) {
     acceptsGroups: !!row.accepts_groups,
     /** Whether a typed staff code is offered beside the table QR. */
     codesEnabled: row.codes_enabled === undefined ? true : !!row.codes_enabled,
+    /** Whether an order carried out to a car has to be paid for first. */
+    carPrepaidOnly: !!row.car_prepaid_only,
     publishedAt: row.published_at ?? null,
     itemCount: countLiveItems(row.id),
     // Exactly what the browse list asks of a restaurant before it shows it.
@@ -745,6 +747,7 @@ staffRouter.patch('/restaurant', (req, res) => {
   if (body.acceptsTakeaway !== undefined) updates.accepts_takeaway = body.acceptsTakeaway ? 1 : 0
   if (body.acceptsGroups !== undefined) updates.accepts_groups = body.acceptsGroups ? 1 : 0
   if (body.codesEnabled !== undefined) updates.codes_enabled = body.codesEnabled ? 1 : 0
+  if (body.carPrepaidOnly !== undefined) updates.car_prepaid_only = body.carPrepaidOnly ? 1 : 0
   if (body.lat !== undefined && body.lng !== undefined) {
     const lat = Number(body.lat)
     const lng = Number(body.lng)

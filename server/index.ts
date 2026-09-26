@@ -4,7 +4,7 @@ import os from 'node:os'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
-import { canSeeInsights, insights, liveCount } from './insights.ts'
+import { canSeeInsights, insights, liveCount, orderList } from './insights.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
 import { keepAwake } from './keep-awake.ts'
@@ -128,6 +128,20 @@ app.get('/api/insights/live', (req: any, res) => {
   if (!insightsGate(req, res)) return
   res.set('Cache-Control', 'no-store')
   res.json(liveCount())
+})
+app.get('/api/insights/orders', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  const which = String(req.query.which ?? 'all')
+  res.json(
+    orderList({
+      days: Number(req.query.days ?? 30),
+      restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+      which: which === 'ahead' || which === 'off' ? which : 'all',
+      limit: req.query.limit ? Number(req.query.limit) : 50,
+      offset: req.query.offset ? Number(req.query.offset) : 0,
+    }),
+  )
 })
 app.get('/api/insights', (req: any, res) => {
   if (!insightsGate(req, res)) return

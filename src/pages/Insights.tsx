@@ -275,12 +275,157 @@ function Card({
   )
 }
 
-function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
+function Tile({ label, value, note, onOpen }: { label: string; value: string; note?: string; onOpen?: () => void }) {
+  if (onOpen) {
+    return (
+      <button className="ins-tile ins-tile-open" onClick={onOpen} aria-label={`${label}: ${value}. See the orders`}>
+        <span>{label}</span>
+        <strong>{value}</strong>
+        {note && <em>{note}</em>}
+        <i className="ins-tile-more">See orders →</i>
+      </button>
+    )
+  }
   return (
     <div className="ins-tile">
       <span>{label}</span>
       <strong>{value}</strong>
       {note && <em>{note}</em>}
+    </div>
+  )
+}
+
+const STATUS_WORD: Record<string, string> = {
+  REQUESTED: 'Waiting to accept',
+  NEW: 'New',
+  ACCEPTED: 'Accepted',
+  PREPARING: 'Being made',
+  READY: 'Ready',
+  SERVED: 'Served',
+  COMPLETED: 'Done',
+  PICKED_UP: 'Picked up',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+  DECLINED: 'Turned down',
+}
+
+/**
+ * The orders behind a figure: which café, whose name, how much, and what was
+ * on it. Same period and restaurant as the page, fifty at a time.
+ */
+function OrdersSheet({
+  title,
+  days,
+  restaurant,
+  which,
+  onClose,
+}: {
+  title: string
+  days: number
+  restaurant: string
+  which: 'all' | 'ahead' | 'off'
+  onClose: () => void
+}) {
+  const [rows, setRows] = useState<any[] | null>(null)
+  const [total, setTotal] = useState(0)
+  const [open, setOpen] = useState<number | null>(null)
+  const [error, setError] = useState('')
+
+  const fetchPage = useCallback(
+    async (offset: number) => {
+      try {
+        const q = new URLSearchParams({ days: String(days), which, offset: String(offset), limit: '50' })
+        if (restaurant) q.set('restaurant', restaurant)
+        const r = await api<{ total: number; orders: any[] }>(`/insights/orders?${q}`)
+        setTotal(r.total)
+        setRows((prev) => (offset && prev ? [...prev, ...r.orders] : r.orders))
+      } catch (e) {
+        setError((e as ApiError).message)
+      }
+    },
+    [days, restaurant, which],
+  )
+  useEffect(() => {
+    void fetchPage(0)
+  }, [fetchPage])
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', esc)
+    return () => window.removeEventListener('keydown', esc)
+  }, [onClose])
+
+  return (
+    <div className="ins-sheet-back" onClick={onClose}>
+      <div className="ins-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <header>
+          <div>
+            <h2>{title}</h2>
+            <p>{rows ? `${num(total)} order${total === 1 ? '' : 's'}` : 'Loading…'}</p>
+          </div>
+          <button className="ins-toggle" onClick={onClose} autoFocus>
+            Close
+          </button>
+        </header>
+        {error && <p className="ins-error">{error}</p>}
+        {rows && rows.length === 0 && <p className="ins-empty">No orders here.</p>}
+        <ul className="ins-orders">
+          {(rows ?? []).map((o) => (
+            <li key={o.id}>
+              <button
+                className="ins-order"
+                aria-expanded={open === o.id}
+                onClick={() => setOpen(open === o.id ? null : o.id)}
+              >
+                <span className="ins-order-main">
+                  <b>{o.restaurant}</b>
+                  <span>
+                    {o.customerName || 'Guest'}
+                    {o.customerPhone ? ` · ${o.customerPhone}` : ''}
+                  </span>
+                  <em>
+                    #{o.orderNumber || '—'} · {o.at?.slice(0, 16).replace('T', ' ')} · {o.mode}
+                  </em>
+                </span>
+                <span className="ins-order-side">
+                  <strong>{rupees(o.totalCents)}</strong>
+                  <em className={/CANCELLED|DECLINED/.test(o.status) ? 'ins-off' : ''}>
+                    {STATUS_WORD[o.status] ?? o.status}
+                    {o.paid ? ' · paid' : ''}
+                  </em>
+                </span>
+              </button>
+              {open === o.id && (
+                <div className="ins-order-items">
+                  {o.items.length ? (
+                    o.items.map((i: any, k: number) => (
+                      <div key={k} className={i.off ? 'ins-item-off' : ''}>
+                        <span>
+                          {i.quantity}× {i.name}
+                          {i.off ? ' (not available)' : ''}
+                        </span>
+                        <span>{rupees(i.cents)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="ins-empty">No dishes recorded.</p>
+                  )}
+                  {o.customerPhone && (
+                    <a className="ins-call" href={`tel:${o.customerPhone.replace(/[^0-9+]/g, '')}`}>
+                      Call {o.customerName || 'customer'}
+                    </a>
+                  )}
+                  {o.removedFromHistory && <p className="ins-note">Removed from the café’s own history; kept here.</p>}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        {rows && rows.length < total && (
+          <button className="ins-more" onClick={() => void fetchPage(rows.length)}>
+            Show 50 more
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -302,6 +447,7 @@ export default function Insights() {
   const [restaurant, setRestaurant] = useState('')
   const tip = useTip()
   const lastCount = useRef<number | null>(null)
+  const [sheet, setSheet] = useState<null | { title: string; which: 'all' | 'ahead' | 'off' }>(null)
 
   useEffect(() => {
     const prev = document.title
@@ -410,14 +556,23 @@ export default function Insights() {
       <section className="ins-hero" aria-live="polite">
         <span className="ins-hero-label">People who have ordered through Khapee</span>
         <strong className={`ins-hero-num ${bump ? 'ins-bump' : ''}`}>{live ? num(live.people) : '—'}</strong>
-        <span className="ins-hero-sub">
+        <button className="ins-hero-sub ins-link" onClick={() => setSheet({ title: 'Every order', which: 'all' })}>
           {live
             ? `${num(live.orders)} orders in all · ${num(live.todayOrders)} today from ${num(live.todayPeople)} ${
                 live.todayPeople === 1 ? 'person' : 'people'
               }`
             : 'Counting…'}
-        </span>
+        </button>
       </section>
+      {sheet && (
+        <OrdersSheet
+          title={sheet.title}
+          which={sheet.which}
+          days={sheet.which === 'all' && sheet.title === 'Every order' ? 0 : days}
+          restaurant={sheet.title === 'Every order' ? '' : restaurant}
+          onClose={() => setSheet(null)}
+        />
+      )}
 
       <div className="ins-filters">
         <div className="ins-seg" role="tablist" aria-label="Period">
@@ -455,8 +610,18 @@ export default function Insights() {
       ) : (
         <div className={`ins-body ${loading ? 'ins-refetch' : ''}`}>
           <div className="ins-tiles">
-            <Tile label="Orders" value={num(t.orders)} note={`${num(t.placed - t.orders)} called off`} />
-            <Tile label="Order value" value={rupees(t.revenue)} note="of orders that went ahead" />
+            <Tile
+              label="Orders"
+              value={num(t.orders)}
+              note={`${num(t.placed - t.orders)} called off`}
+              onOpen={() => setSheet({ title: `Orders · ${periodName}`, which: 'ahead' })}
+            />
+            <Tile
+              label="Order value"
+              value={rupees(t.revenue)}
+              note="of orders that went ahead"
+              onOpen={() => setSheet({ title: `Orders · ${periodName}`, which: 'ahead' })}
+            />
             <Tile label="Average order" value={rupees(t.avgOrderCents)} note={`${t.itemsPerOrder.toFixed(1)} items each`} />
             <Tile
               label="People"
@@ -477,6 +642,7 @@ export default function Insights() {
               label="Cancelled or turned down"
               value={t.placed ? pct((t.cancelled + t.declined) / t.placed) : '—'}
               note={`${num(t.cancelled)} cancelled · ${num(t.declined)} turned down`}
+              onOpen={() => setSheet({ title: `Cancelled or turned down · ${periodName}`, which: 'off' })}
             />
           </div>
 

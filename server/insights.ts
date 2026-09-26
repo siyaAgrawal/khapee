@@ -46,6 +46,20 @@ CREATE INDEX IF NOT EXISTS idx_order_item_facts_order ON order_item_facts(order_
 `)
 
 /*
+ * Who ordered and the order's own number, so the list behind the Orders
+ * figure can say which café, whose name, and the ticket number — added after
+ * the first version of this table, so added as columns.
+ */
+for (const [col, def] of [
+  ['order_number', "TEXT NOT NULL DEFAULT ''"],
+  ['customer_name', "TEXT NOT NULL DEFAULT ''"],
+  ['customer_phone', "TEXT NOT NULL DEFAULT ''"],
+] as const) {
+  const have = (db.prepare('PRAGMA table_info(order_facts)').all() as any[]).some((c) => c.name === col)
+  if (!have) db.exec(`ALTER TABLE order_facts ADD COLUMN ${col} ${def}`)
+}
+
+/*
  * Who "a person" is. A phone number is the best handle there is — most
  * orders are placed without an account — so the last ten digits of it, with
  * the spaces, dashes and +91 taken off. Failing that the account; failing
@@ -59,16 +73,26 @@ const CUSTOMER_KEY = (o: string) => `
     ELSE 'o' || ${o}.id
   END`
 
+// Dropped and made again on every start, so a change to what they record
+// reaches a database that already has the older version of them.
 db.exec(`
-CREATE TRIGGER IF NOT EXISTS facts_order_insert AFTER INSERT ON orders BEGIN
+DROP TRIGGER IF EXISTS facts_order_insert;
+DROP TRIGGER IF EXISTS facts_order_update;
+
+CREATE TRIGGER facts_order_insert AFTER INSERT ON orders BEGIN
   INSERT OR IGNORE INTO order_facts
-    (order_id, restaurant_id, created_at, status, total_cents, payment_status, payment_method, service_mode, order_type, customer_key)
+    (order_id, restaurant_id, created_at, status, total_cents, payment_status, payment_method, service_mode, order_type,
+     customer_key, order_number, customer_name, customer_phone)
   VALUES (NEW.id, NEW.restaurant_id, NEW.created_at, NEW.status, NEW.total_cents, NEW.payment_status,
-          COALESCE(NEW.payment_method, ''), COALESCE(NEW.service_mode, ''), NEW.order_type, ${CUSTOMER_KEY('NEW')});
+          COALESCE(NEW.payment_method, ''), COALESCE(NEW.service_mode, ''), NEW.order_type, ${CUSTOMER_KEY('NEW')},
+          NEW.order_number, COALESCE(NEW.customer_name, ''), COALESCE(NEW.contact_phone, ''));
 END;
 
-CREATE TRIGGER IF NOT EXISTS facts_order_update AFTER UPDATE ON orders BEGIN
+CREATE TRIGGER facts_order_update AFTER UPDATE ON orders BEGIN
   UPDATE order_facts SET
+    order_number = NEW.order_number,
+    customer_name = COALESCE(NEW.customer_name, ''),
+    customer_phone = COALESCE(NEW.contact_phone, ''),
     status = NEW.status,
     total_cents = NEW.total_cents,
     payment_status = NEW.payment_status,
@@ -107,6 +131,11 @@ INSERT OR IGNORE INTO order_item_facts
   (item_id, order_id, restaurant_id, name, quantity, unit_price_cents, accepted, created_at)
 SELECT i.id, i.order_id, o.restaurant_id, i.name, i.quantity, i.unit_price_cents, i.accepted, o.created_at
   FROM order_items i JOIN orders o ON o.id = i.order_id;
+UPDATE order_facts SET
+  order_number = (SELECT o.order_number FROM orders o WHERE o.id = order_facts.order_id),
+  customer_name = COALESCE((SELECT o.customer_name FROM orders o WHERE o.id = order_facts.order_id), ''),
+  customer_phone = COALESCE((SELECT o.contact_phone FROM orders o WHERE o.id = order_facts.order_id), '')
+ WHERE order_number = '' AND EXISTS (SELECT 1 FROM orders o WHERE o.id = order_facts.order_id);
 `)
 
 /** Whoever may see these: a list of account emails, kept out of the repository. */
@@ -384,6 +413,70 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
     restaurants: (db.prepare('SELECT id, name FROM restaurants ORDER BY name').all() as any[]).map((r) => ({
       id: r.id,
       name: r.name,
+    })),
+  }
+}
+
+/**
+ * The orders behind the Orders figure: newest first, with the café, the name
+ * and the amount, and what was on each. Same period and restaurant slice as
+ * everything else on the page. `which` narrows it to the ones that went ahead
+ * or the ones called off.
+ */
+export function orderList(opts: {
+  days: number
+  restaurantId?: number | null
+  which?: 'all' | 'ahead' | 'off'
+  limit?: number
+  offset?: number
+}) {
+  const days = Math.max(0, Math.min(3650, Math.floor(opts.days || 0)))
+  const where: string[] = []
+  const params: any[] = []
+  if (days) where.push(`f.created_at >= datetime('now', '-${days} days')`)
+  if (opts.restaurantId) {
+    where.push('f.restaurant_id = ?')
+    params.push(opts.restaurantId)
+  }
+  if (opts.which === 'ahead') where.push(REAL)
+  if (opts.which === 'off') where.push(`NOT (${REAL})`)
+  const W = where.length ? `WHERE ${where.join(' AND ')}` : ''
+  const limit = Math.max(1, Math.min(200, Math.floor(opts.limit ?? 50)))
+  const offset = Math.max(0, Math.floor(opts.offset ?? 0))
+
+  const total = (db.prepare(`SELECT COUNT(*) AS n FROM order_facts f ${W}`).get(...params) as any).n
+  const rows = db
+    .prepare(
+      `SELECT f.*, COALESCE(r.name, 'Removed restaurant') AS restaurant_name,
+              ${IST} AS at_ist,
+              EXISTS (SELECT 1 FROM orders o WHERE o.id = f.order_id) AS still_there
+         FROM order_facts f LEFT JOIN restaurants r ON r.id = f.restaurant_id
+         ${W} ORDER BY f.created_at DESC, f.order_id DESC LIMIT ? OFFSET ?`,
+    )
+    .all(...params, limit, offset) as any[]
+  const itemsOf = db.prepare(
+    'SELECT name, quantity, unit_price_cents, accepted FROM order_item_facts WHERE order_id = ? ORDER BY item_id',
+  )
+  return {
+    total: Number(total),
+    orders: rows.map((o) => ({
+      id: o.order_id,
+      orderNumber: o.order_number,
+      at: o.at_ist,
+      restaurant: o.restaurant_name,
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      totalCents: o.total_cents,
+      status: o.status,
+      paid: o.payment_status === 'PAID',
+      mode: o.service_mode === 'car' ? 'Car' : o.service_mode === 'delivery' ? 'Delivery' : o.order_type === 'pickup' ? 'Pickup' : 'Table',
+      removedFromHistory: !o.still_there,
+      items: (itemsOf.all(o.order_id) as any[]).map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        cents: i.unit_price_cents * i.quantity,
+        off: i.accepted === 0,
+      })),
     })),
   }
 }

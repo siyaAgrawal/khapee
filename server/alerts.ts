@@ -84,7 +84,20 @@ export function alertRestaurant(a: OrderAlert): void {
     body: summary(a),
     url: '/staff/orders',
     tag: `order-${a.orderNumber}`,
-  }).catch(() => {})
+  })
+    .then((r) => {
+      // Said out loud for the same reason as the email below: an order that
+      // rang no phone looks, from the kitchen, exactly like no order. The
+      // usual cause is "0 devices" — the host rebuilt the database and every
+      // phone's registration went with it.
+      if (!r.sent) {
+        console.warn(
+          `[alerts] order #${a.orderNumber}: push reached no phone ` +
+            `(${r.devices} devices, ${r.failed} failed${r.why ? ` · ${r.why}` : ''})`,
+        )
+      }
+    })
+    .catch((e) => console.warn(`[alerts] order #${a.orderNumber}: push threw`, e))
 
   if (!mailConfigured()) return
   const to = alertEmailFor(a.restaurantId)

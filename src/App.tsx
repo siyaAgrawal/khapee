@@ -46,6 +46,8 @@ import StaffFloor from './pages/staff/StaffFloor'
 import StaffHistory from './pages/staff/StaffHistory'
 import StaffTakings from './pages/staff/StaffTakings'
 import Insights from './pages/Insights'
+import Forgot from './pages/Forgot'
+import Reset from './pages/Reset'
 import { MenuSection, OrdersSection, SettingsSection, TillSection } from './pages/staff/Sections'
 
 /**
@@ -121,6 +123,8 @@ export default function App() {
       <Route path="/order/:orderNumber" element={<OrderTrack />} />
       <Route path="/orders" element={<MyOrders />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot" element={<Forgot />} />
+      <Route path="/reset" element={<Reset />} />
       <Route path="/register" element={<Register />} />
       <Route path="/for-restaurants" element={<RegisterRestaurant />} />
 

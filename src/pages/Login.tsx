@@ -111,6 +111,9 @@ export default function Login() {
         </form>
 
         <p className="auth-alt">
+          <Link to={`/forgot${email ? `?email=${encodeURIComponent(email)}` : ''}`}>Forgot password?</Link>
+        </p>
+        <p className="auth-alt" style={{ marginTop: 6 }}>
           New here? <Link to="/register">Create an account</Link>
         </p>
         <p className="auth-alt" style={{ marginTop: 6 }}>

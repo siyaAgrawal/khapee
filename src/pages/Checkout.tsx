@@ -65,15 +65,6 @@ export default function Checkout() {
   /** How the restaurant reaches this order. Not optional — see needsPhone. */
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [note, setNote] = useState('')
-  /**
-   * When they want it, in minutes from now. 0 is as soon as it is ready.
-   *
-   * Minutes rather than a clock time because the question people actually
-   * answer is "how long until you're here", and because a time typed into a
-   * box is three taps and a keyboard for something that is nearly always one
-   * of four answers.
-   */
-  const [wantIn, setWantIn] = useState(0)
   const [payNow, setPayNow] = useState(false)
   const [options, setOptions] = useState<any>(null)
 
@@ -280,7 +271,6 @@ export default function Checkout() {
           tableToken: where === 'here' ? (scannedTable?.tableToken ?? null) : null,
           sessionToken: withSession ?? dining?.token ?? null,
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
-          wantInMinutes: wantIn,
         },
       })
       const order = r.order
@@ -408,7 +398,6 @@ export default function Checkout() {
           </p>
         )}
 
-        <WhenPanel value={wantIn} onChange={setWantIn} where={where} />
 
         <section className="card card-pad">
           {/* Table — only when eating in */}
@@ -751,85 +740,3 @@ export default function Checkout() {
   )
 }
 
-/**
- * When do you want it.
- *
- * This is the whole product in one control. Every other ordering app asks for
- * food and starts cooking; the argument Khapee makes is that you are not there
- * yet, and the kitchen knowing that is what turns twenty minutes of waiting
- * into none. Until now the app could not carry the answer at all — every order
- * meant "immediately", which is the one thing it is not for.
- *
- * Four choices and a clock time under each, because the question people
- * actually answer is "how long until you're there", and the useful confirmation
- * is a time of day rather than a duration — "9:35" is checkable against the
- * journey somebody is about to make in a way that "+25 min" is not.
- *
- * Deliberately not a time picker. A picker is a keyboard, a scroll wheel and a
- * chance to type 9:35 AM on the wrong day, for a question that is nearly
- * always one of four answers. Somebody who genuinely needs 7:40 tomorrow is
- * better served by ringing the restaurant, and there are not many of them.
- */
-const WHEN_CHOICES = [0, 15, 30, 45] as const
-
-function WhenPanel({
-  value,
-  onChange,
-  where,
-}: {
-  value: number
-  onChange: (v: number) => void
-  where: Where
-}) {
-  /* Re-read every half minute so the clock times under the buttons do not go
-     stale while somebody reads the menu with the checkout open behind it. */
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(id)
-  }, [])
-
-  const at = (mins: number) =>
-    new Date(now + mins * 60_000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-
-  return (
-    <section className="card card-pad when-panel">
-      <div className="field">
-        <label>When do you want it?</label>
-        <div className="when-row" role="group" aria-label="When do you want it?">
-          {WHEN_CHOICES.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={`when-btn ${value === m ? 'active' : ''}`}
-              aria-pressed={value === m}
-              onClick={() => onChange(m)}
-            >
-              <strong>{m === 0 ? 'As soon as it’s ready' : `In ${m} min`}</strong>
-              <em>{m === 0 ? 'Straight away' : at(m)}</em>
-            </button>
-          ))}
-        </div>
-        {/*
-          Said once, in the words the difference is actually felt in. A line
-          that explains the feature every time would be noise; a line that
-          confirms what was just chosen is the receipt for the decision.
-        */}
-        <p className="tiny muted when-note">
-          {value === 0 ? (
-            where === 'here' ? (
-              'The kitchen starts now.'
-            ) : (
-              'The kitchen starts now — come whenever you like, it will be waiting.'
-            )
-          ) : (
-            <>
-              They’ll start in time for <strong>{at(value)}</strong>, so it is hot when you get here —
-              not cooked at {at(0)} and left under a lamp.
-            </>
-          )}
-        </p>
-      </div>
-    </section>
-  )
-}

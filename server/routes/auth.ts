@@ -3,6 +3,7 @@ import { db } from '../db.ts'
 import {
   createSession,
   destroySession,
+  endAllSessions,
   hashPassword,
   requireAuth,
   userById,
@@ -220,7 +221,15 @@ authRouter.post('/me/credentials', requireAuth, (req, res) => {
   // throw the person doing it out of the screen they are standing at.
   const token = db.transaction(() => {
     db.prepare('UPDATE users SET email = ?, password_hash = ? WHERE id = ?').run(email, hash, row.id)
-    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id)
+    /*
+     * Every other device is signed out, and it has to be done by moving the
+     * epoch rather than by emptying the sessions table. A signed token proves
+     * itself without a row — that is what lets one survive the database being
+     * rebuilt — so deleting rows alone would leave a stolen or borrowed token
+     * working after the password it belongs to had been changed.
+     */
+    if (wantsPassword) endAllSessions(row.id)
+    else db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id)
     return createSession(row.id)
   })()
 

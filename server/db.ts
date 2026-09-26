@@ -427,6 +427,22 @@ addColumn('orders', 'resent_as', 'TEXT')
  */
 addColumn('restaurants', 'codes_enabled', 'INTEGER NOT NULL DEFAULT 1')
 
+/**
+ * What a sign-in is tied to, instead of the password itself.
+ *
+ * A session token was signed over the account's password hash, so that
+ * changing a password threw every other device off. Good property, wrong
+ * ingredient — on this deployment the database is rebuilt from the committed
+ * snapshot on every restart, and if the live hash had moved on from the
+ * snapshot's, every token for that account stopped verifying. Restaurants
+ * were being signed out mid-service by a deploy, with nothing to explain it.
+ *
+ * A number that only changes when somebody deliberately changes their
+ * password keeps the property and survives the rebuild, because it is a
+ * column in the snapshot like any other.
+ */
+addColumn('users', 'session_epoch', 'INTEGER NOT NULL DEFAULT 1')
+
 // Where a restaurant sits in the list, above the usual alphabetical order.
 // Zero for almost everywhere; a higher number comes first. It exists because
 // "the one you open the app to see" is a decision somebody makes, not

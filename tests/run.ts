@@ -2221,7 +2221,28 @@ async function runTests() {
     const who = await call('/auth/login', { body: { email: 'owner@newplace.test', password: 'hunter22' } })
     ok('an owner signs in', who.status === 200, who.body)
     const token = who.body.token
-    ok('and the token says who it is for, signed', /^v1\.\d+\.\d+\./.test(token), token)
+    ok('and the token says who it is for, signed', /^v2\.\d+\.\d+\./.test(token), token)
+
+    /*
+     * The failure this scheme exists for.
+     *
+     * A token used to be signed over the account's password hash, and this
+     * deployment rebuilds its database from a committed snapshot on every
+     * restart — so if the live hash had moved on from the snapshot's, every
+     * token for that account stopped verifying and the restaurant was signed
+     * out by a deploy, mid-service, with nothing to explain it.
+     */
+    {
+      const moved = new Database(DB_PATH)
+      const before = moved.prepare('SELECT id, password_hash FROM users WHERE email = ?').get('owner@newplace.test') as any
+      moved.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run('$2a$10$adifferenthashentirelyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', before.id)
+      moved.close()
+      const still = await call('/auth/me', { token })
+      ok('a token outlives the snapshot replacing its password hash', still.status === 200, still.body)
+      const back = new Database(DB_PATH)
+      back.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(before.password_hash, before.id)
+      back.close()
+    }
 
     // Exactly what a restart does to it.
     const wipe = new Database(DB_PATH)
@@ -4312,6 +4333,39 @@ async function runTests() {
 
     const theirs = await call('/staff/history?q=Sunita', { token: otherToken })
     ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
+  }
+
+  group('A SIGNED-IN ACCOUNT IS TOLD ABOUT EVERY ORDER')
+  {
+    // The complaint that started this: people signed in to a restaurant were
+    // getting nothing when orders came in. Being signed in has to be enough —
+    // the device list is wiped whenever the server restarts, so what matters
+    // is that a signed-in account can put itself back without anybody being
+    // asked to do anything.
+    const before = await call('/staff/alerts', { token: roadToken })
+    ok('a signed-in account can read the alert key', before.status === 200, before.body)
+    ok('and is given the key needed to register', !!before.body.push?.publicKey, before.body.push)
+
+    // Exactly what a restart does to the device table.
+    const wipe = new Database(DB_PATH)
+    wipe.prepare('DELETE FROM push_subscriptions').run()
+    wipe.close()
+
+    const fake = {
+      endpoint: 'https://push.example.test/' + Math.random().toString(36).slice(2),
+      keys: { p256dh: 'x'.repeat(87), auth: 'y'.repeat(22) },
+    }
+    const back = await call('/staff/alerts/subscribe', { token: roadToken, body: { subscription: fake } })
+    ok('and can put its device back on its own', back.status === 200, back.body)
+    ok('which the restaurant then counts', back.body.devices >= 1, back.body)
+
+    // The rule the whole feature rests on: every device belonging to anybody
+    // who staffs this restaurant is told, not only the one that happened to
+    // be selected when somebody pressed a button.
+    const listed = await call('/staff/alerts', { token: roadToken })
+    ok('and it is on the restaurant\'s list', listed.body.push.list.some((d: any) => d.whose), listed.body.push.list)
+
+    ok('a signed-out device cannot register itself', (await call('/staff/alerts/subscribe', { body: { subscription: fake } })).status === 401)
   }
 
   group('ORDER ALERTS EVERYWHERE, WHATSAPP ONLY WHERE ASKED')

@@ -444,6 +444,12 @@ export default function Home() {
             <BellIcon size={14} />
             Work here? Turn on order alerts
           </Link>
+          {/* Said in words a search engine can read, because the name is
+              typed every way it sounds. See ALSO_SPELT in server/seo.ts. */}
+          <p className="tiny muted home-aka">
+            Khapee — also searched as Khapi, Khape or Khapeee — is how Indore orders at the table,
+            from the car, or to the door.
+          </p>
         </footer>
       </main>
     </div>

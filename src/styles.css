@@ -6499,6 +6499,9 @@ button.nav-link {
 /* Always present, never loud. The strip at the top of the page is conditional
    and every condition it has used has been wrong at least once; this is the
    one that cannot be. */
+.home-aka {
+  margin: 10px 0 0;
+}
 .home-foot {
   margin: 34px 0 10px;
   padding-top: 18px;

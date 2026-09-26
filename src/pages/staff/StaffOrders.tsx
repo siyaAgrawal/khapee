@@ -211,15 +211,41 @@ function ItemCall({
   )
 }
 
+/**
+ * How this one is being paid for, which the board never said.
+ *
+ * It showed PAID or UNPAID and left the rest to be guessed at, so a counter
+ * could not tell an order already settled by UPI from one whose money is
+ * still to be collected on the doorstep — the difference between handing food
+ * over and asking for two hundred rupees first.
+ *
+ * "UPI" means paid through the app before the kitchen ever saw it. "COD" is
+ * this app's counter method: cash or UPI, taken when the food changes hands.
+ * Deliberately not called CASH, because half of those are paid by phone at
+ * the counter and the till would then disagree with the board.
+ */
 function payLook(o: Order): { cls: string; label: string; hint: string } {
-  if (o.paymentState === 'paid') return { cls: 'badge-open', label: 'PAID', hint: 'Confirmed. Tap to undo.' }
+  const inApp = o.paymentMethod === 'app'
+  if (o.paymentState === 'paid') {
+    return {
+      cls: 'badge-open',
+      label: inApp ? 'PAID · UPI' : 'PAID · COD',
+      hint: inApp ? 'Paid in the app. Tap to undo.' : 'Taken at the counter. Tap to undo.',
+    }
+  }
   if (o.paymentState === 'sent')
     return {
       cls: 'badge-paid-upi',
-      label: `PAID · UPI`,
+      label: `UPI · CHECK`,
       hint: `Customer sent ${money(o.claimedCents)}${o.upiRef ? ` · ref ${o.upiRef}` : ''}. Check your UPI app, then tap to confirm.`,
     }
-  return { cls: 'badge-warn', label: 'UNPAID', hint: 'Tap when they have paid.' }
+  return {
+    cls: 'badge-warn',
+    label: inApp ? 'UPI · UNPAID' : 'COD',
+    hint: inApp
+      ? 'They chose to pay in the app and have not sent it yet.'
+      : 'Cash or UPI when the food changes hands. Tap when they have paid.',
+  }
 }
 
 export default function StaffOrders() {
@@ -816,7 +842,12 @@ export default function StaffOrders() {
                             {timeAgo(o.createdAt)}
                           </em>
                         </span>
-                        {o.paymentState === 'unpaid' && <span className="qrow-dot" title="Not paid" />}
+                        {/* Not just whether, but how. A dot said "not paid"
+                            and left a counter guessing whether to ask for
+                            money or hand the food over. */}
+                        <span className={`qrow-pay badge ${payLook(o).cls}`} title={payLook(o).hint}>
+                          {payLook(o).label}
+                        </span>
                         {/* An affordance, because the row no longer hides the
                             dishes and nothing else says there is more here. */}
                         <span className="qrow-caret" aria-hidden>

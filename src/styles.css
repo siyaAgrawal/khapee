@@ -2551,6 +2551,12 @@ textarea {
   background: var(--warn, #b45309);
   flex: 0 0 auto;
 }
+.qrow-pay {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
 .qrow-caret {
   flex: 0 0 auto;
   width: 22px;
@@ -7267,7 +7273,13 @@ button.nav-link {
     gap: 8px;
     align-self: center;
   }
-  .qrow-caret {
+  .qrow-pay {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.qrow-caret {
     margin-left: auto;
   }
   .qrow-answer {

@@ -2200,6 +2200,8 @@ textarea {
   background: var(--surface);
   border-right: 1px solid var(--line);
   padding: 18px 14px;
+  /* An installed app on a tablet also draws under the status bar. */
+  padding-top: max(18px, calc(env(safe-area-inset-top, 0px) + 8px));
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -3257,7 +3259,12 @@ textarea {
     gap: 6px;
     /* Not scrolled: a clipping context would cut off the switcher menu. */
     overflow: visible;
-    padding: 10px 12px;
+    /* The installed app draws under the phone's status bar, so the top line
+       (restaurant switcher, Sign out) starts below it, as the customer
+       header does. Sides clear a landscape notch. In a browser the inset is
+       0 and this is the old 10px. */
+    padding: max(10px, calc(env(safe-area-inset-top, 0px) + 6px))
+      max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px));
     border-right: 0;
     border-bottom: 1px solid var(--line);
     z-index: 30;

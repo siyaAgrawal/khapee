@@ -33,19 +33,18 @@ export default function Login() {
       const user = await login(email.trim(), password)
       const from = location.state?.from as string | undefined
       /**
-       * Everybody lands on Khapee, including the people who run a restaurant.
+       * Somebody who runs a restaurant lands on its dashboard.
        *
-       * Sending an owner straight to their board assumed that running a place
-       * is the only reason they ever sign in, and it is not: the same account
-       * orders lunch, checks another restaurant's menu, and looks at the app
-       * the way a customer sees it — which is the one view somebody building
-       * this needs most and the one that was hardest to reach, because signing
-       * in took it away. The board is a tap from here and never went anywhere.
+       * Owners sign in to see orders, and landing them on the customer menu
+       * left new orders unseen while they hunted for the board. Customers
+       * still land on Khapee. The same test as StaffGate, so this never sends
+       * anybody to a page that would bounce them straight back.
        *
        * Where somebody was heading before they were asked to sign in still
-       * wins, staff pages included.
+       * wins.
        */
-      navigate(from || '/', { replace: true })
+      const runsRestaurant = !!(user.restaurants?.length && user.restaurantId)
+      navigate(from || (runsRestaurant ? '/staff' : '/'), { replace: true })
     } catch (err) {
       setError((err as ApiError).message)
       setBusy(false)

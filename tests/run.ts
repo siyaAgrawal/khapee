@@ -4553,6 +4553,79 @@ async function runTests() {
     ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
   }
 
+  group('TURNED DOWN — the customer is told, and told why')
+  {
+    // Reported from a real counter: the kitchen declined an order and the
+    // customer's screen simply went quiet. From their side that is
+    // indistinguishable from the order having evaporated — a receipt for food
+    // nobody is making, and no idea whether to wait, ring, or order again.
+    const o = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Turned away',
+        contactPhone: '9876512121',
+      },
+    })
+    const num = o.body.order.orderNumber
+    const tok = o.body.order.verifyToken
+
+    const no = await call(`/staff/orders/${o.body.order.id}/decline`, {
+      token: roadToken,
+      body: { reason: 'Kitchen is full right now' },
+    })
+    ok('the kitchen can turn it down', no.status === 200, no.body)
+
+    const seen = await call(`/orders/${num}?token=${tok}`)
+    ok('the customer sees it was declined', seen.body.order.status === 'DECLINED', seen.body.order.status)
+    // The reason is the whole difference between "they said no" and silence.
+    ok('and is given the reason', seen.body.order.declinedReason === 'Kitchen is full right now', seen.body.order.declinedReason)
+
+    // And the order is dead: no accidental second life.
+    const revive = await call(`/orders/${num}/resend`, { body: { token: tok } })
+    ok('a declined order is not silently sent again', revive.status === 409, revive.status)
+    ok('and says why', /could not take this one/i.test(String(revive.body.error)), revive.body.error)
+  }
+
+  group('THE OWNER SEES THE CUSTOMER\'S ANSWER')
+  {
+    // Without it the board went straight back to looking like an ordinary
+    // untouched order the moment the customer replied, so whoever was
+    // deciding whether to cook could not tell "they have agreed to the
+    // smaller order" from "nobody has answered yet".
+    const menu = await call('/staff/menu', { token: roadToken })
+    const two = menu.body.categories.flatMap((c: any) => c.items).filter((i: any) => i.isAvailable).slice(0, 2)
+    const placed = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: two.map((i: any) => ({ menuItemId: i.id, quantity: 1 })),
+        customerName: 'Half of it',
+        contactPhone: '9876513131',
+      },
+    })
+    const id = placed.body.order.id
+    const num = placed.body.order.orderNumber
+    const tok = placed.body.order.verifyToken
+
+    await call(`/staff/orders/${id}/items/${placed.body.order.items[0].id}/decide`, {
+      token: roadToken,
+      body: { accepted: false },
+    })
+    const asked = await call('/staff/orders?scope=all', { token: roadToken })
+    const waiting = asked.body.orders.find((x: any) => x.orderNumber === num)
+    ok('the board says it is waiting on the customer', !!waiting.needsCustomerOk, waiting.needsCustomerOk)
+    ok('and has no answer yet', !waiting.customerOkAt, waiting.customerOkAt)
+
+    await call(`/orders/${num}/agree`, { body: { token: tok } })
+    const answered = await call('/staff/orders?scope=all', { token: roadToken })
+    const now = answered.body.orders.find((x: any) => x.orderNumber === num)
+    ok('once they agree, the board stops waiting', !now.needsCustomerOk, now.needsCustomerOk)
+    ok('and shows that they said go ahead', !!now.customerOkAt, now.customerOkAt)
+    ok('still naming what came off', now.declinedItems.length > 0, now.declinedItems)
+  }
+
   group("A SESSION THAT HAS RUN OUT STOPS DECIDING WHERE DINNER GOES")
   {
     // Reported from a real counter: a customer was told to "add ₹70 more" on

@@ -75,7 +75,21 @@ function StaffGate({ children }: { children: JSX.Element }) {
 
 export default function App() {
   // The title sequence covers the app for its first couple of seconds.
-  const [intro, setIntro] = useState(true)
+  /*
+   * The title card plays on the front door, and nowhere else.
+   *
+   * It was shown on every page load, covering whatever had been opened for
+   * two and a half seconds — including a menu somebody had just reached by
+   * scanning the QR on their table. They would tap Add, the tap would land on
+   * the splash instead and only dismiss it, and the dish would not go in the
+   * basket. Reported exactly that way: the first Add does nothing.
+   *
+   * Anybody who arrived somewhere specific — a menu, a receipt, a dashboard —
+   * asked for that thing, not for a title sequence over the top of it.
+   */
+  const [intro, setIntro] = useState(
+    () => typeof window === 'undefined' || window.location.pathname === '/',
+  )
 
   return (
     <>

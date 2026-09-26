@@ -785,6 +785,25 @@ export default function StaffOrders() {
                                 waiting on the customer
                               </span>
                             )}
+                            {/*
+                              And their answer, once it comes.
+
+                              Without this the board went straight back to
+                              looking like an ordinary untouched order the
+                              moment the customer replied — so whoever was
+                              deciding whether to cook could not tell "they
+                              have agreed to the smaller order" from "nobody
+                              has answered yet", which is the one thing they
+                              needed to know.
+                            */}
+                            {!o.needsCustomerOk && o.customerOkAt && (
+                              <span
+                                className="customer-said-yes"
+                                title={o.declinedItems ? `They agreed to go without ${o.declinedItems}` : undefined}
+                              >
+                                customer said go ahead
+                              </span>
+                            )}
                           </b>
                           <em>
                             #{o.orderNumber} · {o.customerName || 'Guest'}
@@ -836,7 +855,13 @@ export default function StaffOrders() {
                             disabled={busyId === o.id}
                             onClick={() => advance(o, next)}
                           >
-                            {goLabel(o, next)}
+                            {/* Naming what is being accepted, once some of it
+                                has been taken off. "Accept" on a ticket with
+                                two dishes struck through does not say which
+                                order is being agreed to. */}
+                            {o.customerOkAt && o.declinedItems && next === 'ACCEPTED'
+                              ? 'Accept the rest'
+                              : goLabel(o, next)}
                           </button>
                         )}
                       </span>

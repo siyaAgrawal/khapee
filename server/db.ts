@@ -417,6 +417,16 @@ addColumn('menu_categories', 'limited_ok', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('orders', 'needs_customer_ok', 'TEXT')
 /** What they are being asked about, so the question survives a page reload. */
 addColumn('orders', 'declined_items', "TEXT NOT NULL DEFAULT ''")
+/**
+ * When the customer said go ahead without it.
+ *
+ * The kitchen has to be able to see that answer. Without it the board showed
+ * a refused dish and then, once the customer replied, went back to looking
+ * like an ordinary untouched order — so whoever was deciding whether to cook
+ * could not tell "they have agreed to the smaller order" from "nobody has
+ * answered yet", which is the one thing they need to know.
+ */
+addColumn('orders', 'customer_ok_at', 'TEXT')
 /** Set when an unanswered order was sent again, pointing at its replacement. */
 addColumn('orders', 'resent_as', 'TEXT')
 

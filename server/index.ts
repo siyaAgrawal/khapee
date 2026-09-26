@@ -123,9 +123,27 @@ app.get('/api/stream', (req, res) => {
   // restaurant has role 'customer' forever, and this line was reading that as
   // "not staff" and subscribing them to nothing: their board only ever changed
   // when they reloaded it by hand.
+  /*
+   * A customer with no account, following their own order.
+   *
+   * The receipt token is the same proof the tracking page already uses to
+   * read the order, and it buys exactly one thing here: news about that
+   * order. Anything else on this connection is still decided by the account.
+   */
+  let orderId: number | null = null
+  const wantOrder = String(req.query.order ?? '').toUpperCase()
+  const receipt = String(req.query.receipt ?? '')
+  if (wantOrder && receipt) {
+    const row = db
+      .prepare('SELECT id FROM orders WHERE order_number = ? AND verify_token = ?')
+      .get(wantOrder, receipt) as any
+    orderId = row?.id ?? null
+  }
+
   const client = addClient(res, {
     restaurantId: req.user?.restaurantId ?? null,
     userId: req.user?.id ?? null,
+    orderId,
   })
   res.write(`event: ready\ndata: ${JSON.stringify({ ok: true })}\n\n`)
 

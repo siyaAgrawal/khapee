@@ -146,9 +146,16 @@ export default function OrderTrack() {
 
   // Live updates when signed in; a slow poll keeps guests current too.
   useEffect(() => {
-    const close = openStream((_type, payload) => {
-      if (payload?.order?.orderNumber === orderNumber.toUpperCase()) setOrder(payload.order)
-    })
+    const number = orderNumber.toUpperCase()
+    const close = openStream(
+      (_type, payload) => {
+        if (payload?.order?.orderNumber === number) setOrder(payload.order)
+      },
+      // Follows this one order even with no account, so a refused dish or a
+      // refused order reaches the screen the moment it happens rather than on
+      // the next poll. See openStream.
+      { orderNumber: number, receipt: receiptToken(number) ?? '' },
+    )
     const poll = setInterval(load, 6000)
     return () => {
       close()
@@ -201,6 +208,16 @@ export default function OrderTrack() {
     waited && base[0] === 'NEW' ? (['REQUESTED', ...base.slice(1)] as OrderStatus[]) : base
   const currentIndex = flow.indexOf(order.status as OrderStatus)
   const cancelled = order.status === 'CANCELLED'
+  /**
+   * The restaurant said no — to the whole order, not to a dish.
+   *
+   * DECLINED and a restaurant-side CANCELLED are the same news to whoever is
+   * waiting for the food, so they read the same. A cancellation the customer
+   * asked for themselves is not news and says nothing.
+   */
+  const turnedDown =
+    order.status === 'DECLINED' ||
+    (cancelled && order.declinedReason && !/customer/i.test(order.declinedReason))
   const done = currentIndex === flow.length - 1
 
   const eventAt = (status: string) => order.events.find((e: any) => e.status === status)?.at
@@ -307,6 +324,35 @@ export default function OrderTrack() {
         waiting on them — it is waiting on the person reading this, and until
         they answer nothing else on the page is the point.
       */}
+      {/*
+        Turned down, said plainly and first.
+
+        There was nothing here at all: a declined order simply stopped showing
+        the "waiting for them to accept it" strip, and the page went quiet.
+        From the customer's side that is indistinguishable from the order
+        having evaporated — they are left looking at a receipt for food nobody
+        is making, with no idea whether to wait, ring, or order again.
+      */}
+      {turnedDown && (
+        <div className="declined" role="alert">
+          <span className="declined-mark" aria-hidden>
+            ✕
+          </span>
+          <div>
+            <strong>{order.restaurantName} can&rsquo;t take this order</strong>
+            <p className="tiny">
+              {order.declinedReason
+                ? `They said: “${order.declinedReason}”`
+                : 'No reason was given.'}{' '}
+              You have not been charged. Nothing is being made.
+            </p>
+            <Link className="btn btn-accent btn-sm mt-2" to="/">
+              Order somewhere else
+            </Link>
+          </div>
+        </div>
+      )}
+
       {order.needsCustomerOk && !cancelled && (
         <div className="decided" role="alert">
           <div>
@@ -314,16 +360,21 @@ export default function OrderTrack() {
               {order.restaurantName} can&rsquo;t make {order.declinedItems || 'one of your items'}
             </strong>
             <p className="tiny">
-              Everything else is fine, and your total is now {money(order.totalCents)}. Shall they go
-              ahead without it?
+              The rest is fine. Your new total is {money(order.totalCents)}.
             </p>
           </div>
+          {/*
+            Two answers, each saying what it does rather than what it is
+            called. "Cancel the order" and "Yes, go ahead" read as a pair of
+            opposites only if you already know what is being asked; spelled
+            out, nobody has to work it out while their food waits.
+          */}
           <div className="decided-acts">
             <button className="btn btn-accent" disabled={busy !== ''} onClick={agree}>
-              {busy === 'agree' ? <Spinner /> : 'Yes, go ahead'}
+              {busy === 'agree' ? <Spinner /> : 'Send the rest'}
             </button>
             <button className="btn btn-ghost" disabled={busy !== ''} onClick={callOff}>
-              Cancel the order
+              Cancel everything
             </button>
           </div>
         </div>
@@ -447,14 +498,25 @@ export default function OrderTrack() {
 
         <div className="card card-pad mt-3">
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 14 }}>
-            <h2>{cancelled ? 'Order cancelled' : done ? 'All done' : 'Live status'}</h2>
-            {!cancelled && !done && <span className="badge badge-accent badge-live">Live</span>}
+            <h2>
+              {order.status === 'DECLINED'
+                ? 'Not taken'
+                : cancelled
+                  ? 'Order cancelled'
+                  : done
+                    ? 'All done'
+                    : 'Live status'}
+            </h2>
+            {!cancelled && !done && order.status !== 'DECLINED' && (
+              <span className="badge badge-accent badge-live">Live</span>
+            )}
           </div>
 
-          {cancelled ? (
+          {cancelled || order.status === 'DECLINED' ? (
             <p className="muted tiny">
-              This order was cancelled by the restaurant. Please speak to a staff member if that wasn&rsquo;t
-              expected.
+              {order.declinedReason
+                ? `${order.restaurantName} said: “${order.declinedReason}”`
+                : `This order was cancelled. Please speak to ${order.restaurantName} if that wasn’t expected.`}
             </p>
           ) : (
             <div className="track">

@@ -65,11 +65,27 @@ function safeParse(text: string) {
 }
 
 /** Opens the SSE stream, falling back silently if the browser blocks it. */
-export function openStream(onEvent: (type: string, payload: any) => void): () => void {
+/**
+ * @param follow  One order to be told about, for somebody with no account.
+ *   Almost nobody ordering a coffee makes one, so a customer matched nothing
+ *   on this stream and found out the kitchen had refused their order on the
+ *   next poll. The receipt token is the same proof the page already uses to
+ *   read the order; here it buys news about that order and nothing else.
+ */
+export function openStream(
+  onEvent: (type: string, payload: any) => void,
+  follow?: { orderNumber: string; receipt: string },
+): () => void {
   const token = getToken()
   let source: EventSource | null = null
   try {
-    source = new EventSource(`/api/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`)
+    const q = new URLSearchParams()
+    if (token) q.set('token', token)
+    if (follow?.orderNumber && follow.receipt) {
+      q.set('order', follow.orderNumber)
+      q.set('receipt', follow.receipt)
+    }
+    source = new EventSource(`/api/stream${q.toString() ? `?${q}` : ''}`)
   } catch {
     return () => {}
   }

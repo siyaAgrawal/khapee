@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 export type CartLine = {
   menuItemId: number
@@ -48,6 +48,9 @@ const CartContext = createContext<CartValue | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartState>(load)
+  /** The current basket, readable outside a render — see add(). */
+  const cartRef = useRef(cart)
+  cartRef.current = cart
 
   useEffect(() => {
     try {
@@ -58,11 +61,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [cart])
 
   const add: CartValue['add'] = useCallback((restaurant, item) => {
-    let outcome: 'added' | 'switched' = 'added'
+    /*
+     * Decided here rather than inside the updater below.
+     *
+     * It used to be assigned in there and read straight after the setCart
+     * call — but React runs an updater when it renders, not when it is
+     * handed over, so the value read back was always the one it started
+     * with. "Started a new cart for this restaurant" therefore never
+     * appeared, on the one occasion somebody needs telling: the moment
+     * their previous basket is thrown away.
+     */
+    const outcome: 'added' | 'switched' =
+      cartRef.current.restaurantId &&
+      cartRef.current.restaurantId !== restaurant.id &&
+      cartRef.current.lines.length
+        ? 'switched'
+        : 'added'
+
     setCart((prev) => {
       // A cart belongs to exactly one restaurant — switching starts a fresh cart.
       if (prev.restaurantId && prev.restaurantId !== restaurant.id && prev.lines.length) {
-        outcome = 'switched'
         return {
           restaurantId: restaurant.id,
           restaurantName: restaurant.name,

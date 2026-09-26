@@ -605,7 +605,7 @@ export function decideItem(orderId: number, itemId: number, accepted: boolean): 
 
   if (!allDeclined && refused.length) {
     db.prepare(
-      "UPDATE orders SET needs_customer_ok = datetime('now'), declined_items = ? WHERE id = ?",
+      "UPDATE orders SET needs_customer_ok = datetime('now'), customer_ok_at = NULL, declined_items = ? WHERE id = ?",
     ).run(refused.map((r) => `${r.quantity}× ${r.name}`).join(', ').slice(0, 300), orderId)
     askCustomer(orderId, refused.map((r) => r.name))
   } else if (!refused.length) {
@@ -626,7 +626,9 @@ export function customerAgrees(orderId: number): { ok: boolean; order?: any; err
   const row = db.prepare('SELECT needs_customer_ok FROM orders WHERE id = ?').get(orderId) as any
   if (!row) return { ok: false, error: 'That order no longer exists.' }
   if (!row.needs_customer_ok) return { ok: true, order: getOrder(orderId) }
-  db.prepare("UPDATE orders SET needs_customer_ok = NULL, updated_at = datetime('now') WHERE id = ?").run(orderId)
+  db.prepare(
+    "UPDATE orders SET needs_customer_ok = NULL, customer_ok_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+  ).run(orderId)
   publish('order:update', { restaurantId: (db.prepare('SELECT restaurant_id FROM orders WHERE id = ?').get(orderId) as any)?.restaurant_id, orderId, order: getOrder(orderId) })
   return { ok: true, order: getOrder(orderId) }
 }
@@ -705,6 +707,8 @@ export function shapeOrder(row: any) {
      */
     needsCustomerOk: row.needs_customer_ok ?? null,
     declinedItems: row.declined_items ?? '',
+    /** Set when the customer agreed to go ahead without the refused dishes. */
+    customerOkAt: row.customer_ok_at ?? null,
     /** If this one went unanswered and was sent again, the new number. */
     resentAs: row.resent_as ?? null,
     customerName: row.customer_name,

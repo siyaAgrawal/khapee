@@ -2479,6 +2479,8 @@ textarea {
   border-radius: var(--r-lg);
   background: var(--surface);
 }
+
+
 /*
   An order waiting on a yes looked exactly like one that went out an hour ago.
 
@@ -6776,6 +6778,53 @@ button.nav-link {
   white-space: nowrap;
 }
 
+/* The customer has answered, and said carry on. Green rather than amber:
+   nothing is owed here, it is a ticket that may be cooked. */
+.customer-said-yes {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--good-soft);
+  border: 1px solid var(--good);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* The restaurant cannot take the order at all. Said first, and loudly. */
+.declined {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 auto 16px;
+  max-width: 560px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--bad);
+  background: var(--bad-soft);
+  color: var(--ink);
+}
+.declined-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bad);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+}
+.declined strong {
+  font-size: 15px;
+}
+.declined p {
+  margin: 4px 0 0;
+}
+
 /* The kitchen cannot make one thing, and the order is now waiting on the
    customer. Drawn as a question, not a status — it needs an answer. */
 .decided {
@@ -7142,4 +7191,60 @@ button.nav-link {
 .theme-toggle:hover {
   color: var(--accent);
   background: var(--accent-soft);
+}
+
+/*
+  On a phone, the ticket stops trying to be a row.
+
+  Two columns of "everything about the order" and "the buttons" works on a
+  laptop and falls apart on a handset: the table name wraps to two lines, the
+  time it is wanted for lands on top of the item count, and Accept sits across
+  the words underneath it. A restaurant sent a photograph of exactly that.
+
+  So below this width it is simply stacked — what the order is, then what is
+  on it, then the two answers across the full width where a thumb expects
+  them. Nothing overlaps because nothing is competing for the same line.
+*/
+@media (max-width: 560px) {
+  .qrow {
+    grid-template-columns: 1fr;
+  }
+  .qrow-main {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .qrow-where {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  /* The time it is wanted for gets its own line rather than pushing the
+     table name into a second one. */
+  .qrow-where b {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .wanted-for {
+    margin-left: 0;
+  }
+  .qrow-meta {
+    flex: 1 1 auto;
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 8px;
+    align-self: center;
+  }
+  .qrow-caret {
+    margin-left: auto;
+  }
+  .qrow-answer {
+    grid-column: 1;
+    grid-row: auto;
+    justify-content: stretch;
+    flex-wrap: nowrap;
+  }
+  .qrow-answer > button {
+    flex: 1 1 0;
+  }
 }

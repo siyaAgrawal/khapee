@@ -1,9 +1,10 @@
 # Putting Khapee online
 
-> **Moving to an always-on free server:** see [`deploy/README.md`](deploy/README.md).
-> Render's free plan sleeps and rebuilds the database on every wake and deploy,
-> which wipes the phones signed up for order alerts. The Oracle Always Free
-> setup there never sleeps and keeps its data.
+> **How khapee.com runs now:** Render's free plan, with the database backed up
+> continuously to Supabase Storage and restored on every start — see the next
+> section. Nothing is lost on a restart, sleep or deploy, and nothing needs a
+> card. An Oracle Cloud alternative (needs a card to sign up) is in
+> [`deploy/README.md`](deploy/README.md).
 
 The app is one Node process: it serves the API and the built React app on a
 single port, and keeps its data in a SQLite file plus an uploads folder next to
@@ -56,40 +57,6 @@ Free limits worth knowing: Supabase stores 1 GB free (the database is well
 under 10 MB); Render gives 750 free hours a month, and one server kept awake
 uses about 744.
 
-## Oracle Cloud Always Free (needs a card to sign up)
-
-Render's free plan sleeps and rebuilds the database on every wake, which wipes
-every push subscription: an order placed after a quiet spell reaches no phone,
-and the customer waits for a kitchen that never heard about it. An Oracle
-Always Free VM never sleeps and has a real disk, so subscriptions, orders and
-codes stay put. Free for good, not a trial.
-
-1. Sign up at cloud.oracle.com (a card is asked for identity; Always Free
-   resources are never charged).
-2. **Compute → Instances → Create**. Image: Ubuntu 22.04 or 24.04. Shape:
-   `VM.Standard.A1.Flex` (ARM, 1 OCPU / 6 GB is plenty) — or
-   `VM.Standard.E2.1.Micro` if A1 is out of capacity. Add your SSH key.
-3. **Networking → the VM's subnet → Security list → Add ingress rules**:
-   source `0.0.0.0/0`, TCP, destination ports `80` and `443`.
-4. SSH in and run:
-
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/siyaAgrawal/khapee/main/deploy/oracle/setup.sh | DOMAIN=khapee.com WWW=1 bash
-   ```
-
-5. Point `khapee.com` and `www` (A records) at the VM's public IP. HTTPS is
-   issued automatically by Caddy once DNS resolves — push needs HTTPS.
-6. Once it answers on khapee.com, suspend the Render service so two copies are
-   not running.
-
-After that, **every push to main deploys itself within 2 minutes** (a timer on
-the VM pulls and rebuilds; `deploy/oracle/update.sh`). Settings live in
-`/etc/khapee.env` on the VM; the database is `/var/lib/khapee/khapee.db`,
-outside the checkout, so no deploy or reboot touches it.
-
-Moving hosts gives a new `KHAPEE_SECRET`, so everyone signs in once more and
-each owner turns notifications on again, once. After that they stay on.
-
 ## Why the current Vercel link cannot work for two phones
 
 Vercel runs the app as serverless functions. Each one boots its own private copy
@@ -131,46 +98,28 @@ Verified end to end against the live site:
 
 Two phones on different networks now work, which was the whole point.
 
-### Making alerts reliable without paying
+### Making alerts reliable
 
-Three things, in the order they matter.
+Phones registered for order alerts are kept in the database, which is now
+backed up and restored on every start (see the Supabase section above), so a
+restart, sleep or deploy no longer signs anybody out of alerts. Two things are
+still worth doing:
 
-**1. Turn email on.** It is the only channel that survives a rebuild. A push
-subscription lives in the database, and a free instance rebuilds the database
-from the snapshot every time it wakes — so the phone that was signed up last
-night is not signed up this morning. The email address is not runtime data: it
-is `restaurants.order_email`, or the owner's account, both of which come back
-with the snapshot. So email is the one route that cannot be silently lost.
-
-Free through Gmail with an app password. Add under Environment on the service:
+**1. Turn email on as a second channel.** A phone can still miss a push — it is
+off, notifications are blocked, or an iPhone was never added to the Home
+Screen. Email catches those. Free through Gmail with an app password; add under
+Environment on the service:
 
     SMTP_HOST  smtp.gmail.com
     SMTP_PORT  465
     SMTP_USER  the full Gmail address
     SMTP_PASS  the 16-character app password
 
-Without these, `mailConfigured()` is false and order emails never send — which
-looks exactly like a quiet evening.
+Without these, `mailConfigured()` is false and order emails never send.
 
-**2. Push repairs itself, but only while somebody has the dashboard open.**
-The dashboard re-sends its subscription on every page load, which is what
-repopulates the wiped table. That covers a till that is open all service. It
-does not cover an order arriving after a sleep with every dashboard shut —
-nothing is subscribed at that moment, and only the email gets through.
-
-**3. Keep it awake, so the rebuild stops happening.** The wipe is a symptom of
-spinning down. An uptime pinger hitting `/api/health` every 10 minutes keeps
-one instance up, and then the database simply persists between customers —
-orders and access codes included. Free pingers that do this: cron-job.org,
-UptimeRobot.
-
-> Worth checking before relying on it: a free Render service is capped at a
-> monthly pool of instance-hours, and a service kept awake all month spends
-> nearly all of it. Confirm the current allowance covers a 31-day month
-> (744 hours) on Render's own pricing page — if it does not, the pinger should
-> run only during opening hours, which is the same fix and costs nothing.
-
-None of this is as good as a disk. It is what works at zero cost.
+**2. Check the log when an order seems to ring nobody.** Every order logs
+`[alerts] order #… : …` with how many phones it reached. "No phone is signed up"
+means the owner has to turn alerts on in the app once.
 
 ### Every order, on every restaurant
 
@@ -180,25 +129,28 @@ it who turns notifications on gets every order on Khapee, from any device they
 sign in on. Everyone else keeps getting only the places they work at.
 
 It is an environment variable rather than a database column deliberately — it
-has to outlive the rebuild described above.
+was chosen when the database did not survive a restart, and it still means the
+grant never depends on the data.
 
 ### What free costs
 
-No disk, and the instance sleeps after ~15 minutes idle — the first request
-after that takes up to a minute while it wakes. On every boot the database is
-rebuilt from the committed snapshot, so restaurants, menus and photos always
-come back; orders and access codes made since the last boot do not.
+No disk, and the instance sleeps after ~15 minutes idle; the keep-awake workflow
+stops that. On every start the database is restored from the Supabase backup,
+so orders, access codes, alert phones and dashboard photos all come back.
 
-Before real customers: change `plan` to `starter` in `render.yaml` and uncomment
-the disk blocks at the bottom. Nothing else changes.
+### Changing menus, photos or data on the live site
 
-### Publishing local menu or photo changes
+**Make the change on the live site** — in the dashboard, where it is saved and
+backed up like everything else.
 
-    npm run snapshot && git add -A && git commit && git push
+`data/snapshot.db` is only read on the very first start, when the backup is
+empty. After that, a new snapshot pushed to GitHub does **not** reach
+khapee.com: the backup is restored instead. (`npm run snapshot` is still how a
+fresh copy of the app, or a local clone, gets the catalogue.)
 
-The snapshot is the seed the deployed app boots from, so changes made locally
-only reach the live site through it. Changes made *on* the live site through the
-dashboard are lost at the next sleep until the disk is added.
+To deliberately start the live site over from the snapshot — losing every order,
+code and alert phone since — empty the `khapee` folder in the `khapee-backup`
+bucket and restart the service. Do not do this for a small fix.
 
 ## Railway / Fly.io
 

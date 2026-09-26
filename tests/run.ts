@@ -4553,6 +4553,30 @@ async function runTests() {
     ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
   }
 
+  group("A SESSION THAT HAS RUN OUT STOPS DECIDING WHERE DINNER GOES")
+  {
+    // Reported from a real counter: a customer was told to "add ₹70 more" on
+    // an order that had nothing to do with delivery. A dining session says how
+    // long it has left and nothing ever spent it, so one left behind by an
+    // abandoned delivery order went on deciding where that person's food was
+    // going on every later visit — the checkout hid the "at a table / takeaway
+    // / collect" choice, treated it as a delivery and demanded that area's
+    // minimum, with no way out.
+    //
+    // The expiry itself lives on the phone, so this checks the half the server
+    // owns: that a session it has finished with is reported finished.
+    const opened = await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })
+    ok('a session opens', opened.status === 201, opened.body)
+    ok('and says how long it has', typeof opened.body.session.secondsLeft === 'number', opened.body.session)
+    ok('and that it is live', opened.body.session.active === true, opened.body.session)
+    ok('a table session is not a delivery', opened.body.session.serviceMode !== 'delivery', opened.body.session.serviceMode)
+    ok(
+      'and carries no minimum to hold anybody to',
+      !opened.body.session.minOrderCents,
+      opened.body.session.minOrderCents,
+    )
+  }
+
   group('A SIGNED-IN ACCOUNT IS TOLD ABOUT EVERY ORDER')
   {
     // The complaint that started this: people signed in to a restaurant were

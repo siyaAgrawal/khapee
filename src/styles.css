@@ -129,8 +129,22 @@
    * such places and they had drifted into three different answers.
    */
   --header-h: 72px;
-  --header-top-gap: 12px;
-  --header-total: calc(var(--header-h) + var(--header-top-gap) + env(safe-area-inset-top, 0px));
+  /*
+   * Air above the row, and the whole point is the max().
+   *
+   * env(safe-area-inset-top) is only non-zero in the installed app, where iOS
+   * draws the page under the status bar. In Safari it is 0 — and since iOS
+   * put the address bar at the bottom, the top of the screen there is the
+   * status bar and then immediately this. Adding a fixed gap to the inset
+   * therefore gave a comfortable bar on a notched phone and a cramped one in
+   * the browser, which is where most people actually arrive.
+   *
+   * So: at least 20px of clear air, always; and where the phone has reserved
+   * space of its own, that plus a smaller 8px, because the inset is already
+   * doing most of the work.
+   */
+  --header-pad-top: max(20px, calc(env(safe-area-inset-top, 0px) + 8px));
+  --header-total: calc(var(--header-h) + var(--header-pad-top));
   /*
    * The page margin, as a number anything can read.
    *
@@ -584,7 +598,7 @@ textarea {
   top: 0;
   z-index: 40;
   height: var(--header-total);
-  padding-top: calc(var(--header-top-gap) + env(safe-area-inset-top, 0px));
+  padding-top: var(--header-pad-top);
   display: flex;
   align-items: center;
   gap: 14px;

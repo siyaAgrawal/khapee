@@ -596,17 +596,20 @@ textarea {
   display: flex;
   align-items: baseline;
   /*
-   * The loud face, at the loud weight, italic — the same cut as the line at
-   * the top of the home screen.
+   * The brand's own face, at the heaviest weight it has.
    *
    * Set in the plain interface face it was just the app's name typed out in
    * bold, which is what "cheap" meant: every screen in the product used that
    * face, so the one thing that is supposed to be the brand looked like a
-   * heading that had wandered into the header. Slanted and heavy it is a
-   * logotype, and it rhymes with "kuch khapee lo." two centimetres below it.
+   * heading that had wandered into the header. Archivo is the brand's own
+   * face and is used nowhere else in the interface, which is what makes this
+   * a logotype rather than a heading.
+   *
+   * Upright, not slanted. The italic belongs to "kuch khapee lo." — a line
+   * that is meant to sound like somebody saying it — and a name that leans
+   * is a name in a hurry. This one stands still.
    */
   font-family: var(--shout);
-  font-style: italic;
   font-size: 25px;
   font-weight: 900;
   letter-spacing: -0.045em;

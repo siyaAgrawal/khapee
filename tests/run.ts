@@ -9,6 +9,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
+import net from 'node:net'
 import Database from 'better-sqlite3'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -83,24 +84,104 @@ async function waitForServer(tries = 60) {
 
 /* -------------------------------------------------------------------------- */
 
+/*
+ * Nobody else may be on our port.
+ *
+ * When a run is interrupted its server survives, and the next run's server
+ * then dies instantly on EADDRINUSE while the ORPHAN answers every request —
+ * against the database the new run has just deleted. The symptom is a dozen
+ * passes followed by "no such table: users", which reads like a broken schema
+ * and sends you looking at migrations. It is worth the four lines to say so.
+ */
+await new Promise<void>((resolve) => {
+  const probe = net.createServer()
+  probe.once('error', (e: any) => {
+    if (e?.code !== 'EADDRINUSE') return resolve()
+    console.error(
+      `\n  Port ${PORT} is already in use — almost certainly a server left behind by an\n` +
+        `  interrupted test run. Nothing here is broken; clear it and run again:\n\n` +
+        `      pkill -9 -f "server/index.ts"\n`,
+    )
+    process.exit(1)
+  })
+  probe.once('listening', () => probe.close(() => resolve()))
+  probe.listen(PORT, '127.0.0.1')
+})
+
 for (const suffix of ['', '-wal', '-shm']) {
   const f = DB_PATH + suffix
   if (fs.existsSync(f)) fs.unlinkSync(f)
 }
 
-const server = spawn('npx', ['tsx', 'server/index.ts'], {
+/*
+ * Its own process group, and tsx directly rather than through npx.
+ *
+ * The server is two processes: a launcher and the node process that actually
+ * holds the port. Signalling the child reached the launcher alone and the
+ * grandchild carried on serving, which is how a run that ended perfectly well
+ * still left something on 4399 for the next one to collide with. detached
+ * gives the pair a group of their own so one signal reaches both.
+ *
+ * Going through npx added a third process that exited early, leaving the rest
+ * reparented and outliving a kill aimed at the group it had led. The binary is
+ * sitting in node_modules; there is no reason to ask npx to find it.
+ */
+const server = spawn(path.join(root, 'node_modules', '.bin', 'tsx'), ['server/index.ts'], {
   cwd: root,
-  env: { ...process.env, TABLO_PORT: String(PORT), TABLO_DB: DB_PATH },
+  detached: true,
+  env: {
+    ...process.env,
+    TABLO_PORT: String(PORT),
+    TABLO_DB: DB_PATH,
+    // Whoever runs Khapee itself, rather than one restaurant on it. The
+    // "rings for every restaurant" grant is read from this, so there has to be
+    // somebody on it for that to be testable at all.
+    KHAPEE_OWNER_EMAILS: 'dual@tablo.test',
+  },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
 let serverLog = ''
 server.stdout.on('data', (d) => (serverLog += d))
 server.stderr.on('data', (d) => (serverLog += d))
 
+let downed = false
 function shutdown() {
-  server.kill('SIGTERM')
+  if (downed) return
+  downed = true
+  if (!server.pid) return
+  try {
+    /*
+     * The group, and SIGKILL rather than SIGTERM.
+     *
+     * A polite signal was tried first and is not good enough here: it closed
+     * the listener but left tsx and its node child alive, and the graceful
+     * escalation had to be a timer, which never fires because this runs on
+     * the way out of the process. There is nothing to flush — the database is
+     * deleted at the start of the next run — so the only thing a grace period
+     * buys is the orphan it was meant to prevent.
+     */
+    process.kill(-server.pid, 'SIGKILL')
+  } catch {
+    // Already gone.
+  }
 }
+
 process.on('exit', shutdown)
+/*
+ * 'exit' does not fire for a signal, so Ctrl-C used to leak the entire tree —
+ * and interrupting a slow run is exactly when somebody does that.
+ */
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+  process.on(sig, () => {
+    shutdown()
+    process.exit(130)
+  })
+}
+process.on('uncaughtException', (e) => {
+  console.error('\nTest run threw:', e)
+  shutdown()
+  process.exit(1)
+})
 
 try {
   await waitForServer()
@@ -2316,8 +2397,12 @@ async function runTests() {
     // link, telling Google to prefer a URL that only redirects. Run a second
     // server the way production runs it and check what a crawler is told.
     const port = PORT + 1
-    const proxied = spawn('npx', ['tsx', 'server/index.ts'], {
+    // Its own group, and killed as one — same reason as the main server above.
+    // This is the spawn that was actually leaking: SIGTERM to the launcher left
+    // the node process behind it running, two per test run, for ever.
+    const proxied = spawn(path.join(root, 'node_modules', '.bin', 'tsx'), ['server/index.ts'], {
       cwd: root,
+      detached: true,
       env: { ...process.env, NODE_ENV: 'production', TABLO_PORT: String(port), TABLO_DB: DB_PATH },
       stdio: ['ignore', 'ignore', 'pipe'],
     })
@@ -2349,7 +2434,11 @@ async function runTests() {
       const robots = await asEdge('/robots.txt')
       ok('and the sitemap robots points at is too', robots.includes(`Sitemap: ${secure}/sitemap.xml`), robots)
     } finally {
-      proxied.kill('SIGTERM')
+      try {
+        if (proxied.pid) process.kill(-proxied.pid, 'SIGKILL')
+      } catch {
+        // Already gone.
+      }
     }
   }
 
@@ -3537,6 +3626,48 @@ async function runTests() {
     })
     ok('the same device does not count twice', again.body.devices === good.body.devices, again.body)
 
+    /*
+     * Whoever runs Khapee wants every order on it, not only the places they
+     * happen to staff.
+     *
+     * This could not be asked for at all before. The send query honoured
+     * all_restaurants and saveSubscription accepted it, but no route ever set
+     * it — and the dashboard re-subscribes on every page load with the flag
+     * defaulting to false, so even an invite that set it was wiped by the next
+     * reload. It is now read from the account, which is also why it cannot be
+     * asked for in the request body: that would let anyone running one
+     * restaurant subscribe to everybody else's customer names.
+     */
+    const ownerEverywhere = await call('/staff/alerts/subscribe', {
+      token: dualToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/the-owner',
+          keys: { p256dh: 'BDpUB9' + 'q'.repeat(80), auth: 'ownerownerowner1' },
+        },
+      },
+    })
+    ok('an owner on the list follows every restaurant', ownerEverywhere.body.everywhere === true, ownerEverywhere.body)
+
+    const strangerSees = await call('/staff/alerts', { token: roadToken })
+    ok(
+      'so their phone rings for a restaurant they have nothing to do with',
+      strangerSees.body.push.list.some((d: any) => d.who === 'Owner phone — every restaurant'),
+      strangerSees.body.push.list,
+    )
+
+    // And an ordinary restaurant account does not quietly gain the same thing.
+    const notTheOwner = await call('/staff/alerts/subscribe', {
+      token: roadToken,
+      body: {
+        subscription: {
+          endpoint: 'https://push.example/not-the-owner',
+          keys: { p256dh: 'BDpUB9' + 'w'.repeat(80), auth: 'nottheownerkeys1' },
+        },
+      },
+    })
+    ok('somebody running one restaurant does not', notTheOwner.body.everywhere === false, notTheOwner.body)
+
     // One phone, an owner with two places. Nobody should have to guess that
     // the picker at the top of the dashboard was also choosing which orders
     // would wake them.
@@ -4187,6 +4318,25 @@ async function runTests() {
     ok('settling closes every round at once', settled.body?.settled === 2, settled.body)
     ok('taking the whole amount', settled.body?.amountCents === 3 * croissant.priceCents, settled.body)
 
+    /*
+     * And it produces real invoices.
+     *
+     * This route used to write a payment row straight against each order and
+     * close the bill — the money was right and there was no tax invoice at
+     * all. Dine-in is the path that uses this screen, so a GST restaurant was
+     * taking money all evening against no numbered document.
+     */
+    ok(
+      'settling a table raises a numbered invoice for every order on it',
+      Array.isArray(settled.body?.invoices) && settled.body.invoices.length === 2,
+      settled.body?.invoices,
+    )
+    ok(
+      'and the numbers are distinct and out of the restaurant\'s own series',
+      new Set(settled.body?.invoices).size === 2 && settled.body.invoices.every((n: string) => /\/\d{4}-\d{2}\/\d{6}$/.test(n)),
+      settled.body?.invoices,
+    )
+
     const after = await call('/staff/floor', { token: roadToken })
     const empty = after.body.tables.find((t: any) => t.id === floorTable.id)
     ok('and the table is free again', empty?.orders.length === 0, empty?.orders?.length)
@@ -4707,6 +4857,12 @@ async function runTests() {
         success: '1',
         restaurants: [{ restaurantid: 'R156072', details: { minimum_prep_time: '25' } }],
         categories: [{ categoryid: '900', categoryname: 'Petpooja Specials', categoryrank: '1' }],
+        // Petpooja confirmed the outlet's tables ride along with the menu, and
+        // those names are the ones their till knows a dine-in order by.
+        tables: [
+          { tableid: 'PT-1', tablename: 'Garden 2', seats: '6' },
+          { tableid: 'PT-2', tablename: 'T4' },
+        ],
         items: [
           {
             itemid: 'PP-1',
@@ -4742,15 +4898,39 @@ async function runTests() {
     const seekh = specials?.items.find((i: any) => i.name === 'Chicken Seekh')
     ok('anything not plainly veg is shown as non-veg', seekh?.isVeg === false, seekh)
 
+    // The tables that came with it. Khapee used to invent its own names, which
+    // meant a dine-in order named a table their till had never heard of.
+    const withTables = await call('/staff/tables', { token: roadToken })
+    const garden = withTables.body.tables?.find((t: any) => t.label === 'Garden 2')
+    ok('tables arrive with the menu', !!garden, withTables.body.tables?.map((t: any) => t.label))
+    ok('with the seats the till gave', garden?.seats === 6, garden)
+
+    // Pushed again below; a table must not grow a second copy of itself either.
+    const tablesBefore = withTables.body.tables?.length ?? 0
+
     // Pushed twice, because Petpooja push on every edit and a menu that grows
     // a second copy of itself each time is worse than no integration at all.
     await call(`/petpooja/${secret}/menu`, {
       body: {
         restaurants: [{ restaurantid: 'R156072' }],
         categories: [{ categoryid: '900', categoryname: 'Petpooja Specials' }],
+        tables: [{ tableid: 'PT-1', tablename: 'Garden 2', seats: '6' }],
         items: [{ itemid: 'PP-1', itemname: 'Paneer Tikka', item_categoryid: '900', price: '260', item_attributeid: '1' }],
       },
     })
+    const tablesAfter = await call('/staff/tables', { token: roadToken })
+    ok(
+      'pushing again does not duplicate a table',
+      tablesAfter.body.tables.filter((t: any) => t.label === 'Garden 2').length === 1,
+      tablesAfter.body.tables.map((t: any) => t.label),
+    )
+    // T4 was in the first push and not the second. A table carries a printed QR
+    // code, so it stays put rather than being tidied away under somebody.
+    ok(
+      'and a table left out of a later push is not removed',
+      tablesAfter.body.tables.length === tablesBefore,
+      { before: tablesBefore, after: tablesAfter.body.tables.length },
+    )
     const twice = await call('/staff/menu', { token: roadToken })
     const again = twice.body.categories.find((c: any) => c.name === 'Petpooja Specials')
     ok('pushing again does not duplicate the dish', again.items.filter((i: any) => i.name === 'Paneer Tikka').length === 1, again.items.length)

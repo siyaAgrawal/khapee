@@ -159,6 +159,32 @@ export type Subscription = {
  * both, and has no reason to guess that the picker at the top of the dashboard
  * was also choosing which orders would wake them.
  */
+/**
+ * Whoever runs Khapee itself, rather than one restaurant on it.
+ *
+ * There is no admin column on users and this is not the moment to invent a
+ * role system: the question being asked is only "should this person's phone
+ * ring for every restaurant", and the honest answer is a list of addresses
+ * kept by whoever deploys it. An environment variable also survives what the
+ * database does not — a free host rebuilds the database from the snapshot on
+ * every wake, and a platform owner who had to re-grant themselves this after
+ * each one would simply stop trusting the alerts.
+ *
+ * Empty by default, so a deployment that sets nothing behaves exactly as
+ * before and no account quietly gains every restaurant's customer names.
+ */
+export function followsEveryRestaurant(userId: number | null): boolean {
+  if (!userId) return false
+  const allowed = String(process.env.KHAPEE_OWNER_EMAILS ?? '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+  if (!allowed.length) return false
+  const row = db.prepare('SELECT email FROM users WHERE id = ?').get(userId) as any
+  const email = String(row?.email ?? '').trim().toLowerCase()
+  return !!email && allowed.includes(email)
+}
+
 export function saveSubscription(
   userId: number | null,
   restaurantId: number,

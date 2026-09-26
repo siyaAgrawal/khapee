@@ -21,7 +21,7 @@ import {
   setBillingUrl,
   tellBilling,
 } from '../order-feed.ts'
-import { dropSubscription, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, setDeviceWhatsapp, subscriptionCount, subscriptionList } from '../push.ts'
+import { dropSubscription, followsEveryRestaurant, pushConfigured, pushPublicKey, pushReason, pushToRestaurant, removeSubscription, saveSubscription, setDeviceWhatsapp, subscriptionCount, subscriptionList } from '../push.ts'
 import { alertEmailFor } from '../alerts.ts'
 import { faultsFor } from '../faults.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
@@ -41,7 +41,7 @@ import { shapeDiningSession, startCarSession } from '../dining.ts'
 import { generateAlertCode, randomToken } from '../ids.ts'
 import { floorBoard, kotById, openKot, settleTable, tableBill } from '../floor.ts'
 import { orderHistory, takings } from '../takings.ts'
-import { applyMenuPush, fetchMenu, linkFor, removeLink, saveLink, webhookUrls } from '../petpooja.ts'
+import { applyMenuPush, fetchMenu, linkFor, pushOrder, removeLink, saveLink, webhookUrls } from '../petpooja.ts'
 
 export const staffRouter = Router()
 staffRouter.use(requireStaff)
@@ -920,16 +920,34 @@ staffRouter.post('/alerts/test-email', async (req: any, res) => {
   res.json({ ok: true, to })
 })
 
-/** This device would like to be told. */
+/**
+ * This device would like to be told.
+ *
+ * Called on every page load, not just when the switch is tapped — it is what
+ * repairs the server's subscription table after a host has rebuilt the
+ * database from the snapshot. That makes it the only place the "every
+ * restaurant" grant can live: a flag set once and then cleared by the next
+ * reload is a flag that does not exist, which is exactly how this behaved.
+ */
 staffRouter.post('/alerts/subscribe', (req: any, res) => {
   const restaurantId = myRestaurant(req)
   if (!pushConfigured()) {
     return res.status(503).json({ error: pushReason() })
   }
-  const result = saveSubscription(req.user.id, restaurantId, req.body?.subscription ?? req.body)
+  // Decided here from the account rather than taken from the request, because
+  // a body that could ask for every restaurant's orders is a body that would
+  // be asked for by anybody who runs one restaurant on Khapee.
+  const everywhere = followsEveryRestaurant(req.user.id)
+  const result = saveSubscription(
+    req.user.id,
+    restaurantId,
+    req.body?.subscription ?? req.body,
+    everywhere ? 'Owner phone — every restaurant' : '',
+    everywhere,
+  )
   if (!result.ok) return res.status(400).json({ error: result.error })
-  audit(restaurantId, actorOf(req), 'alerts.subscribe', 'restaurant', restaurantId, {})
-  res.json({ ok: true, devices: subscriptionCount(restaurantId) })
+  audit(restaurantId, actorOf(req), 'alerts.subscribe', 'restaurant', restaurantId, { everywhere })
+  res.json({ ok: true, devices: subscriptionCount(restaurantId), everywhere })
 })
 
 /** And this one would like to stop. */
@@ -1417,6 +1435,12 @@ staffRouter.post('/orders/:id/items', (req: any, res) => {
 
   const updated = getOrder(order.id)
   publish('order:update', { restaurantId, userId: order.user_id, orderId: order.id, order: updated })
+
+  /* A waiter's round is a round like any other, so it goes to the till too.
+     They do not get an alert for it — they are the person who just typed it —
+     but the kitchen on the other side of the wall still has to be told. */
+  void pushOrder(order.id, originOf(req)).catch(() => {})
+
   res.status(201).json({ order: updated })
 })
 
@@ -2216,6 +2240,9 @@ staffRouter.post('/floor/table/:id/settle', (req: any, res) => {
     Number(req.params.id),
     String(req.body?.method ?? 'cash'),
     String(req.body?.payerName ?? ''),
+    // Whoever is at the counter, so the invoice and its audit line name them
+    // rather than "Counter".
+    actorOf(req),
   )
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   publish('orders', { restaurantId })

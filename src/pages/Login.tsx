@@ -39,10 +39,14 @@ export default function Login() {
        * other people's menus between them and the order that was waiting. The
        * list is still a tap away from the dashboard for anyone who wants it.
        *
+       * The same test as StaffGate, so this can never send somebody to a page
+       * that would bounce them straight back.
+       *
        * Where somebody was heading before they were asked to sign in still
-       * wins, staff pages included.
+       * wins.
        */
-      navigate(from || (user.restaurants?.length ? '/staff' : '/'), { replace: true })
+      const runsRestaurant = !!(user.restaurants?.length && user.restaurantId)
+      navigate(from || (runsRestaurant ? '/staff' : '/'), { replace: true })
     } catch (err) {
       setError((err as ApiError).message)
       setBusy(false)

@@ -1,0 +1,15 @@
+[Unit]
+Description=Khapee ordering app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=khapee
+WorkingDirectory=/opt/khapee
+EnvironmentFile=/etc/khapee.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

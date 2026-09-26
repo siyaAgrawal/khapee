@@ -86,8 +86,11 @@ export function alertRestaurant(a: OrderAlert): void {
     tag: `order-${a.orderNumber}`,
   })
     .then((r) => {
-      // In the host's log every time, because an alert that reached nobody
-      // looks exactly like a quiet evening until a customer says otherwise.
+      // In the host's log every time, and not only on failure: an alert that
+      // reached nobody looks exactly like a quiet evening until a customer
+      // says otherwise, and "rang 2 phones" is what proves it really was one.
+      // The usual cause of nought devices is the host rebuilding the database
+      // and taking every phone's registration with it.
       const where = `[alerts] order #${a.orderNumber} (restaurant ${a.restaurantId})`
       if (!r.devices) console.warn(`${where}: no phone is signed up for alerts${r.why ? ` — ${r.why}` : ''}`)
       else if (r.failed) console.warn(`${where}: rang ${r.sent} of ${r.devices} phones — ${r.why}`)

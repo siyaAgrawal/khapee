@@ -16,6 +16,80 @@ npm run build && npm start
 
 That serves everything on `PORT` (default 4273). Verified working locally.
 
+## Render free + Supabase Storage — keeping everything, free, no card
+
+Render's free plan has no disk, so every restart, sleep and deploy rebuilt the
+database from the snapshot: orders, access codes and every phone registered for
+order alerts were lost, and the next order rang nobody. Now the database is
+backed up continuously and put back on every start. Nothing in the app changed
+how it reads or writes; `npm start` runs `scripts/start.sh`, which:
+
+1. restores the latest copy from the storage bucket (Litestream) if the disk is empty,
+2. starts the app under Litestream, which copies every change to the bucket
+   within about a second and makes a last copy when Render stops the app.
+
+Photos uploaded from the dashboard are stored in the database too
+(`upload_files`), so they come back with it.
+
+The bucket is Supabase Storage through its S3 connection (Storage → Settings →
+S3 Connection). Backblaze B2 works the same way with its own endpoint.
+
+Set these under **Environment** on the Render service (see `render.yaml`):
+`BACKUP_BUCKET`, `BACKUP_ENDPOINT`, `BACKUP_REGION`, `BACKUP_KEY_ID`,
+`BACKUP_SECRET`. Without them the app runs exactly as before.
+
+If a backup exists but cannot be restored, the app refuses to start rather than
+start empty and back that up over the real data. Render retries it, and the
+reason is in the log (`[backup]` lines).
+
+**Kept awake** by `.github/workflows/keep-awake.yml`, which asks
+`/api/health` every 10 minutes from GitHub's free scheduler. GitHub pauses
+scheduled workflows in a repository with no commits for 60 days; re-enable it
+under Actions if that happens.
+
+The same workflow also fetches a tiny public file from Supabase every 10
+minutes (the `SUPABASE_PING_URL` repository variable), because Supabase pauses
+free projects after a week without activity — and a paused bucket would stop
+the app from restoring on its next start.
+
+Free limits worth knowing: Supabase stores 1 GB free (the database is well
+under 10 MB); Render gives 750 free hours a month, and one server kept awake
+uses about 744.
+
+## Oracle Cloud Always Free (needs a card to sign up)
+
+Render's free plan sleeps and rebuilds the database on every wake, which wipes
+every push subscription: an order placed after a quiet spell reaches no phone,
+and the customer waits for a kitchen that never heard about it. An Oracle
+Always Free VM never sleeps and has a real disk, so subscriptions, orders and
+codes stay put. Free for good, not a trial.
+
+1. Sign up at cloud.oracle.com (a card is asked for identity; Always Free
+   resources are never charged).
+2. **Compute → Instances → Create**. Image: Ubuntu 22.04 or 24.04. Shape:
+   `VM.Standard.A1.Flex` (ARM, 1 OCPU / 6 GB is plenty) — or
+   `VM.Standard.E2.1.Micro` if A1 is out of capacity. Add your SSH key.
+3. **Networking → the VM's subnet → Security list → Add ingress rules**:
+   source `0.0.0.0/0`, TCP, destination ports `80` and `443`.
+4. SSH in and run:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/siyaAgrawal/khapee/main/deploy/oracle/setup.sh | DOMAIN=khapee.com WWW=1 bash
+   ```
+
+5. Point `khapee.com` and `www` (A records) at the VM's public IP. HTTPS is
+   issued automatically by Caddy once DNS resolves — push needs HTTPS.
+6. Once it answers on khapee.com, suspend the Render service so two copies are
+   not running.
+
+After that, **every push to main deploys itself within 2 minutes** (a timer on
+the VM pulls and rebuilds; `deploy/oracle/update.sh`). Settings live in
+`/etc/khapee.env` on the VM; the database is `/var/lib/khapee/khapee.db`,
+outside the checkout, so no deploy or reboot touches it.
+
+Moving hosts gives a new `KHAPEE_SECRET`, so everyone signs in once more and
+each owner turns notifications on again, once. After that they stay on.
+
 ## Why the current Vercel link cannot work for two phones
 
 Vercel runs the app as serverless functions. Each one boots its own private copy

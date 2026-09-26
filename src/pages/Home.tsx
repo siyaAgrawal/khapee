@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import { api, ApiError } from '../lib/api'
 import { useVegMode } from '../lib/veg'
+import { useSession } from '../lib/session'
 import { alertsLive, pushSupported } from '../lib/push'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 import { ArrowRightIcon, BellIcon, PinIcon, SearchIcon } from '../components/icons'
@@ -49,6 +50,15 @@ export type CuisineTile = { name: string; count: number }
 
 export default function Home() {
   const [veg, setVeg] = useVegMode()
+  const { user } = useSession()
+  /**
+   * Only somebody who works at a restaurant is shown the alerts line: a
+   * signed-in owner or staff member, or a phone that has been given an alert
+   * code before. Customers never see it — to them it was noise above the menu.
+   * A brand-new staff phone with no account still has the link at the bottom
+   * of the page.
+   */
+  const worksHere = !!(user?.restaurants?.length)
   /** Hidden for good once dismissed — it is for staff, and only needed once. */
   const [staffStripGone, setStaffStripGone] = useState(() => {
     try {
@@ -199,7 +209,7 @@ export default function Home() {
           code on this phone before — so they work somewhere — and whose alerts
           the server is not holding. Hiding it from them is hiding the only way
           back to the code, on the one phone that has stopped ringing. */}
-      {(!staffStripGone || halfDone) && !alertsOn && (
+      {((worksHere && !staffStripGone) || halfDone) && !alertsOn && (
         <div className="staff-strip">
           <Link to="/alerts">
             <BellIcon size={14} />

@@ -1,0 +1,7 @@
+[Unit]
+Description=Deploy Khapee when main moves
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/khapee-update

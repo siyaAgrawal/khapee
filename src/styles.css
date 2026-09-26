@@ -114,7 +114,37 @@
 
   --ease: cubic-bezier(0.22, 0.68, 0.32, 1);
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --header-h: 68px;
+  /*
+   * The bar at the top, in three parts.
+   *
+   * --header-h is the row the wordmark and the links sit in. The gap is clear
+   * air above that row, and it exists because the safe-area inset alone is
+   * not breathing room: it is the exact height of the phone's own status bar,
+   * so padding by it and no more puts the logo's cap-height flush against the
+   * clock. On a notched phone that read as a row jammed under the status bar,
+   * which is what it was.
+   *
+   * --header-total is the whole thing, and everything that sticks below the
+   * header measures from it rather than recomputing the sum — there were four
+   * such places and they had drifted into three different answers.
+   */
+  --header-h: 72px;
+  /*
+   * Air above the row, and the whole point is the max().
+   *
+   * env(safe-area-inset-top) is only non-zero in the installed app, where iOS
+   * draws the page under the status bar. In Safari it is 0 — and since iOS
+   * put the address bar at the bottom, the top of the screen there is the
+   * status bar and then immediately this. Adding a fixed gap to the inset
+   * therefore gave a comfortable bar on a notched phone and a cramped one in
+   * the browser, which is where most people actually arrive.
+   *
+   * So: at least 20px of clear air, always; and where the phone has reserved
+   * space of its own, that plus a smaller 8px, because the inset is already
+   * doing most of the work.
+   */
+  --header-pad-top: max(20px, calc(env(safe-area-inset-top, 0px) + 8px));
+  --header-total: calc(var(--header-h) + var(--header-pad-top));
   /*
    * The page margin, as a number anything can read.
    *
@@ -567,8 +597,8 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 40;
-  height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
+  height: var(--header-total);
+  padding-top: var(--header-pad-top);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -1588,7 +1618,7 @@ textarea {
 
 .menu-nav {
   position: sticky;
-  top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  top: var(--header-total);
   z-index: 20;
   display: flex;
   gap: 8px;
@@ -1611,7 +1641,7 @@ textarea {
 
 .menu-section {
   margin-top: 26px;
-  scroll-margin-top: calc(var(--header-h) + 62px);
+  scroll-margin-top: calc(var(--header-total) + 62px);
 }
 .menu-section h2 {
   margin-bottom: 12px;
@@ -2170,6 +2200,8 @@ textarea {
   background: var(--surface);
   border-right: 1px solid var(--line);
   padding: 18px 14px;
+  /* An installed app on a tablet also draws under the status bar. */
+  padding-top: max(18px, calc(env(safe-area-inset-top, 0px) + 8px));
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -3227,7 +3259,12 @@ textarea {
     gap: 6px;
     /* Not scrolled: a clipping context would cut off the switcher menu. */
     overflow: visible;
-    padding: 10px 12px;
+    /* The installed app draws under the phone's status bar, so the top line
+       (restaurant switcher, Sign out) starts below it, as the customer
+       header does. Sides clear a landscape notch. In a browser the inset is
+       0 and this is the old 10px. */
+    padding: max(10px, calc(env(safe-area-inset-top, 0px) + 6px))
+      max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px));
     border-right: 0;
     border-bottom: 1px solid var(--line);
     z-index: 30;
@@ -3257,16 +3294,17 @@ textarea {
   .side-links::-webkit-scrollbar {
     display: none;
   }
-  /* Sign out stays reachable in the compact bar. */
+  /* On a phone the account button beside the restaurant does this job, so
+     the footer (Customer view, Sign out) is folded away rather than left as
+     a stranded row of its own. */
   .side-foot {
-    order: 1;
-    margin: 0 0 0 auto;
-    padding: 0 0 0 8px;
-    border-top: 0;
-    border-left: 1px solid var(--line);
+    display: none;
   }
-  .side-foot .btn-block {
-    width: auto;
+  /* Search on its own full-width line under the restaurant. */
+  .staff-side .staff-search {
+    order: 0;
+    flex: 1 0 100%;
+    margin-bottom: 0;
   }
   .staff-main {
     padding: 16px 14px 60px;
@@ -3299,7 +3337,10 @@ textarea {
      so the redundant "Restaurants" link steps aside. */
   .header {
     gap: 8px;
-    padding: 0 12px;
+    /* Sides only. A `padding` shorthand here resets padding-top, which is
+       what keeps the row clear of the phone's status bar. */
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
   }
   .brand {
     font-size: 18px;
@@ -3826,6 +3867,61 @@ textarea {
   font-weight: 700;
 }
 
+/* The phone's account button. Hidden on wide screens, where the sidebar
+   footer carries the same two actions. */
+.staff-account {
+  display: none;
+  position: relative;
+}
+.staff-account-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+}
+.staff-account-btn[aria-expanded='true'] {
+  border-color: var(--ink);
+}
+.staff-account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  width: min(250px, calc(100vw - 24px));
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-lg);
+  animation: pop 0.16s var(--ease) both;
+}
+.staff-account-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.staff-account-who .tiny {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.staff-account-menu .switcher-item {
+  text-decoration: none;
+  font-size: 14.5px;
+}
+.staff-account-out {
+  color: var(--danger, #b3261e);
+}
+
 .side-user {
   margin-top: 10px;
   padding-top: 10px;
@@ -3875,6 +3971,12 @@ textarea {
   }
   .side-user .btn {
     white-space: nowrap;
+  }
+  /* After the base .staff-account rule, which hides it on wide screens. */
+  .staff-account {
+    display: block;
+    order: -1;
+    flex: 0 0 auto;
   }
 }
 
@@ -5169,7 +5271,12 @@ button.nav-link {
 }
 
 @media (max-width: 420px) {
-  .header { gap: 8px; padding: 0 12px; }
+  .header {
+    gap: 8px;
+    /* Sides only — see the note at the 560px breakpoint. */
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
   .header-nav { gap: 2px; }
   .nav-link { padding: 8px 8px; font-size: 13px; }
 }
@@ -5540,7 +5647,7 @@ button.nav-link {
 
 .pos-panel {
   position: sticky;
-  top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 14px);
+  top: calc(var(--header-total) + 14px);
   padding: 16px;
   border-radius: 16px;
   border: 1px solid var(--line);
@@ -5956,7 +6063,7 @@ button.nav-link {
    that somebody is looking. */
 .paying {
   position: sticky;
-  top: var(--header-h);
+  top: var(--header-total);
   z-index: 30;
   display: flex;
   align-items: flex-start;

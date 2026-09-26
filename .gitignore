@@ -29,3 +29,6 @@ website-v2/dist
 
 # Server settings for deploy/ — secrets, never committed.
 deploy/.env
+# The live database when backups are on (scripts/start.sh) and the backup tool.
+data/live/
+bin/

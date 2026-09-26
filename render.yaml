@@ -5,12 +5,13 @@
 # that — each of its serverless functions has a private copy. See DEPLOY.md.
 #
 # This is the FREE instance type, which needs no card. Free services have no
-# disk and sleep after ~15 minutes idle (waking takes up to a minute); on wake
-# the database is rebuilt from the committed snapshot, so restaurants, menus and
-# photos come back, but orders and codes made in between do not.
+# disk and sleep after ~15 minutes idle. The BACKUP_* settings below keep the
+# data anyway: the database is backed up to Supabase Storage and restored on
+# every start, and .github/workflows/keep-awake.yml stops it sleeping. The
+# committed snapshot is only used on the very first start. See DEPLOY.md.
 #
-# For a real restaurant, change `plan` to starter and uncomment the two blocks
-# at the bottom. Nothing else changes.
+# A paid disk (the two blocks at the bottom) is still an option; with it the
+# backup is simply a second copy.
 services:
   - type: web
     name: ordro

@@ -80,6 +80,16 @@ export function openStream(onEvent: (type: string, payload: any) => void): () =>
       onEvent(type, null)
     }
   }
+  // The stream drops whenever the server restarts — a deploy, or waking from
+  // sleep — and the browser reconnects on its own. A restart is exactly when
+  // the server may have forgotten this device's alerts, so say so and let the
+  // alert code put it back, rather than wait for somebody to reload a till
+  // that has been open all day.
+  let opened = false
+  source.addEventListener('open', () => {
+    if (opened) window.dispatchEvent(new Event('khapee:stream-reopened'))
+    opened = true
+  })
   source.addEventListener('order:new', handle('order:new'))
   source.addEventListener('order:update', handle('order:update'))
   return () => source?.close()

@@ -215,6 +215,59 @@ export function saveSubscription(
   return { ok: true }
 }
 
+/**
+ * Moves a device from the subscription its browser retired to the one that
+ * replaced it.
+ *
+ * Browsers renew a push subscription on their own schedule and tell only the
+ * service worker, never the page. Without this the server kept sending to the
+ * retired address, the push service answered 410, the row was deleted, and the
+ * phone went quiet until somebody next opened the app. The retired address is
+ * the proof: it is a secret only that phone ever knew. Whoever the device
+ * belonged to, and whatever it was set to ring for, carries over unchanged.
+ */
+export function renewSubscription(oldEndpoint: string, sub: Subscription): boolean {
+  const old = String(oldEndpoint ?? '').trim()
+  const endpoint = String(sub?.endpoint ?? '').trim()
+  const p256dh = String(sub?.keys?.p256dh ?? '').trim()
+  const auth = String(sub?.keys?.auth ?? '').trim()
+  if (!old || !endpoint || !p256dh || !auth) return false
+  if (old === endpoint) {
+    const same = db
+      .prepare('UPDATE push_subscriptions SET p256dh = ?, auth = ?, failures = 0 WHERE endpoint = ?')
+      .run(p256dh, auth, old).changes
+    const sameCustomer = db
+      .prepare('UPDATE customer_push SET p256dh = ?, auth = ?, failures = 0 WHERE endpoint = ?')
+      .run(p256dh, auth, old).changes
+    return same + sameCustomer > 0
+  }
+  return db.transaction(() => {
+    // The new address may already be on file — the app got there first on its
+    // own next open. Then the old row is simply the stale one.
+    const staff = db.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').get(old) as any
+    if (staff) {
+      db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint)
+      db.prepare('UPDATE push_subscriptions SET endpoint = ?, p256dh = ?, auth = ?, failures = 0 WHERE id = ?').run(
+        endpoint,
+        p256dh,
+        auth,
+        staff.id,
+      )
+    }
+    const customer = db.prepare('SELECT id FROM customer_push WHERE endpoint = ?').get(old) as any
+    if (customer) {
+      db.prepare('DELETE FROM customer_push WHERE endpoint = ?').run(endpoint)
+      db.prepare('UPDATE customer_push SET endpoint = ?, p256dh = ?, auth = ?, failures = 0 WHERE id = ?').run(
+        endpoint,
+        p256dh,
+        auth,
+        customer.id,
+      )
+    }
+    return !!staff || !!customer
+  })()
+}
+
 export function dropSubscription(endpoint: string): void {
   db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(String(endpoint ?? ''))
 }
@@ -342,7 +395,7 @@ export async function pushToCustomer(orderId: number, note: PushNote): Promise<n
         await webpush.sendNotification(
           { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
           payload,
-          { TTL: 60 * 60 },
+          { TTL: 60 * 60, urgency: 'high' },
         )
         sent++
       } catch (e: any) {
@@ -420,7 +473,11 @@ export async function pushToRestaurant(
         await webpush.sendNotification(
           { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
           payload,
-          { TTL: 60 * 30 },
+          // High urgency is what gets it through Android's battery saving. At
+          // the default, a phone lying idle on the counter is allowed to hold
+          // the message back until it next wakes for something else — minutes
+          // later, with the customer already at the counter asking.
+          { TTL: 60 * 30, urgency: 'high' },
         )
         sent++
         db.prepare("UPDATE push_subscriptions SET failures = 0, last_ok_at = datetime('now') WHERE id = ?").run(

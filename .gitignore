@@ -26,3 +26,6 @@ website/dist
 .vercel
 website-v2/node_modules
 website-v2/dist
+
+# Server settings for deploy/ — secrets, never committed.
+deploy/.env

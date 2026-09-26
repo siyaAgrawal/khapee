@@ -20,7 +20,7 @@ const SHELL = 'khapee-assets-v7'
  *
  * Raise it whenever the behaviour below changes.
  */
-const SW_VERSION = 8
+const SW_VERSION = 9
 
 self.addEventListener('message', (event) => {
   if (event.data === 'version') event.ports?.[0]?.postMessage(SW_VERSION)
@@ -108,8 +108,41 @@ self.addEventListener('push', (event) => {
       // orders looks like one.
       renotify: true,
       requireInteraction: true,
+      // Felt in an apron pocket, where a sound on a busy counter is not heard.
+      vibrate: [300, 120, 300, 120, 600],
       data: { url: note.url || '/staff/orders', wa: note.wa || '' },
     }),
+  )
+})
+
+/**
+ * The browser replaced this phone's subscription.
+ *
+ * Browsers renew push subscriptions on their own schedule and tell only the
+ * service worker. The server was still sending to the retired address, which
+ * the push service refused, so the phone went quiet until somebody next opened
+ * the app. Here the new one is sent straight away, with the retired one as
+ * proof it is the same phone. Where the browser hands over no replacement, a
+ * new subscription is made against the same key; permission is already given,
+ * so nobody is asked anything.
+ */
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    (async () => {
+      const old = event.oldSubscription || null
+      let sub = event.newSubscription || null
+      if (!sub) {
+        const key = old && old.options && old.options.applicationServerKey
+        if (!key) return
+        sub = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key })
+      }
+      if (!old || !old.endpoint) return // nothing to prove it with; the app repairs it on its next open
+      await fetch('/api/alerts/renew', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldEndpoint: old.endpoint, subscription: sub.toJSON() }),
+      })
+    })().catch(() => {}),
   )
 })
 

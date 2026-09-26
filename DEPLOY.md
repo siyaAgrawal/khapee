@@ -1,5 +1,10 @@
 # Putting Khapee online
 
+> **Moving to an always-on free server:** see [`deploy/README.md`](deploy/README.md).
+> Render's free plan sleeps and rebuilds the database on every wake and deploy,
+> which wipes the phones signed up for order alerts. The Oracle Always Free
+> setup there never sleeps and keeps its data.
+
 The app is one Node process: it serves the API and the built React app on a
 single port, and keeps its data in a SQLite file plus an uploads folder next to
 it. So it needs a host that gives you **a persistent disk and a long-running

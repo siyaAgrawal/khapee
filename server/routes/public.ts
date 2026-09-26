@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { db } from '../db.ts'
-import { pushConfigured, pushPublicKey, pushToRestaurant, saveSubscription } from '../push.ts'
+import { pushConfigured, pushPublicKey, pushToRestaurant, renewSubscription, saveSubscription } from '../push.ts'
 import { limitedNotice, limitedState, orderableNow } from '../limited.ts'
 import { thanksText, waAppLink, waNumber } from '../../shared/thanks.ts'
 import { normalizeCode } from '../ids.ts'
@@ -336,6 +336,17 @@ publicRouter.post('/alerts/registered', (req, res) => {
   if (!endpoint) return res.json({ registered: false })
   const row = db.prepare('SELECT 1 FROM push_subscriptions WHERE endpoint = ?').get(endpoint)
   res.json({ registered: !!row })
+})
+
+/**
+ * A browser replacing a phone's push subscription, reported by its service
+ * worker. The retired endpoint is the proof of ownership — see
+ * renewSubscription. Answers 200 either way, so it cannot be used to learn
+ * which endpoints are on file.
+ */
+publicRouter.post('/alerts/renew', (req, res) => {
+  const renewed = renewSubscription(String(req.body?.oldEndpoint ?? ''), req.body?.subscription)
+  res.json({ ok: true, renewed })
 })
 
 /** Not a real category row — the specials section is assembled per request. */

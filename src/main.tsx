@@ -20,6 +20,13 @@ void keepAlertsAlive()
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') void keepAlertsAlive()
 })
+// And while it stays open, which a till or a kitchen tablet does all day: when
+// the live stream comes back after the server restarted, when the network
+// returns, and every few minutes regardless, so a device the server forgot is
+// back on the list long before the next order.
+window.addEventListener('khapee:stream-reopened', () => void keepAlertsAlive())
+window.addEventListener('online', () => void keepAlertsAlive())
+setInterval(() => void keepAlertsAlive(), 5 * 60 * 1000)
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

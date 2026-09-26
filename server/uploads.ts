@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { UPLOAD_DIR } from './db.ts'
+import { BACKED_UP, db, UPLOAD_DIR } from './db.ts'
 
 const MIME_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -41,6 +41,9 @@ export function saveDataUrl(dataUrl: unknown): SaveResult {
 
   const file = `${crypto.randomBytes(10).toString('hex')}.${ext}`
   fs.writeFileSync(path.join(UPLOAD_DIR, file), buffer)
+  // The uploads folder does not survive a restart on the host; the database,
+  // being backed up, does. See upload_files in db.ts.
+  if (BACKED_UP) db.prepare('INSERT OR REPLACE INTO upload_files (name, data) VALUES (?, ?)').run(file, buffer)
   return { ok: true, file }
 }
 
@@ -48,6 +51,7 @@ export function saveDataUrl(dataUrl: unknown): SaveResult {
 export function deleteUpload(file: string | null | undefined) {
   if (!file) return
   const safe = path.basename(file)
+  if (BACKED_UP) db.prepare('DELETE FROM upload_files WHERE name = ?').run(safe)
   try {
     fs.unlinkSync(path.join(UPLOAD_DIR, safe))
   } catch {

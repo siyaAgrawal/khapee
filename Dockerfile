@@ -33,6 +33,9 @@ COPY --from=build /app/shared ./shared
 COPY --from=build /app/data/snapshot.db ./data/snapshot.db
 COPY --from=build /app/data/snapshot-uploads ./data/snapshot-uploads
 COPY --from=build /app/package.json ./package.json
+# How it starts, and the backup settings it starts with when BACKUP_BUCKET is set.
+COPY --from=build /app/scripts/start.sh /app/scripts/fetch-litestream.mjs ./scripts/
+COPY --from=build /app/litestream.yml ./litestream.yml
 COPY --from=build /app/tsconfig.json /app/tsconfig.server.json ./
 
 # The host injects PORT; server/index.ts honours it in production.

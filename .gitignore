@@ -26,3 +26,7 @@ website/dist
 .vercel
 website-v2/node_modules
 website-v2/dist
+
+# The live database when backups are on (scripts/start.sh) and the backup tool.
+data/live/
+bin/

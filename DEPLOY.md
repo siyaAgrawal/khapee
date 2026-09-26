@@ -11,7 +11,39 @@ npm run build && npm start
 
 That serves everything on `PORT` (default 4273). Verified working locally.
 
-## Oracle Cloud Always Free — the host to use
+## Render free + Backblaze B2 — keeping everything, free, no card
+
+Render's free plan has no disk, so every restart, sleep and deploy rebuilt the
+database from the snapshot: orders, access codes and every phone registered for
+order alerts were lost, and the next order rang nobody. Now the database is
+backed up continuously and put back on every start. Nothing in the app changed
+how it reads or writes; `npm start` runs `scripts/start.sh`, which:
+
+1. restores the latest copy from the B2 bucket (Litestream) if the disk is empty,
+2. starts the app under Litestream, which copies every change to the bucket
+   within about a second and makes a last copy when Render stops the app.
+
+Photos uploaded from the dashboard are stored in the database too
+(`upload_files`), so they come back with it.
+
+Set these under **Environment** on the Render service (see `render.yaml`):
+`BACKUP_BUCKET`, `BACKUP_ENDPOINT`, `BACKUP_REGION`, `BACKUP_KEY_ID`,
+`BACKUP_SECRET`. Without them the app runs exactly as before.
+
+If a backup exists but cannot be restored, the app refuses to start rather than
+start empty and back that up over the real data. Render retries it, and the
+reason is in the log (`[backup]` lines).
+
+**Kept awake** by `.github/workflows/keep-awake.yml`, which asks
+`/api/health` every 10 minutes from GitHub's free scheduler. GitHub pauses
+scheduled workflows in a repository with no commits for 60 days; re-enable it
+under Actions if that happens.
+
+Free limits worth knowing: B2 stores 10 GB free (the database is well under
+10 MB); Render gives 750 free hours a month, and one server kept awake uses
+about 744.
+
+## Oracle Cloud Always Free (needs a card to sign up)
 
 Render's free plan sleeps and rebuilds the database on every wake, which wipes
 every push subscription: an order placed after a quiet spell reaches no phone,

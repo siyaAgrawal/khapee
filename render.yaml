@@ -69,6 +69,32 @@ services:
       - key: KHAPEE_OWNER_EMAILS
         sync: false
 
+      # --- Keeping the data (free, no card) -----------------------------------
+      #
+      # This plan has no disk, so on every restart, sleep and deploy the
+      # database used to be rebuilt from the snapshot — and every order, access
+      # code and phone registered for order alerts went with it. With these set,
+      # scripts/start.sh restores the database from a Backblaze B2 bucket before
+      # the app starts, and Litestream copies every change back within a second.
+      # Unset, the app starts exactly as before. Set them under Environment on
+      # the service so the key never enters the repository. See DEPLOY.md.
+      #
+      #   BACKUP_BUCKET    the bucket's name
+      #   BACKUP_ENDPOINT  https://s3.<region>.backblazeb2.com
+      #   BACKUP_REGION    the <region> part, e.g. us-west-004
+      #   BACKUP_KEY_ID    the application key's keyID
+      #   BACKUP_SECRET    the application key itself
+      - key: BACKUP_BUCKET
+        sync: false
+      - key: BACKUP_ENDPOINT
+        sync: false
+      - key: BACKUP_REGION
+        sync: false
+      - key: BACKUP_KEY_ID
+        sync: false
+      - key: BACKUP_SECRET
+        sync: false
+
       # --- Order alerts (optional; add these in the Render dashboard) --------
       #
       # Both are off unless set, and the app runs exactly as before without

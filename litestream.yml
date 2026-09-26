@@ -1,0 +1,16 @@
+# Continuous backup of Khapee's database to S3-compatible storage (Backblaze B2).
+# Used only when BACKUP_BUCKET is set — see scripts/start.sh. Every value comes
+# from the environment, so no key is ever in this repository.
+dbs:
+  - path: ${KHAPEE_DB}
+    replica:
+      type: s3
+      bucket: ${BACKUP_BUCKET}
+      path: khapee
+      endpoint: ${BACKUP_ENDPOINT}
+      region: ${BACKUP_REGION}
+      access-key-id: ${BACKUP_KEY_ID}
+      secret-access-key: ${BACKUP_SECRET}
+      force-path-style: true
+      # Copy changes to the bucket every second.
+      sync-interval: 1s

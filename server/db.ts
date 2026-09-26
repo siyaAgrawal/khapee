@@ -92,6 +92,14 @@ if ((SEED_FROM_SNAPSHOT || FIRST_RUN) && !fs.existsSync(DB_PATH) && fs.existsSyn
 
 export const db = new Database(DB_PATH)
 db.pragma('journal_mode = WAL')
+/**
+ * Whether the database is being backed up continuously (scripts/start.sh).
+ *
+ * Litestream reads the database while the app writes to it, so a write may
+ * briefly wait for it rather than fail with "database is locked".
+ */
+export const BACKED_UP = !!process.env.BACKUP_BUCKET
+if (BACKED_UP) db.pragma('busy_timeout = 5000')
 db.pragma('foreign_keys = ON')
 
 db.exec(`
@@ -1093,6 +1101,32 @@ addColumn('order_items', 'kot_id', 'INTEGER')
 
 export const UPLOAD_DIR = SERVERLESS ? '/tmp/uploads' : path.join(path.dirname(DB_PATH), 'uploads')
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+
+/*
+ * Photos uploaded from the dashboard, kept in the database as well as on disk.
+ *
+ * Only when the database is backed up. The backup follows the database file,
+ * not the uploads folder beside it, and the host wipes that folder on every
+ * restart — so a photo that lived only there was gone by morning. The copy in
+ * here comes back with the database and is written back to disk on boot. The
+ * disk is still what serves them, so how an image reaches a phone is unchanged.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS upload_files (
+  name       TEXT PRIMARY KEY,
+  data       BLOB NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`)
+if (BACKED_UP) {
+  const onDisk = new Set(fs.readdirSync(UPLOAD_DIR))
+  const names = db.prepare('SELECT name FROM upload_files').all() as { name: string }[]
+  for (const { name } of names) {
+    if (onDisk.has(name)) continue
+    const row = db.prepare('SELECT data FROM upload_files WHERE name = ?').get(name) as any
+    if (row?.data) fs.writeFileSync(path.join(UPLOAD_DIR, path.basename(name)), row.data)
+  }
+}
 
 // The photos the snapshot's restaurants and dishes point at ship beside it, and
 // are laid down for the same reason the database is — once per cold start on a

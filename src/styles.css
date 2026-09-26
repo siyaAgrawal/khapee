@@ -4387,6 +4387,84 @@ textarea {
   max-width: 380px;
   line-height: 1.45;
 }
+.ledger-remove {
+  text-align: right;
+  white-space: nowrap;
+}
+.ledger-remove .btn {
+  color: var(--danger, #b3261e);
+}
+
+/* Order history on a phone: one card per order instead of an eight-column
+   table scrolled sideways, with the three things somebody is looking for —
+   the order number, when, and the number to ring — on the first two lines. */
+@media (max-width: 760px) {
+  .ledger-history thead {
+    display: none;
+  }
+  .ledger-history,
+  .ledger-history tbody {
+    display: block;
+  }
+  .ledger-history tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'order when'
+      'who   who'
+      'items items'
+      'place total'
+      'paid  remove';
+    gap: 4px 10px;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .ledger-history tr:last-child {
+    border-bottom: 0;
+  }
+  .ledger-history td {
+    display: block;
+    padding: 0;
+    border: 0;
+    max-width: none;
+  }
+  .ledger-history .ledger-order {
+    grid-area: order;
+    font-size: 15px;
+  }
+  .ledger-history .ledger-when {
+    grid-area: when;
+    text-align: right;
+  }
+  .ledger-history .ledger-when div {
+    display: inline;
+    margin-left: 6px;
+  }
+  .ledger-history .ledger-who {
+    grid-area: who;
+  }
+  .ledger-history .ledger-who .o-phone {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .ledger-history .ledger-items {
+    grid-area: items;
+  }
+  .ledger-history .ledger-place {
+    grid-area: place;
+    color: var(--muted);
+  }
+  .ledger-history .ledger-total {
+    grid-area: total;
+    text-align: right;
+  }
+  .ledger-history .ledger-paid {
+    grid-area: paid;
+  }
+  .ledger-history .ledger-remove {
+    grid-area: remove;
+  }
+}
 
 /* ------------------------------------------------------------- table service */
 .bill-due {
@@ -6372,6 +6450,9 @@ button.nav-link {
 /* Always present, never loud. The strip at the top of the page is conditional
    and every condition it has used has been wrong at least once; this is the
    one that cannot be. */
+.home-aka {
+  margin: 10px 0 0;
+}
 .home-foot {
   margin: 34px 0 10px;
   padding-top: 18px;

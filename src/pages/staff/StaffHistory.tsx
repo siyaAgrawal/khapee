@@ -38,11 +38,14 @@ const RANGES = [
   { days: 365, label: 'A year' },
 ]
 
-/** The date, written the way somebody asking about it would say it. */
+/** The date, written the way somebody asking about it would say it — with the
+    year once it is not this year's, so last Diwali is not mistaken for this. */
 function day(iso: string): string {
-  return new Date(String(iso).replace(' ', 'T') + 'Z').toLocaleDateString([], {
+  const d = new Date(String(iso).replace(' ', 'T') + 'Z')
+  return d.toLocaleDateString([], {
     day: 'numeric',
     month: 'short',
+    ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}),
   })
 }
 function at(iso: string): string {
@@ -59,6 +62,7 @@ export default function StaffHistory() {
   const [q, setQ] = useState('')
   const [days, setDays] = useState(7)
   const [shown, setShown] = useState(50)
+  const [busy, setBusy] = useState<number | 'all' | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -71,6 +75,64 @@ export default function StaffHistory() {
       toast((e as ApiError).message, 'bad')
     }
   }, [days, shown, q, toast])
+
+  /** One order out of the history, after saying which one. */
+  const removeOne = async (o: Row) => {
+    const who = [o.customerName, o.customerPhone].filter(Boolean).join(', ')
+    if (
+      !window.confirm(
+        `Remove order #${o.orderNumber}${who ? ` (${who})` : ''} from ${day(o.createdAt)}?` +
+          '\n\nThis cannot be undone. Its invoice, if any, is kept.',
+      )
+    ) {
+      return
+    }
+    setBusy(o.id)
+    try {
+      await api(`/staff/orders/${o.id}/remove`, { body: {} })
+      toast(`Removed order #${o.orderNumber}.`, 'good')
+      await load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /**
+   * All of it. Counted first and the count shown, including any orders still
+   * being made, because those go too — the same as Clear history on the board.
+   */
+  const removeAll = async () => {
+    setBusy('all')
+    try {
+      const look = await api<{ total: number; active: number }>('/staff/orders/clear', {
+        body: { dryRun: true },
+      })
+      if (!look.total) {
+        toast('There is no order history to clear.', 'info')
+        return
+      }
+      const warning = look.active
+        ? `\n\n${look.active} of them ${look.active === 1 ? 'is' : 'are'} still in progress and will be deleted too.`
+        : ''
+      if (
+        !window.confirm(
+          `Delete all ${look.total} order${look.total === 1 ? '' : 's'} for this restaurant — every date, not just the ones shown?${warning}` +
+            '\n\nThis cannot be undone. Invoices are kept.',
+        )
+      ) {
+        return
+      }
+      const r = await api<{ cleared: number }>('/staff/orders/clear', { body: {} })
+      toast(`Cleared ${r.cleared} order${r.cleared === 1 ? '' : 's'}.`, 'good')
+      await load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy(null)
+    }
+  }
 
   // Typing searches, but not on every keystroke — a query per letter across a
   // year of orders is work nobody asked for.
@@ -110,6 +172,9 @@ export default function StaffHistory() {
         <span className="tiny muted">
           {total} order{total === 1 ? '' : 's'}
         </span>
+        <button className="btn btn-ghost btn-sm" disabled={busy !== null} onClick={removeAll}>
+          {busy === 'all' ? 'Clearing…' : 'Clear history'}
+        </button>
       </div>
 
       {!rows ? (
@@ -127,7 +192,7 @@ export default function StaffHistory() {
       ) : (
         <>
           <div className="card ledger-wrap">
-            <table className="ledger">
+            <table className="ledger ledger-history">
               <thead>
                 <tr>
                   <th>When</th>
@@ -137,47 +202,60 @@ export default function StaffHistory() {
                   <th>What they had</th>
                   <th>Total</th>
                   <th>Paid</th>
+                  <th aria-label="Remove" />
                 </tr>
               </thead>
               <tbody>
                 {rows.map((o) => (
                   <tr key={o.id}>
-                    <td className="tiny">
+                    <td className="tiny ledger-when">
                       <strong>{day(o.createdAt)}</strong>
                       <div className="muted">{at(o.createdAt)}</div>
                     </td>
-                    <td>
+                    <td className="ledger-order">
                       <Link className="mono" to={`/staff/table/${o.id}`}>
                         #{o.orderNumber}
                       </Link>
                       {o.invoiceNumber && <div className="tiny muted mono">{o.invoiceNumber}</div>}
                     </td>
-                    <td>
+                    <td className="ledger-who">
                       {o.customerName || <span className="muted">—</span>}
                       {/* Tappable, because the reason anybody is on this
                           screen is usually that they need to ring them. */}
-                      {o.customerPhone && (
+                      {o.customerPhone ? (
                         <div className="tiny">
                           <a className="o-phone" href={`tel:${o.customerPhone.replace(/[^0-9+]/g, '')}`}>
-                            {o.customerPhone}
+                            📞 {o.customerPhone}
                           </a>
                         </div>
+                      ) : (
+                        <div className="tiny muted">No number</div>
                       )}
                     </td>
-                    <td className="tiny">{o.place}</td>
+                    <td className="tiny ledger-place">{o.place}</td>
                     <td className="ledger-items tiny">
                       {o.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
                     </td>
-                    <td>
+                    <td className="ledger-total">
                       <strong>{money(o.totalCents)}</strong>
                     </td>
-                    <td>
+                    <td className="ledger-paid">
                       <span className={`badge ${o.paymentStatus === 'PAID' ? 'badge-open' : 'badge-warn'}`}>
                         {o.paymentStatus === 'PAID' ? 'Paid' : 'Unpaid'}
                       </span>
                       {o.methods.length > 0 && (
                         <div className="tiny muted">{o.methods.join(' + ').toUpperCase()}</div>
                       )}
+                    </td>
+                    <td className="ledger-remove">
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={busy !== null}
+                        onClick={() => void removeOne(o)}
+                        aria-label={`Remove order ${o.orderNumber}`}
+                      >
+                        {busy === o.id ? 'Removing…' : 'Remove'}
+                      </button>
                     </td>
                   </tr>
                 ))}

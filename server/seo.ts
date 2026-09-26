@@ -16,6 +16,8 @@ import { imageUrl } from './uploads.ts'
 
 /** The product's name as a searcher would type it, alongside what it does. */
 const SITE_NAME = 'Khapee'
+/** How people type the name when they search for it. */
+export const ALSO_SPELT = ['Khapee.com', 'Khapi', 'Khape', 'Khapeee', 'Khappee', 'Khaapee']
 const TAGLINE = 'Order at the table, from your car, or to your door'
 
 export type PageMeta = { title: string; description: string; image?: string | null; canonical: string }
@@ -148,12 +150,31 @@ export function sitemapXml(origin: string): string {
 export function structuredData(pathname: string, origin: string): string | null {
   const m = pathname.match(/^\/r\/(\d+)/)
   if (!m) {
-    return JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: SITE_NAME,
-      url: origin + '/',
-    })
+    /*
+     * The name as people type it, not only as it is spelled. Khapee is said
+     * "khaa-pee" and typed every way that sound allows, and alternateName is
+     * how a search engine is told that those are this site too. The
+     * Organization carries the logo a result can show beside the name.
+     */
+    return JSON.stringify([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        alternateName: ALSO_SPELT,
+        url: origin + '/',
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: SITE_NAME,
+        alternateName: ALSO_SPELT,
+        url: origin + '/',
+        logo: origin + '/icon-512.png',
+        description: 'Ordering at restaurants and cafes in Indore — at the table, from your car, or delivered.',
+        areaServed: { '@type': 'City', name: 'Indore' },
+      },
+    ])
   }
   const r = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(Number(m[1])) as any
   if (!r) return null

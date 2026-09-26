@@ -1128,6 +1128,38 @@ CREATE TABLE IF NOT EXISTS upload_files (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 `)
+/*
+ * One-off changes to the live data, each applied exactly once.
+ *
+ * With the database backed up and restored on every start, the committed
+ * snapshot no longer reaches the live site, so a change to what is in the
+ * data (rather than to the code) has to be made here. Each one is recorded
+ * by name when it runs and never runs again, so an owner who changes the same
+ * thing afterwards in their dashboard is not overruled at the next restart.
+ * Live host only (BACKED_UP): tests and local copies keep their own data.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS data_fixes (
+  name       TEXT PRIMARY KEY,
+  applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`)
+function dataFix(name: string, apply: () => void) {
+  if (db.prepare('SELECT 1 FROM data_fixes WHERE name = ?').get(name)) return
+  db.transaction(() => {
+    apply()
+    db.prepare('INSERT INTO data_fixes (name) VALUES (?)').run(name)
+  })()
+  console.log(`[data] applied ${name}`)
+}
+if (BACKED_UP) {
+  // Only Revery is taking orders for now; every other place shows Closed
+  // until its owner opens it from the dashboard.
+  dataFix('2026-09-26-only-revery-open', () => {
+    db.prepare("UPDATE restaurants SET is_open = CASE WHEN slug = 'revery' THEN 1 ELSE 0 END").run()
+  })
+}
+
 if (BACKED_UP) {
   const onDisk = new Set(fs.readdirSync(UPLOAD_DIR))
   const names = db.prepare('SELECT name FROM upload_files').all() as { name: string }[]

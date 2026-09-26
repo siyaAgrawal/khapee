@@ -59,6 +59,20 @@ export default function Home() {
    * of the page.
    */
   const worksHere = !!(user?.restaurants?.length)
+  /**
+   * Whether this device has already said yes to notifications.
+   *
+   * A signed-in owner who has is never asked again: the app re-registers the
+   * device by itself on every open (keepAlertsAlive), so the line would only
+   * be asking them to do what is already being done for them.
+   */
+  const allowedHere = (() => {
+    try {
+      return typeof Notification !== 'undefined' && Notification.permission === 'granted'
+    } catch {
+      return false
+    }
+  })()
   /** Hidden for good once dismissed — it is for staff, and only needed once. */
   const [staffStripGone, setStaffStripGone] = useState(() => {
     try {
@@ -209,7 +223,7 @@ export default function Home() {
           code on this phone before — so they work somewhere — and whose alerts
           the server is not holding. Hiding it from them is hiding the only way
           back to the code, on the one phone that has stopped ringing. */}
-      {((worksHere && !staffStripGone) || halfDone) && !alertsOn && (
+      {((worksHere && !staffStripGone && !allowedHere) || halfDone) && !alertsOn && (
         <div className="staff-strip">
           <Link to="/alerts">
             <BellIcon size={14} />
@@ -430,6 +444,12 @@ export default function Home() {
             <BellIcon size={14} />
             Work here? Turn on order alerts
           </Link>
+          {/* Said in words a search engine can read, because the name is
+              typed every way it sounds. See ALSO_SPELT in server/seo.ts. */}
+          <p className="tiny muted home-aka">
+            Khapee — also searched as Khapi, Khape or Khapeee — is how Indore orders at the table,
+            from the car, or to the door.
+          </p>
         </footer>
       </main>
     </div>

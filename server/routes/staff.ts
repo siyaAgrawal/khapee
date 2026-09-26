@@ -120,6 +120,28 @@ staffRouter.post('/orders/clear', (req: any, res) => {
   res.json({ cleared: total, active })
 })
 
+/**
+ * Removing one order from the history.
+ *
+ * The same as clearing, for a single row: the order and everything about it
+ * goes, its invoice stays (ON DELETE SET NULL — a tax record is not tidied
+ * away with a screen). Only this restaurant's own orders.
+ */
+staffRouter.post('/orders/:id/remove', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const id = Number(req.params.id)
+  const row = db.prepare('SELECT restaurant_id, order_number FROM orders WHERE id = ?').get(id) as any
+  if (!row) return res.status(404).json({ error: 'That order is already gone.' })
+  if (row.restaurant_id !== restaurantId) {
+    return res.status(403).json({ error: 'That order belongs to another restaurant.' })
+  }
+  db.prepare('DELETE FROM orders WHERE id = ?').run(id)
+  audit(restaurantId, actorOf(req), 'order.remove', 'order', id, { orderNumber: row.order_number })
+  publish('orders', { restaurantId })
+  publish('ops', { restaurantId })
+  res.json({ removed: 1 })
+})
+
 /** Nothing left to cook: accepting would promise a plate with no food on it. */
 function nothingLeft(orderId: number): boolean {
   const row = db

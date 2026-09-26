@@ -1,0 +1,7 @@
+# HTTPS for the app. Caddy fetches and renews the certificate on its own once
+# the domain's DNS points at this server. The live order stream (SSE) is
+# passed through unbuffered, which Caddy does by default for event streams.
+{$KHAPEE_DOMAIN}, www.{$KHAPEE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:8000
+}

@@ -1,0 +1,55 @@
+# Khapee on one always-on server: the app, and Caddy in front of it for HTTPS.
+#
+# Unlike the free Render instance, this machine has a disk that survives
+# restarts and deploys, so the database — orders, menu edits, and the phones
+# signed up for order alerts — is never rebuilt from the snapshot after the
+# first boot. See deploy/README.md for putting it on a free Oracle server.
+#
+# Settings live in deploy/.env (copy .env.example), never in this file.
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: always
+    env_file: .env
+    environment:
+      PORT: '8000'
+      # On the persistent volume. The snapshot is copied here on first boot
+      # only; from then on this file is the live data and nothing replaces it.
+      KHAPEE_DB: /data/khapee.db
+    volumes:
+      - khapee-data:/data
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '5' }
+
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+
+volumes:
+  khapee-data:
+  caddy-data:
+  caddy-config:

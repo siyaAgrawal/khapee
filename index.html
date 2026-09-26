@@ -3,13 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <!-- The browser chrome takes the page's own colour: cream normally, the
-         night bed when the phone is in dark mode. -->
-    <!-- The brand purple in both, because the block at the top of the page is
-         that colour in both, and the phone's own bar sits directly above it. -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#682cc2" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#682cc2" />
+    <!-- One tag, rewritten by the theme switch. It carries the page's own top
+         colour — the header bar, not the purple block under it — because the
+         browser's chrome sits directly above that bar and nothing else. -->
+    <meta name="theme-color" content="#f7f6f3" />
     <title>Khapee — order at the table</title>
+
+    <script>
+      /*
+        Set the theme before the first pixel.
+
+        React mounting a moment later and adding the attribute then is a white
+        flash for anybody who chose dark, which is worse than either theme.
+        The phone's own preference is deliberately not read: a menu is looked
+        at in a lit restaurant more often than in bed, so light is the default
+        for everybody and dark is something you pick.
+      */
+      ;(function () {
+        try {
+          if (localStorage.getItem('khapee.theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark')
+            var m = document.querySelector('meta[name="theme-color"]')
+            if (m) m.setAttribute('content', '#0e0e0d')
+          }
+        } catch (e) {
+          /* a private window simply gets the light theme */
+        }
+      })()
+    </script>
 
     <!--
       Inter sets everything, and Archivo sets the one line that shouts.

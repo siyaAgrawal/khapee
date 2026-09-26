@@ -1,5 +1,8 @@
 /* ============================================================ design tokens */
 :root {
+  /* Light unless the switch in the header says otherwise. */
+  color-scheme: light;
+
   /*
    * Paper and ink, with the brand kept to the things you press.
    *
@@ -124,44 +127,53 @@
   --gutter: 22px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Near-black, not aubergine. The accents do the identifying; a dyed
-       surface at this size only makes the screen harder to sit in front of. */
-    --bg: #0e0e0d;
-    --bg-tint: #161615;
-    --surface: #171716;
-    --surface-2: #1d1d1b;
-    /* The text is the website's cream, which is the one place the warmth can
-       come back at night without dyeing a single panel to get it. */
-    --ink: #f4ede1;
-    --ink-2: #d3cdc2;
-    --muted: #918d85;
-    --line: rgba(244, 237, 225, 0.09);
-    --line-strong: rgba(244, 237, 225, 0.2);
+/*
+ * Night, chosen rather than inherited.
+ *
+ * This was @media (prefers-color-scheme: dark), which meant the app's
+ * appearance was whatever the phone happened to be set to and there was no
+ * way to disagree with it. It is an attribute now, set on <html> before the
+ * first paint, so the switch in the header can drive it — and so the default
+ * is light for everybody regardless of what their phone prefers, because a
+ * menu is read in a lit restaurant more often than it is read in bed.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  /* Near-black, not aubergine. The accents do the identifying; a dyed
+     surface at this size only makes the screen harder to sit in front of. */
+  --bg: #0e0e0d;
+  --bg-tint: #161615;
+  --surface: #171716;
+  --surface-2: #1d1d1b;
+  /* The text is the website's cream, which is the one place the warmth can
+     come back at night without dyeing a single panel to get it. */
+  --ink: #f4ede1;
+  --ink-2: #d3cdc2;
+  --muted: #918d85;
+  --line: rgba(244, 237, 225, 0.09);
+  --line-strong: rgba(244, 237, 225, 0.2);
 
-    /* The light-mode purple disappears into black, so it is lifted until it
-       carries near-black text instead of white. */
-    --accent: #b9a3e8;
-    --accent-ink: #14101f;
-    --accent-soft: #241d33;
-    --gold: #e3b45c;
-    --gold-soft: #2a2312;
+  /* The light-mode purple disappears into black, so it is lifted until it
+     carries near-black text instead of white. */
+  --accent: #b9a3e8;
+  --accent-ink: #14101f;
+  --accent-soft: #241d33;
+  --gold: #e3b45c;
+  --gold-soft: #2a2312;
 
-    --good: #6ecb9b;
-    --good-soft: #12281d;
-    --warn: #dfb469;
-    --warn-soft: #2a2312;
-    --bad: #ef8b80;
-    --bad-soft: #2e1815;
-    --info: #8fb0ce;
-    --info-soft: #14202b;
+  --good: #6ecb9b;
+  --good-soft: #12281d;
+  --warn: #dfb469;
+  --warn-soft: #2a2312;
+  --bad: #ef8b80;
+  --bad-soft: #2e1815;
+  --info: #8fb0ce;
+  --info-soft: #14202b;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
-    --shadow-lg: 0 28px 60px rgba(0, 0, 0, 0.68);
-    --shadow-accent: 0 10px 28px rgba(0, 0, 0, 0.5);
-  }
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 28px 60px rgba(0, 0, 0, 0.68);
+  --shadow-accent: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 
 /* ================================================================== base */
@@ -583,9 +595,20 @@ textarea {
 .brand {
   display: flex;
   align-items: baseline;
-  font-family: var(--display);
-  font-size: 24px;
-  font-weight: 800;
+  /*
+   * The loud face, at the loud weight, italic — the same cut as the line at
+   * the top of the home screen.
+   *
+   * Set in the plain interface face it was just the app's name typed out in
+   * bold, which is what "cheap" meant: every screen in the product used that
+   * face, so the one thing that is supposed to be the brand looked like a
+   * heading that had wandered into the header. Slanted and heavy it is a
+   * logotype, and it rhymes with "kuch khapee lo." two centimetres below it.
+   */
+  font-family: var(--shout);
+  font-style: italic;
+  font-size: 25px;
+  font-weight: 900;
   letter-spacing: -0.045em;
 }
 
@@ -887,12 +910,10 @@ textarea {
   z-index: 1;
   transition: transform 0.35s var(--ease);
 }
-@media (prefers-color-scheme: dark) {
-  .art {
-    /* Warm tile over a near-black page: kept dim so a menu of them reads as
-       one surface rather than a row of lit windows. */
-    background: hsl(var(--art-hue) 22% 26%);
-  }
+/* Warm tile over a near-black page: kept dim so a menu of them reads as one
+   surface rather than a row of lit windows. */
+:root[data-theme='dark'] .art {
+  background: hsl(var(--art-hue) 22% 26%);
 }
 
 .art-photo img {
@@ -953,10 +974,8 @@ textarea {
   place-items: center;
   background: rgba(255, 255, 255, 0.7);
 }
-@media (prefers-color-scheme: dark) {
-  .image-picker-busy {
-    background: rgba(0, 0, 0, 0.55);
-  }
+:root[data-theme='dark'] .image-picker-busy {
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .notice {
@@ -5922,12 +5941,10 @@ button.nav-link {
   color: #1f7a45;
   border: 1px dashed rgba(31, 157, 85, 0.55);
 }
-@media (prefers-color-scheme: dark) {
-  .badge-paid-upi {
-    background: rgba(74, 200, 128, 0.16);
-    color: #7fd7a4;
-    border-color: rgba(127, 215, 164, 0.5);
-  }
+:root[data-theme='dark'] .badge-paid-upi {
+  background: rgba(74, 200, 128, 0.16);
+  color: #7fd7a4;
+  border-color: rgba(127, 215, 164, 0.5);
 }
 
 /* Waiting on the restaurant to confirm a UPI payment.
@@ -6969,3 +6986,26 @@ button.nav-link {
 .takings-emoji { font-size: 16px; }
 
 .ledger tr.is-refund { opacity: 0.72; }
+
+/*
+  Light or dark, in the header.
+
+  It reads as one of the nav links rather than as a control bolted on, and it
+  shows the thing it will do rather than the thing you are looking at — which
+  is the only version of this switch nobody has to stop and think about.
+*/
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.theme-toggle:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}

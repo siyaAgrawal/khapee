@@ -48,7 +48,7 @@ const page = (size, { maskable = false } = {}) => {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@800&display=block"
+      href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@1,900&display=block"
       rel="stylesheet"
     />
     <style>
@@ -69,8 +69,10 @@ const page = (size, { maskable = false } = {}) => {
         overflow: hidden;
       }
       .word {
-        font-family: 'Inter', sans-serif;
-        font-weight: 800;
+        /* The same logotype the header carries: Archivo, 900, italic. */
+        font-family: 'Archivo', sans-serif;
+        font-style: italic;
+        font-weight: 900;
         /* Sized off the tile so every icon is the same picture, and off the
            padding so the maskable one simply sets the word smaller rather
            than being a different drawing. */

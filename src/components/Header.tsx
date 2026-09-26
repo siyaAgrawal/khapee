@@ -4,10 +4,12 @@ import { useSession } from '../lib/session'
 import { useCart } from '../lib/cart'
 import JoinRoom from './JoinRoom'
 import { useInstall } from '../lib/install'
-import { DownloadIcon } from './icons'
+import { useTheme } from '../lib/theme'
+import { DownloadIcon, MoonIcon, SunIcon } from './icons'
 
 export default function Header() {
   const { user, logout } = useSession()
+  const { theme, toggle } = useTheme()
   const { count } = useCart()
   const navigate = useNavigate()
   const [joining, setJoining] = useState(false)
@@ -40,9 +42,21 @@ export default function Header() {
       </Link>
       <div className="header-spacer" />
       <nav className="header-nav">
+        {/* Restaurants stays the first child: the phone breakpoint hides
+            whatever is first here, and it is the link it is meant to hide —
+            the wordmark beside it already goes home. */}
         <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Restaurants
         </NavLink>
+        {/* Named for what it will do, not for what you are looking at. */}
+        <button
+          className="nav-link theme-toggle"
+          onClick={toggle}
+          aria-label={theme === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme'}
+          title={theme === 'dark' ? 'Light' : 'Dark'}
+        >
+          {theme === 'dark' ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+        </button>
         <NavLink to="/orders" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Orders
         </NavLink>

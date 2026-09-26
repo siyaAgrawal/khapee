@@ -79,6 +79,23 @@ export function ArrowRightIcon(props: IconProps) {
   )
 }
 
+export function SunIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="8" cy="8" r="3.1" />
+      <path d="M8 1.4v1.5M8 13.1v1.5M1.4 8h1.5M13.1 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1" />
+    </Svg>
+  )
+}
+
+export function MoonIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M13.3 9.5A5.7 5.7 0 0 1 6.5 2.7a5.8 5.8 0 1 0 6.8 6.8Z" />
+    </Svg>
+  )
+}
+
 export function PeopleIcon(props: IconProps) {
   return (
     <Svg {...props}>

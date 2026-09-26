@@ -3792,6 +3792,74 @@ async function runTests() {
     const dropped = await call('/alerts/registered', { body: { endpoint: 'https://push.example/kept-two' } })
     ok('a phone the server has forgotten reads as off', dropped.body.registered === false, dropped.body)
 
+    // A browser renewing a phone's subscription tells only its service worker,
+    // which reports it here with the retired address as proof. The phone has
+    // to keep ringing for the same restaurant, at its new address, without
+    // anybody opening the app.
+    const renewKeys = { p256dh: 'BDpUB9' + 'r'.repeat(80), auth: 'rrrrrrrrrrrrrrrr' }
+    const before = new Database(DB_PATH)
+    const kept = before
+      .prepare("SELECT restaurant_id, wants_whatsapp FROM push_subscriptions WHERE endpoint = 'https://push.example/kept-one'")
+      .get() as any
+    before.close()
+    const renewed = await call('/alerts/renew', {
+      body: {
+        oldEndpoint: 'https://push.example/kept-one',
+        subscription: { endpoint: 'https://push.example/renewed-one', keys: renewKeys },
+      },
+    })
+    ok('a renewed subscription is taken', renewed.status === 200 && renewed.body.renewed === true, renewed.body)
+    ok(
+      'the new address is registered',
+      (await call('/alerts/registered', { body: { endpoint: 'https://push.example/renewed-one' } })).body.registered === true,
+    )
+    ok(
+      'and the retired one is not',
+      (await call('/alerts/registered', { body: { endpoint: 'https://push.example/kept-one' } })).body.registered === false,
+    )
+    const after = new Database(DB_PATH)
+    const moved = after
+      .prepare("SELECT restaurant_id, wants_whatsapp, p256dh, auth FROM push_subscriptions WHERE endpoint = 'https://push.example/renewed-one'")
+      .get() as any
+    after.close()
+    ok(
+      'it still rings for the same restaurant, with the same settings and the new keys',
+      !!moved &&
+        moved.restaurant_id === kept?.restaurant_id &&
+        moved.wants_whatsapp === kept?.wants_whatsapp &&
+        moved.p256dh === renewKeys.p256dh &&
+        moved.auth === renewKeys.auth,
+      { kept, moved },
+    )
+    const unknown = await call('/alerts/renew', {
+      body: {
+        oldEndpoint: 'https://push.example/never-seen',
+        subscription: { endpoint: 'https://push.example/sneaky', keys: renewKeys },
+      },
+    })
+    ok('an address nobody registered cannot be renewed into the list', unknown.status === 200 && unknown.body.renewed === false, unknown.body)
+    ok(
+      'so the stranger is not registered',
+      (await call('/alerts/registered', { body: { endpoint: 'https://push.example/sneaky' } })).body.registered === false,
+    )
+    const half = await call('/alerts/renew', {
+      body: { oldEndpoint: 'https://push.example/renewed-one', subscription: { endpoint: 'https://push.example/x' } },
+    })
+    ok('an incomplete renewal changes nothing', half.body.renewed === false &&
+      (await call('/alerts/registered', { body: { endpoint: 'https://push.example/renewed-one' } })).body.registered === true)
+    // The app can get there first on its own next open, leaving two rows for
+    // one phone; the renewal has to end with exactly one.
+    await call('/alerts/invite/KEEPME', {
+      body: { subscription: { endpoint: 'https://push.example/raced', keys: renewKeys } },
+    })
+    const raced = await call('/alerts/renew', {
+      body: { oldEndpoint: 'https://push.example/renewed-one', subscription: { endpoint: 'https://push.example/raced', keys: renewKeys } },
+    })
+    const count = new Database(DB_PATH)
+    const rows = (count.prepare("SELECT COUNT(*) AS n FROM push_subscriptions WHERE endpoint IN ('https://push.example/raced', 'https://push.example/renewed-one')").get() as any).n
+    count.close()
+    ok('a renewal the app already made leaves one row, not two', raced.body.renewed === true && rows === 1, { rows })
+
     // The WhatsApp step, testable on its own. Trying it used to mean a second
     // phone, a real order carrying a number, and an accept — and when nothing
     // happened there was no way to tell which of those had failed.

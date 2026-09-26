@@ -84,7 +84,16 @@ export function alertRestaurant(a: OrderAlert): void {
     body: summary(a),
     url: '/staff/orders',
     tag: `order-${a.orderNumber}`,
-  }).catch(() => {})
+  })
+    .then((r) => {
+      // In the host's log every time, because an alert that reached nobody
+      // looks exactly like a quiet evening until a customer says otherwise.
+      const where = `[alerts] order #${a.orderNumber} (restaurant ${a.restaurantId})`
+      if (!r.devices) console.warn(`${where}: no phone is signed up for alerts${r.why ? ` — ${r.why}` : ''}`)
+      else if (r.failed) console.warn(`${where}: rang ${r.sent} of ${r.devices} phones — ${r.why}`)
+      else console.log(`${where}: rang ${r.sent} phone${r.sent === 1 ? '' : 's'}`)
+    })
+    .catch((e) => console.warn(`[alerts] order #${a.orderNumber}: push threw`, e))
 
   if (!mailConfigured()) return
   const to = alertEmailFor(a.restaurantId)

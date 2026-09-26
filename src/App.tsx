@@ -47,6 +47,23 @@ import StaffHistory from './pages/staff/StaffHistory'
 import StaffTakings from './pages/staff/StaffTakings'
 import { MenuSection, OrdersSection, SettingsSection, TillSection } from './pages/staff/Sections'
 
+/**
+ * The first screen, which for somebody who runs a restaurant is its dashboard.
+ *
+ * Opening the installed app, or khapee.com with a session already saved, lands
+ * on / — and an owner opening Khapee is opening it to see orders. Only the
+ * first screen of a visit is sent on: following a link back to the restaurant
+ * list from inside the app still shows it.
+ */
+function Start() {
+  const { user, loading } = useSession()
+  const location = useLocation()
+  const firstScreen = location.key === 'default'
+  if (firstScreen && loading) return <LoadingBlock label="Opening Khapee…" />
+  if (firstScreen && user?.restaurants?.length && user.restaurantId) return <Navigate to="/staff" replace />
+  return <Home />
+}
+
 function StaffGate({ children }: { children: JSX.Element }) {
   const { user, loading } = useSession()
   const location = useLocation()
@@ -64,7 +81,7 @@ export default function App() {
     <>
       {intro && <Splash onDone={() => setIntro(false)} />}
       <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<Start />} />
       <Route path="/restaurants" element={<Navigate to="/" replace />} />
       <Route path="/r/:id" element={<Restaurant />} />
       <Route path="/t/:token" element={<TableEntry />} />

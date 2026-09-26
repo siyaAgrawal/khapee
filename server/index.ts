@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
+import { keepAwake } from './keep-awake.ts'
 import { authRouter } from './routes/auth.ts'
 import { publicRouter } from './routes/public.ts'
 import { ordersRouter } from './routes/orders.ts'
@@ -283,6 +284,7 @@ if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  ▲ Khapee API  →  http://localhost:${PORT}`)
     console.log(`    database   →  ${path.relative(process.cwd(), db.name)}`)
+    keepAwake()
 
     /*
      * The one misconfiguration that looks like a bug in the product.

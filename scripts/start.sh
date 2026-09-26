@@ -1,8 +1,8 @@
 #!/bin/sh
 # How Khapee starts in production (`npm start`).
 #
-# With BACKUP_BUCKET set, the database is backed up continuously to free object
-# storage (Backblaze B2) by Litestream and put back before the app starts. This
+# With BACKUP_BUCKET set, the database is backed up continuously to free
+# S3-compatible storage (Supabase Storage, or Backblaze B2) by Litestream and put back before the app starts. This
 # is what lets a host with no disk — Render's free plan — restart, sleep and
 # redeploy without losing a single order, access code or phone registered for
 # order alerts. Without it, the app starts exactly as it always has.

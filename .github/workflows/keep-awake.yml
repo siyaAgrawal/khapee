@@ -27,3 +27,10 @@ jobs:
           done
           echo "khapee.com did not answer after 3 tries"
           exit 1
+
+      # Supabase pauses a free project after a week without activity, and the
+      # database backup lives there — a paused bucket would stop the app from
+      # restoring on its next start. Fetching one tiny public file counts.
+      - name: Keep the Supabase backup project active
+        if: ${{ vars.SUPABASE_PING_URL != '' }}
+        run: curl -fsS --max-time 30 -o /dev/null "${{ vars.SUPABASE_PING_URL }}"

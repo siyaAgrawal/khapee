@@ -74,16 +74,18 @@ services:
       # This plan has no disk, so on every restart, sleep and deploy the
       # database used to be rebuilt from the snapshot — and every order, access
       # code and phone registered for order alerts went with it. With these set,
-      # scripts/start.sh restores the database from a Backblaze B2 bucket before
+      # scripts/start.sh restores the database from a storage bucket (Supabase
+      # Storage, or Backblaze B2 — both S3-compatible and free) before
       # the app starts, and Litestream copies every change back within a second.
       # Unset, the app starts exactly as before. Set them under Environment on
       # the service so the key never enters the repository. See DEPLOY.md.
       #
       #   BACKUP_BUCKET    the bucket's name
-      #   BACKUP_ENDPOINT  https://s3.<region>.backblazeb2.com
-      #   BACKUP_REGION    the <region> part, e.g. us-west-004
-      #   BACKUP_KEY_ID    the application key's keyID
-      #   BACKUP_SECRET    the application key itself
+      #   BACKUP_ENDPOINT  Supabase: https://<project-ref>.supabase.co/storage/v1/s3
+      #                    B2:       https://s3.<region>.backblazeb2.com
+      #   BACKUP_REGION    the project's / bucket's region, e.g. us-west-1
+      #   BACKUP_KEY_ID    the S3 access key ID
+      #   BACKUP_SECRET    the S3 secret access key
       - key: BACKUP_BUCKET
         sync: false
       - key: BACKUP_ENDPOINT

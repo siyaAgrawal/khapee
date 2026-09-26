@@ -11,7 +11,7 @@ npm run build && npm start
 
 That serves everything on `PORT` (default 4273). Verified working locally.
 
-## Render free + Backblaze B2 — keeping everything, free, no card
+## Render free + Supabase Storage — keeping everything, free, no card
 
 Render's free plan has no disk, so every restart, sleep and deploy rebuilt the
 database from the snapshot: orders, access codes and every phone registered for
@@ -19,12 +19,15 @@ order alerts were lost, and the next order rang nobody. Now the database is
 backed up continuously and put back on every start. Nothing in the app changed
 how it reads or writes; `npm start` runs `scripts/start.sh`, which:
 
-1. restores the latest copy from the B2 bucket (Litestream) if the disk is empty,
+1. restores the latest copy from the storage bucket (Litestream) if the disk is empty,
 2. starts the app under Litestream, which copies every change to the bucket
    within about a second and makes a last copy when Render stops the app.
 
 Photos uploaded from the dashboard are stored in the database too
 (`upload_files`), so they come back with it.
+
+The bucket is Supabase Storage through its S3 connection (Storage → Settings →
+S3 Connection). Backblaze B2 works the same way with its own endpoint.
 
 Set these under **Environment** on the Render service (see `render.yaml`):
 `BACKUP_BUCKET`, `BACKUP_ENDPOINT`, `BACKUP_REGION`, `BACKUP_KEY_ID`,
@@ -39,9 +42,14 @@ reason is in the log (`[backup]` lines).
 scheduled workflows in a repository with no commits for 60 days; re-enable it
 under Actions if that happens.
 
-Free limits worth knowing: B2 stores 10 GB free (the database is well under
-10 MB); Render gives 750 free hours a month, and one server kept awake uses
-about 744.
+The same workflow also fetches a tiny public file from Supabase every 10
+minutes (the `SUPABASE_PING_URL` repository variable), because Supabase pauses
+free projects after a week without activity — and a paused bucket would stop
+the app from restoring on its next start.
+
+Free limits worth knowing: Supabase stores 1 GB free (the database is well
+under 10 MB); Render gives 750 free hours a month, and one server kept awake
+uses about 744.
 
 ## Oracle Cloud Always Free (needs a card to sign up)
 

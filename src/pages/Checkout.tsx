@@ -65,6 +65,17 @@ export default function Checkout() {
   /** How the restaurant reaches this order. Not optional — see needsPhone. */
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [note, setNote] = useState('')
+  /**
+   * How long until they get to the restaurant, for an order placed before
+   * setting off. Zero means as soon as it is ready.
+   *
+   * Asked only on the collect-later path. It used to be asked of everybody,
+   * including people already sitting at a table, where the question is
+   * meaningless — which is why it came off the checkout. Here it is the whole
+   * point: the kitchen cannot time an order for somebody who is twenty
+   * minutes away without being told that they are.
+   */
+  const [arriveIn, setArriveIn] = useState(0)
   const [payNow, setPayNow] = useState(false)
   const [options, setOptions] = useState<any>(null)
 
@@ -279,6 +290,8 @@ export default function Checkout() {
           tableToken: where === 'here' ? (scannedTable?.tableToken ?? null) : null,
           sessionToken: withSession ?? dining?.token ?? null,
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
+          // Only meaningful for an order placed before setting off.
+          wantInMinutes: where === 'later' ? arriveIn : 0,
         },
       })
       const order = r.order
@@ -397,6 +410,43 @@ export default function Checkout() {
               </button>
             )}
           </div>
+        )}
+
+        {/*
+          Ordering before setting off: when will you be here?
+
+          The kitchen's only real problem with an order from somebody who is
+          not in the building is timing it, and this is the only screen where
+          the customer knows the answer. Shown on this path alone — at a table
+          it is a meaningless question, which is why it is no longer asked
+          there.
+        */}
+        {where === 'later' && !placeDecided && (
+          <section className="card card-pad arrive-panel">
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>When will you get there?</label>
+              <div className="arrive-row" role="group" aria-label="When will you get there?">
+                {ARRIVE_CHOICES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`arrive-btn ${arriveIn === m ? 'active' : ''}`}
+                    aria-pressed={arriveIn === m}
+                    onClick={() => setArriveIn(m)}
+                  >
+                    <strong>{m === 0 ? 'Straight there' : `In ${m} min`}</strong>
+                    <em>{m === 0 ? 'Start it now' : clockIn(m)}</em>
+                  </button>
+                ))}
+              </div>
+              <p className="tiny muted" style={{ margin: '9px 0 0' }}>
+                {arriveIn === 0
+                  ? 'They will start it now and hold it for you.'
+                  : `They will have it ready for ${clockIn(arriveIn)}, so it is fresh when you walk in.`}{' '}
+                You choose takeaway or a table when you arrive.
+              </p>
+            </div>
+          </section>
         )}
 
         {!placeDecided && needsPresence && !hasPresence && (
@@ -750,3 +800,19 @@ export default function Checkout() {
   )
 }
 
+/**
+ * How long until they get there.
+ *
+ * Four answers, because in practice there are four: leaving now, a short
+ * walk, a drive across town, and later than that. A time picker for a
+ * question with four real answers is a keyboard nobody needed.
+ */
+const ARRIVE_CHOICES = [0, 15, 30, 45] as const
+
+/** The clock time that many minutes from now, which is what people plan by. */
+function clockIn(minutes: number): string {
+  return new Date(Date.now() + minutes * 60_000).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}

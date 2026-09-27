@@ -293,6 +293,37 @@ export default function OrderTrack() {
     }
   }
 
+  /*
+   * Whether there is an arrival to announce.
+   *
+   * Only for an order placed before setting off — a table order is placed by
+   * somebody already sitting at one — and only once the kitchen has agreed to
+   * make it, because announcing yourself for an order nobody has accepted
+   * tells a counter about somebody they cannot serve.
+   */
+  const canArrive =
+    (order.serviceType === 'pickup' || order.type === 'pickup') &&
+    accepted &&
+    !order.arrivedAt &&
+    !done &&
+    !cancelled &&
+    order.status !== 'DECLINED'
+
+  const arrive = async (choice: 'takeaway' | 'dine_in') => {
+    setBusy(choice)
+    try {
+      const r = await api<{ order: any }>(`/orders/${order.orderNumber}/arrived`, {
+        body: { token: receiptToken(order.orderNumber), choice },
+      })
+      setOrder(r.order)
+      toast(choice === 'dine_in' ? 'They know — find a seat.' : 'They know — it will be bagged up.', 'good')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
   const canFollow = pushSupported() && !!followKey?.available && !done && !cancelled
 
   return (
@@ -350,6 +381,52 @@ export default function OrderTrack() {
               Order somewhere else
             </Link>
           </div>
+        </div>
+      )}
+
+      {/*
+        Arriving, for somebody who ordered before setting off.
+
+        Two things in one tap, because to the person holding the phone they
+        are one thing: the counter is told they are in the building, and they
+        say whether they are taking it with them or sitting down. That choice
+        belongs here and not at checkout — nobody twenty minutes away knows
+        whether there will be a free table.
+      */}
+      {canArrive && (
+        <div className="arrived-ask" role="group" aria-label="Let them know you are here">
+          <div>
+            <strong>Are you at {order.restaurantName}?</strong>
+            <p className="tiny">
+              Tell them you&rsquo;re here and how you want it. They&rsquo;ll bring it to you either way.
+            </p>
+          </div>
+          <div className="arrived-acts">
+            <button className="btn btn-accent" disabled={busy !== ''} onClick={() => void arrive('takeaway')}>
+              {busy === 'takeaway' ? <Spinner /> : '🥡 Taking it away'}
+            </button>
+            <button className="btn btn-secondary" disabled={busy !== ''} onClick={() => void arrive('dine_in')}>
+              {busy === 'dine_in' ? <Spinner /> : '🍽️ Eating in'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Said back, so nobody taps it twice wondering whether it went. */}
+      {order.arrivedAt && !done && !cancelled && (
+        <div className="arrived-done" role="status">
+          <span aria-hidden>✓</span>
+          <span>
+            {order.restaurantName} knows you&rsquo;re here —{' '}
+            <strong>
+              {order.arrivalChoice === 'dine_in'
+                ? order.tableLabel
+                  ? `eating in at ${order.tableLabel}`
+                  : 'eating in'
+                : 'taking it away'}
+            </strong>
+            .
+          </span>
         </div>
       )}
 

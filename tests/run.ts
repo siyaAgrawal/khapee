@@ -4553,6 +4553,100 @@ async function runTests() {
     ok("another restaurant's history does not contain her", theirs.body.rows.length === 0, theirs.body.total)
   }
 
+  group('ORDER BEFORE YOU SET OFF, DECIDE WHEN YOU GET THERE')
+  {
+    // The whole journey for somebody at home who fancies a coffee from a cafe
+    // twenty minutes away: order now, say when you will be there, travel, and
+    // only on the doorstep decide whether you are taking it with you or
+    // sitting down — which is the first moment you can see whether there is a
+    // free table.
+    const ahead = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'On my way',
+        contactPhone: '9876515151',
+        wantInMinutes: 30,
+      },
+    })
+    ok('an order placed before setting off', ahead.status === 201, ahead.body)
+    const num = ahead.body.order.orderNumber
+    const tok = ahead.body.order.verifyToken
+    ok('carries when they will get there', !!ahead.body.order.wantedAt, ahead.body.order.wantedAt)
+    ok('and nobody has arrived yet', !ahead.body.order.arrivedAt, ahead.body.order.arrivedAt)
+
+    // Announcing yourself for an order nobody has accepted tells a counter
+    // about somebody they cannot serve.
+    const tooEarly = await call(`/orders/${num}/arrived`, { body: { token: tok, choice: 'takeaway' } })
+    ok('you cannot arrive before they have accepted it', tooEarly.status === 409, tooEarly.body)
+    ok('and are told why', /accepted/i.test(String(tooEarly.body.error)), tooEarly.body.error)
+
+    await call(`/staff/orders/${ahead.body.order.id}/status`, { token: roadToken, body: { status: 'ACCEPTED' } })
+
+    const stranger = await call(`/orders/${num}/arrived`, { body: { token: 'nope', choice: 'takeaway' } })
+    ok('a stranger cannot arrive for you', stranger.status === 403, stranger.status)
+
+    // --- Taking it away ---
+    const away = await call(`/orders/${num}/arrived`, { body: { token: tok, choice: 'takeaway' } })
+    ok('arriving works once accepted', away.status === 200, away.body)
+    ok('and is recorded', !!away.body.order.arrivedAt, away.body.order.arrivedAt)
+    ok('as taking it away', away.body.order.arrivalChoice === 'takeaway', away.body.order.arrivalChoice)
+
+    const board = await call('/staff/orders?scope=all', { token: roadToken })
+    const seen = board.body.orders.find((o: any) => o.orderNumber === num)
+    ok('the counter sees they are here', !!seen.arrivedAt, seen.arrivedAt)
+    ok('and what they want', seen.arrivalChoice === 'takeaway', seen.arrivalChoice)
+
+    // --- Or sitting down, on a different order ---
+    const second = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Think I will sit',
+        contactPhone: '9876516161',
+        wantInMinutes: 15,
+      },
+    })
+    await call(`/staff/orders/${second.body.order.id}/status`, { token: roadToken, body: { status: 'ACCEPTED' } })
+
+    const tables = await call(`/orders/tables/${mornington.id}`)
+    const table = tables.body.tables[0]
+    const sit = await call(`/orders/${second.body.order.orderNumber}/arrived`, {
+      body: { token: second.body.order.verifyToken, choice: 'dine_in', tableId: table.id },
+    })
+    ok('or they can decide to sit down instead', sit.status === 200, sit.body)
+    ok('which puts them at a table', sit.body.order.tableLabel === table.label, sit.body.order.tableLabel)
+    // A collection that becomes a meal has to be sent to the table, not left
+    // on the pass with a name on it.
+    ok('and turns the order into a table order', sit.body.order.serviceMode === 'dine_in', sit.body.order.serviceMode)
+
+    const notMine = await call(`/orders/${second.body.order.orderNumber}/arrived`, {
+      body: { token: second.body.order.verifyToken, choice: 'dine_in', tableId: 999999 },
+    })
+    ok('a table at another restaurant is refused', notMine.status === 400, notMine.status)
+
+    // Sitting down without naming a table still has to work: plenty of cafes
+    // seat people themselves, and refusing the arrival would refuse the one
+    // message that matters.
+    const third = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Seat me',
+        contactPhone: '9876517171',
+      },
+    })
+    await call(`/staff/orders/${third.body.order.id}/status`, { token: roadToken, body: { status: 'ACCEPTED' } })
+    const noTable = await call(`/orders/${third.body.order.orderNumber}/arrived`, {
+      body: { token: third.body.order.verifyToken, choice: 'dine_in' },
+    })
+    ok('eating in without picking a table is allowed', noTable.status === 200, noTable.body)
+    ok('and still says they are here', !!noTable.body.order.arrivedAt, noTable.body.order.arrivedAt)
+  }
+
   group('TURNED DOWN — the customer is told, and told why')
   {
     // Reported from a real counter: the kitchen declined an order and the

@@ -6831,6 +6831,78 @@ button.nav-link {
   white-space: nowrap;
 }
 
+/* They ordered ahead and are now in the room. The loudest thing on a ticket:
+   until they arrive nothing can be handed over, and the moment they do,
+   everything can. */
+.has-arrived {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* Ordering before setting off: when will you be there. */
+.arrive-panel { margin-bottom: 14px; }
+.arrive-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+.arrive-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-height: 56px;
+}
+.arrive-btn.active { border-color: var(--accent); background: var(--bg-tint); }
+.arrive-btn strong { font-size: 13.5px; font-weight: 650; line-height: 1.2; }
+.arrive-btn em { font-style: normal; font-size: 12px; color: var(--muted); }
+.arrive-btn.active em { color: var(--ink); }
+
+/* And arriving: one tap that both announces you and says how you want it. */
+.arrived-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 auto 16px;
+  max-width: 560px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.arrived-ask strong { font-size: 15px; }
+.arrived-ask p { margin: 4px 0 0; }
+.arrived-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.arrived-acts > .btn { flex: 1 1 auto; min-height: 46px; }
+.arrived-done {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 auto 16px;
+  max-width: 560px;
+  padding: 11px 15px;
+  border-radius: var(--r-md);
+  background: var(--good-soft);
+  border: 1px solid var(--good);
+  color: var(--ink);
+  font-size: 14px;
+}
+
 /* The restaurant cannot take the order at all. Said first, and loudly. */
 .declined {
   display: flex;

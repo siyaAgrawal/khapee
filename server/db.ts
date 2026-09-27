@@ -461,6 +461,25 @@ addColumn('restaurants', 'codes_enabled', 'INTEGER NOT NULL DEFAULT 1')
 addColumn('restaurants', 'car_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
 
 /**
+ * Ordering before you set off, and deciding on arrival.
+ * ---------------------------------------------------------------------------
+ * Somebody at home orders a coffee and a sandwich from a cafe twenty minutes
+ * away. The kitchen's problem is knowing when to start it; the customer's
+ * problem is that they have not yet decided whether they are taking it with
+ * them or sitting down with it, and will not decide until they are standing
+ * in the doorway looking at whether there is a free table.
+ *
+ * Forcing that choice at checkout got it wrong half the time, and a wrong
+ * answer is a cup in a paper bag for somebody who wanted to sit, or a tray
+ * for somebody in a hurry. So the order carries no answer until they arrive
+ * and give one — which is also the moment the counter most wants to hear
+ * from them.
+ */
+addColumn('orders', 'arrived_at', 'TEXT')
+/** What they chose on the doorstep: 'takeaway' or 'dine_in'. */
+addColumn('orders', 'arrival_choice', 'TEXT')
+
+/**
  * What a sign-in is tied to, instead of the password itself.
  *
  * A session token was signed over the account's password hash, so that

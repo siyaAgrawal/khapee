@@ -9,6 +9,7 @@ import { sessionByToken } from '../dining.ts'
 import { money } from '../../shared/orders.ts'
 import { pushOrder } from '../petpooja.ts'
 import { limitedState } from '../limited.ts'
+import { pushToRestaurant } from '../push.ts'
 import { publish } from '../events.ts'
 
 export const ordersRouter = Router()
@@ -279,6 +280,82 @@ ordersRouter.post('/:orderNumber/cancel', (req, res) => {
   db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'CANCELLED', 'customer')").run(row.id)
   publish('order:update', { restaurantId: row.restaurant_id, orderId: row.id, order: getOrder(row.id) })
   res.json({ order: getOrder(row.id) })
+})
+
+/**
+ * "I'm here."
+ *
+ * The last step of ordering before you set off, and the one the counter most
+ * wants to hear. Two things happen at once, because for the customer they are
+ * one thing: the restaurant is told the person is in the building, and the
+ * person says whether they are taking it with them or sitting down.
+ *
+ * That choice is deliberately made here rather than at checkout. Nobody
+ * standing in their own kitchen twenty minutes away knows whether there will
+ * be a free table when they arrive, and forcing a guess gets it wrong often
+ * enough to matter: a cup in a paper bag for somebody who wanted to sit down,
+ * or a tray for somebody already late.
+ *
+ * Only after the kitchen has agreed to make it. Announcing yourself for an
+ * order nobody has accepted tells a counter about somebody they cannot serve.
+ */
+ordersRouter.post('/:orderNumber/arrived', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db.prepare('SELECT * FROM orders WHERE order_number = ?').get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+
+  if (['CANCELLED', 'DECLINED'].includes(row.status)) {
+    return res.status(409).json({ error: 'This order is not going ahead.' })
+  }
+  if (row.status === 'REQUESTED' || row.status === 'NEW') {
+    return res.status(409).json({
+      error: 'They have not accepted this order yet. You will see a tick here the moment they do.',
+    })
+  }
+
+  const choice = String(req.body?.choice ?? '') === 'dine_in' ? 'dine_in' : 'takeaway'
+
+  /*
+   * Sitting down turns a collection into a table order, so the kitchen sends
+   * the food to a table rather than leaving it on the pass with a name on it.
+   * A table is optional: plenty of cafes seat people themselves, and refusing
+   * the arrival for want of a table number would be refusing the one message
+   * that matters.
+   */
+  let tableId: number | null = null
+  let tableLabel: string | null = null
+  if (choice === 'dine_in' && req.body?.tableId) {
+    const table = db
+      .prepare('SELECT id, label FROM restaurant_tables WHERE id = ? AND restaurant_id = ?')
+      .get(Number(req.body.tableId), row.restaurant_id) as any
+    if (!table) return res.status(400).json({ error: 'That table is not at this restaurant.' })
+    tableId = table.id
+    tableLabel = table.label
+  }
+
+  db.prepare(
+    `UPDATE orders
+        SET arrived_at = datetime('now'), arrival_choice = ?,
+            table_id = COALESCE(?, table_id), table_label = COALESCE(?, table_label),
+            service_mode = ?, takeaway = ?, updated_at = datetime('now')
+      WHERE id = ?`,
+  ).run(choice, tableId, tableLabel, choice === 'dine_in' ? 'dine_in' : 'takeaway', choice === 'dine_in' ? 0 : 1, row.id)
+
+  const order = getOrder(row.id)
+  publish('order:update', { restaurantId: row.restaurant_id, userId: row.user_id, orderId: row.id, order })
+  publish('orders', { restaurantId: row.restaurant_id })
+
+  // And on the counter's phone, because this is news whether or not anybody
+  // is looking at the board.
+  void pushToRestaurant(row.restaurant_id, {
+    title: `${row.customer_name || 'A customer'} has arrived`,
+    body: `#${row.order_number} · ${choice === 'dine_in' ? (tableLabel ? `eating in · ${tableLabel}` : 'eating in') : 'taking it away'}`,
+    url: '/staff/orders',
+    tag: `arrived-${row.id}`,
+  }).catch(() => {})
+
+  res.json({ order })
 })
 
 /**

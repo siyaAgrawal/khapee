@@ -729,6 +729,12 @@ export function shapeOrder(row: any) {
     declinedItems: row.declined_items ?? '',
     /** Set when the customer agreed to go ahead without the refused dishes. */
     customerOkAt: row.customer_ok_at ?? null,
+    /**
+     * When somebody who ordered ahead actually turned up, and what they
+     * decided to do about it. Null until they say so from their own phone.
+     */
+    arrivedAt: row.arrived_at ?? null,
+    arrivalChoice: (row.arrival_choice ?? null) as 'takeaway' | 'dine_in' | null,
     /** If this one went unanswered and was sent again, the new number. */
     resentAs: row.resent_as ?? null,
     customerName: row.customer_name,

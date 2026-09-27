@@ -822,6 +822,22 @@ export default function StaffOrders() {
                               has answered yet", which is the one thing they
                               needed to know.
                             */}
+                            {/*
+                              Somebody who ordered ahead is now standing in
+                              the room. The loudest thing on the ticket,
+                              because until they arrive nothing can be handed
+                              over, and the moment they do, everything can.
+                            */}
+                            {o.arrivedAt && (
+                              <span className="has-arrived">
+                                HERE ·{' '}
+                                {o.arrivalChoice === 'dine_in'
+                                  ? o.tableLabel
+                                    ? `eating in · ${o.tableLabel}`
+                                    : 'eating in'
+                                  : 'takeaway'}
+                              </span>
+                            )}
                             {!o.needsCustomerOk && o.customerOkAt && (
                               <span
                                 className="customer-said-yes"

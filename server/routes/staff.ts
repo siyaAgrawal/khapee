@@ -4,7 +4,7 @@ import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
 import { publish } from '../events.ts'
 import { applyStatus } from '../order-status.ts'
-import { acceptRemainingItems, createOrder, decideItem, getOrder, shapeOrder } from '../orders-service.ts'
+import { acceptRemainingItems, askForPrepay, createOrder, decideItem, getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
 import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
@@ -140,6 +140,26 @@ staffRouter.post('/orders/:id/remove', (req: any, res) => {
   publish('orders', { restaurantId })
   publish('ops', { restaurantId })
   res.json({ removed: 1 })
+})
+
+/**
+ * "Prepaid only" on a car order — the kitchen's other answer besides Accept.
+ * The customer is asked to pay online or cancel; see askForPrepay.
+ */
+staffRouter.post('/orders/:id/prepay', (req: any, res) => {
+  const restaurantId = myRestaurant(req)
+  const id = Number(req.params.id)
+  const row = db.prepare('SELECT restaurant_id FROM orders WHERE id = ?').get(id) as any
+  if (!row) return res.status(404).json({ error: 'Order not found.' })
+  if (row.restaurant_id !== restaurantId) {
+    return res.status(403).json({ error: 'That order belongs to another restaurant.' })
+  }
+  const r = askForPrepay(id)
+  if (!r.ok) return res.status(r.status ?? 400).json({ error: r.error })
+  audit(restaurantId, actorOf(req), 'order.prepay', 'order', id, {})
+  publish('order:update', { restaurantId, orderId: id, order: r.order })
+  publish('orders', { restaurantId })
+  res.json({ order: r.order })
 })
 
 /** Nothing left to cook: accepting would promise a plate with no food on it. */

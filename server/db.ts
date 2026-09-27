@@ -415,6 +415,8 @@ addColumn('menu_categories', 'limited_ok', 'INTEGER NOT NULL DEFAULT 0')
  * one who is not in the building.
  */
 addColumn('orders', 'needs_customer_ok', 'TEXT')
+// The kitchen asking for payment up front on a car order — see askForPrepay.
+addColumn('orders', 'needs_prepay', 'TEXT')
 /** What they are being asked about, so the question survives a page reload. */
 addColumn('orders', 'declined_items', "TEXT NOT NULL DEFAULT ''")
 /**

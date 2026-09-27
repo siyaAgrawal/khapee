@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Header from '../components/Header'
+import PayPanel from '../components/PayPanel'
 import { api, ApiError, openStream } from '../lib/api'
 import { Art, ErrorState, LoadingBlock, Spinner, clockTime, money } from '../components/ui'
 import { QRCanvas } from '../lib/qr'
@@ -63,6 +64,8 @@ export default function OrderTrack() {
   const [celebrate, setCelebrate] = useState<'accepted' | 'paid' | null>(null)
   /** Which of the two answers on this page is in flight. */
   const [busy, setBusy] = useState('')
+  /** The UPI request, once the customer has chosen to pay a prepay-only order online. */
+  const [payReq, setPayReq] = useState<any>(null)
   /**
    * Two minutes with no answer.
    *
@@ -242,6 +245,7 @@ export default function OrderTrack() {
   const noAnswer =
     (order.status === 'REQUESTED' || order.status === 'NEW') &&
     !order.needsCustomerOk &&
+    !order.needsPrepay &&
     Number.isFinite(placedAt) &&
     now - placedAt > 120_000
 
@@ -253,6 +257,40 @@ export default function OrderTrack() {
       })
       setOrder(r.order)
       toast('Thanks — they can carry on.', 'good')
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  /**
+   * The kitchen asked for this car order to be paid online first. Opening the
+   * UPI request is the first tap; the reference from their UPI app is the
+   * second, and sends the order back to the kitchen marked paid.
+   */
+  const openPrepay = async () => {
+    setBusy('prepay')
+    try {
+      const r = await api<any>(`/orders/${order.orderNumber}/payment-request`, {
+        body: { token: receiptToken(order.orderNumber) },
+      })
+      setPayReq(r)
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusy('')
+    }
+  }
+  const sendPrepay = async (upiRef: string) => {
+    setBusy('prepay')
+    try {
+      const r = await api<{ order: any }>(`/orders/${order.orderNumber}/pay`, {
+        body: { token: receiptToken(order.orderNumber), upiRef },
+      })
+      setOrder(r.order)
+      setPayReq(null)
+      toast(`Paid — ${order.restaurantName} has your order.`, 'good')
     } catch (e) {
       toast((e as ApiError).message, 'bad')
     } finally {
@@ -457,7 +495,40 @@ export default function OrderTrack() {
         </div>
       )}
 
-      {!accepted && !cancelled && order.status !== 'DECLINED' && !order.needsCustomerOk && (
+      {/* The money version of a refused dish: this car order can go ahead only
+          if it is paid for online. Pay, or call it off — nothing else. */}
+      {order.needsPrepay && !cancelled && order.paymentState === 'unpaid' && (
+        <div className="decided" role="alert">
+          <div>
+            <strong>{order.restaurantName} is only taking online payment for this order right now</strong>
+            <p className="tiny">
+              Pay {money(order.totalCents)} by UPI and your order goes straight to the kitchen — or cancel it.
+            </p>
+          </div>
+          {payReq ? (
+            <PayPanel
+              amountCents={payReq.amountCents}
+              upiLink={payReq.upiLink}
+              payeeName={payReq.payeeName}
+              vpa={payReq.vpa}
+              busy={busy === 'prepay'}
+              onPaid={(upiRef) => void sendPrepay(upiRef)}
+              onCancel={() => setPayReq(null)}
+            />
+          ) : (
+            <div className="decided-acts">
+              <button className="btn btn-accent" disabled={busy !== ''} onClick={() => void openPrepay()}>
+                {busy === 'prepay' ? <Spinner /> : 'Pay online (UPI)'}
+              </button>
+              <button className="btn btn-ghost" disabled={busy !== ''} onClick={callOff}>
+                Cancel order
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!accepted && !cancelled && order.status !== 'DECLINED' && !order.needsCustomerOk && !order.needsPrepay && (
         <div className="paying" role="status" aria-live="polite">
           <span className="paying-spin" aria-hidden />
           <div>
@@ -498,7 +569,17 @@ export default function OrderTrack() {
       <main className="page page-narrow">
         <div className="card receipt">
           <span className={`badge ${order.type === 'pickup' ? 'badge-info' : 'badge-accent'}`}>
-            {order.type === 'pickup' ? 'Pickup order' : `Dine in · ${order.tableLabel}`}
+            {/* Where it is going, in the words the board uses. This only knew
+                pickup or a table, so a car order read "Dine in · null". */}
+            {order.type === 'pickup'
+              ? 'Pickup order'
+              : order.serviceMode && order.serviceMode !== 'dine_in'
+                ? order.serviceMode === 'car'
+                  ? `Car${order.zoneName ? ` · ${order.zoneName}` : ''}`
+                  : order.whereLabel || (order.serviceMode === 'delivery' ? 'Delivery' : 'On its way to you')
+                : order.tableLabel
+                  ? `Dine in · ${order.tableLabel}`
+                  : 'Dine in'}
           </span>
           <div className="receipt-number">#{order.orderNumber}</div>
           <p className="muted tiny">

@@ -45,6 +45,9 @@ import StaffPrecincts from './pages/staff/StaffPrecincts'
 import StaffFloor from './pages/staff/StaffFloor'
 import StaffHistory from './pages/staff/StaffHistory'
 import StaffTakings from './pages/staff/StaffTakings'
+import Insights from './pages/Insights'
+import Forgot from './pages/Forgot'
+import Reset from './pages/Reset'
 import { MenuSection, OrdersSection, SettingsSection, TillSection } from './pages/staff/Sections'
 
 /**
@@ -111,6 +114,8 @@ export default function App() {
       {/* Where the "thank them" notification lands — see src/pages/Thank.tsx */}
       <Route path="/thank" element={<Thank />} />
       <Route path="/alerts" element={<AlertInvite />} />
+      {/* Khapee's own numbers, for whoever runs Khapee. See server/insights.ts. */}
+      <Route path="/insights" element={<Insights />} />
       <Route path="/alerts/:token" element={<AlertInvite />} />
       <Route path="/group" element={<GroupSession />} />
       <Route path="/cart" element={<Cart />} />
@@ -118,6 +123,8 @@ export default function App() {
       <Route path="/order/:orderNumber" element={<OrderTrack />} />
       <Route path="/orders" element={<MyOrders />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot" element={<Forgot />} />
+      <Route path="/reset" element={<Reset />} />
       <Route path="/register" element={<Register />} />
       <Route path="/for-restaurants" element={<RegisterRestaurant />} />
 

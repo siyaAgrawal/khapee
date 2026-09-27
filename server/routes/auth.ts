@@ -1,5 +1,7 @@
+import crypto from 'node:crypto'
 import { Router } from 'express'
 import { db } from '../db.ts'
+import { mailConfigured, sendMail } from '../mail.ts'
 import {
   createSession,
   destroySession,
@@ -234,4 +236,99 @@ authRouter.post('/me/credentials', requireAuth, (req, res) => {
   })()
 
   res.json({ token, user: userFromToken(token) })
+})
+
+/*
+ * Forgotten passwords.
+ *
+ * A link, emailed to the address on the account, that lets whoever holds that
+ * inbox choose a new password once, within half an hour. Only a hash of the
+ * link's token is stored, so the table itself cannot be used to reset
+ * anybody. Using it signs every device out, exactly as changing a password
+ * does, and the reply to "send me a link" is the same whether or not an
+ * account exists — the page must not become a way to test which addresses
+ * have one.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS password_resets (
+  token_hash TEXT PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TEXT    NOT NULL,
+  used_at    TEXT,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+`)
+const RESET_MINUTES = 30
+const hashToken = (t: string) => crypto.createHash('sha256').update(t).digest('hex')
+
+authRouter.post('/forgot', (req: any, res) => {
+  const email = String(req.body?.email ?? '').trim().toLowerCase()
+  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Please enter a valid email address.' })
+  if (!mailConfigured()) {
+    return res.status(503).json({ error: 'Password reset by email is not switched on yet. Please contact Khapee.' })
+  }
+  const sent = { ok: true, message: 'If there is a Khapee account for that email, a reset link is on its way. Check your inbox and spam.' }
+
+  const user = db.prepare('SELECT id, name, email FROM users WHERE email = ?').get(email) as any
+  if (!user) return res.json(sent)
+
+  // Three links an hour per account is plenty for a person and useless for spam.
+  const recent = db
+    .prepare("SELECT COUNT(*) AS n FROM password_resets WHERE user_id = ? AND created_at >= datetime('now', '-1 hour')")
+    .get(user.id) as any
+  if (Number(recent.n) >= 3) return res.json(sent)
+
+  const token = crypto.randomBytes(32).toString('base64url')
+  db.prepare(
+    `INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, datetime('now', '+${RESET_MINUTES} minutes'))`,
+  ).run(hashToken(token), user.id)
+
+  const origin = (process.env.KHAPEE_ORIGIN || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')
+  const link = `${origin}/reset?token=${token}`
+  void sendMail({
+    to: user.email,
+    subject: 'Reset your Khapee password',
+    text: [
+      `Hi ${user.name || 'there'},`,
+      '',
+      'Someone asked to reset the password for your Khapee account. If it was you, open this link to choose a new one:',
+      '',
+      link,
+      '',
+      `The link works once and expires in ${RESET_MINUTES} minutes.`,
+      'If you did not ask for this, ignore this email — your password stays the same.',
+      '',
+      '— Khapee',
+    ].join('\n'),
+  }).then((r) => {
+    if (r !== 'sent') console.warn(`[auth] password reset email to ${user.email}: ${r}`)
+  })
+  res.json(sent)
+})
+
+authRouter.post('/reset', (req, res) => {
+  const token = String(req.body?.token ?? '')
+  const password = String(req.body?.password ?? '')
+  if (!token) return res.status(400).json({ error: 'That reset link is incomplete.' })
+  if (password.length < 8) return res.status(400).json({ error: 'Use at least 8 characters.' })
+
+  const row = db
+    .prepare(
+      `SELECT r.*, (r.expires_at <= datetime('now')) AS expired FROM password_resets r WHERE r.token_hash = ?`,
+    )
+    .get(hashToken(token)) as any
+  if (!row || row.used_at) {
+    return res.status(400).json({ error: 'That reset link has already been used or is not valid. Ask for a new one.' })
+  }
+  if (row.expired) return res.status(400).json({ error: 'That reset link has expired. Ask for a new one.' })
+
+  const session = db.transaction(() => {
+    db.prepare("UPDATE password_resets SET used_at = datetime('now') WHERE token_hash = ?").run(row.token_hash)
+    // Any other unused links for this account stop working too.
+    db.prepare("UPDATE password_resets SET used_at = datetime('now') WHERE user_id = ? AND used_at IS NULL").run(row.user_id)
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(password), row.user_id)
+    endAllSessions(row.user_id)
+    return createSession(row.user_id)
+  })()
+  res.json({ token: session, user: userFromToken(session) })
 })

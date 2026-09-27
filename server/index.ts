@@ -4,6 +4,7 @@ import os from 'node:os'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
+import { canSeeInsights, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
 import { keepAwake } from './keep-awake.ts'
@@ -106,6 +107,59 @@ app.use('/api/groups', groupsRouter)
 app.use('/api/staff', staffRouter)
 // Authenticated by a billing key rather than a session — see routes/billing.ts.
 app.use('/api/billing', orderFeedRouter)
+
+/*
+ * Khapee's own numbers, for whoever runs Khapee (KHAPEE_INSIGHTS_EMAILS).
+ * Signed out gets 401 so the page can ask them to sign in; signed in as
+ * anybody else gets 403 and nothing about any restaurant.
+ */
+function insightsGate(req: any, res: any): boolean {
+  if (!req.user) {
+    res.status(401).json({ error: 'Sign in to see Khapee insights.' })
+    return false
+  }
+  if (!canSeeInsights(req.user)) {
+    res.status(403).json({ error: 'This account cannot see Khapee insights.' })
+    return false
+  }
+  return true
+}
+app.get('/api/insights/live', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.json(liveCount())
+})
+app.get('/api/insights/orders', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  const which = String(req.query.which ?? 'all')
+  res.json(
+    orderList({
+      days: Number(req.query.days ?? 30),
+      restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+      which: which === 'ahead' || which === 'off' || which === 'hidden' ? which : 'all',
+      limit: req.query.limit ? Number(req.query.limit) : 50,
+      offset: req.query.offset ? Number(req.query.offset) : 0,
+    }),
+  )
+})
+app.post('/api/insights/orders/:id/hide', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  const ok = setHidden(Number(req.params.id), req.body?.hidden !== false)
+  if (!ok) return res.status(404).json({ error: 'That order is not in insights.' })
+  res.json({ ok: true, hidden: hiddenCount() })
+})
+app.get('/api/insights', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.json({
+    ...insights({
+      days: Number(req.query.days ?? 30),
+      restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+    }),
+    hiddenOrders: hiddenCount(),
+  })
+})
 
 /** Server-sent events keep the staff board live without any polling loop. */
 app.get('/api/stream', (req, res) => {

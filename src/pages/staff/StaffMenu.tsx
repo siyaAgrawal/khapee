@@ -64,6 +64,8 @@ export default function StaffMenu() {
   const [formError, setFormError] = useState('')
   const [newSection, setNewSection] = useState('')
   const [addingSection, setAddingSection] = useState(false)
+  /** The "+ Add section" box — closed until asked for, open when there are none. */
+  const [sectionOpen, setSectionOpen] = useState(false)
   /**
    * Eighty dishes in nineteen sections is not a list anybody scrolls twice.
    *
@@ -115,18 +117,31 @@ export default function StaffMenu() {
     }
   }
 
-  const addSection = async (e: React.FormEvent) => {
-    e.preventDefault()
+  /** Makes a section and returns it, or null if the server said no. */
+  const createSection = async (name: string): Promise<{ id: number; name: string } | null> => {
     setAddingSection(true)
     try {
-      await api('/staff/categories', { body: { name: newSection.trim() } })
-      setNewSection('')
+      const r = await api<{ category: { id: number; name: string } }>('/staff/categories', {
+        body: { name: name.trim() },
+      })
       load()
-      toast('Section added', 'good')
+      toast(`“${r.category.name}” added`, 'good')
+      return r.category
     } catch (err) {
       toast((err as ApiError).message, 'bad')
+      return null
     } finally {
       setAddingSection(false)
+    }
+  }
+
+  const addSection = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newSection.trim()) return
+    const made = await createSection(newSection)
+    if (made) {
+      setNewSection('')
+      setSectionOpen(false)
     }
   }
 
@@ -274,18 +289,44 @@ export default function StaffMenu() {
       )}
 
       <form className="card card-pad mb-2" onSubmit={addSection}>
+        {/* A button that looks like a button. This was a bare text box beside
+            a greyed-out "Add section" that only woke up once something was
+            typed, and it read as switched off — owners could not find it. */}
+        {(sectionOpen || data.categories.length === 0) && (
+          <div className="row row-wrap mb-2">
+            <input
+              className="input"
+              style={{ maxWidth: 260 }}
+              placeholder="Section name, e.g. Starters"
+              value={newSection}
+              onChange={(e) => setNewSection(e.target.value)}
+              aria-label="New menu section"
+              autoFocus
+              maxLength={60}
+            />
+            <button className="btn btn-accent" disabled={!newSection.trim() || addingSection}>
+              {addingSection ? <Spinner /> : 'Save section'}
+            </button>
+            {data.categories.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setSectionOpen(false)
+                  setNewSection('')
+                }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        )}
         <div className="row row-wrap">
-          <input
-            className="input"
-            style={{ maxWidth: 240 }}
-            placeholder="New section, e.g. Starters"
-            value={newSection}
-            onChange={(e) => setNewSection(e.target.value)}
-            aria-label="New menu section"
-          />
-          <button className="btn btn-secondary" disabled={!newSection.trim() || addingSection}>
-            {addingSection ? <Spinner /> : 'Add section'}
-          </button>
+          {!sectionOpen && data.categories.length > 0 && (
+            <button type="button" className="btn btn-secondary" onClick={() => setSectionOpen(true)}>
+              + Add section
+            </button>
+          )}
           {data.categories.length > 0 && (
             <button
               type="button"
@@ -521,13 +562,25 @@ export default function StaffMenu() {
                       id="d-section"
                       className="select"
                       value={draft.categoryId}
-                      onChange={(e) => setDraft({ ...draft, categoryId: Number(e.target.value) })}
+                      onChange={async (e) => {
+                        const v = Number(e.target.value)
+                        if (v !== -1) {
+                          setDraft({ ...draft, categoryId: v })
+                          return
+                        }
+                        // A new section without leaving the dish half-typed.
+                        const name = window.prompt('Name the new section, e.g. Starters')?.trim()
+                        if (!name) return
+                        const made = await createSection(name)
+                        if (made) setDraft((d) => (d ? { ...d, categoryId: made.id } : d))
+                      }}
                     >
                       {data.categories.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name}
                         </option>
                       ))}
+                      <option value={-1}>+ New section…</option>
                     </select>
                   </div>
                 </div>

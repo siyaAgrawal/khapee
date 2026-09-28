@@ -8,6 +8,7 @@ import { Art, EmptyState, ErrorState, LoadingBlock, money, useToast } from '../c
 import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
 import { ownOrderOnly, readDining } from '../lib/dining'
+import { readIntent, saveIntent } from '../lib/intent'
 import { useGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import { PeopleIcon, SearchIcon } from '../components/icons'
@@ -75,6 +76,9 @@ export default function Restaurant() {
   const [error, setError] = useState('')
   const tableCtx = readTableContext(restaurantId)
   const dining = readDining(restaurantId)
+  /* Whether they have already said they are taking it away. Kept in state as
+     well as storage so the card can show it was chosen without a reload. */
+  const [intent, setIntent] = useState(() => !!readIntent(restaurantId))
   // Confirmed with the server before it is believed — see lib/group.ts. A
   // remembered table that no longer exists used to make ordering impossible.
   const { group: activeGroup } = useGroup()
@@ -294,6 +298,32 @@ export default function Restaurant() {
                     </span>
                   </Link>
                 )}
+                {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && (
+                  <button
+                    type="button"
+                    className={`road-cta ${intent ? 'is-chosen' : ''}`}
+                    onClick={() => {
+                      saveIntent(restaurantId)
+                      setIntent(true)
+                      toast('Takeaway it is — add what you want.', 'good')
+                    }}
+                  >
+                    <span className="road-cta-mark" aria-hidden>
+                      🥡
+                    </span>
+                    <span>
+                      <strong>Taking it away?</strong>
+                      <span className="tiny muted">
+                        {intent
+                          ? 'Chosen. Order now, collect when you get here.'
+                          : 'Order now and collect it — tell them when you set off.'}
+                      </span>
+                    </span>
+                    <span className="road-cta-go" aria-hidden>
+                      {intent ? '✓' : '→'}
+                    </span>
+                  </button>
+                )}
                 {data.restaurant.isOpen && (
                   <div className="noir-hero-dining">
                     <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
@@ -380,6 +410,32 @@ export default function Restaurant() {
                       →
                     </span>
                   </Link>
+                )}
+                {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && (
+                  <button
+                    type="button"
+                    className={`road-cta ${intent ? 'is-chosen' : ''}`}
+                    onClick={() => {
+                      saveIntent(restaurantId)
+                      setIntent(true)
+                      toast('Takeaway it is — add what you want.', 'good')
+                    }}
+                  >
+                    <span className="road-cta-mark" aria-hidden>
+                      🥡
+                    </span>
+                    <span>
+                      <strong>Taking it away?</strong>
+                      <span className="tiny muted">
+                        {intent
+                          ? 'Chosen. Order now, collect when you get here.'
+                          : 'Order now and collect it — tell them when you set off.'}
+                      </span>
+                    </span>
+                    <span className="road-cta-go" aria-hidden>
+                      {intent ? '✓' : '→'}
+                    </span>
+                  </button>
                 )}
                 {data.restaurant.isOpen && (
                   <div style={{ marginTop: 14 }}>

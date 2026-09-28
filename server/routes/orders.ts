@@ -58,6 +58,8 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
     codesEnabled: r.codes_enabled === undefined ? true : !!r.codes_enabled,
     /** Whether an order carried out to a car has to be paid for first. */
     carPrepaidOnly: !!r.car_prepaid_only,
+    /** And the same for one collected from the counter. */
+    takeawayPrepaidOnly: !!r.takeaway_prepaid_only,
   })
 })
 

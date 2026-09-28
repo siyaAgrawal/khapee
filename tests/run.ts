@@ -5031,6 +5031,63 @@ async function runTests() {
     await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { city: 'Indore' } })
   }
 
+  group('TAKEAWAY, PAID FIRST')
+  {
+    // The same risk as a car, and the same answer. Somebody who ordered from
+    // home and has not arrived is food made before anybody paid; a cafe happy
+    // to take the money at the counter leaves this off, one that has been
+    // burned turns it on.
+    const off = await call(`/orders/payment-options/${mornington.id}`)
+    ok('off by default', off.body.takeawayPrepaidOnly === false, off.body.takeawayPrepaidOnly)
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { takeawayPrepaidOnly: true } })
+    const on = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and can be switched on', on.body.takeawayPrepaidOnly === true, on.body.takeawayPrepaidOnly)
+
+    const unpaid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Collecting later',
+        contactPhone: '9876518181',
+      },
+    })
+    ok('an unpaid collection is refused', unpaid.status === 402, unpaid.body)
+    ok('and says where to pay', /in the app/i.test(String(unpaid.body.error)), unpaid.body.error)
+
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Collecting later',
+        contactPhone: '9876518181',
+        paymentClaim: { upiRef: '123456789012' },
+      },
+    })
+    ok('paying in the app goes through', paid.status === 201, paid.body)
+
+    // A table order is somebody already in the building, and the rule has no
+    // business touching it — they settle before they leave.
+    const atTable = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        tableId: tableRow.id,
+        tableToken: tableRow.token,
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Sitting down',
+        contactPhone: '9876519191',
+      },
+    })
+    ok('but an order at a table is untouched by it', atTable.status === 201, atTable.body)
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { takeawayPrepaidOnly: false } })
+    const back = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and it switches off again', back.body.takeawayPrepaidOnly === false, back.body.takeawayPrepaidOnly)
+  }
+
   group('TO A CAR, PAID FIRST')
   {
     // Every other way of ordering ends with the customer inside the building.

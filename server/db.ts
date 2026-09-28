@@ -477,6 +477,17 @@ addColumn('restaurants', 'car_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
  * and give one — which is also the moment the counter most wants to hear
  * from them.
  */
+/**
+ * The same rule as a car, for an order collected from the counter.
+ *
+ * Somebody who ordered from home and has not arrived is, to a kitchen, the
+ * same risk as somebody sitting in a car: the food is made before anybody has
+ * paid, and if they never turn up the restaurant carries it. A cafe that is
+ * happy to take the money at the counter leaves this off; one that has been
+ * burned turns it on.
+ */
+addColumn('restaurants', 'takeaway_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
+
 addColumn('orders', 'arrived_at', 'TEXT')
 /** What they chose on the doorstep: 'takeaway' or 'dine_in'. */
 addColumn('orders', 'arrival_choice', 'TEXT')

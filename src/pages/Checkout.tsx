@@ -8,6 +8,7 @@ import { useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
+import { clearIntent, readIntent } from '../lib/intent'
 import { EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../components/ui'
 
 type Where = 'here' | 'takeaway' | 'later'
@@ -41,7 +42,23 @@ export default function Checkout() {
    * That demand is gone: choosing the table is now the whole of it. So the
    * guess is gone too, and the common case opens first.
    */
-  const [where, setWhere] = useState<Where>('here')
+  /*
+   * Where the food is going, decided on the restaurant's page rather than
+   * here.
+   *
+   * This used to be three buttons at the top of the checkout — at a table,
+   * takeaway, collect later — which asked the question on the last screen,
+   * after the basket was full, and asked it again of people who had already
+   * answered it by scanning the QR on their table or tapping "sitting in your
+   * car". Now the ways in are the choice, and this screen states what was
+   * chosen with a way back to change it.
+   */
+  const chosenIntent = restaurantId ? readIntent(restaurantId) : null
+  const [where, setWhere] = useState<Where>(() => {
+    if (restaurantId && readTableContext(restaurantId)) return 'here'
+    if (readIntent(restaurantId ?? undefined)) return 'later'
+    return 'here'
+  })
   const [tables, setTables] = useState<Table[] | null>(null)
   // A scanned table QR already answered "which table", so start on its answer
   // rather than an empty grid.
@@ -202,7 +219,10 @@ export default function Checkout() {
    * — the one place the food is taken out to somebody already sitting in the
    * thing they will leave in.
    */
-  const prepaidOnly = !!options?.prepaidOnly || (isCar && !!options?.carPrepaidOnly)
+  const prepaidOnly =
+    !!options?.prepaidOnly ||
+    (isCar && !!options?.carPrepaidOnly) ||
+    (where === 'later' && !!options?.takeawayPrepaidOnly)
   useEffect(() => {
     // Nothing to choose when there is only one way to pay.
     if (prepaidOnly && !payNow) setPayNow(true)
@@ -392,23 +412,31 @@ export default function Checkout() {
             </Link>
           </div>
         ) : (
-          <div className="seg" role="group" aria-label="Where are you?">
-            <button className={`seg-btn ${where === 'here' ? 'active' : ''}`} onClick={() => setWhere('here')}>
-              🍽️ At a table
-            </button>
-            {options?.acceptsTakeaway !== false && (
-              <button
-                className={`seg-btn ${where === 'takeaway' ? 'active' : ''}`}
-                onClick={() => setWhere('takeaway')}
-              >
-                🥡 Takeaway
-              </button>
-            )}
-            {options?.acceptsPickup !== false && (
-              <button className={`seg-btn ${where === 'later' ? 'active' : ''}`} onClick={() => setWhere('later')}>
-                🚶 Collect later
-              </button>
-            )}
+          /*
+            Not a question any more — a statement, with a way back.
+            
+            The three buttons that used to live here asked, on the last screen
+            and with a full basket, something the customer had usually already
+            answered on the way in. The ways in are the choice now; this says
+            which one was taken. The same shape as a car or an address, which
+            have always worked this way.
+          */
+          <div className="verified-banner" style={{ marginBottom: 4 }}>
+            <span aria-hidden>{where === 'here' ? '🍽️' : '🥡'}</span>
+            <div style={{ flex: 1 }}>
+              {where === 'here' ? (
+                <>
+                  Eating in at <strong>{cart.restaurantName}</strong>
+                </>
+              ) : (
+                <>
+                  Taking it away from <strong>{cart.restaurantName}</strong>
+                </>
+              )}
+            </div>
+            <Link className="btn btn-ghost btn-sm" to={`/r/${restaurantId}`}>
+              Change
+            </Link>
           </div>
         )}
 
@@ -692,6 +720,8 @@ export default function Checkout() {
                 {prepaidOnly
                   ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
                     ? 'Orders brought out to your car are paid for in the app'
+                    : where === 'later' && options?.takeawayPrepaidOnly && !options?.prepaidOnly
+                      ? 'Takeaway orders are paid for in the app'
                     : 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
                   : isDelivery
                   ? 'Cash or UPI when it reaches you'

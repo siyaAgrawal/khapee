@@ -32,6 +32,7 @@ type Profile = {
   acceptsGroups: boolean
   codesEnabled: boolean
   carPrepaidOnly: boolean
+  takeawayPrepaidOnly: boolean
   publishedAt: string | null
   itemCount: number
   isListed: boolean
@@ -342,6 +343,7 @@ export default function StaffProfile() {
           acceptsGroups: form.acceptsGroups,
           codesEnabled: form.codesEnabled,
           carPrepaidOnly: form.carPrepaidOnly,
+          takeawayPrepaidOnly: form.takeawayPrepaidOnly,
           lat: form.lat,
           lng: form.lng,
         },
@@ -548,6 +550,7 @@ export default function StaffProfile() {
                 // A car is the one place the food goes out to somebody
                 // already sitting in the thing they will leave in.
                 ['carPrepaidOnly', 'Orders to a car must be paid in the app'],
+                ['takeawayPrepaidOnly', 'Takeaway orders must be paid in the app'],
               ] as const
             ).map(([key, label]) => (
               <div key={key} className="list-row">

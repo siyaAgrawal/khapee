@@ -284,6 +284,24 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     }
   }
 
+  /*
+   * And the same for an order being collected. Checked against the order's
+   * own type rather than a session, because ordering ahead opens no session —
+   * the customer is at home.
+   */
+  if (!input.paymentClaim && input.type === 'pickup' && !liveSession) {
+    const rule = db
+      .prepare('SELECT takeaway_prepaid_only FROM restaurants WHERE id = ?')
+      .get(input.restaurantId) as any
+    if (rule?.takeaway_prepaid_only) {
+      return {
+        ok: false,
+        status: 402,
+        error: `${restaurant.name} takes payment in the app for orders collected from the counter. Pay by UPI to place the order.`,
+      }
+    }
+  }
+
   if (limited.on && !input.paymentClaim) {
     return {
       ok: false,

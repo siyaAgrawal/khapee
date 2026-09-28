@@ -8151,3 +8151,12 @@ button.nav-link {
   border-color: var(--ins-base);
   color: var(--ins-ink);
 }
+.paying-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.paying-acts:empty {
+  display: none;
+}

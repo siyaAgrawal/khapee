@@ -4858,6 +4858,41 @@ async function runTests() {
     ok('or calls the whole thing off', called.body.order.status === 'CANCELLED', called.body.order.status)
   }
 
+  group('CUSTOMER CANCELS — any order, only until the restaurant accepts')
+  {
+    const menu = await call('/staff/menu', { token: roadToken })
+    const dish = menu.body.categories.flatMap((c: any) => c.items).find((i: any) => i.isAvailable)
+    const place = async (name: string, phone: string) =>
+      (
+        await call('/orders', {
+          body: {
+            restaurantId: mornington.id,
+            type: 'pickup',
+            items: [{ menuItemId: dish.id, quantity: 1 }],
+            customerName: name,
+            contactPhone: phone,
+          },
+        })
+      ).body.order
+
+    const early = await place('Changed my mind', '9876511111')
+    const nosey = await call(`/orders/${early.orderNumber}/cancel`, { body: { token: 'not-theirs' } })
+    ok('somebody else cannot cancel it', nosey.status === 403, nosey.status)
+    const gone = await call(`/orders/${early.orderNumber}/cancel`, { body: { token: early.verifyToken } })
+    ok('the customer cancels before it is accepted', gone.body.order?.status === 'CANCELLED', gone.body)
+    const told = (
+      await call('/staff/notifications', { token: roadToken })
+    ).body
+    const said = JSON.stringify(told)
+    ok('and the restaurant is told', said.includes(`#${early.orderNumber} cancelled by the customer`), said.slice(0, 200))
+
+    const late = await place('Too late now', '9876522222')
+    await call(`/staff/orders/${late.id}/status`, { token: roadToken, body: { status: 'ACCEPTED' } })
+    const refused = await call(`/orders/${late.orderNumber}/cancel`, { body: { token: late.verifyToken } })
+    ok('but not once the restaurant has accepted it', refused.status === 409, refused.status)
+    ok('and says to ring them instead', /ring them/.test(refused.body.error ?? ''), refused.body)
+  }
+
   group('NOBODY ANSWERED — sending it again without rebuilding the basket')
   {
     // Two minutes of a spinner is about how long somebody watches before

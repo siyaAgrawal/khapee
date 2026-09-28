@@ -299,7 +299,7 @@ export default function OrderTrack() {
   }
 
   const callOff = async () => {
-    if (!window.confirm('Cancel the whole order?')) return
+    if (!window.confirm(`Cancel order #${order.orderNumber}? ${order.restaurantName} will be told not to make it.`)) return
     setBusy('cancel')
     try {
       await api(`/orders/${order.orderNumber}/cancel`, { body: { token: receiptToken(order.orderNumber) } })
@@ -545,11 +545,21 @@ export default function OrderTrack() {
               anybody who has already chosen five things and then watched a
               spinner has done their part twice already.
             */}
-            {noAnswer && (
-              <button className="btn btn-accent btn-sm" disabled={busy !== ''} onClick={resend}>
-                {busy === 'resend' ? <Spinner /> : 'Send it again'}
-              </button>
-            )}
+            <div className="paying-acts">
+              {noAnswer && (
+                <button className="btn btn-accent btn-sm" disabled={busy !== ''} onClick={resend}>
+                  {busy === 'resend' ? <Spinner /> : 'Send it again'}
+                </button>
+              )}
+              {/* Changed their mind, or ordered from the wrong place: fine
+                  until the restaurant has said yes. Not once money has been
+                  sent — that is the restaurant's to cancel and refund. */}
+              {order.paymentState === 'unpaid' && (order.status === 'REQUESTED' || order.status === 'NEW') && (
+                <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={callOff}>
+                  {busy === 'cancel' ? <Spinner /> : 'Cancel order'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -302,8 +302,13 @@ ordersRouter.post('/:orderNumber/cancel', (req, res) => {
   if (!row) return res.status(404).json({ error: 'We could not find that order.' })
   if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
 
-  if (!['REQUESTED', 'NEW', 'ACCEPTED'].includes(row.status)) {
-    return res.status(409).json({ error: 'This one is too far along to cancel here — please ring the restaurant.' })
+  // Any order — table, pickup, car or delivery — until the restaurant says
+  // yes. Once it has, food may already be on its way to the pan, and calling
+  // it off is a conversation, not a tap.
+  if (!['REQUESTED', 'NEW'].includes(row.status)) {
+    return res.status(409).json({
+      error: 'The restaurant has already accepted this order, so it can’t be cancelled here — please ring them.',
+    })
   }
   // Sent by UPI counts: the money has left their bank either way.
   if (row.payment_status === 'PAID' || claimedCents(row.id) > 0) {
@@ -318,7 +323,22 @@ ordersRouter.post('/:orderNumber/cancel', (req, res) => {
       WHERE id = ?`,
   ).run(row.id)
   db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'CANCELLED', 'customer')").run(row.id)
+  // Told, not left to notice: a kitchen that has not looked at the board yet
+  // should not start on something nobody is coming for.
+  db.prepare('INSERT INTO notifications (restaurant_id, order_id, title, body) VALUES (?, ?, ?, ?)').run(
+    row.restaurant_id,
+    row.id,
+    `#${row.order_number} cancelled by the customer`,
+    `${row.customer_name || 'The customer'} called it off before it was accepted.`,
+  )
+  void pushToRestaurant(row.restaurant_id, {
+    title: `#${row.order_number} was cancelled`,
+    body: `${row.customer_name || 'The customer'} cancelled before you accepted it — nothing to make.`,
+    url: '/staff/orders',
+    tag: `order-${row.order_number}`,
+  }).catch(() => {})
   publish('order:update', { restaurantId: row.restaurant_id, orderId: row.id, order: getOrder(row.id) })
+  publish('orders', { restaurantId: row.restaurant_id })
   res.json({ order: getOrder(row.id) })
 })
 

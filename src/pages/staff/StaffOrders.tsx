@@ -12,6 +12,7 @@ import {
   STATUS_LABEL,
   type OrderStatus,
   type ServiceType,
+  howOrdered,
 } from '../../../shared/orders'
 
 /**
@@ -57,7 +58,11 @@ function placeOf(o: any): string {
   if (o.serviceMode === 'delivery' || o.serviceType === 'delivery') return o.deliveryArea || 'Delivery'
   if (o.serviceMode === 'car' || o.serviceType === 'car') return o.zoneName ? `Car · ${o.zoneName}` : 'Car outside'
   if (o.tableLabel) return o.tableLabel
-  return SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]
+  // Beside the Takeaway tag, say which kind — the tag already says takeaway.
+  const t = (o.serviceType ?? o.type) as ServiceType
+  if (t === 'pickup') return 'Collect later'
+  if (t === 'takeaway') return 'Carry out'
+  return SERVICE_LABEL[t]
 }
 
 /** Placed today, read the way the server stores it: "YYYY-MM-DD HH:MM:SS" UTC. */
@@ -831,6 +836,12 @@ export default function StaffOrders() {
                       >
                         <span className="qrow-where">
                           <b>
+                            {/* How it came in — car, takeaway or at the
+                                restaurant — before where exactly it goes. */}
+                            <span className={`how-tag how-${howOrdered(o.serviceType ?? o.serviceMode).key}`}>
+                              <span aria-hidden>{howOrdered(o.serviceType ?? o.serviceMode).icon}</span>{' '}
+                              {howOrdered(o.serviceType ?? o.serviceMode).label}
+                            </span>{' '}
                             {placeOf(o)}
                             <WantedFor order={o} />
                             {/* Turned round: this one is not waiting on the

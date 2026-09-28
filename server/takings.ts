@@ -211,6 +211,15 @@ export function orderHistory(
         createdAt: o.created_at,
         status: o.status,
         serviceMode: o.service_mode ?? 'dine_in',
+        /** Car, takeaway, at the restaurant… — see howOrdered in shared/orders.ts. */
+        serviceType:
+          o.service_mode === 'car' || o.service_mode === 'delivery' || o.service_mode === 'precinct'
+            ? o.service_mode
+            : o.order_type === 'pickup'
+              ? 'pickup'
+              : o.takeaway
+                ? 'takeaway'
+                : 'dine_in',
         place: o.table_label ?? (o.service_mode === 'delivery' ? 'Delivery' : 'Counter'),
         customerName: o.customer_name ?? '',
         customerPhone: o.contact_phone ?? '',

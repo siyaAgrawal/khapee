@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError } from '../../lib/api'
 import { EmptyState, LoadingBlock, money, useToast } from '../../components/ui'
+import { howOrdered } from '../../../shared/orders'
+import { thanksText, waAppLink, waLink } from '../../../shared/thanks'
 
 /**
  * Every order this restaurant has taken, and who placed it.
@@ -19,6 +21,7 @@ type Row = {
   createdAt: string
   status: string
   serviceMode: string
+  serviceType?: string
   place: string
   customerName: string
   customerPhone: string
@@ -227,12 +230,32 @@ export default function StaffHistory() {
                           <a className="o-phone" href={`tel:${o.customerPhone.replace(/[^0-9+]/g, '')}`}>
                             📞 {o.customerPhone}
                           </a>
+                          {/* The same thank-you as on the board, from the
+                              restaurant's own WhatsApp — for the regular who
+                              came in on Tuesday as much as tonight's table. */}
+                          {!!waLink(o.customerPhone, '') && (
+                            <a
+                              className="btn btn-ghost btn-sm history-thank"
+                              href={waAppLink(o.customerPhone, thanksText(o.customerName || 'there'))}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={`Thank ${o.customerName || 'them'} on WhatsApp`}
+                            >
+                              Thank on WhatsApp
+                            </a>
+                          )}
                         </div>
                       ) : (
                         <div className="tiny muted">No number</div>
                       )}
                     </td>
-                    <td className="tiny ledger-place">{o.place}</td>
+                    <td className="tiny ledger-place">
+                      <span className={`how-tag how-${howOrdered(o.serviceType ?? o.serviceMode).key}`}>
+                        <span aria-hidden>{howOrdered(o.serviceType ?? o.serviceMode).icon}</span>{' '}
+                        {howOrdered(o.serviceType ?? o.serviceMode).label}
+                      </span>
+                      {o.place && !/^(Counter|Delivery)$/.test(o.place) && <div className="muted">{o.place}</div>}
+                    </td>
                     <td className="ledger-items tiny">
                       {o.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
                     </td>

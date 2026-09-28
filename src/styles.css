@@ -5431,21 +5431,63 @@ button.nav-link {
 .chip-row .chip { cursor: pointer; }
 .chip-row .chip.on { background: var(--ink); color: var(--bg); }
 
-/* The prompt on a restaurant page for someone who never got out of the car. */
+/* The prompts on a restaurant page for someone who is not at a table: the car,
+   the street, the takeaway counter. They sit in a stack with the dining bar, so
+   they are built to the same measurements. */
 .road-cta {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
   margin-top: 14px;
   padding: 14px 16px;
   border-radius: 16px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
+  /* Most of these are links; takeaway is a button, because choosing it changes
+     something on this page rather than going anywhere. A button arrives with
+     its own centred text, its own font and its own colour, which is why that
+     one card sat centred between two cards that read from the left. Said once
+     here, so the row looks the same whichever element it happens to be. */
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
 }
+.road-cta:hover { border-color: var(--accent); background: var(--accent-soft); }
+/* The words, between the mark and the arrow: it takes the slack so long
+   subtitles wrap against the arrow rather than pushing it off the card. */
+.road-cta > span:nth-child(2) { flex: 1; min-width: 0; }
 .road-cta strong { display: block; font-size: 15px; }
-.road-cta .tiny { display: block; }
-.road-cta-mark { font-size: 24px; }
-.road-cta-go { margin-left: auto; color: var(--muted); font-size: 18px; }
+.road-cta .tiny { display: block; color: var(--muted); }
+/* A disc, like the pin on the dining bar directly below it. A bare 24px emoji
+   beside a 30px disc is the sort of half-millimetre difference nobody names
+   but everybody sees. */
+.road-cta-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-tint);
+  font-size: 16px;
+  line-height: 1;
+}
+.road-cta-go { flex: 0 0 auto; color: var(--accent); font-size: 18px; font-weight: 700; }
+/* Chosen. It had nothing but a tick before, which on a phone in daylight is
+   not enough to tell you the choice landed. */
+.road-cta.is-chosen {
+  border-color: rgba(128, 128, 128, 0.32);
+  border-color: color-mix(in srgb, var(--good) 35%, transparent);
+  background: var(--good-soft);
+}
+.road-cta.is-chosen .road-cta-mark { background: transparent; }
+.road-cta.is-chosen strong,
+.road-cta.is-chosen .tiny,
+.road-cta.is-chosen .road-cta-go { color: var(--good); }
 
 /* ── The floor board ──────────────────────────────────────────────────────────
    One screen answering who is here, where, what state, and who owes. */

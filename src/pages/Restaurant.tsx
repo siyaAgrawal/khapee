@@ -34,30 +34,6 @@ type MenuItem = {
 }
 type Category = { id: number; name: string; items: MenuItem[] }
 
-/**
- * Where this kitchen delivers, named.
- *
- * "We deliver nearby" is true of every restaurant that delivers at all, so it
- * tells a reader nothing they did not already know from the offer being
- * there — and leaves them to open the delivery page to find out whether their
- * own area is on the list. The areas have names; using them answers the
- * question on the spot.
- *
- * Long lists are cut short rather than run on, because the point is
- * recognition — somebody is looking for their own area, not reading an
- * inventory — and "nearby" is kept for a restaurant that has named none.
- */
-function deliversTo(areas: string[] | undefined): string {
-  const named = (areas ?? []).filter(Boolean)
-  if (!named.length) return 'We deliver nearby — the kitchen confirms first.'
-  const where =
-    named.length === 1
-      ? named[0]
-      : named.length <= 3
-        ? `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`
-        : `${named.slice(0, 3).join(', ')} and ${named.length - 3} more`
-  return `We deliver in ${where} — the kitchen confirms first.`
-}
 
 export default function Restaurant() {
   const { id } = useParams()
@@ -284,20 +260,6 @@ export default function Restaurant() {
                     </span>
                   </Link>
                 )}
-                {data.restaurant.isOpen && data.restaurant.acceptsDelivery && !dining && (
-                  <Link className="road-cta" to={`/r/${restaurantId}/delivery`}>
-                    <span className="road-cta-mark" aria-hidden>
-                      🛵
-                    </span>
-                    <span>
-                      <strong>Want it at home?</strong>
-                      <span className="tiny muted">{deliversTo(data.restaurant.deliveryAreas)}</span>
-                    </span>
-                    <span className="road-cta-go" aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                )}
                 {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && (
                   <button
                     type="button"
@@ -391,20 +353,6 @@ export default function Restaurant() {
                     <span>
                       <strong>Sitting in your car?</strong>
                       <span className="tiny muted">Order from the road — we&rsquo;ll bring it out.</span>
-                    </span>
-                    <span className="road-cta-go" aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                )}
-                {data.restaurant.isOpen && data.restaurant.acceptsDelivery && !dining && (
-                  <Link className="road-cta" to={`/r/${restaurantId}/delivery`}>
-                    <span className="road-cta-mark" aria-hidden>
-                      🛵
-                    </span>
-                    <span>
-                      <strong>Want it at home?</strong>
-                      <span className="tiny muted">{deliversTo(data.restaurant.deliveryAreas)}</span>
                     </span>
                     <span className="road-cta-go" aria-hidden>
                       →

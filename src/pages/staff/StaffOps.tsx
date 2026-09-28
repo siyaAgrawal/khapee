@@ -13,6 +13,8 @@ type OpsOrder = {
   ageMinutes: number
   items: { name: string; quantity: number; addedLater: boolean }[]
   runner: { id: number; name: string } | null
+  customerName?: string
+  customerPhone?: string
 }
 type OpsSession = {
   id: number
@@ -371,6 +373,19 @@ function SessionCard({
                 <span className={`badge ${o.status === 'READY' ? 'badge-open' : ''}`}>{STATUS_LABEL[o.status]}</span>
                 <span className="tiny muted">{o.ageMinutes}m</span>
               </div>
+              {/* Who it is for, and a number to ring when the car is not
+                  where they said it would be. */}
+              {(o.customerName || o.customerPhone) && (
+                <p className="ops-who">
+                  {o.customerName || 'Customer'}
+                  {o.customerPhone && (
+                    <>
+                      {' · '}
+                      <a href={`tel:${o.customerPhone.replace(/[^0-9+]/g, '')}`}>📞 {o.customerPhone}</a>
+                    </>
+                  )}
+                </p>
+              )}
               <ul className="ops-items">
                 {o.items.map((i, n) => (
                   <li key={n}>

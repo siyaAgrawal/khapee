@@ -1205,6 +1205,14 @@ if (BACKED_UP) {
   dataFix('2026-09-26-only-revery-open', () => {
     db.prepare("UPDATE restaurants SET is_open = CASE WHEN slug = 'revery' THEN 1 ELSE 0 END").run()
   })
+  // Khapee does not deliver yet: orders are takeaway, from the car, or at the
+  // restaurant. Revery was left with a live delivery area from testing, which
+  // put delivery on offer. Off everywhere; a restaurant can switch it back on
+  // from its own settings when it really delivers.
+  dataFix('2026-09-28-delivery-off', () => {
+    db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
+    db.prepare('UPDATE delivery_areas SET is_active = 0').run()
+  })
 }
 
 if (BACKED_UP) {

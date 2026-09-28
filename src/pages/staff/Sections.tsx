@@ -37,16 +37,22 @@ function Section({
 
 /** Live counts, so a tab can say how much is waiting behind it. */
 function useWaiting() {
-  const [n, setN] = useState<{ payments: number; deliveries: number }>({ payments: 0, deliveries: 0 })
+  const [n, setN] = useState<{ payments: number; deliveries: number; delivers: boolean }>({
+    payments: 0,
+    deliveries: 0,
+    delivers: false,
+  })
   useEffect(() => {
     const load = () =>
       Promise.all([
         api<{ payments: any[] }>('/staff/payments').catch(() => ({ payments: [] })),
         api<any>('/staff/ops').catch(() => null),
-      ]).then(([p, ops]) =>
+        api<any>('/staff/restaurant').catch(() => null),
+      ]).then(([p, ops, own]) =>
         setN({
           payments: (p.payments ?? []).filter((x: any) => x.status === 'CLAIMED').length,
           deliveries: ops?.summary?.deliveryRequests ?? 0,
+          delivers: !!own?.restaurant?.acceptsDelivery,
         }),
       )
     load()
@@ -74,7 +80,11 @@ export function OrdersSection() {
         { to: '/staff/orders', label: 'All orders', end: true },
         { to: '/staff/orders/history', label: 'History' },
         { to: '/staff/orders/floor', label: 'Cars & runners' },
-        { to: '/staff/orders/deliveries', label: 'Deliveries', count: waiting.deliveries },
+        // Only for a restaurant that delivers — Khapee is takeaway, car and
+        // eat-in for now — or one with a delivery still waiting on it.
+        ...(waiting.delivers || waiting.deliveries > 0
+          ? [{ to: '/staff/orders/deliveries', label: 'Deliveries', count: waiting.deliveries }]
+          : []),
         { to: '/staff/orders/check', label: 'Check a code' },
       ]}
     />

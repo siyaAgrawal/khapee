@@ -312,14 +312,26 @@ async function runTests() {
   const notif = await call('/staff/notifications', { token: staffToken })
   ok('a notification is recorded for the new order', notif.body.notifications.some((n: any) => n.orderNumber === o1.orderNumber))
 
-  // Status flow
+  /*
+   * Two steps, not five.
+   *
+   * The kitchen says yes, then says the food is ready, and that is the end of
+   * the order. The steps that used to sit between them announced that cooking
+   * was happening and that a plate had been handed over — neither of which
+   * anybody in the room needed telling.
+   */
   let cur = o1
-  for (const step of ['ACCEPTED', 'PREPARING', 'READY', 'COMPLETED']) {
+  for (const step of ['ACCEPTED', 'READY']) {
     const r = await call(`/staff/orders/${o1.id}/status`, { token: staffToken, body: { status: step } })
     ok(`dine-in status advances to ${step}`, r.status === 200 && r.body.order.status === step, r.body)
     cur = r.body.order
   }
-  ok('completed order records a full timeline', cur.events.length === 5)
+  ok('and the timeline is those two, from where it started', cur.events.length === 3, cur.events)
+
+  const cooking = await call(`/staff/orders/${o1.id}/status`, { token: staffToken, body: { status: 'PREPARING' } })
+  ok('there is no cooking step to move to', cooking.status === 400, cooking.body)
+  const handover = await call(`/staff/orders/${o1.id}/status`, { token: staffToken, body: { status: 'COMPLETED' } })
+  ok('and nothing after ready', handover.status === 400, handover.body)
 
   const skip = await call(`/staff/orders/${o1.id}/status`, { token: staffToken, body: { status: 'NEW' } })
   ok('cannot jump backwards across the whole flow', skip.status === 400)
@@ -473,7 +485,7 @@ async function runTests() {
   const basilBoard = await call('/staff/orders', { token: basilToken })
   ok('pickup restaurant sees the order right away', basilBoard.body.orders.some((o: any) => o.orderNumber === o3.orderNumber))
 
-  for (const step of ['ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP']) {
+  for (const step of ['ACCEPTED', 'READY_FOR_PICKUP']) {
     const r = await call(`/staff/orders/${o3.id}/status`, { token: basilToken, body: { status: step } })
     ok(`pickup status advances to ${step}`, r.status === 200 && r.body.order.status === step, r.body)
   }
@@ -502,8 +514,10 @@ async function runTests() {
   const crossVerify = await call('/staff/verify-order', { token: staffToken, body: { value: o3.orderNumber } })
   ok('staff cannot verify another restaurant\'s order', crossVerify.status === 403, crossVerify.body)
 
+  // Ready is the end of a collection order now: there is no separate step for
+  // somebody walking up to the counter and being handed a bag.
   const pickedUp = await call(`/staff/orders/${o3.id}/status`, { token: basilToken, body: { status: 'PICKED_UP' } })
-  ok('order completes as PICKED_UP', pickedUp.body.order.status === 'PICKED_UP')
+  ok('there is no step after ready for a collection', pickedUp.status === 400, pickedUp.body)
 
   group('Order visibility & ownership')
   const guestLookup = await call(`/orders/${o3.orderNumber}?token=${o3.verifyToken}`)
@@ -1046,7 +1060,7 @@ async function runTests() {
     body: { status: 'ACCEPTED' },
   })
   ok('takeaway follows the counter flow', takeawayReady.status === 200)
-  for (const step of ['PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP']) {
+  for (const step of ['READY_FOR_PICKUP']) {
     const r = await call(`/staff/orders/${takeawayOrder.body.order.id}/status`, {
       token: reLogin.body.token,
       body: { status: step },
@@ -1955,7 +1969,7 @@ async function runTests() {
 
   const accepted = await call(`/staff/orders/${delOrder.body.order.id}/accept`, { token: roadToken, method: 'POST' })
   ok('accepting starts the kitchen', accepted.body.order.status === 'ACCEPTED', accepted.body)
-  for (const st of ['PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']) {
+  for (const st of ['READY']) {
     const r = await call(`/staff/orders/${delOrder.body.order.id}/status`, { token: roadToken, body: { status: st } })
     ok(`a delivery walks through ${st.toLowerCase().replace(/_/g, ' ')}`, r.status === 200, r.body)
   }
@@ -2239,7 +2253,7 @@ async function runTests() {
   ok('a car nobody has been to shows as waiting to order', unasked?.waitingToOrder === true)
   ok('and the summary counts it', board2.body.summary.waitingToOrder >= 1, board2.body.summary)
 
-  for (const st of ['ACCEPTED', 'PREPARING', 'READY']) {
+  for (const st of ['ACCEPTED', 'READY']) {
     await call(`/staff/orders/${carOrder.body.order.id}/status`, { token: roadToken, body: { status: st } })
   }
   const runs = await call('/staff/runs', { token: roadToken })
@@ -2509,7 +2523,7 @@ async function runTests() {
   ok('the car orders without a zone, a table or a code', bareOrder.status === 201, bareOrder.body)
   ok('and follows the roadside flow all the same', bareOrder.body.order.serviceType === 'car')
 
-  for (const st of ['ACCEPTED', 'PREPARING', 'READY']) {
+  for (const st of ['ACCEPTED', 'READY']) {
     await call(`/staff/orders/${bareOrder.body.order.id}/status`, { token: roadToken, body: { status: st } })
   }
   const bareRuns = await call('/staff/runs', { token: roadToken })
@@ -2561,7 +2575,7 @@ async function runTests() {
     // And saying yes drops it into that mode's own flow, not delivery's.
     const yes = await call(`/staff/orders/${atTable.body.order.id}/accept`, { token: roadToken, method: 'POST' })
     ok('accepting puts it in the kitchen', yes.body.order.status === 'ACCEPTED', yes.body)
-    for (const st of ['PREPARING', 'READY', 'COMPLETED']) {
+    for (const st of ['READY']) {
       const r = await call(`/staff/orders/${atTable.body.order.id}/status`, { token: roadToken, body: { status: st } })
       ok(`and it finishes the dine-in way through ${st.toLowerCase()}`, r.status === 200, r.body)
     }
@@ -4166,7 +4180,7 @@ async function runTests() {
 
     const yes = await call(`/staff/orders/${order.body.order.id}/accept`, { token: roadToken, method: 'POST' })
     ok('the kitchen can take it', yes.body.order.status === 'ACCEPTED', yes.body)
-    for (const st of ['PREPARING', 'READY', 'OUT_FOR_DELIVERY']) {
+    for (const st of ['READY']) {
       const r = await call(`/staff/orders/${order.body.order.id}/status`, { token: roadToken, body: { status: st } })
       ok(`and walk it through ${st.toLowerCase().replace(/_/g, ' ')}`, r.status === 200, r.body)
     }
@@ -5421,10 +5435,10 @@ async function runTests() {
     // order is READY, a counter order is READY_FOR_PICKUP, a delivery is READY
     // before somebody walks it out. This one was placed for collection.
     ok('and lands on the right kind of ready for a pickup', readyAt.body.order.status === 'READY_FOR_PICKUP', readyAt.body.order.status)
-    // The step their till never reported is written rather than jumped over,
-    // because the customer's tracker draws that list and a hole in it reads as
-    // a broken order.
-    ok('with the step their till never reports filled in', readyAt.body.order.events.some((e: any) => e.status === 'PREPARING'), readyAt.body.order.events)
+    // Their till reports accepted and then food-ready with nothing between,
+    // and Khapee now has nothing between either — so the timeline is those two
+    // and the catch-up that used to fill the gap has no gap to fill.
+    ok('with a timeline of exactly what happened', readyAt.body.order.events.length === 3, readyAt.body.order.events)
 
     const nonsense = await call(`/petpooja/${secret}/callback`, {
       body: { restID: 'R156072', orderID: 'NOSUCH', status: '1' },

@@ -69,14 +69,25 @@ function isToday(createdAt: string): boolean {
   )
 }
 
+/**
+ * Three columns, because an order is only ever in three places.
+ *
+ * There were five, two of which existed to say things everybody in the room
+ * could already see: that cooking was happening, and that a plate had been
+ * handed over. Ready is where an order ends now, so it is the last column,
+ * and PREPARING keeps a home only because orders placed before the change
+ * still sit in it and must not vanish off the board.
+ */
 const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
   // Everything nobody has answered yet, plus anything already paid for and
   // therefore straight into the kitchen.
   { key: 'new', title: 'To accept', statuses: ['REQUESTED', 'NEW'] },
-  { key: 'accepted', title: 'Accepted', statuses: ['ACCEPTED'] },
-  { key: 'preparing', title: 'Preparing', statuses: ['PREPARING'] },
-  { key: 'ready', title: 'Ready', statuses: ['READY', 'READY_FOR_PICKUP'] },
-  { key: 'done', title: 'Completed', statuses: ['COMPLETED', 'PICKED_UP', 'CANCELLED', 'DECLINED'] },
+  { key: 'accepted', title: 'Accepted', statuses: ['ACCEPTED', 'PREPARING'] },
+  {
+    key: 'done',
+    title: 'Ready',
+    statuses: ['READY', 'READY_FOR_PICKUP', 'COMPLETED', 'PICKED_UP', 'DELIVERED', 'CANCELLED', 'DECLINED'],
+  },
 ]
 
 
@@ -113,8 +124,10 @@ const COLUMNS: { key: string; title: string; statuses: OrderStatus[] }[] = [
 const GO_WORDS: Partial<Record<OrderStatus, string>> = {
   ACCEPTED: 'Accept',
   PREPARING: 'Start cooking',
+  // Retained above only for orders placed before the app was cut to two
+  // steps; no flow offers it any more.
   READY: 'Food is ready',
-  READY_FOR_PICKUP: 'Ready to collect',
+  READY_FOR_PICKUP: 'Food is ready',
   COMPLETED: 'Handed over',
   PICKED_UP: 'They collected it',
   DELIVERING: 'Send it out',
@@ -870,7 +883,15 @@ export default function StaffOrders() {
                             )}
                           </b>
                           <em>
+                            {/*
+                              The number is on the ticket, not only in the
+                              history. It is how a kitchen asks "did you want
+                              this without onion" or says "we have run out" —
+                              and looking it up afterwards is no use while the
+                              person is still waiting.
+                            */}
                             #{o.orderNumber} · {o.customerName || 'Guest'}
+                            {o.customerPhone ? ` · ${o.customerPhone}` : ''}
                           </em>
                         </span>
                         <span className="qrow-meta">

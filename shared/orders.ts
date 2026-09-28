@@ -7,9 +7,28 @@ export type OrderType = 'dine_in' | 'pickup'
  */
 export type ServiceType = 'dine_in' | 'car' | 'takeaway' | 'pickup' | 'delivery' | 'precinct'
 
-export const DINE_IN_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED'] as const
-export const PICKUP_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP'] as const
-export const CAR_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERING', 'DELIVERED'] as const
+/**
+ * Two things happen to an order, and the app says both.
+ *
+ * There were five steps: new, preparing, ready, and a handover at the end. A
+ * kitchen pressed four buttons per order and a customer watched a bar creep
+ * along, and none of it told either of them anything they did not already
+ * know — the food is obviously being cooked between "yes" and "ready", and
+ * everybody in the room can see it has been handed over.
+ *
+ * So there are two: the restaurant has taken it, and the food is ready. The
+ * second is the end of the order. Every button that existed only to admit
+ * that cooking was happening is gone, and so is the one that said a plate had
+ * travelled a metre.
+ *
+ * The statuses themselves are kept in the type below rather than deleted:
+ * orders placed before this change still carry PREPARING or COMPLETED, and a
+ * database full of rows nothing can read is a worse problem than a longer
+ * union.
+ */
+export const DINE_IN_FLOW = ['NEW', 'ACCEPTED', 'READY'] as const
+export const PICKUP_FLOW = ['NEW', 'ACCEPTED', 'READY_FOR_PICKUP'] as const
+export const CAR_FLOW = ['NEW', 'ACCEPTED', 'READY'] as const
 
 /**
  * Delivery opens at REQUESTED rather than NEW, because here "accepted" is a
@@ -17,16 +36,16 @@ export const CAR_FLOW = ['NEW', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERING', 
  * no when it is full, and the app has to be able to say no too — so the order
  * waits for an answer before the customer is told anything is happening.
  */
-export const DELIVERY_FLOW = [
-  'REQUESTED',
-  'ACCEPTED',
-  'PREPARING',
-  'READY',
-  'OUT_FOR_DELIVERY',
-  'DELIVERED',
-] as const
+export const DELIVERY_FLOW = ['REQUESTED', 'ACCEPTED', 'READY'] as const
+
+/**
+ * Statuses no flow offers any more, kept so orders placed before the app was
+ * cut to two steps still read, and so a POS that reports one is understood.
+ */
+export type RetiredStatus = 'PREPARING' | 'COMPLETED' | 'PICKED_UP' | 'DELIVERING' | 'OUT_FOR_DELIVERY' | 'DELIVERED'
 
 export type OrderStatus =
+  | RetiredStatus
   | (typeof DINE_IN_FLOW)[number]
   | (typeof PICKUP_FLOW)[number]
   | (typeof CAR_FLOW)[number]

@@ -843,7 +843,13 @@ export function applyCallback(link: Link, orderNumber: string, status: string, c
    */
   const flow = flowFor(serviceOf(order))
   const ready = (['READY', 'READY_FOR_PICKUP'] as const).find((s) => flow.includes(s as any)) ?? null
-  const finished = (['COMPLETED', 'PICKED_UP', 'DELIVERED'] as const).find((s) => flow.includes(s as any)) ?? null
+  /*
+   * Khapee ends an order at ready, so their "delivered" has nowhere further
+   * to go and means the same thing here: the order is done. Falling back to
+   * ready rather than to nothing keeps a till that reports 10 from being
+   * answered with an error it cannot act on.
+   */
+  const finished = (['COMPLETED', 'PICKED_UP', 'DELIVERED'] as const).find((s) => flow.includes(s as any)) ?? ready
 
   const to =
     status === '-1'

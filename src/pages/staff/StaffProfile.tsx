@@ -550,7 +550,8 @@ export default function StaffProfile() {
                 // A car is the one place the food goes out to somebody
                 // already sitting in the thing they will leave in.
                 ['carPrepaidOnly', 'Orders to a car must be paid in the app'],
-                ['takeawayPrepaidOnly', 'Takeaway orders must be paid in the app'],
+                // Takeaway is now UPI-only everywhere (server/orders-service.ts),
+                // so its own switch would do nothing and is no longer shown.
               ] as const
             ).map(([key, label]) => (
               <div key={key} className="list-row">

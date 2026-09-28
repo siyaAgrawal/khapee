@@ -222,7 +222,10 @@ export default function Checkout() {
   const prepaidOnly =
     !!options?.prepaidOnly ||
     (isCar && !!options?.carPrepaidOnly) ||
-    (where === 'later' && !!options?.takeawayPrepaidOnly)
+    // Takeaway — ordered here to carry out, or ordered ahead to collect — is
+    // paid in the app at every restaurant; the server refuses it otherwise.
+    where === 'later' ||
+    where === 'takeaway'
   useEffect(() => {
     // Nothing to choose when there is only one way to pay.
     if (prepaidOnly && !payNow) setPayNow(true)
@@ -720,8 +723,8 @@ export default function Checkout() {
                 {prepaidOnly
                   ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
                     ? 'Orders brought out to your car are paid for in the app'
-                    : where === 'later' && options?.takeawayPrepaidOnly && !options?.prepaidOnly
-                      ? 'Takeaway orders are paid for in the app'
+                    : (where === 'later' || where === 'takeaway') && !options?.prepaidOnly
+                      ? 'Takeaway orders are paid by UPI in the app'
                     : 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
                   : isDelivery
                   ? 'Cash or UPI when it reaches you'

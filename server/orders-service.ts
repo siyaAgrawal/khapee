@@ -344,6 +344,23 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     return { ok: false, status: 400, error: 'Add a 10-digit mobile number so the restaurant can reach you.' }
   }
 
+  /*
+   * Takeaway is paid for in the app, at every restaurant.
+   *
+   * Both kinds: ordered at the restaurant and carried out, and ordered ahead
+   * to collect. Nobody is sitting at a table the restaurant can walk up to,
+   * so a takeaway order nobody pays for is food made for nobody. Only orders
+   * a customer places themselves — the restaurant's own till still takes cash
+   * at the counter for a takeaway it rings up.
+   */
+  if (!input.paymentClaim && input.requirePhone && (input.type === 'pickup' || input.takeaway)) {
+    return {
+      ok: false,
+      status: 402,
+      error: 'Takeaway orders are paid by UPI in the app. Pay by UPI to place the order.',
+    }
+  }
+
   const orderNumber = generateOrderNumber()
   const verifyToken = randomToken(10)
   const paymentMethod = input.paymentMethod === 'app' ? 'app' : 'counter'

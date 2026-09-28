@@ -46,9 +46,20 @@ async function call<T = any>(
   // Placing an order needs a number the restaurant can ring. Every test below
   // is about something else, so one is filled in here rather than in fifty
   // bodies; the requirement itself is checked in "A NUMBER THEY CAN RING".
+  //
+  // Takeaway is paid by UPI in the app, always (see "TAKEAWAY IS UPI ONLY"),
+  // and most tests below use a pickup order as the plainest order there is.
+  // So a takeaway body with no payment of its own gets a UPI claim here; a
+  // test that means to check the refusal sends `paymentClaim: null`.
+  const order = opts.body as Record<string, unknown> | undefined
+  const takeaway = !!order && (order.type === 'pickup' || order.takeaway === true)
   const payload =
-    path === '/orders' && opts.body && typeof opts.body === 'object'
-      ? { contactPhone: '98765 43210', ...(opts.body as Record<string, unknown>) }
+    path === '/orders' && order && typeof order === 'object'
+      ? {
+          contactPhone: '98765 43210',
+          ...(takeaway && !('paymentClaim' in order) ? { paymentClaim: { upiRef: '123456789012' } } : {}),
+          ...order,
+        }
       : opts.body
 
   const res = await fetch(BASE + path, {
@@ -422,6 +433,13 @@ async function runTests() {
   const tableRow = db
     .prepare('SELECT * FROM restaurant_tables WHERE restaurant_id = ? ORDER BY id LIMIT 1')
     .get(mornington.id) as any
+  /**
+   * A seat at that table, for tests that need an order nobody has paid for:
+   * takeaway can no longer be unpaid (TAKEAWAY IS UPI ONLY), so the plainest
+   * unpaid order is one placed at a table.
+   */
+  const seatAtTable = async (): Promise<string> =>
+    (await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })).body.session.token
   const resolveTable = await call('/resolve', { body: { value: `ORDRO:TABLE:${tableRow.token}` } })
   ok('a scanned table QR resolves to restaurant + table', resolveTable.body.kind === 'table' && resolveTable.body.tableLabel === tableRow.label, resolveTable.body)
 
@@ -1082,9 +1100,11 @@ async function runTests() {
       takeaway: true,
       items: [{ menuItemId: croissant.id, quantity: 1 }],
       customerName: 'Remote Guest',
+      paymentClaim: null,
     },
   })
-  ok('takeaway still needs proof the customer is there', noProofTakeaway.status === 400)
+  // Refused on proof or on payment — takeaway is UPI-only now, so either way.
+  ok('takeaway still needs proof the customer is there', [400, 402].includes(noProofTakeaway.status), noProofTakeaway.status)
 
   await call('/staff/restaurant', { token: reLogin.body.token, method: 'PATCH', body: { acceptsPickup: false } })
   const pickupOff = await call('/orders', {
@@ -1425,11 +1445,12 @@ async function runTests() {
       items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
       customerName: 'Chancer',
       contactPhone: '98765 43210',
+      paymentClaim: null,
     },
   })
   ok(
     'takeaway with neither code, session nor payment is still refused',
-    takeawayNoProof.status === 400,
+    [400, 402].includes(takeawayNoProof.status),
     takeawayNoProof.body,
   )
 
@@ -2470,15 +2491,18 @@ async function runTests() {
   )
   ok(
     'and so does takeaway, which is also ordered at the counter',
-    (await call('/orders', {
-      body: {
-        restaurantId: mornington.id,
-        type: 'dine_in',
-        takeaway: true,
-        items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
-        customerName: 'From home',
-      },
-    })).status === 400,
+    [400, 402].includes(
+      (await call('/orders', {
+        body: {
+          restaurantId: mornington.id,
+          type: 'dine_in',
+          takeaway: true,
+          items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+          customerName: 'From home',
+          paymentClaim: null,
+        },
+      })).status,
+    ),
   )
   const fromAway = await call('/orders', {
     body: {
@@ -2488,8 +2512,8 @@ async function runTests() {
       customerName: 'From home',
     },
   })
-  ok('but collecting later needs nothing at all', fromAway.status === 201, fromAway.body)
-  ok('and it is a real order the restaurant can see', fromAway.body.order.status === 'REQUESTED')
+  ok('but collecting later needs no code — only paying by UPI', fromAway.status === 201, fromAway.body)
+  ok('and, paid, it is a real order that goes straight in', fromAway.body.order.status === 'NEW', fromAway.body.order?.status)
 
   group('ROADSIDE WITHOUT ZONES — a place with one stretch of kerb')
   // Some places have several stretches of road and need to know which one you
@@ -2538,12 +2562,16 @@ async function runTests() {
     // A restaurant that has been paid can start cooking. One that has not is
     // being asked to make food on the promise that somebody turns up, and that
     // is a decision it has to be able to refuse — whatever way the order came.
+    // Takeaway can no longer be unpaid (TAKEAWAY IS UPI ONLY), so the order
+    // that owes money is one at a table.
+    const seat = await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })
     const unpaid = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Owes money',
+        sessionToken: seat.body.session.token,
       },
     })
     ok('an unpaid order waits on the kitchen', unpaid.body.order.status === 'REQUESTED', unpaid.body.order)
@@ -2601,7 +2629,8 @@ async function runTests() {
     const cash = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Pays later',
       },
@@ -2682,7 +2711,8 @@ async function runTests() {
     const waiting = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Waiting on a yes',
       },
@@ -2698,7 +2728,8 @@ async function runTests() {
     const another = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Turned away',
       },
@@ -4670,7 +4701,8 @@ async function runTests() {
     const o = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Turned away',
         contactPhone: '9876512121',
@@ -4856,7 +4888,8 @@ async function runTests() {
     const second = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: two.map((i: any) => ({ menuItemId: i.id, quantity: 1 })),
         customerName: 'No thanks then',
         contactPhone: '9876566666',
@@ -4872,6 +4905,70 @@ async function runTests() {
     ok('or calls the whole thing off', called.body.order.status === 'CANCELLED', called.body.order.status)
   }
 
+  group('TAKEAWAY IS UPI ONLY — both kinds, at every restaurant')
+  {
+    const menu = await call('/staff/menu', { token: roadToken })
+    const dish = menu.body.categories.flatMap((c: any) => c.items).find((i: any) => i.isAvailable)
+    const later = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Cash please',
+        contactPhone: '9876500001',
+        paymentClaim: null,
+      },
+    })
+    ok('collecting later without paying is refused', later.status === 402, later.status)
+    ok('and says to pay by UPI', /UPI/.test(later.body.error ?? ''), later.body)
+
+    const seat = await seatAtTable()
+    const carryOut = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        takeaway: true,
+        sessionToken: seat,
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Carry out, cash',
+        contactPhone: '9876500002',
+        paymentClaim: null,
+      },
+    })
+    ok('takeaway ordered at the restaurant without paying is refused', carryOut.status === 402, carryOut.status)
+
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Paid by UPI',
+        contactPhone: '9876500003',
+        paymentClaim: { upiRef: '512312345678' },
+      },
+    })
+    ok('paid by UPI, takeaway goes through', paid.status === 201, paid.body)
+
+    const eatIn = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        sessionToken: seat,
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Eating in, paying after',
+        contactPhone: '9876500004',
+        paymentClaim: null,
+      },
+    })
+    ok('eating in can still be paid afterwards', eatIn.status === 201, eatIn.body)
+
+    const till = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { serviceMode: 'takeaway', items: [{ menuItemId: dish.id, quantity: 1 }] },
+    })
+    ok('the restaurant’s own till still rings up a cash takeaway', [200, 201].includes(till.status), till.body)
+  }
+
   group('CUSTOMER CANCELS — any order, only until the restaurant accepts')
   {
     const menu = await call('/staff/menu', { token: roadToken })
@@ -4880,8 +4977,11 @@ async function runTests() {
       (
         await call('/orders', {
           body: {
+            // At a table: takeaway is paid up front now, and a paid order is
+            // the restaurant's to cancel, not the customer's.
             restaurantId: mornington.id,
-            type: 'pickup',
+            type: 'dine_in',
+            sessionToken: await seatAtTable(),
             items: [{ menuItemId: dish.id, quantity: 1 }],
             customerName: name,
             contactPhone: phone,
@@ -4918,7 +5018,8 @@ async function runTests() {
     const first = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: [{ menuItemId: dish.id, quantity: 2 }],
         customerName: 'Still waiting',
         contactPhone: '9876577777',
@@ -5065,6 +5166,7 @@ async function runTests() {
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Collecting later',
         contactPhone: '9876518181',
+        paymentClaim: null,
       },
     })
     ok('an unpaid collection is refused', unpaid.status === 402, unpaid.body)
@@ -5237,6 +5339,7 @@ async function runTests() {
         items: [{ menuItemId: sweet.items[0].id, quantity: 1 }],
         customerName: 'Pay later',
         contactPhone: '9876533333',
+        paymentClaim: null,
       },
     })
     // The second half of the same switch: a place running on one person and a
@@ -5409,7 +5512,8 @@ async function runTests() {
     const order = await call('/orders', {
       body: {
         restaurantId: mornington.id,
-        type: 'pickup',
+        type: 'dine_in',
+        sessionToken: await seatAtTable(),
         items: [{ menuItemId: croissant.id, quantity: 1 }],
         customerName: 'Petpooja Kitchen',
         contactPhone: '9876511111',
@@ -5433,8 +5537,9 @@ async function runTests() {
     const readyAt = await call(`/orders/${order.body.order.orderNumber}?token=${order.body.order.verifyToken}`)
     // "Food ready" is one word in Petpooja and three statuses here — a table
     // order is READY, a counter order is READY_FOR_PICKUP, a delivery is READY
-    // before somebody walks it out. This one was placed for collection.
-    ok('and lands on the right kind of ready for a pickup', readyAt.body.order.status === 'READY_FOR_PICKUP', readyAt.body.order.status)
+    // before somebody walks it out. This one was placed at a table (a takeaway
+    // is paid up front now, so it never waits for an Accept to be answered).
+    ok('and lands on the right kind of ready for a table', readyAt.body.order.status === 'READY', readyAt.body.order.status)
     // Their till reports accepted and then food-ready with nothing between,
     // and Khapee now has nothing between either — so the timeline is those two
     // and the catch-up that used to fill the gap has no gap to fill.

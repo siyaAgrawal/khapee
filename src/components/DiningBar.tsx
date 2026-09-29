@@ -63,7 +63,10 @@ export default function DiningBar({
       ? `Delivering to ${session!.address || session!.areaName || 'your address'}`
       : mode === 'car'
         ? `In the car${session!.seqNo ? ` · Car ${session!.seqNo}` : ''}`
-        : `You're at ${session?.restaurantName}${session?.tableLabel ? ` · ${session.tableLabel}` : ''}`
+        : // Just the table. "You're at Revery" is on the page already, and the
+          // session explanation under it was four lines between the customer
+          // and the menu.
+          session?.tableLabel || `At ${session?.restaurantName}`
   const sub =
     mode === 'precinct'
       ? `${session!.restaurantName} accepts the order, then walks it over.`
@@ -71,9 +74,7 @@ export default function DiningBar({
       ? `${session!.restaurantName} accepts the order before it is made.`
       : mode === 'car'
         ? 'They bring it out to you — no need to come in.'
-        : session?.source === 'payment'
-          ? 'Verified by your payment — order away.'
-          : 'Session open — order without entering the code again.'
+        : 'Order from here — it comes to your table.'
 
   return (
     <>

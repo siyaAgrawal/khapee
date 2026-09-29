@@ -365,13 +365,20 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   const verifyToken = randomToken(10)
   const paymentMethod = input.paymentMethod === 'app' ? 'app' : 'counter'
 
-  // Khapee never sees the money, so a payment it is told about has to come
-  // with the one number the restaurant can look up: the UTR their own UPI app
-  // prints against the transfer. Without it "I paid" is unfalsifiable, and the
-  // person left carrying that is whoever made the food.
+  /*
+   * The UPI reference is optional.
+   *
+   * Asking everybody to copy a 12-digit number out of their UPI app was the
+   * single slowest thing about paying, and it is not how the restaurant
+   * checks anyway: the payment arrives in their own UPI app with the
+   * customer's name on it (the note on the UPI request — see
+   * /orders/payment-request), and they tick it off under "To confirm" before
+   * the food goes out. A reference that IS given still has to be a whole one,
+   * so a half-typed number is caught rather than saved.
+   */
   if (input.paymentClaim) {
     const ref = String(input.paymentClaim.upiRef ?? '').replace(/\D/g, '')
-    if (ref.length < 12) {
+    if (ref.length > 0 && ref.length < 12) {
       return {
         ok: false,
         status: 400,
@@ -733,8 +740,9 @@ export function payOrderByUpi(orderId: number, upiRef: string): { ok: boolean; s
   if (['CANCELLED', 'DECLINED'].includes(order.status)) {
     return { ok: false, status: 409, error: 'This order was cancelled, so there is nothing to pay.' }
   }
+  // Optional, as at checkout; a partial one is still refused.
   const ref = String(upiRef ?? '').replace(/\D/g, '')
-  if (ref.length < 12) {
+  if (ref.length > 0 && ref.length < 12) {
     return { ok: false, status: 400, error: 'Enter the 12-digit UPI reference so the restaurant can find your payment.' }
   }
   const owed = outstandingCents(orderId)
@@ -748,7 +756,12 @@ export function payOrderByUpi(orderId: number, upiRef: string): { ok: boolean; s
     db.prepare("UPDATE orders SET needs_prepay = NULL, updated_at = datetime('now') WHERE id = ?").run(orderId)
     db.prepare(
       `INSERT INTO notifications (restaurant_id, order_id, title, body) VALUES (?, ?, ?, ?)`,
-    ).run(order.restaurant_id, orderId, `#${order.order_number} paid online`, `${order.customer_name ?? ''} · ${money(owed)} by UPI · ref ${ref}`)
+    ).run(
+      order.restaurant_id,
+      orderId,
+      `#${order.order_number} paid online`,
+      `${order.customer_name ?? ''} · ${money(owed)} by UPI${ref ? ` · ref ${ref}` : ' · check your UPI app'}`,
+    )
   })()
 
   const r = db.prepare('SELECT name FROM restaurants WHERE id = ?').get(order.restaurant_id) as any

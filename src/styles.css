@@ -8263,3 +8263,131 @@ button.nav-link {
 .ops-who a {
   font-weight: 600;
 }
+.quick-once {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ============================================ One-tap ordering (menu page)
+   A dish with no photo is one compact row — name, a line of description,
+   price and Add — instead of a card built around an empty picture box. About
+   twice as many fit on a phone screen. */
+.item-card.item-compact {
+  padding: 11px 13px;
+  gap: 0;
+}
+.item-compact .item-desc {
+  -webkit-line-clamp: 1;
+}
+.item-compact .item-foot {
+  margin-top: 6px;
+}
+/* No picture, or already seated: the header is a line, not a screen. */
+.r-hero-slim {
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+.r-hero-slim .r-hero-body {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.r-hero-slim h1 {
+  font-size: 22px;
+}
+/* "Order again" — the last order here, one tap back into the cart. */
+.order-again {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+}
+.order-again-mark {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.order-again-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.order-again-body span {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.order-again-price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pay-ref-link {
+  margin-top: 6px;
+}
+/* A compact dish is one row: name and price on the left, Add on the right. */
+.item-compact .item-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+}
+.item-compact .item-title,
+.item-compact .item-desc {
+  grid-column: 1;
+}
+.item-compact .item-foot {
+  display: contents;
+}
+.item-compact .item-price {
+  grid-column: 1;
+  margin-top: 2px;
+}
+.item-compact .item-foot > :not(.item-price) {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+}
+/* The ways in, as one row of small buttons. */
+.way-in {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.way-in-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.way-in-btn.is-chosen {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

@@ -368,6 +368,36 @@ function shapeMenuItem(i: any) {
   }
 }
 
+/**
+ * What people actually order here, most first — for the top of the menu, so
+ * a regular's cold coffee is the first thing on the screen rather than the
+ * sixtieth. Dish ids only; nothing about who ordered them. Only dishes still
+ * on the menu and available, from the last 60 days of real (not cancelled)
+ * orders, and only once a dish has been ordered more than once.
+ */
+publicRouter.get('/restaurants/:id/popular', (req, res) => {
+  const restaurantId = Number(req.params.id)
+  const rows = db
+    .prepare(
+      `SELECT oi.menu_item_id AS id, SUM(oi.quantity) AS n
+         FROM order_items oi
+         JOIN orders o ON o.id = oi.order_id
+         JOIN menu_items m ON m.id = oi.menu_item_id
+        WHERE o.restaurant_id = ?
+          AND o.status NOT IN ('CANCELLED', 'DECLINED')
+          AND o.created_at >= datetime('now', '-60 days')
+          AND (oi.accepted IS NULL OR oi.accepted = 1)
+          AND m.is_available = 1
+        GROUP BY oi.menu_item_id
+       HAVING n > 1
+        ORDER BY n DESC
+        LIMIT 6`,
+    )
+    .all(restaurantId) as any[]
+  res.set('Cache-Control', 'public, max-age=300')
+  res.json({ ids: rows.map((r) => Number(r.id)) })
+})
+
 /** The roadside zones a restaurant has set up, for the "where are you?" step. */
 publicRouter.get('/restaurants/:id/zones', (req, res) => {
   const zones = db

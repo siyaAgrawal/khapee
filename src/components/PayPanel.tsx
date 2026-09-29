@@ -30,6 +30,7 @@ export default function PayPanel({
   label?: string
 }) {
   const [ref, setRef] = useState('')
+  const [showRef, setShowRef] = useState(false)
 
   return (
     <div className="pay-panel">
@@ -83,38 +84,41 @@ export default function PayPanel({
         ))}
 
       {/*
-        Not optional any more.
+        Optional again.
 
-        Khapee never sees the money — it goes from the customer's bank to the
-        restaurant's — so the only thing standing between "I paid" and a free
-        meal is whether the restaurant can find the payment. The UTR is the
-        number printed on both sides of that transfer: with it, they check
-        their app and tick it off in seconds. Without it they are searching a
-        statement for an amount that several people paid today.
+        Copying a 12-digit number out of a UPI app was the slowest part of
+        paying. The restaurant does not need it to find the payment: it lands
+        in their own UPI app with the customer's name on it, and they tick it
+        off under "To confirm" before the food goes out. Somebody who has the
+        number to hand can still add it.
       */}
-      <div className="field">
-        <label htmlFor="upi-ref">UPI reference number</label>
-        <input
-          id="upi-ref"
-          className="input"
-          inputMode="numeric"
-          placeholder="12-digit UTR from your UPI app"
-          value={ref}
-          onChange={(e) => setRef(e.target.value.replace(/\D/g, '').slice(0, 20))}
-        />
-        <span className="hint">
-          In your UPI app it is on the payment, as &ldquo;UTR&rdquo; or &ldquo;UPI transaction ID&rdquo;.
-          {' '}{payeeName} needs it to find your payment.
-        </span>
-      </div>
+      {showRef ? (
+        <div className="field">
+          <label htmlFor="upi-ref">UPI reference (optional)</label>
+          <input
+            id="upi-ref"
+            className="input"
+            inputMode="numeric"
+            placeholder="12-digit UTR from your UPI app"
+            value={ref}
+            onChange={(e) => setRef(e.target.value.replace(/\D/g, '').slice(0, 20))}
+            autoFocus
+          />
+        </div>
+      ) : null}
 
       <button
         className="btn btn-accent btn-lg btn-block"
-        disabled={busy || ref.trim().length < 12}
+        disabled={busy || (ref.length > 0 && ref.length < 12)}
         onClick={() => onPaid(ref)}
       >
-        {busy ? <Spinner /> : ref.trim().length < 12 ? 'Enter the 12-digit reference' : "I've paid"}
+        {busy ? <Spinner /> : ref.length > 0 && ref.length < 12 ? 'Finish the 12-digit reference' : "I've paid"}
       </button>
+      {!showRef && (
+        <button type="button" className="btn btn-ghost btn-sm btn-block pay-ref-link" onClick={() => setShowRef(true)}>
+          Have the UPI reference? Add it (optional)
+        </button>
+      )}
       {onCancel && (
         <button className="btn btn-ghost btn-block" style={{ marginTop: 8 }} onClick={onCancel} disabled={busy}>
           Back

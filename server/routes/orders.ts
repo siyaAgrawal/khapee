@@ -112,7 +112,11 @@ ordersRouter.post('/payment-request', (req, res) => {
       vpa: r.upi_vpa,
       name: r.upi_name || r.name,
       amountCents,
-      note: `${r.name} order`,
+      // The customer's name on the payment, so the restaurant can match it in
+      // its own UPI app without a reference number.
+      note: String(req.body?.customerName ?? '').trim()
+        ? `${r.name} · ${String(req.body.customerName).trim().slice(0, 30)}`
+        : `${r.name} order`,
       ref,
     }),
   })

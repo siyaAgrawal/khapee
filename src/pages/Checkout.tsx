@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
 import VerifyModal from '../components/VerifyModal'
@@ -9,6 +9,7 @@ import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { clearIntent, readIntent } from '../lib/intent'
+import { readMe, saveLastOrder, saveMe } from '../lib/me'
 import { EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../components/ui'
 
 type Where = 'here' | 'takeaway' | 'later'
@@ -78,9 +79,19 @@ export default function Checkout() {
    * own account gets an empty box, like anybody else standing at the counter.
    */
   const ownsThis = !!user?.restaurants?.some((r) => r.id === restaurantId)
-  const [name, setName] = useState(ownsThis ? '' : (user?.name ?? ''))
+  /* Asked once, then remembered on this phone (lib/me.ts) — typing a name and
+     ten digits on every order was most of the work of ordering. */
+  const me = readMe()
+  const [name, setName] = useState(ownsThis ? '' : (user?.name || me?.name || ''))
   /** How the restaurant reaches this order. Not optional — see needsPhone. */
-  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [phone, setPhone] = useState(user?.phone || me?.phone || '')
+  /**
+   * Opened from the menu's one-tap "Place order". If nothing is missing the
+   * order goes straight through; if something is (a first order, with no
+   * name or number yet), this screen shows just that and one button.
+   */
+  const [params] = useSearchParams()
+  const go = params.get('go') === '1'
   const [note, setNote] = useState('')
   /**
    * How long until they get to the restaurant, for an order placed before
@@ -267,6 +278,31 @@ export default function Checkout() {
    */
   const needsPhone = !isNearby && !isDelivery && phone.replace(/\D/g, '').length < 10
   const ready = !needsTable && !needsProof && !needsName && !needsPhone
+  /**
+   * The one-tap order, when all that is missing is the name and number: show
+   * only those two boxes and the button. Where it is going, the table, the
+   * note and how to pay are all already settled, and restating them on a
+   * first order made it look like a form to fill in.
+   */
+  const lean = go && !needsTable && !needsProof && !isDelivery
+
+  /*
+   * One tap from the menu. Once the payment options are known (they decide
+   * whether this is pay-later or UPI-first), an order with nothing missing is
+   * placed — or, when it has to be paid first, the UPI screen opens — without
+   * the customer touching this page. Only once per visit to the page.
+   */
+  const [autoTried, setAutoTried] = useState(false)
+  useEffect(() => {
+    if (!go || autoTried || !options || placing || payRequest || !count) return
+    // Decided once, on arrival. If something was missing then, the customer
+    // finishes it and presses the button — the order must never go off by
+    // itself halfway through typing a name.
+    setAutoTried(true)
+    if (!ready || shortOfMinimum > 0) return
+    if (payNow) void startPayment()
+    else void place()
+  }, [go, autoTried, options, ready, payNow, placing, payRequest, count]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startPayment = async () => {
     setPlacing(true)
@@ -279,6 +315,8 @@ export default function Checkout() {
           // So the amount asked for is the amount owed: a delivery adds a fee
           // that the dishes alone do not account for.
           sessionToken: dining?.token ?? null,
+          // Written on the UPI payment, so the restaurant can match it by name.
+          customerName: name.trim(),
         },
       })
       setPayRequest(r)
@@ -319,6 +357,13 @@ export default function Checkout() {
       })
       const order = r.order
       rememberReceipt(order.orderNumber, order.verifyToken)
+      saveMe(name, phone)
+      if (restaurantId) {
+        saveLastOrder(
+          restaurantId,
+          cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity, name: l.name, priceCents: l.priceCents })),
+        )
+      }
       /**
        * The room this order opened stays open — and this phone stays out of it.
        *
@@ -379,6 +424,14 @@ export default function Checkout() {
 
         {error && <div className="form-error">{error}</div>}
 
+        {/* The one-tap order from the menu, going through by itself. */}
+        {go && placing && !payRequest && <LoadingBlock label="Placing your order…" />}
+        {go && !ready && !placing && (needsName || needsPhone) && (
+          <p className="quick-once">Just your name and number — only this once.</p>
+        )}
+
+        {!lean && (
+          <>
         {/* Where is this going? Already answered, if they came by car or asked
             for it to be brought to them. */}
         {placeDecided ? (
@@ -442,6 +495,8 @@ export default function Checkout() {
             </Link>
           </div>
         )}
+          </>
+        )}
 
         {/*
           Ordering before setting off: when will you be here?
@@ -503,7 +558,7 @@ export default function Checkout() {
             bigger table, and the only thing worse than asking twice is not
             letting them correct it.
           */}
-          {where === 'here' && !placeDecided && seated && !changingTable && (
+          {!lean && where === 'here' && !placeDecided && seated && !changingTable && (
             <div className="field">
               <label>Table</label>
               <div className="seated-at">
@@ -587,7 +642,7 @@ export default function Checkout() {
             </div>
           )}
 
-          <div className="field">
+          <div className="field" style={lean ? { display: 'none' } : undefined}>
             <label htmlFor="co-note">Anything we should know? (optional)</label>
             <textarea
               id="co-note"
@@ -602,7 +657,7 @@ export default function Checkout() {
 
           {/* The code — only mentioned when it is actually the missing piece.
               A car or a delivery has said where it is going at the top already. */}
-          {placeDecided ? null : verified ? (
+          {placeDecided || lean ? null : verified ? (
             <div className="verified-banner">
               <span>✓</span>
               <div style={{ flex: 1 }}>
@@ -687,6 +742,10 @@ export default function Checkout() {
             somebody who does has to open, read, pick and come back to see what
             they picked. Two rows say everything at once.
           */}
+          {lean && !payNow ? (
+            <p className="tiny muted pay-picks-foot">{payLaterLabel} — nothing to pay now.</p>
+          ) : (
+          <>
           <p className="pay-head-label">Pay using</p>
           <div className="pay-picks">
             <button
@@ -738,6 +797,8 @@ export default function Checkout() {
             </button>
           </div>
           <p className="tiny muted pay-picks-foot">{paySub}</p>
+          </>
+          )}
 
           <button
             className="btn btn-accent btn-lg btn-block"

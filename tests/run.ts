@@ -2651,9 +2651,9 @@ async function runTests() {
         paymentClaim: { upiRef: '402311112222' },
       },
     })
-    // Khapee never sees the money, so "I paid" has to come with the number the
-    // restaurant can look up. Without it the claim is unfalsifiable and the
-    // person carrying the risk is whoever made the food.
+    // The reference is optional now: copying 12 digits out of a UPI app was
+    // the slowest part of paying, and the restaurant matches the payment by
+    // the name on it in its own app. A half-typed one is still refused.
     const noRef = await call('/orders', {
       body: {
         restaurantId: mornington.id,
@@ -2663,7 +2663,8 @@ async function runTests() {
         paymentClaim: { upiRef: '' },
       },
     })
-    ok('a payment claim without a reference is refused', noRef.status === 400, noRef.body)
+    ok('a payment claim without a reference goes through', noRef.status === 201, noRef.body)
+    ok('and reads as sent, for the restaurant to check', noRef.body.order?.paymentState === 'sent', noRef.body.order)
     const shortRef = await call('/orders', {
       body: {
         restaurantId: mornington.id,

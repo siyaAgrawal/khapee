@@ -384,12 +384,10 @@ async function runTests() {
   const revoked = await call('/orders/verify-code', { body: { restaurantId: mornington.id, code: revokable.body.code.code } })
   ok('a cancelled code is rejected', revoked.status === 400 && revoked.body.reason === 'revoked')
 
-  // Naming the table is the proof now. It is chosen from this restaurant's own
-  // list and checked against it, and the food is carried to it — an order to
-  // table 4 from somebody not at table 4 arrives at table 4, where nobody
-  // wants it. Demanding a scan on top of that asked somebody sitting in the
-  // room to establish that they were in the room.
-  const atATable = await call('/orders', {
+  // Eating in starts with the QR on the table. Naming a table from the list
+  // is not enough on its own any more; once scanned, the customer may still
+  // move to another table.
+  const pickedOnly = await call('/orders', {
     body: {
       restaurantId: mornington.id,
       type: 'dine_in',
@@ -399,8 +397,28 @@ async function runTests() {
       tableId: tables[0].id,
     },
   })
-  ok('picking a table is enough to order to it', atATable.status === 201, atATable.body)
-  ok('and the order knows which table', atATable.body.order?.tableLabel === tables[0].label, atATable.body.order)
+  ok('picking a table without scanning is refused', pickedOnly.status === 400, pickedOnly.body)
+  ok('and says to scan the table QR', /Scan the QR/.test(pickedOnly.body.error ?? ''), pickedOnly.body)
+
+  const scannedFirst = (db.prepare('SELECT token FROM restaurant_tables WHERE id = ?').get(tables[0].id) as any).token
+  const seatedByScan = await call('/sessions', { body: { value: `KHAPEE:TABLE:${scannedFirst}` } })
+  const atATable = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Sitting down',
+      contactPhone: '98765 43210',
+      sessionToken: seatedByScan.body.session.token,
+      tableId: tables[1]?.id ?? tables[0].id,
+    },
+  })
+  ok('after scanning, they can order — and move to another table', atATable.status === 201, atATable.body)
+  ok(
+    'and the order knows which table',
+    atATable.body.order?.tableLabel === (tables[1] ?? tables[0]).label,
+    atATable.body.order,
+  )
 
   // A table nobody offered is still refused: the list is the check.
   const notATable = await call('/orders', {
@@ -1408,7 +1426,9 @@ async function runTests() {
 
   group('PAY FIRST — payment stands in for the code')
   const payFirstTable = (await call(`/orders/tables/${mornington.id}`)).body.tables[0]
-  const payFirst = await call('/orders', {
+  // Paying is not a way round the table QR: without the scan, a table order
+  // is refused even when paid.
+  const paidNoScan = await call('/orders', {
     body: {
       restaurantId: mornington.id,
       type: 'dine_in',
@@ -1418,7 +1438,18 @@ async function runTests() {
       paymentClaim: { upiRef: '555566667777' },
     },
   })
-  ok('paying through the app needs no access code', payFirst.status === 201, payFirst.body)
+  ok('paying without scanning the table is refused', paidNoScan.status === 400, paidNoScan.body)
+  const payFirst = await call('/orders', {
+    body: {
+      restaurantId: mornington.id,
+      type: 'dine_in',
+      items: [{ menuItemId: coldCoffee.id, quantity: 1 }],
+      customerName: 'Prepaid Diner',
+      tableToken: (db.prepare('SELECT token FROM restaurant_tables WHERE id = ?').get(payFirstTable.id) as any).token,
+      paymentClaim: { upiRef: '555566667777' },
+    },
+  })
+  ok('with the table scanned, paying through the app needs no access code', payFirst.status === 201, payFirst.body)
   ok('the prepaid order is seated at the chosen table', payFirst.body.order.tableLabel === payFirstTable.label)
   ok('paying opens a session for the rest of the meal', typeof payFirst.body.order.sessionToken === 'string')
   const paidSession = payFirst.body.order.sessionToken

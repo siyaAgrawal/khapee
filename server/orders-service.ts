@@ -224,8 +224,29 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       // asking for one is exactly the friction these modes exist to remove.
       tableId = null
       tableLabel = null
-    } else if (!tableId) {
-      return { ok: false, status: 400, error: 'Please choose your table number.' }
+    } else {
+      /*
+       * Eating in starts with the QR on the table — nothing else.
+       *
+       * Picking a table from a list let anybody anywhere send food to "table
+       * 4", and it made the phone ask a question the table itself answers.
+       * A customer's order to a table now needs the scan: the table's own QR
+       * token, or a session that scanning (or staff) opened. Once scanned,
+       * they may move to another table — the scan is the proof they are in
+       * the room — but never start without one. The restaurant's own till
+       * (requirePhone false) is not a customer and is not asked.
+       */
+      // A staff code counts too — a member of staff handed it over at the
+      // table — for restaurants that use codes. Revery does not (its codes
+      // are switched off), so there the QR is the only way in.
+      const scanned =
+        !!tableToken ||
+        !!accessCodeId ||
+        (!!liveSession && (liveSession.source === 'table_qr' || liveSession.source === 'code' || !!liveSession.table_id))
+      if (input.requirePhone && !scanned) {
+        return { ok: false, status: 400, error: 'Scan the QR code on your table to order at the restaurant.' }
+      }
+      if (!tableId) return { ok: false, status: 400, error: 'Please choose your table number.' }
     }
   }
 

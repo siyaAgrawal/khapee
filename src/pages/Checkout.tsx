@@ -253,8 +253,14 @@ export default function Checkout() {
           : 'Pay from your own UPI app before it is made'
       : 'Cash or UPI, when you get it'
 
+  /**
+   * Eating in starts with the table's QR — see the rule in createOrder. A
+   * scan leaves a table context, or a table session; either is "scanned in".
+   * Without one there is no table list to pick from, only the scanner.
+   */
+  const scannedIn = !!scannedTable || (!!dining?.token && !!dining?.tableId)
   // What still stands between the customer and their food.
-  const needsTable = where === 'here' && !seated && !placeDecided
+  const needsTable = where === 'here' && !placeDecided && (!scannedIn || !seated)
   /**
    * Takeaway still has to be proved; eating in no longer does.
    *
@@ -575,7 +581,27 @@ export default function Checkout() {
             </div>
           )}
 
-          {where === 'here' && !placeDecided && (!seated || changingTable) && (
+          {/* Not scanned: no list to pick from — the QR on the table is the
+              way in. Scanning opens the table and the order goes straight on. */}
+          {where === 'here' && !placeDecided && !scannedIn && (
+            <div className="scan-first">
+              <strong>Scan the QR on your table</strong>
+              <span className="tiny muted">Ordering at the restaurant starts with your table&rsquo;s QR code.</span>
+              <button
+                type="button"
+                className="btn btn-accent btn-sm"
+                onClick={() => {
+                  setPlaceAfterVerify(false)
+                  setVerifyOpen(true)
+                }}
+              >
+                Scan QR
+              </button>
+            </div>
+          )}
+
+          {/* Scanned, and asked to move: the list, only then. */}
+          {where === 'here' && !placeDecided && scannedIn && changingTable && (
             <div className="field">
               <label>Table</label>
               {!tables ? (
@@ -815,6 +841,12 @@ export default function Checkout() {
                 return
               }
               if (needsTable) {
+                if (!scannedIn) {
+                  // The scanner, then straight on with the order.
+                  setPlaceAfterVerify(true)
+                  setVerifyOpen(true)
+                  return
+                }
                 document.querySelector('.table-grid')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 toast('Tap your table number.', 'info')
                 return
@@ -837,6 +869,8 @@ export default function Checkout() {
               <Spinner />
             ) : shortOfMinimum > 0 ? (
               `Add ${money(shortOfMinimum)} more`
+            ) : needsTable && !scannedIn ? (
+              'Scan table QR to order'
             ) : payNow && canPayInApp ? (
               `Pay ${money(payableCents)}`
             ) : (
@@ -851,7 +885,9 @@ export default function Checkout() {
                 : needsPhone
                   ? 'Add your mobile number — the restaurant may need to ring.'
                   : needsTable
-                  ? 'Tap your table number above.'
+                  ? scannedIn
+                    ? 'Tap your table number above.'
+                    : 'Scan the QR on your table to order here.'
                   : "Tap above and we'll ask for the code — or switch to paying in the app."}
             </p>
           )}

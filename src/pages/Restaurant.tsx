@@ -619,8 +619,8 @@ export default function Restaurant() {
             <span>
               {inThisGroup
                 ? `Adding to group ${activeGroup!.code}`
-                : tableCtx?.tableLabel || dining?.tableLabel
-                  ? `${cart.restaurantName} · ${tableCtx?.tableLabel || dining?.tableLabel}`
+                : dining?.tableLabel || tableCtx?.tableLabel
+                  ? `${cart.restaurantName} · ${dining?.tableLabel || tableCtx?.tableLabel}`
                   : cart.restaurantName}
             </span>
           </div>

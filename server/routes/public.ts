@@ -372,19 +372,39 @@ function shapeMenuItem(i: any) {
  * What people actually order here, most first — for the top of the menu, so
  * a regular's cold coffee is the first thing on the screen rather than the
  * sixtieth. Dish ids only; nothing about who ordered them. Only dishes still
- * on the menu and available, from the last 60 days of real (not cancelled)
+ * on the menu and available, from the last 30 days of real (not cancelled)
  * orders, and only once a dish has been ordered more than once.
  */
 publicRouter.get('/restaurants/:id/popular', (req, res) => {
   const restaurantId = Number(req.params.id)
-  // A restaurant's own picks win. Only those still on the menu and available.
+  /*
+   * A restaurant's own picks, until the orders can speak for themselves.
+   *
+   * A new place has too few orders for "most ordered" to mean anything, so
+   * the dishes it chose stand in. Once it has had PICKS_UNTIL real orders in
+   * the last 30 days, the list is what people actually ordered in those 30
+   * days, and it keeps moving with them. Only dishes still on the menu and
+   * available, either way.
+   */
+  const PICKS_UNTIL = 40
+  const recent = Number(
+    (
+      db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM orders
+            WHERE restaurant_id = ? AND status NOT IN ('CANCELLED', 'DECLINED')
+              AND created_at >= datetime('now', '-30 days')`,
+        )
+        .get(restaurantId) as any
+    ).n,
+  )
   const own = String(
     (db.prepare('SELECT featured_items FROM restaurants WHERE id = ?').get(restaurantId) as any)?.featured_items ?? '',
   )
     .split(',')
     .map(Number)
     .filter((n) => Number.isInteger(n) && n > 0)
-  if (own.length) {
+  if (own.length && recent < PICKS_UNTIL) {
     const ok = new Set(
       (
         db
@@ -405,7 +425,7 @@ publicRouter.get('/restaurants/:id/popular', (req, res) => {
          JOIN menu_items m ON m.id = oi.menu_item_id
         WHERE o.restaurant_id = ?
           AND o.status NOT IN ('CANCELLED', 'DECLINED')
-          AND o.created_at >= datetime('now', '-60 days')
+          AND o.created_at >= datetime('now', '-30 days')
           AND (oi.accepted IS NULL OR oi.accepted = 1)
           AND m.is_available = 1
         GROUP BY oi.menu_item_id

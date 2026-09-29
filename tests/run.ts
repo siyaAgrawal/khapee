@@ -4906,6 +4906,37 @@ async function runTests() {
     ok('or calls the whole thing off', called.body.order.status === 'CANCELLED', called.body.order.status)
   }
 
+  group('MOST ORDERED — the restaurant\'s picks, then the real orders')
+  {
+    const menu = await call('/staff/menu', { token: roadToken })
+    const dishes = menu.body.categories.flatMap((c: any) => c.items).filter((i: any) => i.isAvailable)
+    const [a, b, busy] = [dishes[0], dishes[1], dishes[2]]
+    db.prepare('UPDATE restaurants SET featured_items = ? WHERE id = ?').run(`${a.id},${b.id}`, mornington.id)
+    const recent = (db.prepare(
+      "SELECT COUNT(*) AS n FROM orders WHERE restaurant_id = ? AND status NOT IN ('CANCELLED','DECLINED') AND created_at >= datetime('now','-30 days')",
+    ).get(mornington.id) as any).n as number
+
+    if (recent < 40) {
+      const early = await call(`/restaurants/${mornington.id}/popular`)
+      ok('with few orders, the restaurant\'s own picks show', JSON.stringify(early.body.ids) === JSON.stringify([a.id, b.id]), early.body)
+    }
+    // Enough real ordering that the picks give way to what people order.
+    for (let n = recent; n < 42; n++) {
+      await call('/orders', {
+        body: {
+          restaurantId: mornington.id,
+          type: 'pickup',
+          items: [{ menuItemId: busy.id, quantity: 1 }],
+          customerName: `Regular ${n}`,
+          contactPhone: `98760${String(10000 + n).slice(-5)}`,
+        },
+      })
+    }
+    const later = await call(`/restaurants/${mornington.id}/popular`)
+    ok('with 40+ orders in 30 days, the list follows the orders', later.body.ids?.[0] === busy.id, later.body)
+    db.prepare("UPDATE restaurants SET featured_items = '' WHERE id = ?").run(mornington.id)
+  }
+
   group('TAKEAWAY IS UPI ONLY — both kinds, at every restaurant')
   {
     const menu = await call('/staff/menu', { token: roadToken })

@@ -417,6 +417,9 @@ addColumn('menu_categories', 'limited_ok', 'INTEGER NOT NULL DEFAULT 0')
 addColumn('orders', 'needs_customer_ok', 'TEXT')
 // The kitchen asking for payment up front on a car order — see askForPrepay.
 addColumn('orders', 'needs_prepay', 'TEXT')
+// The dishes a restaurant wants at the top of its menu as "Most ordered here",
+// as comma-separated menu item ids. Empty means work it out from real orders.
+addColumn('restaurants', 'featured_items', "TEXT NOT NULL DEFAULT ''")
 /** What they are being asked about, so the question survives a page reload. */
 addColumn('orders', 'declined_items', "TEXT NOT NULL DEFAULT ''")
 /**
@@ -1209,6 +1212,39 @@ if (BACKED_UP) {
   // restaurant. Revery was left with a live delivery area from testing, which
   // put delivery on offer. Off everywhere; a restaurant can switch it back on
   // from its own settings when it really delivers.
+  // Revery's own picks for "Most ordered here", and its sections in the order
+  // it wants them read: Maggi, Nachos, Quick Bites, Rice Bowls first, then the
+  // rest of the food, then drinks, then desserts. Matched by name so it does
+  // not depend on ids. Any section not named keeps its place after these.
+  dataFix('2026-09-29-revery-featured-and-order', () => {
+    const r = db.prepare("SELECT id FROM restaurants WHERE slug = 'revery'").get() as any
+    if (!r) return
+    const pick = (name: string) =>
+      (db.prepare('SELECT id FROM menu_items WHERE restaurant_id = ? AND lower(name) = lower(?)').get(r.id, name) as any)?.id
+    const featured = ['Chocolate Strawberry', 'Peri-Peri Cheese Maggi', "Bhatia's Bowl (Fully Loaded)"]
+      .map(pick)
+      .filter(Boolean)
+    db.prepare('UPDATE restaurants SET featured_items = ? WHERE id = ?').run(featured.join(','), r.id)
+
+    const order = [
+      'Maggi', 'Nachos', 'Quick Bites', 'Rice Bowls', 'Fries', 'Wraps', 'Burgers', 'Pizza', 'Garlic Bread',
+      'Open Toast', 'Sandwiches', 'Special Buns', 'Pasta',
+      'Hot Coffee', 'Cold Coffee', 'Shakes', 'Iced Tea', 'Mocktails', 'Red Bull',
+      'Desserts',
+    ]
+    const sections = db
+      .prepare('SELECT id, name FROM menu_categories WHERE restaurant_id = ? ORDER BY sort_order, id')
+      .all(r.id) as { id: number; name: string }[]
+    const rank = (n: string) => {
+      const i = order.findIndex((o) => o.toLowerCase() === n.trim().toLowerCase())
+      return i === -1 ? order.length : i
+    }
+    const sorted = sections
+      .map((c, i) => ({ ...c, i }))
+      .sort((a, b) => rank(a.name) - rank(b.name) || a.i - b.i)
+    const set = db.prepare('UPDATE menu_categories SET sort_order = ? WHERE id = ?')
+    sorted.forEach((c, n) => set.run(n, c.id))
+  })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
     db.prepare('UPDATE delivery_areas SET is_active = 0').run()

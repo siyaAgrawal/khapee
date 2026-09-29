@@ -377,6 +377,26 @@ function shapeMenuItem(i: any) {
  */
 publicRouter.get('/restaurants/:id/popular', (req, res) => {
   const restaurantId = Number(req.params.id)
+  // A restaurant's own picks win. Only those still on the menu and available.
+  const own = String(
+    (db.prepare('SELECT featured_items FROM restaurants WHERE id = ?').get(restaurantId) as any)?.featured_items ?? '',
+  )
+    .split(',')
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0)
+  if (own.length) {
+    const ok = new Set(
+      (
+        db
+          .prepare(
+            `SELECT id FROM menu_items WHERE restaurant_id = ? AND is_available = 1 AND id IN (${own.map(() => '?').join(',')})`,
+          )
+          .all(restaurantId, ...own) as any[]
+      ).map((r) => Number(r.id)),
+    )
+    res.set('Cache-Control', 'public, max-age=300')
+    return res.json({ ids: own.filter((n) => ok.has(n)) })
+  }
   const rows = db
     .prepare(
       `SELECT oi.menu_item_id AS id, SUM(oi.quantity) AS n

@@ -2525,33 +2525,6 @@ textarea {
   font-size: 15px;
   letter-spacing: -0.01em;
 }
-/* Which way this order came in, on every ticket.
-   Colour carries the kind so a full board can be sorted by eye before a word
-   of it is read: purple is in the room, amber is waiting at the counter, blue
-   is outside in a car. */
-.o-mode {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  vertical-align: middle;
-  background: var(--bg-tint);
-  color: var(--muted);
-}
-.o-mode.is-in { background: var(--accent-soft); color: var(--accent); }
-.o-mode.is-takeaway { background: var(--warn-soft); color: var(--warn); }
-.o-mode.is-car { background: var(--info-soft); color: var(--info); }
-.o-mode.is-delivery,
-.o-mode.is-nearby { background: var(--good-soft); color: var(--good); }
-/* The table or the zone, beside the mode rather than instead of it. */
-.qrow-detail {
-  margin-left: 7px;
-  font-weight: 600;
-}
 .qrow-where em,
 .qrow-meta em {
   font-style: normal;
@@ -8229,6 +8202,218 @@ button.nav-link {
 .paying-acts:empty {
   display: none;
 }
+/* How an order came in — car, takeaway or at the restaurant. Same words on
+   the board, the history and insights (howOrdered in shared/orders.ts). */
+.how-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-2, #f1efea);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.how-car {
+  background: #e8f0fe;
+  border-color: #c8dafc;
+  color: #1c4fa0;
+}
+.how-takeaway {
+  background: #fdf1e3;
+  border-color: #f5d9b6;
+  color: #8a4b0b;
+}
+.how-restaurant {
+  background: #eaf6ec;
+  border-color: #c9e7ce;
+  color: #1f6b2d;
+}
+:root[data-theme='dark'] .how-car {
+  background: #16223a;
+  border-color: #24375c;
+  color: #9ec5f4;
+}
+:root[data-theme='dark'] .how-takeaway {
+  background: #2e2113;
+  border-color: #4a3219;
+  color: #f0c38d;
+}
+:root[data-theme='dark'] .how-restaurant {
+  background: #15271a;
+  border-color: #214029;
+  color: #9fd8aa;
+}
+.history-thank {
+  display: flex;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.ops-who {
+  margin: 4px 0 2px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.ops-who a {
+  font-weight: 600;
+}
+.quick-once {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ============================================ One-tap ordering (menu page)
+   A dish with no photo is one compact row — name, a line of description,
+   price and Add — instead of a card built around an empty picture box. About
+   twice as many fit on a phone screen. */
+.item-card.item-compact {
+  padding: 11px 13px;
+  gap: 0;
+}
+.item-compact .item-desc {
+  -webkit-line-clamp: 1;
+}
+.item-compact .item-foot {
+  margin-top: 6px;
+}
+/* No picture, or already seated: the header is a line, not a screen. */
+.r-hero-slim {
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+.r-hero-slim .r-hero-body {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.r-hero-slim h1 {
+  font-size: 22px;
+}
+/* "Order again" — the last order here, one tap back into the cart. */
+.order-again {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+}
+.order-again-mark {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.order-again-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.order-again-body span {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.order-again-price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pay-ref-link {
+  margin-top: 6px;
+}
+/* A compact dish is one row: name and price on the left, Add on the right. */
+.item-compact .item-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+}
+.item-compact .item-title,
+.item-compact .item-desc {
+  grid-column: 1;
+}
+.item-compact .item-foot {
+  display: contents;
+}
+.item-compact .item-price {
+  grid-column: 1;
+  margin-top: 2px;
+}
+.item-compact .item-foot > :not(.item-price) {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+}
+/* The ways in, as one row of small buttons. */
+.way-in {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.way-in-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.way-in-btn.is-chosen {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+/* "Change" beside the table name — the only trace of moving tables until tapped. */
+.table-change {
+  margin-left: 8px;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.scan-first {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
 
 /* ── Mr. Beans ────────────────────────────────────────────────────────────────
    Black ink on aged paper, set the way an engraver would have set it.
@@ -8335,7 +8520,7 @@ button.nav-link {
 /* Square corners on the ways in too, so they agree with the plate. */
 .beans-page .road-cta,
 .beans-page .dining-bar,
-.beans-page .o-mode { border-radius: 2px; }
+.beans-page .how-tag { border-radius: 2px; }
 .beans-page .noir-hero-meta {
   justify-content: center;
   font-family: var(--beans-sc);
@@ -8469,5 +8654,4 @@ button.nav-link {
   margin: auto;
   object-fit: contain;
   filter: invert(1);
-  opacity: 0.82;
-}
+  opacity: 0.82;}

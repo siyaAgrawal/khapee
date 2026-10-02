@@ -57,6 +57,8 @@ for (const [col, def] of [
   // Taken out of the numbers by whoever runs insights — a test order, say.
   // Kept, not deleted, so it can be put back.
   ['hidden', 'INTEGER NOT NULL DEFAULT 0'],
+  // Ordered at the restaurant to carry out — takeaway, not a table.
+  ['takeaway', 'INTEGER NOT NULL DEFAULT 0'],
 ] as const) {
   const have = (db.prepare('PRAGMA table_info(order_facts)').all() as any[]).some((c) => c.name === col)
   if (!have) db.exec(`ALTER TABLE order_facts ADD COLUMN ${col} ${def}`)
@@ -85,10 +87,10 @@ DROP TRIGGER IF EXISTS facts_order_update;
 CREATE TRIGGER facts_order_insert AFTER INSERT ON orders BEGIN
   INSERT OR IGNORE INTO order_facts
     (order_id, restaurant_id, created_at, status, total_cents, payment_status, payment_method, service_mode, order_type,
-     customer_key, order_number, customer_name, customer_phone)
+     customer_key, order_number, customer_name, customer_phone, takeaway)
   VALUES (NEW.id, NEW.restaurant_id, NEW.created_at, NEW.status, NEW.total_cents, NEW.payment_status,
           COALESCE(NEW.payment_method, ''), COALESCE(NEW.service_mode, ''), NEW.order_type, ${CUSTOMER_KEY('NEW')},
-          NEW.order_number, COALESCE(NEW.customer_name, ''), COALESCE(NEW.contact_phone, ''));
+          NEW.order_number, COALESCE(NEW.customer_name, ''), COALESCE(NEW.contact_phone, ''), COALESCE(NEW.takeaway, 0));
 END;
 
 CREATE TRIGGER facts_order_update AFTER UPDATE ON orders BEGIN
@@ -96,6 +98,7 @@ CREATE TRIGGER facts_order_update AFTER UPDATE ON orders BEGIN
     order_number = NEW.order_number,
     customer_name = COALESCE(NEW.customer_name, ''),
     customer_phone = COALESCE(NEW.contact_phone, ''),
+    takeaway = COALESCE(NEW.takeaway, 0),
     status = NEW.status,
     total_cents = NEW.total_cents,
     payment_status = NEW.payment_status,
@@ -139,6 +142,8 @@ UPDATE order_facts SET
   customer_name = COALESCE((SELECT o.customer_name FROM orders o WHERE o.id = order_facts.order_id), ''),
   customer_phone = COALESCE((SELECT o.contact_phone FROM orders o WHERE o.id = order_facts.order_id), '')
  WHERE order_number = '' AND EXISTS (SELECT 1 FROM orders o WHERE o.id = order_facts.order_id);
+UPDATE order_facts SET takeaway = 1
+ WHERE takeaway = 0 AND EXISTS (SELECT 1 FROM orders o WHERE o.id = order_facts.order_id AND o.takeaway = 1);
 `)
 
 /** Whoever may see these: a list of account emails, kept out of the repository. */
@@ -318,12 +323,13 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
   }))
 
   // --- How ------------------------------------------------------------------
+  // The same words as howOrdered in shared/orders.ts.
   const MODE = `CASE
-      WHEN f.service_mode = 'car' THEN 'From the car'
+      WHEN f.service_mode = 'car' THEN 'Car'
       WHEN f.service_mode = 'delivery' THEN 'Delivery'
-      WHEN f.service_mode = 'precinct' THEN 'Nearby spot'
-      WHEN f.order_type = 'pickup' THEN 'Pickup'
-      ELSE 'At the table' END`
+      WHEN f.service_mode = 'precinct' THEN 'Nearby'
+      WHEN f.order_type = 'pickup' OR f.takeaway = 1 THEN 'Takeaway'
+      ELSE 'At the restaurant' END`
   const modes = all(`
     SELECT ${MODE} AS mode, COUNT(*) AS orders, SUM(f.total_cents) AS revenue
       FROM order_facts f ${W}${AND}${REAL} GROUP BY mode ORDER BY orders DESC`).map((r) => ({
@@ -477,7 +483,16 @@ export function orderList(opts: {
       totalCents: o.total_cents,
       status: o.status,
       paid: o.payment_status === 'PAID',
-      mode: o.service_mode === 'car' ? 'Car' : o.service_mode === 'delivery' ? 'Delivery' : o.order_type === 'pickup' ? 'Pickup' : 'Table',
+      mode:
+        o.service_mode === 'car'
+          ? 'Car'
+          : o.service_mode === 'delivery'
+            ? 'Delivery'
+            : o.service_mode === 'precinct'
+              ? 'Nearby'
+              : o.order_type === 'pickup' || o.takeaway
+                ? 'Takeaway'
+                : 'At the restaurant',
       removedFromHistory: !o.still_there,
       hidden: !!o.hidden,
       items: (itemsOf.all(o.order_id) as any[]).map((i) => ({

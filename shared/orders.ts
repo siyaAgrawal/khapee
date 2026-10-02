@@ -82,6 +82,29 @@ export const SERVICE_LABEL: Record<ServiceType, string> = {
 }
 
 /**
+ * How the order was placed, in the three words an owner asked for: from the
+ * car, takeaway, or at the restaurant (plus delivery and nearby, which are
+ * their own things). Takeaway covers both carrying out and collecting later.
+ * One definition, so the board, the history and insights all say the same.
+ */
+export type HowOrdered = { key: 'car' | 'takeaway' | 'restaurant' | 'delivery' | 'nearby'; icon: string; label: string }
+export function howOrdered(serviceType: ServiceType | string | null | undefined): HowOrdered {
+  switch (serviceType) {
+    case 'car':
+      return { key: 'car', icon: '🚗', label: 'Car' }
+    case 'takeaway':
+    case 'pickup':
+      return { key: 'takeaway', icon: '🥡', label: 'Takeaway' }
+    case 'delivery':
+      return { key: 'delivery', icon: '🛵', label: 'Delivery' }
+    case 'precinct':
+      return { key: 'nearby', icon: '📍', label: 'Nearby' }
+    default:
+      return { key: 'restaurant', icon: '🍽️', label: 'At the restaurant' }
+  }
+}
+
+/**
  * An order nobody has paid for yet waits at REQUESTED whatever the mode.
  *
  * Money is the reason. A restaurant that has been paid can start cooking; one

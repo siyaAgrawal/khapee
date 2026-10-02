@@ -9,6 +9,7 @@ import { useCart } from '../lib/cart'
 import { readTableContext } from '../lib/table-context'
 import { ownOrderOnly, readDining } from '../lib/dining'
 import { readIntent, saveIntent } from '../lib/intent'
+import { readLastOrder } from '../lib/me'
 import { useGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import { PeopleIcon, SearchIcon } from '../components/icons'
@@ -160,6 +161,84 @@ export default function Restaurant() {
     if (outcome === 'switched') toast('Started a new cart for this restaurant', 'info')
   }
 
+  /* What people actually order here, first — see /restaurants/:id/popular. */
+  const [popularIds, setPopularIds] = useState<number[]>([])
+  useEffect(() => {
+    api<{ ids: number[] }>(`/restaurants/${restaurantId}/popular`)
+      .then((r) => setPopularIds(r.ids ?? []))
+      .catch(() => setPopularIds([]))
+  }, [restaurantId])
+  const allItems = (data?.menu ?? []).flatMap((c) => c.items)
+  const byId = new Map(allItems.map((i) => [i.id, i]))
+  const popular = popularIds.map((pid) => byId.get(pid)).filter((i): i is MenuItem => !!i && i.isAvailable)
+
+  /* The last order here, for "Order again" — only what is still on and available. */
+  const last = readLastOrder(restaurantId).filter((l) => byId.get(l.menuItemId)?.isAvailable)
+  const lastTotal = last.reduce((n, l) => n + (byId.get(l.menuItemId)?.priceCents ?? l.priceCents) * l.quantity, 0)
+  const orderAgain = () => {
+    if (!data) return
+    for (const l of last) {
+      const item = byId.get(l.menuItemId)
+      if (!item) continue
+      onAdd(item)
+      if (l.quantity > 1) setQuantity(item.id, l.quantity)
+    }
+  }
+
+  /**
+   * Where this order is going, which decides the one button at the bottom.
+   *
+   * At a table or in the car the order is placed from here — no cart screen,
+   * no checkout — because everything the checkout would ask is already known
+   * (the table from the QR, the name and number from last time). Takeaway is
+   * paid first, so its button goes straight to UPI.
+   */
+  const seated = !!tableCtx || (!!dining && (dining.serviceMode === 'dine_in' || dining.serviceMode === 'car' || !dining.serviceMode))
+  const takingAway = !seated && intent
+
+  /** One dish, the same everywhere on the page. No empty picture box when there is no photo. */
+  const renderItem = (item: MenuItem) => {
+    const qty = quantityOf(item.id)
+    const inThisCart = cart.restaurantId === data!.restaurant.id
+    const photo = noPhotos ? null : item.imageUrl
+    return (
+      <article
+        key={item.id}
+        className={`item-card ${photo ? '' : 'item-compact'} ${item.isAvailable ? '' : 'item-unavailable'}`}
+      >
+        {photo && <Art emoji={item.emoji} hue={item.hue} imageUrl={photo} alt={item.name} className="item-art" />}
+        <div className="item-body">
+          <div className="item-title">
+            <span className={`veg-dot ${item.isVeg ? '' : 'nonveg'}`} aria-hidden />
+            {item.isSpecial && <span className="star" title="This month">★</span>}
+            {item.name}
+          </div>
+          {item.description && <p className="item-desc">{item.description}</p>}
+          <div className="item-foot">
+            <span className="item-price">{money(item.priceCents)}</span>
+            {!item.isAvailable ? (
+              <span className="badge">Sold out</span>
+            ) : qty > 0 && inThisCart ? (
+              <div className="stepper">
+                <button onClick={() => setQuantity(item.id, qty - 1)} aria-label={`Remove one ${item.name}`}>
+                  −
+                </button>
+                <span>{qty}</span>
+                <button onClick={() => onAdd(item)} aria-label={`Add one ${item.name}`}>
+                  +
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn-add btn-sm" onClick={() => onAdd(item)} disabled={!data!.restaurant.isOpen}>
+                Add
+              </button>
+            )}
+          </div>
+        </div>
+      </article>
+    )
+  }
+
   return (
     <div className="app">
       <Header />
@@ -305,14 +384,19 @@ export default function Restaurant() {
                 )}
               </header>
             ) : (
-            <div className="r-hero">
-              <Art
-                emoji={data.restaurant.emoji}
-                hue={data.restaurant.hue}
-                imageUrl={noPhotos ? null : data.restaurant.imageUrl}
-                alt={data.restaurant.name}
-                className={`r-hero-art ${data.restaurant.isOpen ? '' : 'closed-art'}`}
-              />
+            <div className={`r-hero ${seated || noPhotos || !data.restaurant.imageUrl ? 'r-hero-slim' : ''}`}>
+              {/* The big picture only when there is a real one and nobody is
+                  sitting down yet — at a table it is a screen of scrolling
+                  between the customer and the menu. */}
+              {!seated && !noPhotos && data.restaurant.imageUrl && (
+                <Art
+                  emoji={data.restaurant.emoji}
+                  hue={data.restaurant.hue}
+                  imageUrl={data.restaurant.imageUrl}
+                  alt={data.restaurant.name}
+                  className={`r-hero-art ${data.restaurant.isOpen ? '' : 'closed-art'}`}
+                />
+              )}
               <div className="r-hero-body">
                 <div className="row row-wrap" style={{ justifyContent: 'space-between' }}>
                   <h1>{data.restaurant.name}</h1>
@@ -320,9 +404,12 @@ export default function Restaurant() {
                     {data.restaurant.isOpen ? 'Open now' : 'Closed'}
                   </span>
                 </div>
-                <p className="muted" style={{ marginTop: 4 }}>
-                  {data.restaurant.description}
-                </p>
+                {!seated && data.restaurant.description && (
+                  <p className="muted" style={{ marginTop: 4 }}>
+                    {data.restaurant.description}
+                  </p>
+                )}
+                {!seated && (
                 <div className="r-card-meta">
                   {data.restaurant.rating ? <span className="rating">★ {data.restaurant.rating.toFixed(1)}</span> : null}
                   <span className={data.restaurant.rating ? 'dot-sep' : ''}>
@@ -331,6 +418,7 @@ export default function Restaurant() {
                   <span className="dot-sep">{data.restaurant.hours}</span>
                   <span className="dot-sep">~{data.restaurant.prepMinutes} min</span>
                 </div>
+                )}
                 {/* Ordering to wherever you are standing in the area, beside
                     eating in, takeaway and the kerb — because from the street
                     it is simply another way to order from this kitchen. */}
@@ -352,56 +440,37 @@ export default function Restaurant() {
                       </span>
                     </Link>
                   ))}
-                {data.restaurant.isOpen && data.restaurant.acceptsCar && !dining && (
-                  <Link className="road-cta" to={`/r/${restaurantId}/car`}>
-                    <span className="road-cta-mark" aria-hidden>
-                      🚗
-                    </span>
-                    <span>
-                      <strong>Sitting in your car?</strong>
-                      <span className="tiny muted">Order from the road — we&rsquo;ll bring it out.</span>
-                    </span>
-                    <span className="road-cta-go" aria-hidden>
-                      →
-                    </span>
-                  </Link>
-                )}
-                {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && (
-                  <button
-                    type="button"
-                    className={`road-cta ${intent ? 'is-chosen' : ''}`}
-                    onClick={() => {
-                      saveIntent(restaurantId)
-                      setIntent(true)
-                      toast('Takeaway it is — add what you want.', 'good')
-                    }}
-                  >
-                    <span className="road-cta-mark" aria-hidden>
-                      🥡
-                    </span>
-                    <span>
-                      <strong>Taking it away?</strong>
-                      <span className="tiny muted">
-                        {intent
-                          ? 'Chosen. Order now, collect when you get here.'
-                          : 'Order now and collect it — tell them when you set off.'}
-                      </span>
-                    </span>
-                    <span className="road-cta-go" aria-hidden>
-                      {intent ? '✓' : '→'}
-                    </span>
-                  </button>
+                {/* How they are ordering, as two small buttons side by side
+                    rather than two screen-wide cards — the menu is what they
+                    came for. */}
+                {data.restaurant.isOpen && !dining && (data.restaurant.acceptsCar || data.restaurant.acceptsPickup) && (
+                  <div className="way-in">
+                    {data.restaurant.acceptsCar && (
+                      <Link className="way-in-btn" to={`/r/${restaurantId}/car`}>
+                        <span aria-hidden>🚗</span> In my car
+                      </Link>
+                    )}
+                    {data.restaurant.acceptsPickup && (
+                      <button
+                        type="button"
+                        className={`way-in-btn ${intent ? 'is-chosen' : ''}`}
+                        onClick={() => {
+                          saveIntent(restaurantId)
+                          setIntent(true)
+                          toast('Takeaway — add what you want, then pay by UPI.', 'good')
+                        }}
+                      >
+                        <span aria-hidden>🥡</span> {intent ? 'Takeaway ✓' : 'Takeaway'}
+                      </button>
+                    )}
+                  </div>
                 )}
                 {data.restaurant.isOpen && (
-                  <div style={{ marginTop: 14 }}>
+                  <div style={{ marginTop: 10 }}>
                     <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
                   </div>
                 )}
-                {tableCtx && (
-                  <p className="tiny muted" style={{ marginTop: 8 }}>
-                    {tableCtx.tableLabel}
-                  </p>
-                )}
+
                 {inThisGroup && (
                   <div className="row row-wrap" style={{ marginTop: 12 }}>
                     <Link className="btn btn-secondary btn-sm" to="/group">
@@ -512,60 +581,33 @@ export default function Restaurant() {
                 <EmptyState emoji="📋" title="No dishes yet" body="This restaurant hasn't published a menu." />
               ))}
 
+            {!needle && last.length > 0 && data.restaurant.isOpen && (
+              <button type="button" className="order-again" onClick={orderAgain}>
+                <span className="order-again-mark" aria-hidden>
+                  ↻
+                </span>
+                <span className="order-again-body">
+                  <strong>Order again</strong>
+                  <span>
+                    {last.map((l) => `${l.quantity}× ${byId.get(l.menuItemId)?.name ?? l.name}`).join(', ')}
+                  </span>
+                </span>
+                <span className="order-again-price">{money(lastTotal)}</span>
+              </button>
+            )}
+
+            {!needle && popular.length > 0 && (
+              <section className="menu-section">
+                <h2>Most ordered here</h2>
+                <div className="item-grid">{popular.map(renderItem)}</div>
+              </section>
+            )}
+
             {shown.map((category) => (
               <section key={category.id} id={`cat-${category.id}`} className="menu-section">
                 <h2>{category.name}</h2>
                 <div className="item-grid">
-                  {category.items.map((item) => {
-                    const qty = quantityOf(item.id)
-                    const inThisCart = cart.restaurantId === data.restaurant.id
-                    return (
-                      <article
-                        key={item.id}
-                        className={`item-card ${item.isAvailable ? '' : 'item-unavailable'}`}
-                      >
-                        <Art
-                          emoji={item.emoji}
-                          hue={item.hue}
-                          imageUrl={noPhotos ? null : item.imageUrl}
-                          alt={item.name}
-                          className="item-art"
-                        />
-                        <div className="item-body">
-                          <div className="item-title">
-                            <span className={`veg-dot ${item.isVeg ? '' : 'nonveg'}`} aria-hidden />
-                            {item.isSpecial && <span className="star" title="This month">★</span>}
-                            {item.name}
-                          </div>
-                          <p className="item-desc">{item.description}</p>
-                          <div className="item-foot">
-                            <span className="item-price">{money(item.priceCents)}</span>
-                            {!item.isAvailable ? (
-                              <span className="badge">Sold out</span>
-                            ) : qty > 0 && inThisCart ? (
-                              <div className="stepper">
-                                <button onClick={() => setQuantity(item.id, qty - 1)} aria-label={`Remove one ${item.name}`}>
-                                  −
-                                </button>
-                                <span>{qty}</span>
-                                <button onClick={() => onAdd(item)} aria-label={`Add one ${item.name}`}>
-                                  +
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                className="btn btn-add btn-sm"
-                                onClick={() => onAdd(item)}
-                                disabled={!data.restaurant.isOpen}
-                              >
-                                Add
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </article>
-                    )
-                  })}
+                  {category.items.map(renderItem)}
                 </div>
               </section>
             ))}
@@ -581,10 +623,31 @@ export default function Restaurant() {
             <strong>
               {count} item{count > 1 ? 's' : ''} · {money(totalCents)}
             </strong>
-            <span>{inThisGroup ? `Adding to group ${activeGroup!.code}` : cart.restaurantName}</span>
+            <span>
+              {inThisGroup
+                ? `Adding to group ${activeGroup!.code}`
+                : dining?.tableLabel || tableCtx?.tableLabel
+                  ? `${cart.restaurantName} · ${dining?.tableLabel || tableCtx?.tableLabel}`
+                  : cart.restaurantName}
+            </span>
           </div>
-          <button className="btn btn-accent" onClick={() => navigate('/cart')}>
-            {inThisGroup ? 'Add to table' : 'View cart'}
+          {/* One tap. At a table or in the car the order goes in from here;
+              takeaway opens UPI; anything else goes straight to the one
+              screen that asks what is still unknown. The cart screen is no
+              longer a stop on the way — the steppers on the menu are the cart. */}
+          <button
+            className="btn btn-accent"
+            onClick={() =>
+              navigate(inThisGroup ? '/cart' : seated || takingAway ? '/checkout?go=1' : '/checkout')
+            }
+          >
+            {inThisGroup
+              ? 'Add to table'
+              : seated
+                ? `Place order · ${money(totalCents)}`
+                : takingAway
+                  ? `Pay & order · ${money(totalCents)}`
+                  : 'Continue'}
           </button>
         </div>
       )}

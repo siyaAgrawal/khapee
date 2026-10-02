@@ -714,6 +714,7 @@ function shapeOwnRestaurant(row: any) {
     upiVpa: row.upi_vpa ?? '',
     upiName: row.upi_name ?? '',
     acceptsPickup: !!row.accepts_pickup,
+    acceptsDelivery: !!row.accepts_delivery,
     acceptsTakeaway: !!row.accepts_takeaway,
     acceptsGroups: !!row.accepts_groups,
     /** Whether a typed staff code is offered beside the table QR. */

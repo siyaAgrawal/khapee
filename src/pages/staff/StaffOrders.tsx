@@ -12,6 +12,7 @@ import {
   STATUS_LABEL,
   type OrderStatus,
   type ServiceType,
+  howOrdered,
 } from '../../../shared/orders'
 
 /**
@@ -52,46 +53,16 @@ function groupByPerson(items: any[]): { name: string; items: any[] }[] {
 
 type Order = any
 
-/**
- * Which of the ways in this order came by.
- *
- * The board used to say "Table 7" or "Counter" and leave the rest to be
- * worked out. That reads fine until a Friday night, when the question being
- * asked over the pass is not which table it is — it is whether anybody is
- * going to come and collect this, or whether it is going out to a car. So
- * the mode is said in words on every ticket, and the table or the zone is
- * the detail beside it rather than a substitute for it.
- *
- * Someone who ordered ahead and then sat down counts as being at the
- * restaurant: they chose that on arrival, and their food should be carried
- * to them rather than left at the counter.
- */
-type Mode = { key: 'in' | 'takeaway' | 'car' | 'delivery' | 'nearby'; label: string }
-
-function modeOf(o: any): Mode {
-  const type = (o.serviceMode ?? o.serviceType ?? o.type) as ServiceType
-  if (type === 'delivery') return { key: 'delivery', label: 'Delivery' }
-  if (type === 'car') return { key: 'car', label: 'Car' }
-  if (type === 'precinct') return { key: 'nearby', label: 'Nearby' }
-  if (o.arrivalChoice === 'dine_in') return { key: 'in', label: 'At the restaurant' }
-  if (o.arrivalChoice === 'takeaway') return { key: 'takeaway', label: 'Takeaway' }
-  if (type === 'pickup' || type === 'takeaway') return { key: 'takeaway', label: 'Takeaway' }
-  return { key: 'in', label: 'At the restaurant' }
-}
-
-/** The bit that narrows it down, where there is one. Empty is normal. */
-function detailOf(o: any): string {
-  const mode = modeOf(o)
-  if (mode.key === 'delivery') return o.deliveryArea || ''
-  if (mode.key === 'car') return o.zoneName || ''
-  if (mode.key === 'nearby') return o.precinctSpot || o.precinctName || ''
-  return o.tableLabel || ''
-}
-
-/** Both together, for searching and for reading aloud to a screen reader. */
+/** Where this one is going, in the words staff use for it. */
 function placeOf(o: any): string {
-  const detail = detailOf(o)
-  return detail ? `${modeOf(o).label} · ${detail}` : modeOf(o).label
+  if (o.serviceMode === 'delivery' || o.serviceType === 'delivery') return o.deliveryArea || 'Delivery'
+  if (o.serviceMode === 'car' || o.serviceType === 'car') return o.zoneName ? `Car · ${o.zoneName}` : 'Car outside'
+  if (o.tableLabel) return o.tableLabel
+  // Beside the Takeaway tag, say which kind — the tag already says takeaway.
+  const t = (o.serviceType ?? o.type) as ServiceType
+  if (t === 'pickup') return 'Collect later'
+  if (t === 'takeaway') return 'Carry out'
+  return SERVICE_LABEL[t]
 }
 
 /** Placed today, read the way the server stores it: "YYYY-MM-DD HH:MM:SS" UTC. */
@@ -774,8 +745,7 @@ export default function StaffOrders() {
                     {o.isGroup && <span className="o-group-tag" style={{ marginLeft: 6 }}>GROUP</span>}
                   </td>
                   <td>
-                    <span className={`o-mode is-${modeOf(o).key}`}>{modeOf(o).label}</span>
-                    {detailOf(o) && <div className="tiny muted">{detailOf(o)}</div>}
+                    {o.serviceType === 'dine_in' ? o.tableLabel : SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]}
                   </td>
                   <td>
                     {o.customerName}
@@ -866,8 +836,13 @@ export default function StaffOrders() {
                       >
                         <span className="qrow-where">
                           <b>
-                            <span className={`o-mode is-${modeOf(o).key}`}>{modeOf(o).label}</span>
-                            {detailOf(o) && <span className="qrow-detail">{detailOf(o)}</span>}
+                            {/* How it came in — car, takeaway or at the
+                                restaurant — before where exactly it goes. */}
+                            <span className={`how-tag how-${howOrdered(o.serviceType ?? o.serviceMode).key}`}>
+                              <span aria-hidden>{howOrdered(o.serviceType ?? o.serviceMode).icon}</span>{' '}
+                              {howOrdered(o.serviceType ?? o.serviceMode).label}
+                            </span>{' '}
+                            {placeOf(o)}
                             <WantedFor order={o} />
                             {/* Turned round: this one is not waiting on the
                                 kitchen any more, and a board that does not
@@ -1124,14 +1099,18 @@ export default function StaffOrders() {
                           <Link className="o-number" to={`/staff/table/${o.id}`}>
                             #{o.orderNumber}
                           </Link>
-                          <span className={`o-mode is-${modeOf(o).key}`}>{modeOf(o).label}</span>
+                          <span className={`badge ${o.serviceType === 'dine_in' ? 'badge-accent' : 'badge-info'}`}>
+                            {SERVICE_LABEL[(o.serviceType ?? o.type) as ServiceType]}
+                          </span>
                           {o.isGroup && <span className="o-group-tag">GROUP</span>}
                           <span className="spacer" />
                           <span className="tiny muted">{timeAgo(o.createdAt)}</span>
                           <WantedFor order={o} />
                         </div>
 
-                        {detailOf(o) && <div className="o-where">{detailOf(o)}</div>}
+                        <div className="o-where">
+                          {o.serviceType === 'dine_in' ? o.tableLabel : 'Counter'}
+                        </div>
                         <div className="o-name">
                           {o.customerName} · {clockTime(o.createdAt)}
                           {/* Tappable, because the two calls a kitchen makes

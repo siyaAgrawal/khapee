@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext } from '../lib/table-context'
 import { PinIcon } from './icons'
+import { Modal } from './ui'
 
 /**
  * Persistent "you're here" strip. Shows the open session, or offers to start
@@ -21,6 +22,30 @@ export default function DiningBar({
 }) {
   const [session, setSession] = useState<DiningSession | null>(() => readDining(restaurantId))
   const [open, setOpen] = useState(false)
+  /* Moving tables after the scan: a small "Change" beside the table name,
+     and the list only when asked for. */
+  const [moving, setMoving] = useState(false)
+  const [tables, setTables] = useState<{ id: number; label: string; seats: number }[] | null>(null)
+  const openMove = () => {
+    setMoving(true)
+    if (!tables && session?.token) {
+      api<{ tables: { id: number; label: string; seats: number }[] }>(`/sessions/${session.token}/tables`)
+        .then((r) => setTables(r.tables))
+        .catch(() => setTables([]))
+    }
+  }
+  const moveTo = (t: { id: number; label: string }) => {
+    if (!session?.token) return
+    api<{ session: DiningSession }>(`/sessions/${session.token}/table`, { body: { tableId: t.id } })
+      .then((r) => {
+        const next = { ...session, ...r.session, tableId: t.id, tableLabel: t.label }
+        saveDining(next)
+        setSession(next)
+        onChange?.(next)
+        setMoving(false)
+      })
+      .catch(() => setMoving(false))
+  }
 
   const verified = session?.active !== false && !!session
 
@@ -63,7 +88,10 @@ export default function DiningBar({
       ? `Delivering to ${session!.address || session!.areaName || 'your address'}`
       : mode === 'car'
         ? `In the car${session!.seqNo ? ` · Car ${session!.seqNo}` : ''}`
-        : `You're at ${session?.restaurantName}${session?.tableLabel ? ` · ${session.tableLabel}` : ''}`
+        : // Just the table. "You're at Revery" is on the page already, and the
+          // session explanation under it was four lines between the customer
+          // and the menu.
+          session?.tableLabel || `At ${session?.restaurantName}`
   const sub =
     mode === 'precinct'
       ? `${session!.restaurantName} accepts the order, then walks it over.`
@@ -71,9 +99,7 @@ export default function DiningBar({
       ? `${session!.restaurantName} accepts the order before it is made.`
       : mode === 'car'
         ? 'They bring it out to you — no need to come in.'
-        : session?.source === 'payment'
-          ? 'Verified by your payment — order away.'
-          : 'Session open — order without entering the code again.'
+        : 'Order from here — it comes to your table.'
 
   return (
     <>
@@ -81,7 +107,14 @@ export default function DiningBar({
         <div className="dining-bar is-on">
           <span aria-hidden>{mode === 'precinct' ? '🚶' : mode === 'delivery' ? '🛵' : mode === 'car' ? '🚗' : '✓'}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <strong>{heading}</strong>
+            <strong>
+              {heading}
+              {(!mode || mode === 'dine_in') && session?.tableId && (
+                <button type="button" className="table-change" onClick={openMove}>
+                  Change
+                </button>
+              )}
+            </strong>
             <span className="tiny">{sub}</span>
           </div>
           <button
@@ -125,6 +158,24 @@ export default function DiningBar({
           onChange?.(s)
         }}
       />
+      <Modal open={moving} onClose={() => setMoving(false)} title="Which table are you at?">
+        {!tables ? (
+          <p className="tiny muted">Loading…</p>
+        ) : (
+          <div className="table-grid">
+            {tables.map((t) => (
+              <button
+                key={t.id}
+                className={`table-btn ${session?.tableId === t.id ? 'selected' : ''}`}
+                onClick={() => moveTo(t)}
+              >
+                <strong>{t.label}</strong>
+                <span>{t.seats} seats</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
     </>
   )
 }

@@ -224,8 +224,29 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       // asking for one is exactly the friction these modes exist to remove.
       tableId = null
       tableLabel = null
-    } else if (!tableId) {
-      return { ok: false, status: 400, error: 'Please choose your table number.' }
+    } else {
+      /*
+       * Eating in starts with the QR on the table — nothing else.
+       *
+       * Picking a table from a list let anybody anywhere send food to "table
+       * 4", and it made the phone ask a question the table itself answers.
+       * A customer's order to a table now needs the scan: the table's own QR
+       * token, or a session that scanning (or staff) opened. Once scanned,
+       * they may move to another table — the scan is the proof they are in
+       * the room — but never start without one. The restaurant's own till
+       * (requirePhone false) is not a customer and is not asked.
+       */
+      // A staff code counts too — a member of staff handed it over at the
+      // table — for restaurants that use codes. Revery does not (its codes
+      // are switched off), so there the QR is the only way in.
+      const scanned =
+        !!tableToken ||
+        !!accessCodeId ||
+        (!!liveSession && (liveSession.source === 'table_qr' || liveSession.source === 'code' || !!liveSession.table_id))
+      if (input.requirePhone && !scanned) {
+        return { ok: false, status: 400, error: 'Scan the QR code on your table to order at the restaurant.' }
+      }
+      if (!tableId) return { ok: false, status: 400, error: 'Please choose your table number.' }
     }
   }
 
@@ -344,17 +365,41 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     return { ok: false, status: 400, error: 'Add a 10-digit mobile number so the restaurant can reach you.' }
   }
 
+  /*
+   * Takeaway is paid for in the app, at every restaurant.
+   *
+   * Both kinds: ordered at the restaurant and carried out, and ordered ahead
+   * to collect. Nobody is sitting at a table the restaurant can walk up to,
+   * so a takeaway order nobody pays for is food made for nobody. Only orders
+   * a customer places themselves — the restaurant's own till still takes cash
+   * at the counter for a takeaway it rings up.
+   */
+  if (!input.paymentClaim && input.requirePhone && (input.type === 'pickup' || input.takeaway)) {
+    return {
+      ok: false,
+      status: 402,
+      error: 'Takeaway orders are paid by UPI in the app. Pay by UPI to place the order.',
+    }
+  }
+
   const orderNumber = generateOrderNumber()
   const verifyToken = randomToken(10)
   const paymentMethod = input.paymentMethod === 'app' ? 'app' : 'counter'
 
-  // Khapee never sees the money, so a payment it is told about has to come
-  // with the one number the restaurant can look up: the UTR their own UPI app
-  // prints against the transfer. Without it "I paid" is unfalsifiable, and the
-  // person left carrying that is whoever made the food.
+  /*
+   * The UPI reference is optional.
+   *
+   * Asking everybody to copy a 12-digit number out of their UPI app was the
+   * single slowest thing about paying, and it is not how the restaurant
+   * checks anyway: the payment arrives in their own UPI app with the
+   * customer's name on it (the note on the UPI request — see
+   * /orders/payment-request), and they tick it off under "To confirm" before
+   * the food goes out. A reference that IS given still has to be a whole one,
+   * so a half-typed number is caught rather than saved.
+   */
   if (input.paymentClaim) {
     const ref = String(input.paymentClaim.upiRef ?? '').replace(/\D/g, '')
-    if (ref.length < 12) {
+    if (ref.length > 0 && ref.length < 12) {
       return {
         ok: false,
         status: 400,
@@ -716,8 +761,9 @@ export function payOrderByUpi(orderId: number, upiRef: string): { ok: boolean; s
   if (['CANCELLED', 'DECLINED'].includes(order.status)) {
     return { ok: false, status: 409, error: 'This order was cancelled, so there is nothing to pay.' }
   }
+  // Optional, as at checkout; a partial one is still refused.
   const ref = String(upiRef ?? '').replace(/\D/g, '')
-  if (ref.length < 12) {
+  if (ref.length > 0 && ref.length < 12) {
     return { ok: false, status: 400, error: 'Enter the 12-digit UPI reference so the restaurant can find your payment.' }
   }
   const owed = outstandingCents(orderId)
@@ -731,7 +777,12 @@ export function payOrderByUpi(orderId: number, upiRef: string): { ok: boolean; s
     db.prepare("UPDATE orders SET needs_prepay = NULL, updated_at = datetime('now') WHERE id = ?").run(orderId)
     db.prepare(
       `INSERT INTO notifications (restaurant_id, order_id, title, body) VALUES (?, ?, ?, ?)`,
-    ).run(order.restaurant_id, orderId, `#${order.order_number} paid online`, `${order.customer_name ?? ''} · ${money(owed)} by UPI · ref ${ref}`)
+    ).run(
+      order.restaurant_id,
+      orderId,
+      `#${order.order_number} paid online`,
+      `${order.customer_name ?? ''} · ${money(owed)} by UPI${ref ? ` · ref ${ref}` : ' · check your UPI app'}`,
+    )
   })()
 
   const r = db.prepare('SELECT name FROM restaurants WHERE id = ?').get(order.restaurant_id) as any

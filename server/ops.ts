@@ -22,6 +22,9 @@ export type OpsOrder = {
   ageMinutes: number
   items: { name: string; quantity: number; addedLater: boolean }[]
   runner: { id: number; name: string } | null
+  /** Who to hand it to, and the number to ring when the car is not where it said. */
+  customerName: string
+  customerPhone: string
 }
 
 export type OpsSession = {
@@ -96,6 +99,8 @@ export function opsBoard(restaurantId: number) {
     paymentMethod: o.payment_method,
     createdAt: o.created_at,
     ageMinutes: minutesSince(o.created_at),
+    customerName: o.customer_name ?? '',
+    customerPhone: o.contact_phone ?? o.delivery_phone ?? '',
     items: (itemsFor.all(o.id) as any[]).map((i) => ({
       name: i.name,
       quantity: i.quantity,

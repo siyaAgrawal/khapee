@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
 import VerifyModal from '../components/VerifyModal'
@@ -9,6 +9,7 @@ import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { clearIntent, readIntent } from '../lib/intent'
+import { readMe, saveLastOrder, saveMe } from '../lib/me'
 import { EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../components/ui'
 
 type Where = 'here' | 'takeaway' | 'later'
@@ -78,9 +79,19 @@ export default function Checkout() {
    * own account gets an empty box, like anybody else standing at the counter.
    */
   const ownsThis = !!user?.restaurants?.some((r) => r.id === restaurantId)
-  const [name, setName] = useState(ownsThis ? '' : (user?.name ?? ''))
+  /* Asked once, then remembered on this phone (lib/me.ts) — typing a name and
+     ten digits on every order was most of the work of ordering. */
+  const me = readMe()
+  const [name, setName] = useState(ownsThis ? '' : (user?.name || me?.name || ''))
   /** How the restaurant reaches this order. Not optional — see needsPhone. */
-  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [phone, setPhone] = useState(user?.phone || me?.phone || '')
+  /**
+   * Opened from the menu's one-tap "Place order". If nothing is missing the
+   * order goes straight through; if something is (a first order, with no
+   * name or number yet), this screen shows just that and one button.
+   */
+  const [params] = useSearchParams()
+  const go = params.get('go') === '1'
   const [note, setNote] = useState('')
   /**
    * How long until they get to the restaurant, for an order placed before
@@ -118,8 +129,6 @@ export default function Checkout() {
   // Standing somewhere in a precinct: no table, no address, a landmark.
   const isNearby = dining?.serviceMode === 'precinct'
   const placeDecided = isDelivery || isCar || isNearby
-  /** Collected at a counter, whether ordered ahead or while standing there. */
-  const isTakeaway = where === 'later' || where === 'takeaway'
 
   /**
    * Named for the situation, so "pay later" means something concrete — and it
@@ -133,8 +142,8 @@ export default function Checkout() {
       ? 'UPI or cash at the car'
       : isNearby
         ? 'UPI or cash when it arrives'
-        : isTakeaway
-          ? 'Cash when you collect'
+        : where === 'later'
+          ? 'UPI or cash when you collect'
           : 'UPI or cash at the restaurant'
 
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
@@ -221,23 +230,13 @@ export default function Checkout() {
    * — the one place the food is taken out to somebody already sitting in the
    * thing they will leave in.
    */
-  /*
-   * Takeaway is paid for in the app wherever that is possible at all.
-   *
-   * It used to wait on a per-restaurant switch, and the switch was the
-   * problem: takeaway is the one mode where nobody is sitting down and nothing
-   * is held against the order. The food is bagged, it sits on the counter, and
-   * if the person does not come it is thrown away — so the kitchen is being
-   * asked to cook on a promise from someone it cannot see.
-   *
-   * Conditioned on canPayInApp and nothing else: a restaurant that has not put
-   * a UPI ID on Khapee has no in-app payment to insist on, and offering it
-   * nothing would leave it unable to take a takeaway order at all. The server
-   * still keeps the owner's switch as its own backstop; this is the question
-   * the customer is actually asked.
-   */
   const prepaidOnly =
-    !!options?.prepaidOnly || (isTakeaway && canPayInApp) || (isCar && !!options?.carPrepaidOnly)
+    !!options?.prepaidOnly ||
+    (isCar && !!options?.carPrepaidOnly) ||
+    // Takeaway — ordered here to carry out, or ordered ahead to collect — is
+    // paid in the app at every restaurant; the server refuses it otherwise.
+    where === 'later' ||
+    where === 'takeaway'
   useEffect(() => {
     // Nothing to choose when there is only one way to pay.
     if (prepaidOnly && !payNow) setPayNow(true)
@@ -254,8 +253,14 @@ export default function Checkout() {
           : 'Pay from your own UPI app before it is made'
       : 'Cash or UPI, when you get it'
 
+  /**
+   * Eating in starts with the table's QR — see the rule in createOrder. A
+   * scan leaves a table context, or a table session; either is "scanned in".
+   * Without one there is no table list to pick from, only the scanner.
+   */
+  const scannedIn = !!scannedTable || (!!dining?.token && !!dining?.tableId)
   // What still stands between the customer and their food.
-  const needsTable = where === 'here' && !seated && !placeDecided
+  const needsTable = where === 'here' && !placeDecided && (!scannedIn || !seated)
   /**
    * Takeaway still has to be proved; eating in no longer does.
    *
@@ -279,6 +284,31 @@ export default function Checkout() {
    */
   const needsPhone = !isNearby && !isDelivery && phone.replace(/\D/g, '').length < 10
   const ready = !needsTable && !needsProof && !needsName && !needsPhone
+  /**
+   * The one-tap order, when all that is missing is the name and number: show
+   * only those two boxes and the button. Where it is going, the table, the
+   * note and how to pay are all already settled, and restating them on a
+   * first order made it look like a form to fill in.
+   */
+  const lean = go && !needsTable && !needsProof && !isDelivery
+
+  /*
+   * One tap from the menu. Once the payment options are known (they decide
+   * whether this is pay-later or UPI-first), an order with nothing missing is
+   * placed — or, when it has to be paid first, the UPI screen opens — without
+   * the customer touching this page. Only once per visit to the page.
+   */
+  const [autoTried, setAutoTried] = useState(false)
+  useEffect(() => {
+    if (!go || autoTried || !options || placing || payRequest || !count) return
+    // Decided once, on arrival. If something was missing then, the customer
+    // finishes it and presses the button — the order must never go off by
+    // itself halfway through typing a name.
+    setAutoTried(true)
+    if (!ready || shortOfMinimum > 0) return
+    if (payNow) void startPayment()
+    else void place()
+  }, [go, autoTried, options, ready, payNow, placing, payRequest, count]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startPayment = async () => {
     setPlacing(true)
@@ -291,6 +321,8 @@ export default function Checkout() {
           // So the amount asked for is the amount owed: a delivery adds a fee
           // that the dishes alone do not account for.
           sessionToken: dining?.token ?? null,
+          // Written on the UPI payment, so the restaurant can match it by name.
+          customerName: name.trim(),
         },
       })
       setPayRequest(r)
@@ -331,6 +363,13 @@ export default function Checkout() {
       })
       const order = r.order
       rememberReceipt(order.orderNumber, order.verifyToken)
+      saveMe(name, phone)
+      if (restaurantId) {
+        saveLastOrder(
+          restaurantId,
+          cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity, name: l.name, priceCents: l.priceCents })),
+        )
+      }
       /**
        * The room this order opened stays open — and this phone stays out of it.
        *
@@ -391,6 +430,14 @@ export default function Checkout() {
 
         {error && <div className="form-error">{error}</div>}
 
+        {/* The one-tap order from the menu, going through by itself. */}
+        {go && placing && !payRequest && <LoadingBlock label="Placing your order…" />}
+        {go && !ready && !placing && (needsName || needsPhone) && (
+          <p className="quick-once">Just your name and number — only this once.</p>
+        )}
+
+        {!lean && (
+          <>
         {/* Where is this going? Already answered, if they came by car or asked
             for it to be brought to them. */}
         {placeDecided ? (
@@ -454,6 +501,8 @@ export default function Checkout() {
             </Link>
           </div>
         )}
+          </>
+        )}
 
         {/*
           Ordering before setting off: when will you be here?
@@ -515,7 +564,7 @@ export default function Checkout() {
             bigger table, and the only thing worse than asking twice is not
             letting them correct it.
           */}
-          {where === 'here' && !placeDecided && seated && !changingTable && (
+          {!lean && where === 'here' && !placeDecided && seated && !changingTable && (
             <div className="field">
               <label>Table</label>
               <div className="seated-at">
@@ -532,7 +581,27 @@ export default function Checkout() {
             </div>
           )}
 
-          {where === 'here' && !placeDecided && (!seated || changingTable) && (
+          {/* Not scanned: no list to pick from — the QR on the table is the
+              way in. Scanning opens the table and the order goes straight on. */}
+          {where === 'here' && !placeDecided && !scannedIn && (
+            <div className="scan-first">
+              <strong>Scan the QR on your table</strong>
+              <span className="tiny muted">Ordering at the restaurant starts with your table&rsquo;s QR code.</span>
+              <button
+                type="button"
+                className="btn btn-accent btn-sm"
+                onClick={() => {
+                  setPlaceAfterVerify(false)
+                  setVerifyOpen(true)
+                }}
+              >
+                Scan QR
+              </button>
+            </div>
+          )}
+
+          {/* Scanned, and asked to move: the list, only then. */}
+          {where === 'here' && !placeDecided && scannedIn && changingTable && (
             <div className="field">
               <label>Table</label>
               {!tables ? (
@@ -599,7 +668,7 @@ export default function Checkout() {
             </div>
           )}
 
-          <div className="field">
+          <div className="field" style={lean ? { display: 'none' } : undefined}>
             <label htmlFor="co-note">Anything we should know? (optional)</label>
             <textarea
               id="co-note"
@@ -614,7 +683,7 @@ export default function Checkout() {
 
           {/* The code — only mentioned when it is actually the missing piece.
               A car or a delivery has said where it is going at the top already. */}
-          {placeDecided ? null : verified ? (
+          {placeDecided || lean ? null : verified ? (
             <div className="verified-banner">
               <span>✓</span>
               <div style={{ flex: 1 }}>
@@ -699,6 +768,10 @@ export default function Checkout() {
             somebody who does has to open, read, pick and come back to see what
             they picked. Two rows say everything at once.
           */}
+          {lean && !payNow ? (
+            <p className="tiny muted pay-picks-foot">{payLaterLabel} — nothing to pay now.</p>
+          ) : (
+          <>
           <p className="pay-head-label">Pay using</p>
           <div className="pay-picks">
             <button
@@ -733,10 +806,10 @@ export default function Checkout() {
               <strong>{payLaterLabel}</strong>
               <span className="pay-pick-sub">
                 {prepaidOnly
-                  ? isTakeaway && !options?.prepaidOnly
-                    ? 'Takeaway is paid for in the app'
-                    : isCar && options?.carPrepaidOnly && !options?.prepaidOnly
-                      ? 'Orders brought out to your car are paid for in the app'
+                  ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
+                    ? 'Orders brought out to your car are paid for in the app'
+                    : (where === 'later' || where === 'takeaway') && !options?.prepaidOnly
+                      ? 'Takeaway orders are paid by UPI in the app'
                     : 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
                   : isDelivery
                   ? 'Cash or UPI when it reaches you'
@@ -750,6 +823,8 @@ export default function Checkout() {
             </button>
           </div>
           <p className="tiny muted pay-picks-foot">{paySub}</p>
+          </>
+          )}
 
           <button
             className="btn btn-accent btn-lg btn-block"
@@ -766,6 +841,12 @@ export default function Checkout() {
                 return
               }
               if (needsTable) {
+                if (!scannedIn) {
+                  // The scanner, then straight on with the order.
+                  setPlaceAfterVerify(true)
+                  setVerifyOpen(true)
+                  return
+                }
                 document.querySelector('.table-grid')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 toast('Tap your table number.', 'info')
                 return
@@ -788,6 +869,8 @@ export default function Checkout() {
               <Spinner />
             ) : shortOfMinimum > 0 ? (
               `Add ${money(shortOfMinimum)} more`
+            ) : needsTable && !scannedIn ? (
+              'Scan table QR to order'
             ) : payNow && canPayInApp ? (
               `Pay ${money(payableCents)}`
             ) : (
@@ -802,7 +885,9 @@ export default function Checkout() {
                 : needsPhone
                   ? 'Add your mobile number — the restaurant may need to ring.'
                   : needsTable
-                  ? 'Tap your table number above.'
+                  ? scannedIn
+                    ? 'Tap your table number above.'
+                    : 'Scan the QR on your table to order here.'
                   : "Tap above and we'll ask for the code — or switch to paying in the app."}
             </p>
           )}

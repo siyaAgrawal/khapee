@@ -1,0 +1,465 @@
+[
+  {
+    "name": "Komal's Cake Shop",
+    "description": "Cakes, pastries, cookies and hampers, baked in Indore.",
+    "address": "Indore",
+    "categories": [
+      "Bakery",
+      "Desserts",
+      "Cakes"
+    ],
+    "emoji": "🎂",
+    "hue": 340,
+    "prepMinutes": 20,
+    "isOpen": false,
+    "menu": [
+      {
+        "category": "Cakes",
+        "items": [
+          {
+            "name": "Chocolate Truffle Cake (500 g)",
+            "price": 750,
+            "veg": true,
+            "description": "Rich and moist chocolate-layered cake."
+          },
+          {
+            "name": "Black Forest Cake (500 g)",
+            "price": 750,
+            "veg": true,
+            "description": "Classic chocolate and cherry-filled delight."
+          },
+          {
+            "name": "Butterscotch Cake (500 g)",
+            "price": 750,
+            "veg": true,
+            "description": "Light cake with crunchy butterscotch flavours."
+          },
+          {
+            "name": "White Forest Cake (500 g)",
+            "price": 750,
+            "veg": true,
+            "description": "Creamy cake layered with white chocolate."
+          },
+          {
+            "name": "Belgian Chocolate Cake (500 g)",
+            "price": 900,
+            "veg": true,
+            "description": "Luxurious cake with Belgian chocolate."
+          },
+          {
+            "name": "Pineapple Cake (500 g)",
+            "price": 750,
+            "veg": true,
+            "description": "Fluffy cake with tangy pineapple layers."
+          },
+          {
+            "name": "Mixed Fruit Cake (500 g)",
+            "price": 800,
+            "veg": true,
+            "description": "Soft cake with assorted fresh fruits."
+          }
+        ]
+      },
+      {
+        "category": "Bento Cakes",
+        "items": [
+          {
+            "name": "Blueberry Cheesecake (250 g)",
+            "price": 520,
+            "veg": true,
+            "description": "New York-style cheesecake bursting with juicy blueberries, baked to a golden brown top."
+          },
+          {
+            "name": "Lotus Biscoff Cheesecake (250 g)",
+            "price": 500,
+            "veg": true,
+            "description": "Creamy cheesecake infused with Biscoff, on a crunchy Biscoff crumble base."
+          }
+        ]
+      },
+      {
+        "category": "Pastries & Cheesecakes",
+        "items": [
+          {
+            "name": "Blueberry Cheesecake",
+            "price": 190,
+            "veg": true,
+            "description": "Creamy cheesecake topped with blueberry compote."
+          },
+          {
+            "name": "Lotus Biscoff Cheesecake",
+            "price": 230,
+            "veg": true,
+            "description": "Rich cheesecake with a caramelised Lotus Biscoff topping."
+          },
+          {
+            "name": "Chocolate Truffle Pastry",
+            "price": 110,
+            "veg": true,
+            "description": "Rich, smooth chocolate-filled delight."
+          },
+          {
+            "name": "Belgian Chocolate Pastry",
+            "price": 125,
+            "veg": true,
+            "description": "Decadent pastry made with premium Belgian chocolate."
+          },
+          {
+            "name": "Mixed Fruit Pastry",
+            "price": 125,
+            "veg": true,
+            "description": "Soft pastry topped with fresh fruit."
+          },
+          {
+            "name": "Pineapple Pastry",
+            "price": 110,
+            "veg": true,
+            "description": "Classic pineapple-flavoured light pastry."
+          },
+          {
+            "name": "Chocolate Doughnut",
+            "price": 80,
+            "veg": true,
+            "description": "Soft doughnut with a chocolate glaze."
+          },
+          {
+            "name": "Walnut Brownie",
+            "price": 90,
+            "veg": true,
+            "description": "Fudgy brownie with crunchy walnuts."
+          },
+          {
+            "name": "Jam Roll",
+            "price": 125,
+            "veg": true,
+            "description": "Soft sponge roll filled with sweet jam."
+          }
+        ]
+      },
+      {
+        "category": "Dry Cakes",
+        "items": [
+          {
+            "name": "Chocolate Marble Cake (400 g)",
+            "price": 390,
+            "veg": true,
+            "description": "Swirled vanilla and chocolate tea cake."
+          },
+          {
+            "name": "Tutti Frutti Cake (400 g)",
+            "price": 390,
+            "veg": true,
+            "description": "Soft cake dotted with colourful tutti frutti."
+          },
+          {
+            "name": "Choco Chips Dry Cake (400 g)",
+            "price": 390,
+            "veg": true,
+            "description": "Moist, rich chocolate tea cake."
+          },
+          {
+            "name": "Dry Fruit Cake (400 g)",
+            "price": 390,
+            "veg": true,
+            "description": "Cake packed with crunchy dry fruits."
+          },
+          {
+            "name": "Mava Cake (280 g)",
+            "price": 340,
+            "veg": true,
+            "description": "Rich, buttery cake with mava."
+          }
+        ]
+      },
+      {
+        "category": "Muffins",
+        "items": [
+          {
+            "name": "Vanilla Muffin",
+            "price": 30,
+            "veg": true,
+            "description": "Soft and fluffy vanilla muffin."
+          },
+          {
+            "name": "Choco Chips Muffin",
+            "price": 30,
+            "veg": true,
+            "description": "Rich chocolate muffin with a soft centre."
+          }
+        ]
+      },
+      {
+        "category": "Puddings",
+        "items": [
+          {
+            "name": "Opera (1 jar)",
+            "price": 280,
+            "veg": true,
+            "description": "Layers of coffee-soaked sponge and ganache."
+          },
+          {
+            "name": "Tres Leches (1 jar)",
+            "price": 280,
+            "veg": true
+          },
+          {
+            "name": "Hazelnut Jar (1 jar)",
+            "price": 280,
+            "veg": true,
+            "description": "Creamy dessert with rich hazelnut flavours."
+          }
+        ]
+      },
+      {
+        "category": "Cookies",
+        "items": [
+          {
+            "name": "Oats Honey Cookies (250 g)",
+            "price": 260,
+            "veg": true,
+            "description": "Crispy oats cookies with a hint of honey."
+          },
+          {
+            "name": "Almond Stick Cookies (250 g)",
+            "price": 340,
+            "veg": true,
+            "description": "Crunchy sticks loaded with almonds."
+          },
+          {
+            "name": "Gud Till Cookies (250 g)",
+            "price": 230,
+            "veg": true,
+            "description": "Nutty sesame cookies sweetened with jaggery."
+          },
+          {
+            "name": "Multigrain Cookies (250 g)",
+            "price": 280,
+            "veg": true,
+            "description": "A wholesome mix of grains in every bite."
+          },
+          {
+            "name": "Coconut Cookies (250 g)",
+            "price": 230,
+            "veg": true,
+            "description": "Delicate cookies infused with coconut."
+          },
+          {
+            "name": "Atta Cookies (250 g)",
+            "price": 230,
+            "veg": true,
+            "description": "Classic, crunchy whole wheat cookies."
+          },
+          {
+            "name": "Ajwaini Cookies (250 g)",
+            "price": 230,
+            "veg": true,
+            "description": "Spiced cookies with aromatic ajwain."
+          },
+          {
+            "name": "Jeera Cookies (250 g)",
+            "price": 250,
+            "veg": true,
+            "description": "Savoury cumin-flavoured crisp cookies."
+          },
+          {
+            "name": "Chocolate Cookies (250 g)",
+            "price": 250,
+            "veg": true,
+            "description": "Soft, buttery cookies with chocolate chips."
+          },
+          {
+            "name": "Brownie Cookies (250 g)",
+            "price": 250,
+            "veg": true,
+            "description": "Dense and fudgy chocolate brownie in a cookie."
+          },
+          {
+            "name": "Tutti Frutti Cookies (250 g)",
+            "price": 230,
+            "veg": true,
+            "description": "Colourful, fruity cookies for a sweet treat."
+          },
+          {
+            "name": "Kesar Pista Cookies (250 g)",
+            "price": 280,
+            "veg": true,
+            "description": "Rich saffron and pistachio cookies."
+          },
+          {
+            "name": "Nutella Cookies (1 piece)",
+            "price": 110,
+            "veg": true,
+            "description": "Gooey cookies filled with Nutella."
+          },
+          {
+            "name": "Oats and Raisin Cookies (1 piece)",
+            "price": 110,
+            "veg": true,
+            "description": "Chewy oats cookies with sweet raisins."
+          }
+        ]
+      },
+      {
+        "category": "Cream Rolls",
+        "items": [
+          {
+            "name": "Vanilla Cream Roll",
+            "price": 48,
+            "veg": true,
+            "description": "Soft roll filled with vanilla cream."
+          },
+          {
+            "name": "Chocolate Cream Roll",
+            "price": 48,
+            "veg": true,
+            "description": "Sponge roll with creamy chocolate filling."
+          },
+          {
+            "name": "Butterscotch Cream Roll",
+            "price": 48,
+            "veg": true,
+            "description": "Fluffy roll filled with butterscotch cream."
+          },
+          {
+            "name": "Strawberry Cream Roll",
+            "price": 48,
+            "veg": true,
+            "description": "Light roll with strawberry-flavoured cream."
+          }
+        ]
+      },
+      {
+        "category": "Khari",
+        "items": [
+          {
+            "name": "Plain Khari (150 g)",
+            "price": 110,
+            "veg": true,
+            "description": "Light, flaky, buttery puffed bites."
+          }
+        ]
+      },
+      {
+        "category": "Rusk",
+        "items": [
+          {
+            "name": "Suji Toast (300 g)",
+            "price": 155,
+            "veg": true,
+            "description": "Crunchy, lightly sweetened semolina toast."
+          },
+          {
+            "name": "Cake Rusk (250 g)",
+            "price": 230,
+            "veg": true,
+            "description": "Twice-baked crunchy cake slices for tea time."
+          }
+        ]
+      },
+      {
+        "category": "Chocolate Sticks",
+        "items": [
+          {
+            "name": "Dark Chocolate Sticks (10 pieces)",
+            "price": 160,
+            "veg": true,
+            "description": "Intense and rich dark chocolate sticks."
+          },
+          {
+            "name": "White Chocolate Sticks (10 pieces)",
+            "price": 160,
+            "veg": true,
+            "description": "Sweet, creamy white chocolate sticks."
+          }
+        ]
+      },
+      {
+        "category": "Gift Hampers",
+        "items": [
+          {
+            "name": "The Balanced Bite Hamper",
+            "price": 1499,
+            "veg": true,
+            "description": "Oats cookies (250 g), jeera cookies (250 g), Farmley makhana, 2 cream rolls and a marble cake (250 g)."
+          },
+          {
+            "name": "Comfort Cravings Hamper",
+            "price": 999,
+            "veg": true,
+            "description": "Oats cookies (250 g), mathri (240 g), 2 cream rolls and Nutella cookies."
+          },
+          {
+            "name": "Joy Hamper",
+            "price": 889,
+            "veg": true,
+            "description": "Oats (150 g), jeera (150 g), almond stick (200 g) and tutti frutti (150 g)."
+          },
+          {
+            "name": "Bliss Hamper",
+            "price": 1749,
+            "veg": true,
+            "description": "2 dry fruit bars, Ferrero Rocher T3, almond stick (200 g), chocolate stick and jeera cookies."
+          },
+          {
+            "name": "Delight Hamper",
+            "price": 2349,
+            "veg": true,
+            "description": "4 cream rolls in different flavours, oats (250 g), jeera (250 g), a Nutella cookie, an oats and raisin cookie, a chocolate stick (10 pieces), 2 dry fruit bars and a mawa cake (300 g)."
+          }
+        ]
+      },
+      {
+        "category": "Father's Day Special",
+        "items": [
+          {
+            "name": "Father's Day Mixed Fruit Floral Cake (400 g)",
+            "price": 599,
+            "veg": true,
+            "description": "Wishing you a happy Father's Day."
+          },
+          {
+            "name": "Father's Day Belgian Chocolate Floral Cake (400 g)",
+            "price": 599,
+            "veg": true,
+            "description": "Wishing you a happy Father's Day."
+          }
+        ]
+      },
+      {
+        "category": "Christmas Special",
+        "items": [
+          {
+            "name": "Plum Cake (260 g)",
+            "price": 330,
+            "veg": true
+          },
+          {
+            "name": "Plum Cake (400 g)",
+            "price": 460,
+            "veg": true
+          },
+          {
+            "name": "Strawberry Cream Christmas Special",
+            "price": 399,
+            "veg": true
+          },
+          {
+            "name": "Red Velvet Pudding Christmas Special",
+            "price": 399,
+            "veg": true
+          },
+          {
+            "name": "Strawberry Chocolate Pastry",
+            "price": 159,
+            "veg": true
+          },
+          {
+            "name": "Christmas Special Cookies (250 g)",
+            "price": 240,
+            "veg": true
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -17,6 +17,7 @@ import { groupsRouter } from './routes/groups.ts'
 import { sessionsRouter } from './routes/sessions.ts'
 import { petpoojaRouter } from './routes/petpooja.ts'
 import { ensureSeed } from './seed.ts'
+import { importNewArrivals } from './new-arrivals.ts'
 import { injectMeta, metaFor, robotsTxt, sitemapXml, structuredData } from './seo.ts'
 import { thankPage } from './thank-page.ts'
 import { contactCard } from './vcard.ts'
@@ -31,7 +32,11 @@ const PORT = Number((process.env.KHAPEE_PORT ?? process.env.TABLO_PORT) ?? (IS_P
 // Where customers reach the app (Vite in dev, this server once built).
 const WEB_PORT = Number(process.env.TABLO_WEB_PORT ?? 5273)
 
-ensureSeed()
+// A database that was just filled with demo restaurants is not the live shop
+// list, and the test suite counts what the seed put there — so real arrivals
+// are only imported into a database that already existed.
+const seededNow = ensureSeed()
+if (!seededNow) importNewArrivals()
 purgeExpiredSessions()
 
 const app = express()

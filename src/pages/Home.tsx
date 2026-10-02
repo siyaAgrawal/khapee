@@ -7,6 +7,7 @@ import { useSession } from '../lib/session'
 import { alertsLive, pushSupported } from '../lib/push'
 import { Art, EmptyState, ErrorState, Skeleton, Spinner } from '../components/ui'
 import { ArrowRightIcon, BellIcon, PinIcon, SearchIcon } from '../components/icons'
+import { crestFor } from '../lib/themes'
 
 type Precinct = { id: number; slug: string; name: string; city: string; note: string; restaurants: number }
 
@@ -402,6 +403,7 @@ export default function Home() {
                   emoji={r.emoji}
                   hue={r.hue}
                   imageUrl={r.imageUrl}
+                  crest={crestFor(r.theme)}
                   alt={r.name}
                   className={`r-card-art ${r.isOpen ? '' : 'closed-art'}`}
                 />

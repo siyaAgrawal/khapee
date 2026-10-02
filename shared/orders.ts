@@ -63,12 +63,21 @@ export function flowFor(type: OrderType | ServiceType): readonly OrderStatus[] {
   return type === 'dine_in' ? DINE_IN_FLOW : PICKUP_FLOW
 }
 
+/*
+ * The words on the ticket.
+ *
+ * "Roadside" and "Pickup" were ours, not theirs: nobody behind a counter says
+ * either. A kitchen sorts orders into the three things it has to do
+ * differently — carry it to a table, hand it over at the counter, or walk it
+ * out to a car — so those are the words, and pickup and takeaway stop being
+ * two names for one job.
+ */
 export const SERVICE_LABEL: Record<ServiceType, string> = {
-  dine_in: 'Dine in',
-  car: 'Roadside',
+  dine_in: 'At the restaurant',
+  car: 'Car',
   delivery: 'Delivery',
   takeaway: 'Takeaway',
-  pickup: 'Pickup',
+  pickup: 'Takeaway',
   precinct: 'Nearby',
 }
 

@@ -4,7 +4,17 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'plain' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'plain' | ''
+
+/**
+ * A restaurant's own mark, for the places that would otherwise show a category
+ * emoji — the card in the list, the switcher. Only for a theme we hold an
+ * actual logo file for; inventing one would be putting a mark on a shopfront
+ * that the shop never chose.
+ */
+export function crestFor(theme: ThemeName | string | undefined): string | null {
+  return theme === 'beans' ? '/beans-gentleman.png' : null
+}
 
 /** How one section of a themed menu presents itself. */
 export type SectionVoice = {
@@ -108,6 +118,41 @@ const PAARROO_VOICES: Record<string, SectionVoice> = {
   'Milk & Water': { accent: '#5c8aa8', kicker: 'Plain, and cold', glyph: '💧' },
 }
 
+/**
+ * Mr. Beans' sections.
+ *
+ * The one theme set on paper rather than on a ground: the shop's own look is
+ * black ink on cream — an engraver's capitals, ruled plates, the gentleman in
+ * his oval — and the café inherits it. So the glyphs are printer's ornaments
+ * instead of emoji, and the accents are inks rather than colours: oxblood,
+ * olive, sepia, bottle green, the four an old press would actually have had.
+ *
+ * The kickers are dry. A kitchen that names a section "Not Pasta" has a voice
+ * already and does not need ours on top of it.
+ */
+const BEANS_VOICES: Record<string, SectionVoice> = {
+  'Freshly Baked From The Gourmet Store Bakery': {
+    accent: '#7a5230',
+    kicker: 'Out of the oven this morning',
+    glyph: '❦',
+  },
+  'Eggs, Eggs & More Eggs': { accent: '#a8782c', kicker: 'However you take them', glyph: '◍' },
+  'Tartine, Toasty & Flat Breads': { accent: '#8a5a2b', kicker: 'Open-faced, under the grill', glyph: '❧' },
+  'Salads & Healthy Bowls': { accent: '#4a6b3a', kicker: 'Green, and plenty of it', glyph: '✿' },
+  Sandwiches: { accent: '#6b5a33', kicker: 'Pressed to order', glyph: '❖' },
+  Entree: { accent: '#7d3f2c', kicker: 'To begin with', glyph: '✦' },
+  Pizzas: { accent: '#9c4529', kicker: 'Straight off the stone', glyph: '◆' },
+  'Pasta & Noodles': { accent: '#8a6b2e', kicker: 'Red, white, or neither', glyph: '❈' },
+  'Not Pasta': { accent: '#6f6436', kicker: 'The exceptions', glyph: '✧' },
+  'Meat Feasts': { accent: '#7a3326', kicker: 'For the hungry end of the table', glyph: '❂' },
+  'Asian Selection': { accent: '#45604a', kicker: 'From the other kitchen', glyph: '❃' },
+  'Asian Curry': { accent: '#8a5a22', kicker: 'Slow, and spiced', glyph: '❉' },
+  Desserts: { accent: '#6e3f55', kicker: 'The reason you stayed', glyph: '❀' },
+  'Not Coffee': { accent: '#4a5f6b', kicker: 'Everything else to drink', glyph: '⁂' },
+  'Cold Coffee': { accent: '#5d4632', kicker: 'Over plenty of ice', glyph: '☙' },
+  Coffee: { accent: '#5d4632', kicker: 'Pulled to order', glyph: '☙' },
+}
+
 const FALLBACK: SectionVoice = { accent: '#c9a227', kicker: 'From the kitchen', glyph: '·' }
 
 /**
@@ -129,6 +174,7 @@ export function accentVars(hex: string): Record<string, string> {
 }
 
 export function sectionVoice(theme: ThemeName, section: string): SectionVoice {
+  if (theme === 'beans') return BEANS_VOICES[section] ?? { ...FALLBACK, accent: '#6b5a33', glyph: '✦' }
   if (theme === 'paarroo') return PAARROO_VOICES[section] ?? { ...FALLBACK, accent: '#2f7d55' }
   if (theme === 'revery') return REVERY_VOICES[section] ?? { ...FALLBACK, accent: '#8fc46b' }
   if (theme === 'hut') return HUT_VOICES[section] ?? { ...FALLBACK, accent: '#e8a33d' }

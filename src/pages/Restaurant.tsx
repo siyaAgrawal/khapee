@@ -18,6 +18,7 @@ import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
 import { PaarrooMark, PaarrooWordmark } from '../components/PaarrooBrand'
+import { BeansFlourish, BeansMark, BeansWordmark } from '../components/BeansBrand'
 import type { RestaurantCard } from './Home'
 
 type MenuItem = {
@@ -103,11 +104,12 @@ export default function Restaurant() {
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
-  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'paarroo' | 'plain' | ''
+  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'plain' | ''
   const noir = theme === 'noir'
   const hut = theme === 'hut'
   const revery = theme === 'revery'
   const paarroo = theme === 'paarroo'
+  const beans = theme === 'beans'
   /**
    * "plain" is not a look of its own — it is the ordinary page with the
    * photographs left off. A restaurant whose pictures are not good enough to
@@ -127,7 +129,7 @@ export default function Restaurant() {
    */
   const [query, setQuery] = useState('')
   /** Themed restaurants share the menu and page shell, dressed differently. */
-  const themed = noir || hut || revery || paarroo
+  const themed = noir || hut || revery || paarroo || beans
   const noirPage = themed
 
   /**
@@ -161,7 +163,7 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''}`}>
+      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''} ${beans ? 'beans-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
@@ -196,7 +198,9 @@ export default function Restaurant() {
 
                 <div className="noir-hero-lockup">
                   <span className="noir-hero-mark">
-                    {paarroo ? (
+                    {beans ? (
+                      <BeansMark size={176} />
+                    ) : paarroo ? (
                       <PaarrooMark size={50} />
                     ) : revery ? (
                       <ReveryMark size={50} />
@@ -206,7 +210,9 @@ export default function Restaurant() {
                       <NoirMark size={46} />
                     )}
                   </span>
-                  {paarroo ? (
+                  {beans ? (
+                    <BeansWordmark name={data.restaurant.name} />
+                  ) : paarroo ? (
                     <PaarrooWordmark />
                   ) : revery ? (
                     <ReveryWordmark />
@@ -215,6 +221,7 @@ export default function Restaurant() {
                   ) : (
                     <NoirWordmark />
                   )}
+                  {beans && <BeansFlourish />}
                   <p className="noir-hero-line">{data.restaurant.description}</p>
                   <div className="noir-hero-meta">
                     <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>

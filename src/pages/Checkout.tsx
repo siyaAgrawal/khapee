@@ -118,6 +118,8 @@ export default function Checkout() {
   // Standing somewhere in a precinct: no table, no address, a landmark.
   const isNearby = dining?.serviceMode === 'precinct'
   const placeDecided = isDelivery || isCar || isNearby
+  /** Collected at a counter, whether ordered ahead or while standing there. */
+  const isTakeaway = where === 'later' || where === 'takeaway'
 
   /**
    * Named for the situation, so "pay later" means something concrete — and it
@@ -131,8 +133,8 @@ export default function Checkout() {
       ? 'UPI or cash at the car'
       : isNearby
         ? 'UPI or cash when it arrives'
-        : where === 'later'
-          ? 'UPI or cash when you collect'
+        : isTakeaway
+          ? 'Cash when you collect'
           : 'UPI or cash at the restaurant'
 
   /** Eating in and takeaway are ordered at the restaurant; collecting is not. */
@@ -219,10 +221,23 @@ export default function Checkout() {
    * — the one place the food is taken out to somebody already sitting in the
    * thing they will leave in.
    */
+  /*
+   * Takeaway is paid for in the app wherever that is possible at all.
+   *
+   * It used to wait on a per-restaurant switch, and the switch was the
+   * problem: takeaway is the one mode where nobody is sitting down and nothing
+   * is held against the order. The food is bagged, it sits on the counter, and
+   * if the person does not come it is thrown away — so the kitchen is being
+   * asked to cook on a promise from someone it cannot see.
+   *
+   * Conditioned on canPayInApp and nothing else: a restaurant that has not put
+   * a UPI ID on Khapee has no in-app payment to insist on, and offering it
+   * nothing would leave it unable to take a takeaway order at all. The server
+   * still keeps the owner's switch as its own backstop; this is the question
+   * the customer is actually asked.
+   */
   const prepaidOnly =
-    !!options?.prepaidOnly ||
-    (isCar && !!options?.carPrepaidOnly) ||
-    (where === 'later' && !!options?.takeawayPrepaidOnly)
+    !!options?.prepaidOnly || (isTakeaway && canPayInApp) || (isCar && !!options?.carPrepaidOnly)
   useEffect(() => {
     // Nothing to choose when there is only one way to pay.
     if (prepaidOnly && !payNow) setPayNow(true)
@@ -718,10 +733,10 @@ export default function Checkout() {
               <strong>{payLaterLabel}</strong>
               <span className="pay-pick-sub">
                 {prepaidOnly
-                  ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
-                    ? 'Orders brought out to your car are paid for in the app'
-                    : where === 'later' && options?.takeawayPrepaidOnly && !options?.prepaidOnly
-                      ? 'Takeaway orders are paid for in the app'
+                  ? isTakeaway && !options?.prepaidOnly
+                    ? 'Takeaway is paid for in the app'
+                    : isCar && options?.carPrepaidOnly && !options?.prepaidOnly
+                      ? 'Orders brought out to your car are paid for in the app'
                     : 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
                   : isDelivery
                   ? 'Cash or UPI when it reaches you'

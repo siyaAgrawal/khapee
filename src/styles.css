@@ -2525,6 +2525,33 @@ textarea {
   font-size: 15px;
   letter-spacing: -0.01em;
 }
+/* Which way this order came in, on every ticket.
+   Colour carries the kind so a full board can be sorted by eye before a word
+   of it is read: purple is in the room, amber is waiting at the counter, blue
+   is outside in a car. */
+.o-mode {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+  background: var(--bg-tint);
+  color: var(--muted);
+}
+.o-mode.is-in { background: var(--accent-soft); color: var(--accent); }
+.o-mode.is-takeaway { background: var(--warn-soft); color: var(--warn); }
+.o-mode.is-car { background: var(--info-soft); color: var(--info); }
+.o-mode.is-delivery,
+.o-mode.is-nearby { background: var(--good-soft); color: var(--good); }
+/* The table or the zone, beside the mode rather than instead of it. */
+.qrow-detail {
+  margin-left: 7px;
+  font-weight: 600;
+}
 .qrow-where em,
 .qrow-meta em {
   font-style: normal;
@@ -8201,4 +8228,246 @@ button.nav-link {
 }
 .paying-acts:empty {
   display: none;
+}
+
+/* ── Mr. Beans ────────────────────────────────────────────────────────────────
+   Black ink on aged paper, set the way an engraver would have set it.
+
+   Everything here is the shop's own and none of it is invented: the gentleman
+   in the top hat is the chalk mural from the wall, the capitals are the sign
+   over the door, and the rules and the oval are the ornaments that go around a
+   portrait of that age. The one decision taken here is to let the paper be the
+   ground rather than the app's white, because ink on white is a document and
+   ink on cream is a shopfront.
+
+   This is the second light theme, after 28 Paarroo, and it borrows that one's
+   method: redefine the tokens, then undo the handful of places where the
+   shared themed layout paints a dark ground directly. */
+:root[data-theme='beans'] {
+  --bg: #efe6d2;
+  --bg-tint: #e7dcc3;
+  --surface: #f4edda;
+  --surface-2: #e9dfc7;
+  --ink: #1b1813;
+  --ink-2: #3a332a;
+  /* 5.6:1 on this paper. A grey that looks right on white goes muddy on
+     cream and drops under 4.5, and this menu is nothing but descriptions. */
+  --muted: #5e5445;
+  --line: rgba(27, 24, 19, 0.16);
+  --line-strong: rgba(27, 24, 19, 0.3);
+
+  --accent: #1b1813;
+  --accent-ink: #f4edda;
+  --accent-soft: #e2d6b9;
+
+  --good: #3d6b35;
+  --good-soft: #e0e8d4;
+  --warn: #8a6417;
+  --warn-soft: #ece0c2;
+  --bad: #8e3326;
+  --bad-soft: #eed9cf;
+  --info: #45566b;
+  --info-soft: #dfe2dd;
+
+  /* Tinted with the paper, not black turned down: a black shadow on cream
+     reads as a smudge rather than as depth. */
+  --shadow-sm: 0 1px 2px rgba(60, 44, 20, 0.1);
+  --shadow-md: 0 6px 18px rgba(60, 44, 20, 0.12);
+  --shadow-lg: 0 22px 48px rgba(60, 44, 20, 0.16);
+  --shadow-accent: 0 10px 24px rgba(60, 44, 20, 0.2);
+}
+
+/* The shared themed layout keeps its own ink, set for a dark ground. Left
+   alone, every heading on this page is near-white on cream. */
+.beans-page,
+.beans-page .noir {
+  --noir-ink: #1b1813;
+  --noir-dim: #5e5445;
+  font-family: var(--beans-text);
+}
+
+/* The two faces: engraved capitals for anything that would have been cut into
+   a sign, an old bookface for anything that would have been printed. Both fall
+   back to faces every device already has, so the page is right before the
+   webfont lands and still right if it never does. */
+:root {
+  --beans-caps: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --beans-text: 'Libre Caslon Text', 'Iowan Old Style', Georgia, serif;
+  --beans-sc: 'IM Fell English SC', Georgia, serif;
+}
+
+/* The paper itself: a little tooth, and edges darkened by handling. Fixed
+   rather than scrolled, because a sheet does not move while you read it. */
+.beans-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 110% at 50% 45%, transparent 55%, rgba(92, 70, 38, 0.18) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .27 0 0 0 0 .15 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+.beans-page > * { position: relative; z-index: 1; }
+
+/* No photograph, so no gradient slab pretending to be one. The hero is the
+   lockup alone, as the shop's own sheet is: a portrait, a sign, a rule. */
+.beans-page .noir-hero-art { display: none; }
+.beans-page .noir-hero-lockup {
+  color: var(--ink);
+  text-align: center;
+  padding-top: 26px;
+}
+.beans-page .noir-hero-mark {
+  display: block;
+  /* Clear of the sticky header: the oval's crest is the first thing drawn and
+     it was being sliced off by the bar above it. */
+  margin: 22px auto 6px;
+}
+.beans-page .noir-hero-line,
+.beans-page .noir-hero-meta { color: var(--muted); }
+/* Open and closed, in inks rather than in the dark theme's pastels — a mint
+   green on cream is the one word on this page that looks like another app. */
+.beans-page .noir-open { color: #3d6b35; }
+.beans-page .noir-shut { color: #8e3326; }
+/* Square corners on the ways in too, so they agree with the plate. */
+.beans-page .road-cta,
+.beans-page .dining-bar,
+.beans-page .o-mode { border-radius: 2px; }
+.beans-page .noir-hero-meta {
+  justify-content: center;
+  font-family: var(--beans-sc);
+  letter-spacing: 0.1em;
+  font-size: 15px;
+}
+
+/* The portrait: the oval, and the gentleman standing inside it. */
+.beans-portrait {
+  position: relative;
+  display: inline-block;
+  aspect-ratio: 240 / 320;
+  color: var(--ink);
+}
+.beans-cartouche {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* He arrives as white chalk on transparent — which is right on the shop's
+   dark wall and invisible on paper. Inverted, he is the black engraving the
+   oval was drawn for. */
+.beans-gentleman {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 68%;
+  width: auto;
+  filter: invert(1);
+  opacity: 0.88;
+}
+
+/* The sign over the door: capitals inside a ruled plate, the branch beneath. */
+.beans-wordmark { display: block; }
+.beans-plate {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 11px 26px 9px;
+  border: 1.5px solid var(--ink);
+  /* The double rule of a shop sign: a heavy line and a hair beside it. */
+  box-shadow: 0 0 0 1px var(--bg), 0 0 0 2.5px var(--ink);
+}
+.beans-plate-name {
+  font-family: var(--beans-caps);
+  font-size: clamp(24px, 6.5vw, 36px);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.beans-plate-branch {
+  font-family: var(--beans-sc);
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 5px;
+  border-top: 1px solid var(--line-strong);
+  align-self: stretch;
+  text-align: center;
+}
+
+.beans-flourish {
+  display: block;
+  width: min(220px, 60%);
+  height: auto;
+  margin: 18px auto 6px;
+  color: var(--ink);
+  opacity: 0.75;
+}
+
+/* The menu, printed rather than carded: section names in engraved capitals,
+   dishes on ruled lines with the price at the end, as a bill of fare is set. */
+.beans-page .noir-section-title,
+.beans-page .noir-item-name,
+.beans-page h1,
+.beans-page h2,
+.beans-page h3 {
+  font-family: var(--beans-caps);
+  letter-spacing: 0.05em;
+}
+.beans-page .noir-tab {
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: transparent;
+  font-family: var(--beans-sc);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.beans-page .noir-tab:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(27, 24, 19, 0.05);
+}
+.beans-page .noir-item {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.beans-page .noir-row { border-bottom: 1px solid var(--line); }
+.beans-page .noir-dots { border-bottom: 1px dotted rgba(27, 24, 19, 0.35); }
+/* Square corners throughout. Rounded ones are this decade's; the sign is not. */
+.beans-page .btn,
+.beans-page .chip,
+.beans-page .badge,
+.beans-page .r-search { border-radius: 2px; }
+
+/* The mark on a restaurant card, where every other place shows an emoji. */
+.art-crest {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #efe6d2 0%, #e7dcc3 60%, #ded2b6 100%);
+}
+/* Taken out of the grid and pinned to the frame.
+   As a grid item its percentage height had nothing settled to resolve against
+   — the row sizes itself from the item and the item from the row — so this
+   1004px-tall portrait kept its natural height and the card showed a crop of
+   his hat. Positioned against the frame, which does have a height, the
+   percentages mean what they say. */
+.art-crest-img {
+  position: absolute;
+  inset: 9% 8%;
+  width: auto;
+  height: auto;
+  max-width: 84%;
+  max-height: 82%;
+  margin: auto;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: 0.82;
 }

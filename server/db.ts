@@ -1207,6 +1207,18 @@ if (BACKED_UP) {
   })
 }
 
+/*
+ * Mr. Beans wears its own look.
+ *
+ * Not guarded by BACKED_UP, unlike the fix above: which restaurants are open
+ * is a fact about the live host, but a restaurant's branding is part of the
+ * product, and a theme that only exists in production is one nobody can see
+ * before it ships.
+ */
+dataFix('2026-10-02-beans-theme', () => {
+  db.prepare("UPDATE restaurants SET theme = 'beans' WHERE slug LIKE 'mr-beans%'").run()
+})
+
 if (BACKED_UP) {
   const onDisk = new Set(fs.readdirSync(UPLOAD_DIR))
   const names = db.prepare('SELECT name FROM upload_files').all() as { name: string }[]

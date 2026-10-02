@@ -125,6 +125,7 @@ export function Art({
   rounded = 18,
   imageUrl,
   alt,
+  crest,
 }: {
   emoji: string
   hue: number
@@ -133,6 +134,15 @@ export function Art({
   /** An uploaded photo takes over when the restaurant has provided one. */
   imageUrl?: string | null
   alt?: string
+  /**
+   * A restaurant's own mark, standing in for the glyph.
+   *
+   * Without a photograph every card falls back to its category emoji, so two
+   * Mr. Beans branches are two identical coffee cups in a list of coffee
+   * cups. A place that owns a logo should be wearing it — and unlike the
+   * emoji it is the thing a customer already recognises from the shopfront.
+   */
+  crest?: string | null
 }) {
   const [broken, setBroken] = useState(false)
   // A tall photo in a wide frame loses its subject to the crop — a drink ends up
@@ -160,6 +170,13 @@ export function Art({
             if (img.naturalWidth && img.naturalHeight / img.naturalWidth > 1.15) setPortrait(true)
           }}
         />
+      </div>
+    )
+  }
+  if (crest) {
+    return (
+      <div className={`art art-crest ${className ?? ''}`} style={style} aria-hidden>
+        <img className="art-crest-img" src={crest} alt="" draggable={false} />
       </div>
     )
   }

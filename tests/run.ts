@@ -5324,6 +5324,56 @@ async function runTests() {
     ok('and switches off again', back.body.carPrepaidOnly === false, back.body.carPrepaidOnly)
   }
 
+  group('PAYING MEANS THE ORDER ALREADY EXISTS')
+  {
+    // The order used to be created only when the customer came back from
+    // their UPI app and said they had paid. So the money left against an
+    // order that did not exist, and a phone that dropped the page on the way
+    // back dropped the order with it — the restaurant never saw a thing.
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: true } })
+
+    const refused = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Not paying',
+        contactPhone: '9876533441',
+        paymentClaim: null,
+      },
+    })
+    ok('an order that will not be paid for is still refused', refused.status === 402, refused.body)
+
+    const going = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Off to pay',
+        contactPhone: '9876533441',
+        paymentClaim: null,
+        payingNow: true,
+      },
+    })
+    ok('but one the customer is off to pay for is created', going.status === 201, going.body)
+    ok('waiting for that payment', !!going.body.order.needsPrepay, going.body.order)
+    ok('and unpaid until it lands', going.body.order.paymentState === 'unpaid', going.body.order)
+
+    // Which is the whole point: it has a number before the customer leaves.
+    const num = going.body.order.orderNumber
+    const board = await call('/staff/orders', { token: roadToken })
+    ok('the kitchen can see it waiting', board.body.orders.some((o: any) => o.orderNumber === num))
+
+    // And the customer pays it from its own page, whenever they get back.
+    const paid = await call(`/orders/${num}/pay`, {
+      body: { token: going.body.order.verifyToken, upiRef: '123456789014' },
+    })
+    ok('paying it afterwards goes through', paid.status === 200, paid.body)
+    ok('and it stops waiting', !paid.body.order.needsPrepay, paid.body.order)
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: false } })
+  }
+
   group('UPI ONLY — a restaurant that takes no cash')
   {
     // The flags above it are per-mode, because for most places paying

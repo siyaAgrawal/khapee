@@ -162,6 +162,9 @@ ordersRouter.post('/', (req, res) => {
     takeaway: !!body.takeaway,
     sessionToken: body.sessionToken ?? null,
     paymentClaim: body.paymentClaim ?? null,
+    // The customer is going to their UPI app next, so an order that has to be
+    // paid for is created waiting for that payment rather than refused.
+    payingNow: !!body.payingNow,
     // The pre-order. Minutes from now, because the server owns the clock.
     wantInMinutes: body.wantInMinutes === undefined ? null : Number(body.wantInMinutes),
   })

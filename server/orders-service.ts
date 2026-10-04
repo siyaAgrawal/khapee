@@ -70,6 +70,14 @@ export type CreateOrderInput = {
   /** What the customer says they have already sent over UPI. */
   paymentClaim?: { amountCents?: number; upiRef?: string; method?: string } | null
   /**
+   * The customer is going to their UPI app now.
+   *
+   * Lets an order that must be paid for be created unpaid, marked as waiting
+   * for payment, rather than refused — so the money is never sent against an
+   * order that does not exist yet.
+   */
+  payingNow?: boolean
+  /**
    * How many minutes from now the customer wants it ready. Absent or 0 means
    * as soon as possible, which is what every order was before this existed.
    *
@@ -115,6 +123,50 @@ function customerPhone(given: string | undefined, userId: number | null, session
 /** Ten digits is a mobile number in India; anything shorter is a typo. */
 function looksLikePhone(value: string): boolean {
   return value.replace(/\D/g, '').length >= 10
+}
+
+/**
+ * Whether this order has to be paid for in the app before the kitchen sees it.
+ *
+ * Returns the reason when it does, so the customer is told which rule applied
+ * rather than a generic refusal — "Revery takes UPI only" and "takeaway is
+ * paid in the app" are different facts and a customer can act on each.
+ *
+ * Null whenever the restaurant has no UPI ID, whatever the switches say:
+ * there is nothing to pay into, so insisting on it would just close the
+ * restaurant. Null too for an order the restaurant's own till rang up, which
+ * is where cash is actually handed over.
+ */
+function mustPayInApp(
+  input: CreateOrderInput,
+  liveSession: any,
+  restaurant: any,
+): { reason: string } | null {
+  if (input.paymentClaim) return null
+  // `requirePhone` marks an order a customer placed for themselves.
+  if (!input.requirePhone) return null
+
+  const r = db
+    .prepare('SELECT cash_disabled, car_prepaid_only, upi_vpa FROM restaurants WHERE id = ?')
+    .get(input.restaurantId) as any
+  if (!String(r?.upi_vpa ?? '').trim()) return null
+
+  if (r.cash_disabled) return { reason: `${restaurant.name} takes UPI only. Pay by UPI to place the order.` }
+
+  if (liveSession?.service_mode === 'car' && r.car_prepaid_only) {
+    return {
+      reason: `${restaurant.name} takes payment in the app for orders brought out to your car. Pay by UPI to place the order.`,
+    }
+  }
+
+  // Takeaway, both kinds: carried out from here, or collected later. Nobody is
+  // sitting at a table the restaurant can walk up to, and a bag on a counter
+  // that nobody comes for is thrown away.
+  if (input.type === 'pickup' || input.takeaway) {
+    return { reason: 'Takeaway is paid by UPI in the app. Pay by UPI to place the order.' }
+  }
+
+  return null
 }
 
 export function createOrder(input: CreateOrderInput): CreateOrderResult {
@@ -292,62 +344,6 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * not to offer paying at the car, and a request can still be made without
    * it. The person who pays for that is the kitchen that cooked the food.
    */
-  /*
-   * A restaurant that takes no cash at all.
-   *
-   * Read before the per-mode rules, because it answers for every mode at once
-   * — a table, a kerb, a counter, an address. Only for an order a customer
-   * placed themselves: the restaurant's own till still rings up whatever
-   * somebody hands over at the counter, which is the one place cash can
-   * actually be taken.
-   *
-   * Conditioned on there being a UPI ID to pay into. A restaurant with no way
-   * to be paid in the app and no cash accepted could take no orders at all,
-   * and a setting that silently closes a business is not a setting.
-   */
-  if (!input.paymentClaim && input.requirePhone) {
-    const rule = db
-      .prepare('SELECT cash_disabled, upi_vpa FROM restaurants WHERE id = ?')
-      .get(input.restaurantId) as any
-    if (rule?.cash_disabled && String(rule.upi_vpa ?? '').trim()) {
-      return {
-        ok: false,
-        status: 402,
-        error: `${restaurant.name} takes UPI only. Pay by UPI to place the order.`,
-      }
-    }
-  }
-
-  if (!input.paymentClaim && liveSession?.service_mode === 'car') {
-    const rule = db
-      .prepare('SELECT car_prepaid_only FROM restaurants WHERE id = ?')
-      .get(input.restaurantId) as any
-    if (rule?.car_prepaid_only) {
-      return {
-        ok: false,
-        status: 402,
-        error: `${restaurant.name} takes payment in the app for orders brought out to your car. Pay by UPI to place the order.`,
-      }
-    }
-  }
-
-  /*
-   * And the same for an order being collected. Checked against the order's
-   * own type rather than a session, because ordering ahead opens no session —
-   * the customer is at home.
-   */
-  if (!input.paymentClaim && input.type === 'pickup' && !liveSession) {
-    const rule = db
-      .prepare('SELECT takeaway_prepaid_only FROM restaurants WHERE id = ?')
-      .get(input.restaurantId) as any
-    if (rule?.takeaway_prepaid_only) {
-      return {
-        ok: false,
-        status: 402,
-        error: `${restaurant.name} takes payment in the app for orders collected from the counter. Pay by UPI to place the order.`,
-      }
-    }
-  }
 
   if (limited.on && !input.paymentClaim) {
     return {
@@ -392,19 +388,37 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   }
 
   /*
-   * Takeaway is paid for in the app, at every restaurant.
+   * Must this order be paid for in the app, and can it be?
    *
-   * Both kinds: ordered at the restaurant and carried out, and ordered ahead
-   * to collect. Nobody is sitting at a table the restaurant can walk up to,
-   * so a takeaway order nobody pays for is food made for nobody. Only orders
-   * a customer places themselves — the restaurant's own till still takes cash
-   * at the counter for a takeaway it rings up.
+   * Four rules used to sit here as four separate refusals, each reading the
+   * restaurant row again. They are one question: is cash allowed for this
+   * order. Asked once, so the answer cannot differ between them and the
+   * reason given to the customer is the one that actually applied.
+   *
+   * Every rule is conditioned on there being a UPI ID to pay into. A
+   * restaurant with no way to be paid in the app and no cash accepted could
+   * take no orders at all, and a setting that silently closes a business is
+   * not a setting — it is an outage with a checkbox.
+   *
+   * None of it binds the restaurant's own till (`requirePhone` marks an order
+   * a customer placed for themselves). The counter is the one place cash can
+   * actually change hands.
    */
-  if (!input.paymentClaim && input.requirePhone && (input.type === 'pickup' || input.takeaway)) {
-    return {
-      ok: false,
-      status: 402,
-      error: 'Takeaway orders are paid by UPI in the app. Pay by UPI to place the order.',
+  const payFirst = mustPayInApp(input, liveSession, restaurant)
+  if (payFirst) {
+    /*
+     * Paying right now is not the same as not paying.
+     *
+     * Refusing here was what sent the customer away to their UPI app with no
+     * order behind them: the money left, nothing was recorded, and if the
+     * browser dropped the page on the way back there was nothing to come back
+     * to. So an order the customer is about to pay for is created — unpaid,
+     * marked `needs_prepay`, sitting on the board as waiting for payment —
+     * and it has a number and a URL from that moment on. The kitchen does not
+     * cook it until the money lands; the customer cannot lose it.
+     */
+    if (!input.payingNow) {
+      return { ok: false, status: 402, error: payFirst.reason }
     }
   }
 
@@ -573,6 +587,17 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   })
 
   const orderId = run()
+  /*
+   * Marked as waiting for payment before anything else reads it.
+   *
+   * This is the state the board already draws as "waiting for online
+   * payment", built for the car orders a kitchen asks to be prepaid. The same
+   * state, for the same reason: the order exists and the kitchen is not
+   * cooking it yet. The customer's tracker takes it from here.
+   */
+  if (payFirst && input.payingNow) {
+    db.prepare("UPDATE orders SET needs_prepay = datetime('now') WHERE id = ?").run(orderId)
+  }
   const order: any = getOrder(orderId)
 
   // Every dine-in order is a room the rest of the table can join — no separate

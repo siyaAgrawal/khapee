@@ -500,9 +500,11 @@ export default function OrderTrack() {
       {order.needsPrepay && !cancelled && order.paymentState === 'unpaid' && (
         <div className="decided" role="alert">
           <div>
-            <strong>{order.restaurantName} is only taking online payment for this order right now</strong>
+            <strong>Pay {money(order.totalCents)} to send this to the kitchen</strong>
             <p className="tiny">
-              Pay {money(order.totalCents)} by UPI and your order goes straight to the kitchen — or cancel it.
+              Order <strong>#{order.orderNumber}</strong> is saved. Pay by UPI and it goes straight
+              through — your place is held either way, and you can come back to this page from
+              Orders if you need to.
             </p>
           </div>
           {payReq ? (

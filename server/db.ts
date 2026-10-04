@@ -1282,6 +1282,16 @@ if (BACKED_UP) {
       m.items.forEach(([name, desc, cents, emoji], j) => addItem.run(restaurantId, Number(c.lastInsertRowid), name, desc, cents, emoji, j))
     })
   })
+  // 187 Grams has no reviews, so it shows no score — the 4.5 was the column's
+  // default, not anything a customer said. Collect-only and paid up front.
+  dataFix('2026-10-04-187-grams-no-rating', () => {
+    db.prepare(
+      `UPDATE restaurants
+          SET rating = 0, accepts_pickup = 1, accepts_takeaway = 0, accepts_car = 0,
+              accepts_groups = 0, accepts_delivery = 0, takeaway_prepaid_only = 1
+        WHERE slug = '187-grams'`,
+    ).run()
+  })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
     db.prepare('UPDATE delivery_areas SET is_active = 0').run()

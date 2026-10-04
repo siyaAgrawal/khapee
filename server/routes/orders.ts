@@ -60,6 +60,16 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
     carPrepaidOnly: !!r.car_prepaid_only,
     /** And the same for one collected from the counter. */
     takeawayPrepaidOnly: !!r.takeaway_prepaid_only,
+    /*
+     * Ordered ahead and collected, and nothing else: no tables, no car, no
+     * carrying out from a seat. The checkout then stops offering a way to
+     * change how it is ordered, or a table to choose on arrival.
+     */
+    collectOnly:
+      !!r.accepts_pickup &&
+      !r.accepts_takeaway &&
+      !r.accepts_car &&
+      !db.prepare('SELECT 1 FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(r.id),
   })
 })
 

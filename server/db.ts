@@ -1245,6 +1245,43 @@ if (BACKED_UP) {
     const set = db.prepare('UPDATE menu_categories SET sort_order = ? WHERE id = ?')
     sorted.forEach((c, n) => set.run(n, c.id))
   })
+  /*
+   * One Eighty Seven Grams — a small-batch bakery (cloud kitchen, Indore and
+   * Bangalore), on Khapee with its own look (theme 'grams'). Collect-only:
+   * no tables, no car, no delivery. Added closed: takeaway is paid by UPI and
+   * the bakery's UPI ID is not set yet, so it opens from its own dashboard
+   * once that is in. Prices are placeholders the bakery will set itself.
+   */
+  dataFix('2026-10-04-add-187-grams', () => {
+    if (db.prepare("SELECT 1 FROM restaurants WHERE slug = '187-grams'").get()) return
+    const r = db
+      .prepare(
+        `INSERT INTO restaurants
+           (slug, name, description, address, categories, emoji, hue, is_open, hours, prep_minutes, city, theme,
+            accepts_pickup, accepts_takeaway, accepts_car, accepts_groups, accepts_delivery, codes_enabled, published_at)
+         VALUES ('187-grams', '187 Grams', 'Small-batch bakes from a Le Cordon Bleu–trained kitchen.', 'Indore',
+                 'Bakery, Desserts', '🍪', 50, 0, '11:00 AM – 9:00 PM', 30, 'Indore', 'grams',
+                 1, 0, 0, 0, 0, 0, datetime('now'))`,
+      )
+      .run()
+    const restaurantId = Number(r.lastInsertRowid)
+    const menu: { section: string; items: [string, string, number, string][] }[] = [
+      { section: 'Cookie Tins', items: [['Kinder Bueno Cookie Tin', 'A tin of chewy cookies, loaded with Kinder Bueno.', 120000, '🍪']] },
+      { section: 'Bars', items: [['Belgian Chocolate French Biscuit Bar', 'Buttery French biscuit under a thick layer of Belgian chocolate.', 100000, '🍫']] },
+      { section: 'Jars', items: [['Biscoff Raspberry Jar', 'Biscoff crumb, cream and sharp raspberry, layered in a jar.', 110000, '🫙']] },
+      { section: 'Granola', items: [['Granola', 'House-baked, clustered granola. Good with yoghurt, better by the handful.', 100000, '🥣']] },
+      { section: 'Bento Cakes', items: [['Customised Bento Cake', 'A little cake in a box, made to your message and colours. Tell us in the note.', 150000, '🎂']] },
+    ]
+    const addSection = db.prepare('INSERT INTO menu_categories (restaurant_id, name, sort_order) VALUES (?, ?, ?)')
+    const addItem = db.prepare(
+      `INSERT INTO menu_items (restaurant_id, category_id, name, description, price_cents, emoji, hue, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, 50, ?)`,
+    )
+    menu.forEach((m, i) => {
+      const c = addSection.run(restaurantId, m.section, i)
+      m.items.forEach(([name, desc, cents, emoji], j) => addItem.run(restaurantId, Number(c.lastInsertRowid), name, desc, cents, emoji, j))
+    })
+  })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
     db.prepare('UPDATE delivery_areas SET is_active = 0').run()

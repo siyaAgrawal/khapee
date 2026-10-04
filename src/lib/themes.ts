@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'plain' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'grams' | 'plain' | ''
 
 /**
  * A restaurant's own mark, for the places that would otherwise show a category

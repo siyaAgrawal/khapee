@@ -8656,3 +8656,209 @@ button.nav-link {
   object-fit: contain;
   filter: invert(1);
   opacity: 0.82;}
+
+/* ======================================== One Eighty Seven Grams (theme 'grams')
+   Built for the bakery in its own look: butter-yellow and cream, cobalt-blue
+   ink, the soft wonky serif (Fraunces), hand-written asides (Caveat), candy
+   stripes and grid paper — the same pieces their posts and packaging use. A
+   light theme on purpose, like their feed. */
+:root[data-theme='grams'] {
+  --bg: #fdf6d4;
+  --bg-tint: #fbf0c2;
+  --surface: #fffdf2;
+  --surface-2: #fff7d6;
+  --ink: #1f2b7a;
+  --ink-2: #2f3c8f;
+  /* Cobalt at reading weight; 6:1 on the cream. */
+  --muted: #555c8f;
+  --line: rgba(43, 58, 170, 0.14);
+  --line-strong: rgba(43, 58, 170, 0.28);
+  --accent: #2b3aaa;
+  --accent-ink: #fffdf2;
+  --accent-soft: #e9ebff;
+  --good: #2b3aaa;
+  --good-soft: #e9ebff;
+  --warn: #b07d16;
+  --warn-soft: #faf1dc;
+  --bad: #c2415a;
+  --bad-soft: #fbe6ea;
+  --info: #2b3aaa;
+  --info-soft: #e9ebff;
+  --shadow-sm: 0 1px 2px rgba(43, 58, 170, 0.08);
+  --shadow-md: 0 8px 20px rgba(43, 58, 170, 0.1);
+  --shadow-lg: 0 22px 48px rgba(43, 58, 170, 0.14);
+  --shadow-accent: 0 10px 24px rgba(43, 58, 170, 0.22);
+}
+:root[data-theme='grams'] body {
+  background: var(--bg);
+}
+
+/* The badge: cream and butter stripes in a circle, "187grams" in cobalt. */
+.grams-mark {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: repeating-linear-gradient(90deg, #fbeea0 0 9px, #fffbe6 9px 18px);
+  box-shadow: inset 0 0 0 1.5px rgba(43, 58, 170, 0.18), 0 6px 16px rgba(43, 58, 170, 0.12);
+  flex-shrink: 0;
+}
+.grams-mark-word {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-weight: 560;
+  color: #2b3aaa;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.grams-187 {
+  font-variant-numeric: oldstyle-nums;
+  font-weight: 400;
+}
+
+/* The header: a candy-stripe band, then the badge and name on cream. */
+.grams-hero {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong);
+  margin-bottom: 10px;
+}
+.grams-stripes {
+  height: 58px;
+  background: repeating-linear-gradient(90deg, #fbeea0 0 18px, #fffbe6 18px 36px);
+  border-bottom: 1.5px solid var(--line-strong);
+}
+.grams-hero-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 18px 18px;
+  margin-top: -46px;
+}
+.grams-name {
+  margin: 10px 0 2px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-weight: 650;
+  font-size: 27px;
+  letter-spacing: -0.02em;
+  color: #2b3aaa;
+}
+.grams-name em {
+  font-style: italic;
+  font-weight: 500;
+}
+.grams-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.grams-hand {
+  margin: 6px 0 0;
+  font-family: 'Caveat', 'Comic Sans MS', cursive;
+  font-size: 22px;
+  font-weight: 700;
+  color: #2b3aaa;
+  transform: rotate(-3deg);
+}
+.grams-arrow {
+  display: inline-block;
+  transform: rotate(12deg);
+}
+.grams-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.grams-meta span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.grams-meta .grams-open {
+  background: #2b3aaa;
+  border-color: #2b3aaa;
+  color: #fffdf2;
+  font-weight: 700;
+}
+.grams-meta .grams-shut {
+  background: #fbe6ea;
+  border-color: #f2c6d0;
+  color: #a2324a;
+  font-weight: 700;
+}
+.grams-way-in {
+  grid-template-columns: 1fr;
+  margin: 4px 0 12px;
+}
+
+/* The menu on grid paper, in the serif. */
+.grams-page .menu-section h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-weight: 650;
+  color: #2b3aaa;
+  letter-spacing: -0.01em;
+}
+.grams-page .menu-section h2::after {
+  content: ' ✦';
+  font-size: 0.7em;
+  color: #e88aa8;
+}
+.grams-page .item-card {
+  border: 1.5px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: none;
+  background-color: var(--surface);
+  background-image: linear-gradient(rgba(43, 58, 170, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43, 58, 170, 0.06) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+.grams-page .item-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: 'SOFT' 100;
+  font-weight: 600;
+  font-size: 16.5px;
+  color: #1f2b7a;
+}
+.grams-page .item-price {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  color: #2b3aaa;
+}
+.grams-page .item-desc {
+  color: var(--muted);
+}
+.grams-page .btn-add {
+  border: 1.5px solid #2b3aaa;
+  color: #2b3aaa;
+  background: #fffdf2;
+  font-weight: 700;
+}
+.grams-page .btn-add:hover {
+  background: #2b3aaa;
+  color: #fffdf2;
+}
+.grams-page .stepper {
+  background: #2b3aaa;
+}
+.grams-page .chip {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: #2b3aaa;
+  font-weight: 600;
+}
+/* Collect-only bakery: the veg-only filter means little here. */
+.grams-page .veg-toggle {
+  display: none;
+}
+:root[data-theme='grams'] .cart-bar {
+  background: #2b3aaa;
+}

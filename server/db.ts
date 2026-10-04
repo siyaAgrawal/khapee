@@ -526,6 +526,9 @@ addColumn('restaurants', 'lng', 'REAL')
 // the details form with a dish on the menu, and never cleared after that —
 // closing for the night is `is_open`, which is a different thing entirely.
 addColumn('restaurants', 'published_at', 'TEXT')
+// Reachable by its link, left off the list on the front page — for a place
+// that shares its own link rather than wanting to be found by browsing.
+addColumn('restaurants', 'unlisted', 'INTEGER NOT NULL DEFAULT 0')
 
 // A dine-in order the customer is carrying out rather than eating at a table.
 addColumn('orders', 'takeaway', 'INTEGER NOT NULL DEFAULT 0')
@@ -1291,6 +1294,10 @@ if (BACKED_UP) {
               accepts_groups = 0, accepts_delivery = 0, takeaway_prepaid_only = 1
         WHERE slug = '187-grams'`,
     ).run()
+  })
+  // 187 Grams takes orders from its own link, not from Khapee's front page.
+  dataFix('2026-10-04-187-grams-unlisted', () => {
+    db.prepare("UPDATE restaurants SET unlisted = 1 WHERE slug = '187-grams'").run()
   })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()

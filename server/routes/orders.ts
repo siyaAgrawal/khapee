@@ -114,7 +114,15 @@ ordersRouter.post('/payment-request', (req, res) => {
     }
   }
 
-  const ref = `TABLO${Date.now().toString(36).toUpperCase()}`
+  /*
+   * The reference the customer sees in their bank app, and the restaurant in
+   * their UPI statement. It carried TABLO — the name this app had two names
+   * ago — into every payment made on it. The TABLO and ORDRO spellings
+   * elsewhere are deliberate: they read QR codes printed under the old names,
+   * and those stickers are still on real tables. This one is generated fresh
+   * every time and parsed by nobody, so there is nothing to be compatible with.
+   */
+  const ref = `KHAPEE${Date.now().toString(36).toUpperCase()}`
   res.json({
     amountCents,
     vpa: r.upi_vpa,

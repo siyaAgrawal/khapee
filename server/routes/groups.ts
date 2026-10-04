@@ -224,7 +224,7 @@ groupsRouter.post('/session/payment-request', (req, res) => {
     })
   }
 
-  const ref = `TABLO${state.order.orderNumber}${ctx.member.id}`
+  const ref = `KHAPEE${state.order.orderNumber}${ctx.member.id}`
   res.json({
     amountCents,
     scope,

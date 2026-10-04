@@ -5324,6 +5324,59 @@ async function runTests() {
     ok('and switches off again', back.body.carPrepaidOnly === false, back.body.carPrepaidOnly)
   }
 
+  group('UPI ONLY — a restaurant that takes no cash')
+  {
+    // The flags above it are per-mode, because for most places paying
+    // afterwards is fine at a table and risky at a kerb. This one is a single
+    // fact about a business, so it answers for every mode at once.
+    const off = await call(`/orders/payment-options/${mornington.id}`)
+    ok('off by default', off.body.cashDisabled === false, off.body.cashDisabled)
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: true } })
+    const on = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and the owner can switch it on', on.body.cashDisabled === true, on.body)
+
+    // At a table — the mode that has always allowed paying afterwards.
+    const table = await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })
+    const unpaidTable = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'No notes on me',
+        contactPhone: '9876511221',
+        sessionToken: table.body.session.token,
+      },
+    })
+    ok('a table order with no payment is refused', unpaidTable.status === 402, unpaidTable.body)
+    ok('and says UPI only', /UPI only/i.test(String(unpaidTable.body.error)), unpaidTable.body.error)
+
+    const paidTable = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Paid up',
+        contactPhone: '9876511221',
+        sessionToken: table.body.session.token,
+        paymentClaim: { upiRef: '123456789013' },
+      },
+    })
+    ok('paying in the app goes through', paidTable.status === 201, paidTable.body)
+
+    // The counter is the one place cash can actually change hands, so the
+    // restaurant's own till is not bound by this.
+    const atTill = await call('/staff/pos/sale', {
+      token: roadToken,
+      body: { items: [{ menuItemId: croissant.id, quantity: 1 }], customerName: 'Walk-in' },
+    })
+    ok('the till still rings up a cash sale', atTill.status === 201 || atTill.status === 200, atTill.body)
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: false } })
+    const back = await call(`/orders/payment-options/${mornington.id}`)
+    ok('and switches off again', back.body.cashDisabled === false, back.body.cashDisabled)
+  }
+
   group('SCAN ONLY — a restaurant that hands out no codes')
   {
     // Two ways exist to prove somebody is in the room: they scanned the QR on

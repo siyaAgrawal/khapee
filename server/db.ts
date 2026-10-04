@@ -491,6 +491,21 @@ addColumn('restaurants', 'car_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
  */
 addColumn('restaurants', 'takeaway_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
 
+/*
+ * A restaurant that does not take cash at all, in any mode.
+ *
+ * The flags above it are per-mode, because for most places paying afterwards
+ * is fine at a table and risky at a kerb. A few run the other way: everything
+ * is paid for in the app, and a counter that is never asked to handle notes
+ * never has to count a till, never argues about change, and never carries an
+ * order somebody walked away from. One switch rather than one per mode,
+ * because "we do not take cash" is a single fact about a business.
+ *
+ * It applies only where there is a UPI ID to pay into. A restaurant with no
+ * way to be paid in the app and no cash accepted could take no orders at all.
+ */
+addColumn('restaurants', 'cash_disabled', 'INTEGER NOT NULL DEFAULT 0')
+
 addColumn('orders', 'arrived_at', 'TEXT')
 /** What they chose on the doorstep: 'takeaway' or 'dine_in'. */
 addColumn('orders', 'arrival_choice', 'TEXT')
@@ -1315,6 +1330,17 @@ if (BACKED_UP) {
  */
 dataFix('2026-10-02-beans-theme', () => {
   db.prepare("UPDATE restaurants SET theme = 'beans' WHERE slug LIKE 'mr-beans%'").run()
+})
+
+/*
+ * Revery takes UPI only.
+ *
+ * Their decision, applied here because the dashboard switch that now exists
+ * cannot be reached until somebody signs in, and this is the restaurant
+ * taking live orders today. The switch stays theirs to turn back off.
+ */
+dataFix('2026-10-04-revery-no-cash', () => {
+  db.prepare("UPDATE restaurants SET cash_disabled = 1 WHERE slug = 'revery'").run()
 })
 
 if (BACKED_UP) {

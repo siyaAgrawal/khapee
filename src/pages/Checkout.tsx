@@ -235,6 +235,10 @@ export default function Checkout() {
   const collectOnly = !!options?.collectOnly
   const prepaidOnly =
     !!options?.prepaidOnly ||
+    // A restaurant that takes no cash at all, in any mode. One fact about the
+    // business rather than a rule per mode, so it is read first and the
+    // per-mode reasons below never come up for them.
+    !!options?.cashDisabled ||
     (isCar && !!options?.carPrepaidOnly) ||
     // Takeaway — ordered here to carry out, or ordered ahead to collect — is
     // paid in the app at every restaurant; the server refuses it otherwise.
@@ -850,7 +854,9 @@ export default function Checkout() {
               <strong>{payLaterLabel}</strong>
               <span className="pay-pick-sub">
                 {prepaidOnly
-                  ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
+                  ? options?.cashDisabled && !options?.prepaidOnly
+                    ? `${cart.restaurantName} takes UPI only — no cash`
+                    : isCar && options?.carPrepaidOnly && !options?.prepaidOnly
                     ? 'Orders brought out to your car are paid for in the app'
                     : (where === 'later' || where === 'takeaway') && !options?.prepaidOnly
                       ? 'Takeaway orders are paid by UPI in the app'

@@ -28,7 +28,14 @@ export function upiLink(opts: {
     tn: opts.note.slice(0, 50),
     tr: opts.ref.slice(0, 35),
   })
-  return `upi://pay?${params.toString()}`
+  /*
+   * `+` for a space is a form-encoding convention, not a URI one, and a UPI
+   * app is not reading a form. Several parse the query themselves and show
+   * the payee as "VIBHANSHI+JAIN", which is the name the customer is being
+   * asked to trust at the moment they are deciding whether to pay. %20 is the
+   * literal escape and every app decodes it.
+   */
+  return `upi://pay?${params.toString().replace(/\+/g, '%20')}`
 }
 
 export function restaurantAcceptsUpi(restaurant: any): boolean {

@@ -56,6 +56,8 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
     prepaidOnly: limitedState(Number(req.params.restaurantId)).on,
     /** Whether a typed code is offered beside the scanner. */
     codesEnabled: r.codes_enabled === undefined ? true : !!r.codes_enabled,
+    /** This restaurant takes no cash at all, in any mode. */
+    cashDisabled: !!r.cash_disabled && !!String(r.upi_vpa ?? '').trim(),
     /** Whether an order carried out to a car has to be paid for first. */
     carPrepaidOnly: !!r.car_prepaid_only,
     /** And the same for one collected from the counter. */

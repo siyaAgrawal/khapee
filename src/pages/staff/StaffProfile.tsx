@@ -32,6 +32,7 @@ type Profile = {
   acceptsGroups: boolean
   codesEnabled: boolean
   carPrepaidOnly: boolean
+  cashDisabled: boolean
   takeawayPrepaidOnly: boolean
   publishedAt: string | null
   itemCount: number
@@ -343,6 +344,7 @@ export default function StaffProfile() {
           acceptsGroups: form.acceptsGroups,
           codesEnabled: form.codesEnabled,
           carPrepaidOnly: form.carPrepaidOnly,
+          cashDisabled: form.cashDisabled,
           takeawayPrepaidOnly: form.takeawayPrepaidOnly,
           lat: form.lat,
           lng: form.lng,
@@ -550,6 +552,9 @@ export default function StaffProfile() {
                 // A car is the one place the food goes out to somebody
                 // already sitting in the thing they will leave in.
                 ['carPrepaidOnly', 'Orders to a car must be paid in the app'],
+                // One switch for the whole business, above the per-mode ones,
+                // because "we do not take cash" is a single fact about it.
+                ['cashDisabled', 'Take UPI only — no cash, in any mode'],
                 // Takeaway is now UPI-only everywhere (server/orders-service.ts),
                 // so its own switch would do nothing and is no longer shown.
               ] as const

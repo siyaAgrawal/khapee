@@ -292,6 +292,32 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * not to offer paying at the car, and a request can still be made without
    * it. The person who pays for that is the kitchen that cooked the food.
    */
+  /*
+   * A restaurant that takes no cash at all.
+   *
+   * Read before the per-mode rules, because it answers for every mode at once
+   * — a table, a kerb, a counter, an address. Only for an order a customer
+   * placed themselves: the restaurant's own till still rings up whatever
+   * somebody hands over at the counter, which is the one place cash can
+   * actually be taken.
+   *
+   * Conditioned on there being a UPI ID to pay into. A restaurant with no way
+   * to be paid in the app and no cash accepted could take no orders at all,
+   * and a setting that silently closes a business is not a setting.
+   */
+  if (!input.paymentClaim && input.requirePhone) {
+    const rule = db
+      .prepare('SELECT cash_disabled, upi_vpa FROM restaurants WHERE id = ?')
+      .get(input.restaurantId) as any
+    if (rule?.cash_disabled && String(rule.upi_vpa ?? '').trim()) {
+      return {
+        ok: false,
+        status: 402,
+        error: `${restaurant.name} takes UPI only. Pay by UPI to place the order.`,
+      }
+    }
+  }
+
   if (!input.paymentClaim && liveSession?.service_mode === 'car') {
     const rule = db
       .prepare('SELECT car_prepaid_only FROM restaurants WHERE id = ?')

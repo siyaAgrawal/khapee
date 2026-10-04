@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { QRCanvas } from '../lib/qr'
-import { appLink, IOS_UPI_APPS, isIOS, isMobile } from '../lib/upi-apps'
+import { appsFor, isIOS, isMobile, linkFor } from '../lib/upi-apps'
 import { money, Spinner } from './ui'
 
 /**
@@ -50,38 +50,41 @@ export default function PayPanel({
         BHIM, your bank&rsquo;s own. The money goes straight to the restaurant.
       </p>
 
-      {/* On the same phone the QR is on, there is nothing to point a camera at,
-          so the app has to be opened directly. Android does that from one
-          intent and draws its own picker; iOS registers no handler for upi://
-          at all, which is a button that does nothing and says nothing, so
-          there the apps are named one by one. */}
-      {isMobile() &&
-        (isIOS() ? (
-          <>
-            <p className="tiny muted center" style={{ margin: '0 0 8px' }}>
-              Paying on this phone? Open your app:
-            </p>
-            <div className="upi-apps">
-              {IOS_UPI_APPS.map((app) => (
-                <a key={app.id} className="upi-app" href={appLink(app, upiLink)}>
-                  {app.name}
-                </a>
-              ))}
-            </div>
+      {/* On the same phone the QR is on there is nothing to point a camera at,
+          so the app has to be opened directly — and named, on both platforms.
+          Android would take a plain upi:// and draw its own chooser, which
+          makes paying two taps: ours, then theirs. An intent that names the
+          package skips the chooser and lands inside the app with the amount
+          already filled in. iOS has no choice in the matter: it registers no
+          handler for upi:// at all. */}
+      {isMobile() && (
+        <>
+          <p className="tiny muted center" style={{ margin: '0 0 8px' }}>
+            Paying on this phone? One tap:
+          </p>
+          <div className="upi-apps">
+            {appsFor(isIOS()).map((app) => (
+              <a key={app.id} className="upi-app" href={linkFor(app, upiLink, isIOS())}>
+                {app.name}
+              </a>
+            ))}
+          </div>
+          {/* The app nobody here has listed — a bank's own, something new.
+              Android can still hand the request to the system; iOS cannot,
+              and is told to use the QR instead. */}
+          {isIOS() ? (
             <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
               Not there? Screenshot the QR above and scan it from inside your app.
             </p>
-          </>
-        ) : (
-          <>
-            <a className="btn btn-accent btn-block" href={upiLink}>
-              Open a UPI app on this phone
-            </a>
+          ) : (
             <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
-              Your phone will offer every UPI app you have installed.
+              <a className="upi-any" href={upiLink}>
+                Another UPI app
+              </a>
             </p>
-          </>
-        ))}
+          )}
+        </>
+      )}
 
       {/*
         Optional again.

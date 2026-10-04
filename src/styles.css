@@ -8662,7 +8662,6 @@ button.nav-link {
    - the wide butter and cream stripes behind "187grams" (their profile picture)
    - condensed serif capitals led by a bold arrow, tight black sans against a
      cobalt italic, the outlined pill and the empty ○ (their hiring post)
-   - thin cobalt line icons on cream circles (their story highlights)
    - the smile with its tongue out (the side of their box)
    Three faces: Gilda Display for the wordmark, Instrument Serif for capitals
    and italics, Inter Tight for everything you read. */
@@ -8712,7 +8711,7 @@ button.nav-link {
 .grams-banner {
   display: grid;
   place-items: center;
-  height: clamp(96px, 22vw, 140px);
+  height: clamp(150px, 40vw, 220px);
   margin: -32px calc(50% - 50vw) 0;
   background: repeating-linear-gradient(90deg, var(--g-butter) 0 22px, var(--g-cream) 22px 44px);
 }
@@ -8720,7 +8719,7 @@ button.nav-link {
   margin: 0;
   font-family: var(--g-logo);
   font-weight: 400;
-  font-size: clamp(36px, 10vw, 54px);
+  font-size: clamp(40px, 11vw, 60px);
   line-height: 1;
   letter-spacing: -0.01em;
   color: var(--g-cobalt);
@@ -8775,45 +8774,6 @@ button.nav-link {
   margin: 8px 0 0;
   font-size: 13.5px;
   color: var(--muted);
-}
-
-/* The story highlights. */
-.grams-highlights {
-  display: flex;
-  gap: 10px;
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.grams-bubble {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 3px;
-  width: 62px;
-  height: 62px;
-  border-radius: 50%;
-  background: var(--g-cream);
-  color: var(--g-cobalt);
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px rgba(46, 70, 163, 0.12);
-}
-.grams-bubble svg {
-  width: 25px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.grams-bubble span {
-  font-family: var(--g-serif);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.grams-highlights .is-shut .grams-bubble {
-  color: var(--bad);
 }
 
 /* "SEND YOUR PORTFOLIO TO: ____" — an outlined pill and a ruled line. */
@@ -8916,9 +8876,9 @@ button.nav-link {
   font-family: var(--g-serif);
   font-style: italic;
   font-weight: 400;
-  font-size: 28px;
-  line-height: 1;
-  letter-spacing: -0.01em;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
   color: var(--g-cobalt);
   margin-bottom: 2px;
 }
@@ -9026,4 +8986,12 @@ button.nav-link {
 :root[data-theme='grams'] .cart-bar {
   background: var(--g-cobalt);
   font-family: var(--g-sans);
+}
+.grams-field-line .grams-open {
+  color: var(--g-cobalt);
+  font-weight: 700;
+}
+.grams-field-line .grams-shut {
+  color: var(--bad);
+  font-weight: 700;
 }

@@ -1314,6 +1314,16 @@ if (BACKED_UP) {
   dataFix('2026-10-04-187-grams-unlisted', () => {
     db.prepare("UPDATE restaurants SET unlisted = 1 WHERE slug = '187-grams'").run()
   })
+  // Revery's sixth table, with the token its printed QR card carries. If a
+  // Table 6 was already added from the dashboard it takes this token, since
+  // these are the cards going on the tables.
+  dataFix('2026-10-04-revery-table-6', () => {
+    const r = db.prepare("SELECT id FROM restaurants WHERE slug = 'revery'").get() as any
+    if (!r) return
+    const t6 = db.prepare("SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND label = 'Table 6'").get(r.id) as any
+    if (t6) db.prepare('UPDATE restaurant_tables SET token = ? WHERE id = ?').run('1be9748ea2db49f7', t6.id)
+    else db.prepare("INSERT INTO restaurant_tables (restaurant_id, label, seats, token) VALUES (?, 'Table 6', 4, ?)").run(r.id, '1be9748ea2db49f7')
+  })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
     db.prepare('UPDATE delivery_areas SET is_active = 0').run()

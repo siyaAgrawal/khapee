@@ -471,6 +471,157 @@ function Empty({ text }: { text: string }) {
 
 /* -------------------------------------------------------------------- page */
 
+/** Plain names for where a visit came from. */
+const SOURCE_NAMES: Record<string, string> = {
+  qr: 'Scanned a QR',
+  search: 'Google or another search',
+  instagram: 'Instagram',
+  whatsapp: 'WhatsApp',
+  facebook: 'Facebook',
+  app: 'The installed app',
+  link: 'A link on another site',
+  direct: 'Typed in or a saved link',
+  other: 'Other',
+}
+const PAGE_NAMES: Record<string, string> = {
+  home: 'Front page',
+  menu: 'A menu',
+  'menu-car': 'Ordering from the car',
+  'menu-delivery': 'Delivery',
+  'menu-nearby': 'Ordering nearby',
+  'table-qr': 'Table QR',
+  'car-qr': 'Car QR',
+  area: 'An area page',
+  cart: 'Cart',
+  checkout: 'Checkout',
+  order: 'Order tracking',
+  'my-orders': 'My orders',
+  'for-restaurants': 'For restaurants',
+  other: 'Other pages',
+}
+
+/**
+ * Who looked, not only who ordered: page visits, where they came from, and
+ * which menus they opened. Counted from 4 Oct 2026 — nothing before that was
+ * recorded.
+ */
+function Visits({ days, restaurant, tip }: { days: number; restaurant: string; tip: TipApi }) {
+  const [v, setV] = useState<any>(null)
+  useEffect(() => {
+    const q = new URLSearchParams({ days: String(days) })
+    if (restaurant) q.set('restaurant', restaurant)
+    let stop = false
+    const get = () =>
+      api<any>(`/insights/visits?${q}`)
+        .then((r) => !stop && setV(r))
+        .catch(() => {})
+    void get()
+    const t = setInterval(get, 30000)
+    return () => {
+      stop = true
+      clearInterval(t)
+    }
+  }, [days, restaurant])
+  if (!v) return null
+  const since = v.since ? new Date(v.since.replace(' ', 'T') + 'Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : null
+  return (
+    <>
+      <h2 className="ins-section-title">Visits</h2>
+      <p className="ins-note">
+        {since ? `Counted since ${since}. ` : 'Counting starts with the next visit. '}
+        One visitor is one phone or browser; restaurant dashboards are not counted.
+      </p>
+      <div className="ins-tiles">
+        <Tile label="Visitors" value={num(v.visitors)} note={`${num(v.todayVisitors)} today`} />
+        <Tile label="Page visits" value={num(v.views)} note={`${num(v.todayViews)} today`} />
+        <Tile
+          label="Reached checkout"
+          value={num(v.checkoutVisitors)}
+          note={v.visitors ? `${pct(v.checkoutVisitors / v.visitors)} of visitors` : 'of visitors'}
+        />
+      </div>
+      {v.views > 0 && (
+        <div className="ins-grid">
+          <Card
+            title="Where visitors come from"
+            table={{
+              head: ['From', 'Visits', 'Visitors'],
+              rows: v.sources.map((s: any) => [SOURCE_NAMES[s.source] ?? s.source, num(s.visits), num(s.visitors)]),
+            }}
+          >
+            <Bars
+              tip={tip}
+              rows={v.sources.map((s: any) => ({
+                key: s.source,
+                name: SOURCE_NAMES[s.source] ?? s.source,
+                value: s.visitors,
+                visits: s.visits,
+              }))}
+              sub={(r) => ` · ${num(r.visits)} visits`}
+            />
+          </Card>
+          <Card
+            title="Menus people opened"
+            table={{
+              head: ['Restaurant', 'Visitors', 'Visits', 'QR scans'],
+              rows: v.byRestaurant.map((r: any) => [r.name, num(r.visitors), num(r.views), num(r.scans)]),
+            }}
+          >
+            {v.byRestaurant.length ? (
+              <Bars
+                tip={tip}
+                rows={v.byRestaurant.map((r: any) => ({ key: String(r.id), name: r.name, value: r.visitors, scans: r.scans }))}
+                sub={(r) => (r.scans ? ` · ${num(r.scans)} QR scans` : '')}
+              />
+            ) : (
+              <Empty text="No menu opened yet." />
+            )}
+          </Card>
+          <Card
+            wide
+            title="Visitors per day"
+            table={{
+              head: ['Day', 'Visitors', 'Page visits'],
+              rows: v.byDay.map((d: any) => [d.day, num(d.visitors), num(d.views)]),
+            }}
+          >
+            <Columns
+              tip={tip}
+              labelEvery={Math.max(1, Math.ceil(v.byDay.length / 8))}
+              data={v.byDay.map((d: any) => ({
+                key: d.day,
+                label: d.day.slice(5),
+                value: d.visitors,
+                tipLabel: `${d.day} · ${num(d.views)} page visits`,
+              }))}
+            />
+          </Card>
+          <Card
+            title="Pages"
+            table={{
+              head: ['Page', 'Visits', 'Visitors'],
+              rows: v.byPage.map((p: any) => [PAGE_NAMES[p.page] ?? p.page, num(p.views), num(p.visitors)]),
+            }}
+          >
+            <Bars
+              tip={tip}
+              rows={v.byPage.map((p: any) => ({ key: p.page, name: PAGE_NAMES[p.page] ?? p.page, value: p.views }))}
+            />
+          </Card>
+          {v.referrers.length > 0 && (
+            <Card
+              title="Sites that sent people"
+              table={{ head: ['Site', 'Visits'], rows: v.referrers.map((r: any) => [r.host, num(r.visits)]) }}
+            >
+              <Bars tip={tip} rows={v.referrers.map((r: any) => ({ key: r.host, name: r.host, value: r.visits }))} />
+            </Card>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function Insights() {
   const [live, setLive] = useState<Live | null>(null)
   const [bump, setBump] = useState(false)
@@ -690,6 +841,9 @@ export default function Insights() {
             />
           </div>
 
+          <Visits days={days} restaurant={restaurant} tip={tip} />
+
+          <h2 className="ins-section-title">Orders</h2>
           {t.orders === 0 ? (
             <Empty text={`No orders ${periodName === 'all time' ? 'yet' : `in the last ${periodName}`}. Try a longer period.`} />
           ) : (

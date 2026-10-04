@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
 import { canSeeInsights, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
+import { recordVisit, visitStats } from './visits.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
 import { keepAwake } from './keep-awake.ts'
@@ -153,6 +154,29 @@ app.post('/api/insights/orders/:id/hide', (req: any, res) => {
   const ok = setHidden(Number(req.params.id), req.body?.hidden !== false)
   if (!ok) return res.status(404).json({ error: 'That order is not in insights.' })
   res.json({ ok: true, hidden: hiddenCount() })
+})
+/*
+ * One page view, sent by the browser as the customer moves around. Answers
+ * 204 whatever happens: a visit that cannot be recorded is not the
+ * customer's problem, and nothing about it should ever show on their screen.
+ */
+app.post('/api/visit', (req: any, res) => {
+  try {
+    recordVisit(req.body, String(req.headers['user-agent'] ?? ''))
+  } catch {
+    /* counting visits never gets in the way of the page */
+  }
+  res.status(204).end()
+})
+app.get('/api/insights/visits', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.json(
+    visitStats({
+      days: Number(req.query.days ?? 30),
+      restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+    }),
+  )
 })
 app.get('/api/insights', (req: any, res) => {
   if (!insightsGate(req, res)) return

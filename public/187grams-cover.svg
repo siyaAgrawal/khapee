@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="s" width="16" height="250" patternUnits="userSpaceOnUse">
+      <rect width="8" height="250" fill="#fbf0ac"/>
+      <rect x="8" width="8" height="250" fill="#f3eedb"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="250" fill="url(#s)"/>
+  <text x="200" y="140" text-anchor="middle" fill="#2e46a3" stroke="#2e46a3" stroke-width="0.6"
+        font-family="'Gilda Display', Didot, 'Bodoni 72', 'Noto Serif Display', Georgia, serif"
+        font-size="58" letter-spacing="-0.5">187grams</text>
+</svg>

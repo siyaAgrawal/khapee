@@ -4,7 +4,7 @@
  * can have the menu dressed to match it rather than looking like everywhere
  * else on the app.
  */
-export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'plain' | ''
+export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'grams' | 'plain' | ''
 
 /**
  * A restaurant's own mark, for the places that would otherwise show a category
@@ -14,6 +14,15 @@ export type ThemeName = 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'plain
  */
 export function crestFor(theme: ThemeName | string | undefined): string | null {
   return theme === 'beans' ? '/beans-gentleman.png' : null
+}
+
+/**
+ * A cover for the card in the list, for a place whose look is a pattern rather
+ * than a photograph: 187 Grams is its butter-and-cream stripes, so that is
+ * what its card shows instead of a cookie emoji.
+ */
+export function coverFor(theme: ThemeName | string | undefined): string | null {
+  return theme === 'grams' ? '/187grams-cover.svg' : null
 }
 
 /** How one section of a themed menu presents itself. */

@@ -231,6 +231,8 @@ export default function Checkout() {
    * — the one place the food is taken out to somebody already sitting in the
    * thing they will leave in.
    */
+  /** A bakery that only hands orders over the counter: nothing to change, nothing to pay later. */
+  const collectOnly = !!options?.collectOnly
   const prepaidOnly =
     !!options?.prepaidOnly ||
     (isCar && !!options?.carPrepaidOnly) ||
@@ -535,9 +537,11 @@ export default function Checkout() {
                 </>
               )}
             </div>
-            <Link className="btn btn-ghost btn-sm" to={`/r/${restaurantId}`}>
-              Change
-            </Link>
+            {!collectOnly && (
+              <Link className="btn btn-ghost btn-sm" to={`/r/${restaurantId}`}>
+                Change
+              </Link>
+            )}
           </div>
         )}
           </>
@@ -552,7 +556,7 @@ export default function Checkout() {
           it is a meaningless question, which is why it is no longer asked
           there.
         */}
-        {where === 'later' && !placeDecided && (
+        {where === 'later' && !placeDecided && !collectOnly && (
           <section className="card card-pad arrive-panel">
             <div className="field" style={{ marginBottom: 0 }}>
               <label>When will you get there?</label>
@@ -573,8 +577,8 @@ export default function Checkout() {
               <p className="tiny muted" style={{ margin: '9px 0 0' }}>
                 {arriveIn === 0
                   ? 'They will start it now and hold it for you.'
-                  : `They will have it ready for ${clockIn(arriveIn)}, so it is fresh when you walk in.`}{' '}
-                You choose takeaway or a table when you arrive.
+                  : `They will have it ready for ${clockIn(arriveIn)}, so it is fresh when you walk in.`}
+                {!collectOnly && ' You choose takeaway or a table when you arrive.'}
               </p>
             </div>
           </section>
@@ -832,6 +836,7 @@ export default function Checkout() {
               <span className="pay-pick-dot" aria-hidden />
             </button>
 
+            {!collectOnly && (
             <button
               type="button"
               className={`pay-pick ${payNow ? '' : 'on'} ${prepaidOnly ? 'off' : ''}`}
@@ -860,6 +865,7 @@ export default function Checkout() {
               </span>
               <span className="pay-pick-dot" aria-hidden />
             </button>
+            )}
           </div>
           <p className="tiny muted pay-picks-foot">{paySub}</p>
           </>

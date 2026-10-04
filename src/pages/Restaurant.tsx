@@ -19,6 +19,7 @@ import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
 import { PaarrooMark, PaarrooWordmark } from '../components/PaarrooBrand'
+import { GramsHero, GramsYum } from '../components/GramsBrand'
 import { BeansFlourish, BeansMark, BeansWordmark } from '../components/BeansBrand'
 import type { RestaurantCard } from './Home'
 
@@ -105,7 +106,7 @@ export default function Restaurant() {
   // A restaurant with its own look gets its own menu component. Everything
   // outside the menu — cart bar, dining bar, table context — is shared, so a
   // theme changes how the food reads and nothing about how ordering works.
-  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'plain' | ''
+  const theme = (data?.restaurant.theme ?? '') as 'noir' | 'hut' | 'revery' | 'paarroo' | 'beans' | 'grams' | 'plain' | ''
   const noir = theme === 'noir'
   const hut = theme === 'hut'
   const revery = theme === 'revery'
@@ -118,6 +119,9 @@ export default function Restaurant() {
    * easier to use than any of the dressed-up ones.
    */
   const noPhotos = theme === 'plain'
+  /* One Eighty Seven Grams: the standard page (and its one-tap ordering)
+     dressed in the bakery's own look — see GramsBrand and .grams-page. */
+  const grams = theme === 'grams'
 
   /**
    * Finding one dish on a long menu.
@@ -204,7 +208,7 @@ export default function Restaurant() {
     return (
       <article
         key={item.id}
-        className={`item-card ${photo ? '' : 'item-compact'} ${item.isAvailable ? '' : 'item-unavailable'}`}
+        className={`item-card ${photo ? '' : 'item-compact'} ${item.isAvailable ? '' : 'item-unavailable'} ${qty > 0 && inThisCart ? 'in-cart' : ''}`}
       >
         {photo && <Art emoji={item.emoji} hue={item.hue} imageUrl={photo} alt={item.name} className="item-art" />}
         <div className="item-body">
@@ -242,7 +246,7 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''} ${beans ? 'beans-page' : ''}`}>
+      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''} ${beans ? 'beans-page' : ''} ${grams ? 'grams-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
@@ -383,6 +387,29 @@ export default function Restaurant() {
                   </Link>
                 )}
               </header>
+            ) : grams ? (
+              <>
+                <GramsHero
+                  isOpen={data.restaurant.isOpen}
+                  hours={data.restaurant.hours}
+                  prepMinutes={data.restaurant.prepMinutes}
+                />
+                {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && !intent && (
+                  <div className="way-in grams-way-in">
+                    <button
+                      type="button"
+                      className="way-in-btn"
+                      onClick={() => {
+                        saveIntent(restaurantId)
+                        setIntent(true)
+                        toast('Add what you’d like, then pay by UPI.', 'good')
+                      }}
+                    >
+                      Order to collect <span aria-hidden>→</span>
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
             <div className={`r-hero ${seated || noPhotos || !data.restaurant.imageUrl ? 'r-hero-slim' : ''}`}>
               {/* The big picture only when there is a real one and nobody is
@@ -611,6 +638,12 @@ export default function Restaurant() {
                 </div>
               </section>
             ))}
+            {grams && !needle && (
+              <p className="grams-signoff">
+                <GramsYum />
+                <span>Baked in small batches, in Indore.</span>
+              </p>
+            )}
               </>
             )}
           </>

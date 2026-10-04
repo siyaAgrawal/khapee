@@ -8656,3 +8656,342 @@ button.nav-link {
   object-fit: contain;
   filter: invert(1);
   opacity: 0.82;}
+
+/* ======================================== One Eighty Seven Grams (theme 'grams')
+   Set from the bakery's own Instagram, piece by piece:
+   - the wide butter and cream stripes behind "187grams" (their profile picture)
+   - condensed serif capitals led by a bold arrow, tight black sans against a
+     cobalt italic, the outlined pill and the empty ○ (their hiring post)
+   - the smile with its tongue out (the side of their box)
+   Three faces: Gilda Display for the wordmark, Instrument Serif for capitals
+   and italics, Inter Tight for everything you read. */
+:root[data-theme='grams'] {
+  --bg: #fcf8ea;
+  --bg-tint: #f7f0d8;
+  --surface: #fffcf2;
+  --surface-2: #f4efdd;
+  --ink: #151515;
+  --ink-2: #2a2a2a;
+  --muted: #5f6070;
+  --line: rgba(46, 70, 163, 0.14);
+  --line-strong: rgba(46, 70, 163, 0.3);
+  --accent: #2e46a3;
+  --accent-ink: #fffcf2;
+  --accent-soft: #e8ebf7;
+  --good: #2e46a3;
+  --good-soft: #e8ebf7;
+  --warn: #9a6d12;
+  --warn-soft: #f6ecd2;
+  --bad: #b23a55;
+  --bad-soft: #f8e3e8;
+  --info: #2e46a3;
+  --info-soft: #e8ebf7;
+  --shadow-sm: none;
+  --shadow-md: 0 8px 22px rgba(46, 70, 163, 0.08);
+  --shadow-lg: 0 22px 48px rgba(46, 70, 163, 0.12);
+  --shadow-accent: 0 10px 24px rgba(46, 70, 163, 0.2);
+
+  --g-cobalt: #2e46a3;
+  --g-butter: #fbf0ac;
+  --g-cream: #f3eedb;
+  --g-logo: 'Gilda Display', 'Didot', Georgia, serif;
+  --g-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --g-sans: 'Inter Tight', 'Inter', system-ui, sans-serif;
+}
+:root[data-theme='grams'] body {
+  background: var(--bg);
+  overflow-x: clip;
+}
+.grams-page {
+  font-family: var(--g-sans);
+  color: var(--ink);
+}
+
+/* The profile picture, opened out into a banner. */
+.grams-banner {
+  display: grid;
+  place-items: center;
+  height: clamp(150px, 40vw, 220px);
+  margin: -32px calc(50% - 50vw) 0;
+  background: repeating-linear-gradient(90deg, var(--g-butter) 0 22px, var(--g-cream) 22px 44px);
+}
+.grams-logo {
+  margin: 0;
+  font-family: var(--g-logo);
+  font-weight: 400;
+  font-size: clamp(40px, 11vw, 60px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--g-cobalt);
+  /* Gilda is a touch lighter than their mark; a hairline of stroke matches it. */
+  -webkit-text-stroke: 0.6px var(--g-cobalt);
+}
+
+.grams-intro {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 4px 4px;
+}
+.grams-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-family: var(--g-serif);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.grams-arrow {
+  width: 16px;
+  height: 11px;
+  flex: none;
+  color: var(--g-cobalt);
+}
+.grams-title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.grams-title-plain {
+  font-family: var(--g-sans);
+  font-weight: 500;
+  font-size: clamp(30px, 8.6vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+}
+.grams-title-em {
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-size: clamp(38px, 11vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--g-cobalt);
+}
+.grams-by {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* "SEND YOUR PORTFOLIO TO: ____" — an outlined pill and a ruled line. */
+.grams-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+.grams-pill {
+  flex: none;
+  padding: 4px 10px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.grams-field-line {
+  flex: 1;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--g-cobalt);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.grams-way-in {
+  grid-template-columns: 1fr;
+  max-width: 560px;
+  margin: 16px auto 2px;
+}
+.grams-page .way-in-btn {
+  background: var(--g-cobalt);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-family: var(--g-sans);
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+}
+
+/* Search: a ruled line, like the email line on their post. */
+.grams-page .menu-find,
+.grams-page .menu-nav,
+.grams-page .menu-find-count,
+.grams-page .menu-section,
+.grams-signoff {
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.grams-page .menu-find {
+  margin-top: 18px;
+}
+.grams-page .menu-find-input {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--g-sans);
+}
+.grams-page .menu-find-input:focus {
+  border-bottom-color: var(--g-cobalt);
+  box-shadow: none;
+}
+.grams-page .menu-nav {
+  gap: 4px 20px;
+  background: var(--bg);
+}
+.grams-page .chip {
+  flex: none;
+  border: 0;
+  background: none;
+  padding: 6px 0;
+  border-radius: 0;
+  font-family: var(--g-serif);
+  font-size: 14.5px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.grams-page .chip:hover {
+  color: var(--g-cobalt);
+}
+.grams-page .veg-toggle {
+  display: none;
+}
+
+/* The menu. Section names in their cobalt italic; dishes as the ○ lines of
+   the hiring post, the circle filling in once a dish is in the bag. */
+.grams-page .menu-section {
+  margin-top: 22px;
+}
+.grams-page .menu-section h2 {
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  color: var(--g-cobalt);
+  margin-bottom: 2px;
+}
+.grams-page .item-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.grams-page .item-card {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 12px 0 14px;
+}
+.grams-page .item-card:hover {
+  box-shadow: none;
+}
+.grams-page .item-title {
+  gap: 10px;
+  font-family: var(--g-sans);
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.grams-page .item-title .veg-dot {
+  display: none;
+}
+.grams-page .item-title::before {
+  content: '';
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.4px solid var(--g-cobalt);
+  transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.grams-page .item-card.in-cart .item-title::before {
+  background: var(--g-cobalt);
+  box-shadow: inset 0 0 0 2.5px var(--bg);
+}
+.grams-page .item-desc,
+.grams-page .item-compact .item-desc {
+  -webkit-line-clamp: unset;
+  display: block;
+  margin-left: 23px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.grams-page .item-price {
+  font-family: var(--g-serif);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: 0;
+  color: var(--g-cobalt);
+  margin: 5px 0 0 23px;
+  line-height: 1;
+}
+.grams-page .btn-add {
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 999px;
+  font-family: var(--g-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.grams-page .btn-add:hover {
+  background: var(--g-cobalt);
+  border-color: var(--g-cobalt);
+  color: var(--accent-ink);
+}
+.grams-page .stepper {
+  background: var(--g-cobalt);
+  border-radius: 999px;
+}
+
+.grams-signoff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+}
+.grams-yum {
+  width: 48px;
+  height: 16px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+:root[data-theme='grams'] .cart-bar {
+  background: var(--g-cobalt);
+  font-family: var(--g-sans);
+}
+.grams-field-line .grams-open {
+  color: var(--g-cobalt);
+  font-weight: 700;
+}
+.grams-field-line .grams-shut {
+  color: var(--bad);
+  font-weight: 700;
+}

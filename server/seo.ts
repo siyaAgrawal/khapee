@@ -55,7 +55,7 @@ export function metaFor(pathname: string, origin: string): PageMeta {
       db
         .prepare(
           `SELECT r.name FROM restaurants r
-            WHERE r.is_open = 1 AND EXISTS (SELECT 1 FROM menu_items m WHERE m.restaurant_id = r.id)
+            WHERE r.is_open = 1 AND r.unlisted = 0 AND EXISTS (SELECT 1 FROM menu_items m WHERE m.restaurant_id = r.id)
             ORDER BY r.name LIMIT 6`,
         )
         .all() as any[]
@@ -144,7 +144,7 @@ export function sitemapXml(origin: string): string {
   const rows = db
     .prepare(
       `SELECT r.id, r.slug FROM restaurants r
-        WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.restaurant_id = r.id)
+        WHERE r.unlisted = 0 AND EXISTS (SELECT 1 FROM menu_items m WHERE m.restaurant_id = r.id)
         ORDER BY r.id`,
     )
     .all() as any[]

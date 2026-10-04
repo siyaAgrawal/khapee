@@ -89,7 +89,7 @@ publicRouter.get('/restaurants', (req, res) => {
        FROM restaurants r ORDER BY r.is_open DESC, r.top_rank DESC, r.name ASC`,
     )
     .all(vegOnly ? 1 : 0) as any[]
-  const visible = includeDrafts ? rows : rows.filter((r) => r.item_count > 0)
+  const visible = includeDrafts ? rows : rows.filter((r) => r.item_count > 0 && !r.unlisted)
 
   // "Near me" is computed here from coordinates the restaurants entered
   // themselves — the browser supplies the customer's position, no map service

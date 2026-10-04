@@ -8658,195 +8658,269 @@ button.nav-link {
   opacity: 0.82;}
 
 /* ======================================== One Eighty Seven Grams (theme 'grams')
-   The bakery's own pieces — butter-yellow and cream stripes, cobalt ink, the
-   soft serif of their wordmark — set the way Mr. Beans is set: one flat ground,
-   no cards, no boxes, the menu printed in rows with the dishes' names written
-   by hand. The stripes appear once, as an awning, and that is enough. */
+   Set from the bakery's own Instagram, piece by piece:
+   - the wide butter and cream stripes behind "187grams" (their profile picture)
+   - condensed serif capitals led by a bold arrow, tight black sans against a
+     cobalt italic, the outlined pill and the empty ○ (their hiring post)
+   - thin cobalt line icons on cream circles (their story highlights)
+   - the smile with its tongue out (the side of their box)
+   Three faces: Gilda Display for the wordmark, Instrument Serif for capitals
+   and italics, Inter Tight for everything you read. */
 :root[data-theme='grams'] {
-  --bg: #fbf6e6;
-  --bg-tint: #f6efd6;
-  --surface: #fdf9ec;
-  --surface-2: #f6efd6;
-  --ink: #1f2b7a;
-  --ink-2: #2f3c8f;
-  /* Cobalt at reading weight; above 6:1 on this cream. */
-  --muted: #565d8c;
-  --line: rgba(31, 43, 122, 0.12);
-  --line-strong: rgba(31, 43, 122, 0.26);
-  --accent: #2b3aaa;
-  --accent-ink: #fdf9ec;
-  --accent-soft: #eceaf6;
-  --good: #2b3aaa;
-  --good-soft: #eceaf6;
+  --bg: #fcf8ea;
+  --bg-tint: #f7f0d8;
+  --surface: #fffcf2;
+  --surface-2: #f4efdd;
+  --ink: #151515;
+  --ink-2: #2a2a2a;
+  --muted: #5f6070;
+  --line: rgba(46, 70, 163, 0.14);
+  --line-strong: rgba(46, 70, 163, 0.3);
+  --accent: #2e46a3;
+  --accent-ink: #fffcf2;
+  --accent-soft: #e8ebf7;
+  --good: #2e46a3;
+  --good-soft: #e8ebf7;
   --warn: #9a6d12;
   --warn-soft: #f6ecd2;
-  --bad: #a2324a;
-  --bad-soft: #f6e2e4;
-  --info: #2b3aaa;
-  --info-soft: #eceaf6;
+  --bad: #b23a55;
+  --bad-soft: #f8e3e8;
+  --info: #2e46a3;
+  --info-soft: #e8ebf7;
   --shadow-sm: none;
-  --shadow-md: 0 8px 22px rgba(31, 43, 122, 0.08);
-  --shadow-lg: 0 22px 48px rgba(31, 43, 122, 0.12);
-  --shadow-accent: 0 10px 24px rgba(31, 43, 122, 0.18);
-  --grams-serif: 'Fraunces', Georgia, serif;
-  --grams-hand: 'Caveat', 'Bradley Hand', cursive;
-  --grams-butter: #f5e08a;
-  --grams-cream: #fffcf0;
+  --shadow-md: 0 8px 22px rgba(46, 70, 163, 0.08);
+  --shadow-lg: 0 22px 48px rgba(46, 70, 163, 0.12);
+  --shadow-accent: 0 10px 24px rgba(46, 70, 163, 0.2);
+
+  --g-cobalt: #2e46a3;
+  --g-butter: #fbf0ac;
+  --g-cream: #f3eedb;
+  --g-logo: 'Gilda Display', 'Didot', Georgia, serif;
+  --g-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --g-sans: 'Inter Tight', 'Inter', system-ui, sans-serif;
 }
 :root[data-theme='grams'] body {
   background: var(--bg);
-  /* The awning runs edge to edge, past the page's own width. */
   overflow-x: clip;
 }
 .grams-page {
-  font-family: var(--grams-serif);
-  font-variation-settings: 'SOFT' 50;
+  font-family: var(--g-sans);
+  color: var(--ink);
 }
 
-/* The awning: their stripes, finished with a scalloped hem — each scallop the
-   colour of the stripe above it. */
-.grams-hero {
-  margin-bottom: 18px;
-}
-.grams-awning {
-  position: relative;
-  height: 54px;
+/* The profile picture, opened out into a banner. */
+.grams-banner {
+  display: grid;
+  place-items: center;
+  height: clamp(150px, 34vw, 230px);
   margin: -32px calc(50% - 50vw) 0;
-  background: repeating-linear-gradient(90deg, var(--grams-butter) 0 24px, var(--grams-cream) 24px 48px);
-  filter: drop-shadow(0 2px 0 rgba(31, 43, 122, 0.07));
+  background: repeating-linear-gradient(90deg, var(--g-butter) 0 30px, var(--g-cream) 30px 60px);
 }
-.grams-awning::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 12px;
-  background:
-    radial-gradient(circle at 12px 0, var(--grams-butter) 11.5px, transparent 12px) 0 0 / 48px 12px repeat-x,
-    radial-gradient(circle at 12px 0, var(--grams-cream) 11.5px, transparent 12px) 24px 0 / 48px 12px repeat-x;
+.grams-logo {
+  margin: 0;
+  font-family: var(--g-logo);
+  font-weight: 400;
+  font-size: clamp(52px, 15vw, 88px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--g-cobalt);
+  /* Gilda is a touch lighter than their mark; a hairline of stroke matches it. */
+  -webkit-text-stroke: 0.9px var(--g-cobalt);
 }
 
-.grams-lockup {
-  text-align: center;
-  padding: 40px 8px 4px;
+.grams-intro {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 28px 4px 6px;
 }
-.grams-eyebrow {
-  margin: 0 0 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.28em;
+.grams-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-family: var(--g-serif);
+  font-size: 17px;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  color: var(--ink);
+}
+.grams-arrow {
+  width: 20px;
+  height: 13px;
+  flex: none;
+  color: var(--g-cobalt);
+}
+.grams-title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.grams-title-plain {
+  font-family: var(--g-sans);
+  font-weight: 500;
+  font-size: clamp(34px, 9.5vw, 48px);
+  line-height: 1;
+  letter-spacing: -0.055em;
+  color: var(--ink);
+}
+.grams-title-em {
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-size: clamp(44px, 12.5vw, 62px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--g-cobalt);
+}
+.grams-by {
+  margin: 12px 0 0;
+  font-size: 14.5px;
   color: var(--muted);
 }
-.grams-word {
-  margin: 0;
-  font-family: var(--grams-serif);
-  font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
-  font-weight: 500;
-  font-size: clamp(46px, 13vw, 68px);
-  line-height: 1;
-  letter-spacing: -0.035em;
-  color: var(--accent);
+
+/* The story highlights. */
+.grams-highlights {
+  display: flex;
+  gap: 14px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
 }
-.grams-187 {
-  font-weight: 600;
+.grams-bubble {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--g-cream);
+  color: var(--g-cobalt);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px rgba(46, 70, 163, 0.12);
 }
-.grams-line {
-  margin: 12px auto 0;
-  max-width: 30ch;
-  font-style: italic;
-  font-size: 15.5px;
-  line-height: 1.45;
+.grams-bubble svg {
+  width: 36px;
+  height: 29px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.grams-bubble span {
+  font-family: var(--g-serif);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.grams-highlights .is-shut .grams-bubble {
+  color: var(--bad);
+}
+
+/* "SEND YOUR PORTFOLIO TO: ____" — an outlined pill and a ruled line. */
+.grams-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 0;
+}
+.grams-pill {
+  flex: none;
+  padding: 6px 13px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.grams-field-line {
+  flex: 1;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--g-cobalt);
+  font-size: 13.5px;
   color: var(--ink-2);
 }
-.grams-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 8px;
-  margin: 14px 0 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-.grams-open {
-  color: var(--accent);
-  font-weight: 700;
-}
-.grams-shut {
-  color: var(--bad);
-  font-weight: 700;
-}
+
 .grams-way-in {
   grid-template-columns: 1fr;
-  max-width: 360px;
-  margin: 4px auto 6px;
+  max-width: 560px;
+  margin: 20px auto 4px;
 }
 .grams-page .way-in-btn {
-  background: var(--accent);
+  background: var(--g-cobalt);
   color: var(--accent-ink);
   border: 0;
   border-radius: 999px;
-  padding: 13px 18px;
-  font-family: var(--grams-serif);
+  padding: 14px 20px;
+  font-family: var(--g-sans);
   font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.01em;
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
 }
 
-/* Search and section links: hairlines, not boxes. */
+/* Search: a ruled line, like the email line on their post. */
+.grams-page .menu-find,
+.grams-page .menu-nav,
+.grams-page .menu-find-count,
+.grams-page .menu-section,
+.grams-signoff {
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.grams-page .menu-find {
+  margin-top: 26px;
+}
 .grams-page .menu-find-input {
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--line-strong);
   border-radius: 0;
   box-shadow: none;
-  font-family: var(--grams-serif);
+  font-family: var(--g-sans);
 }
 .grams-page .menu-find-input:focus {
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--g-cobalt);
   box-shadow: none;
 }
 .grams-page .menu-nav {
-  gap: 4px 18px;
-  justify-content: safe center;
+  gap: 4px 20px;
   background: var(--bg);
-  border-bottom: 1px solid var(--line);
 }
 .grams-page .chip {
+  flex: none;
   border: 0;
   background: none;
   padding: 6px 0;
   border-radius: 0;
-  font-family: var(--grams-serif);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-family: var(--g-serif);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--ink);
 }
 .grams-page .chip:hover {
-  color: var(--accent);
+  color: var(--g-cobalt);
 }
-/* An all-veg bakery: the veg-only switch has nothing to filter. */
 .grams-page .veg-toggle {
   display: none;
 }
 
-/* The menu: written by hand, printed in rows. */
+/* The menu. Section names in their cobalt italic; dishes as the ○ lines of
+   the hiring post, the circle filling in once a dish is in the bag. */
 .grams-page .menu-section {
-  max-width: 640px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 30px;
 }
 .grams-page .menu-section h2 {
-  font-family: var(--grams-hand);
-  font-weight: 700;
-  font-size: 38px;
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 40px;
   line-height: 1;
-  letter-spacing: 0;
-  color: var(--accent);
-  margin-bottom: 4px;
+  letter-spacing: -0.015em;
+  color: var(--g-cobalt);
+  margin-bottom: 2px;
 }
 .grams-page .item-grid {
   grid-template-columns: 1fr;
@@ -8858,62 +8932,98 @@ button.nav-link {
   border-bottom: 1px solid var(--line);
   border-radius: 0;
   box-shadow: none;
-  padding: 14px 0 16px;
+  padding: 16px 0 18px;
 }
 .grams-page .item-card:hover {
   box-shadow: none;
 }
 .grams-page .item-title {
-  font-family: var(--grams-hand);
-  font-weight: 700;
-  font-size: 27px;
-  line-height: 1.1;
+  gap: 10px;
+  font-family: var(--g-sans);
+  font-weight: 600;
+  font-size: 17.5px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 .grams-page .item-title .veg-dot {
-  transform: scale(0.8);
+  display: none;
+}
+.grams-page .item-title::before {
+  content: '';
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.4px solid var(--g-cobalt);
+  transition: background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.grams-page .item-card.in-cart .item-title::before {
+  background: var(--g-cobalt);
+  box-shadow: inset 0 0 0 2.5px var(--bg);
 }
 .grams-page .item-desc,
 .grams-page .item-compact .item-desc {
   -webkit-line-clamp: unset;
   display: block;
+  margin-left: 25px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
 }
-.grams-page .item-foot {
-  margin-top: 10px;
-}
 .grams-page .item-price {
-  font-family: var(--grams-serif);
-  font-weight: 600;
-  font-size: 17px;
-  color: var(--accent);
+  font-family: var(--g-serif);
+  font-weight: 400;
+  font-size: 25px;
+  letter-spacing: 0;
+  color: var(--g-cobalt);
+  margin: 6px 0 0 25px;
+  line-height: 1;
 }
 .grams-page .btn-add {
-  border: 1px solid var(--accent);
+  border: 1px solid var(--ink);
   background: transparent;
-  color: var(--accent);
+  color: var(--ink);
   border-radius: 999px;
-  font-weight: 600;
+  font-family: var(--g-sans);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   padding-left: 18px;
   padding-right: 18px;
 }
 .grams-page .btn-add:hover {
-  background: var(--accent);
+  background: var(--g-cobalt);
+  border-color: var(--g-cobalt);
   color: var(--accent-ink);
 }
 .grams-page .stepper {
-  background: var(--accent);
+  background: var(--g-cobalt);
   border-radius: 999px;
 }
-:root[data-theme='grams'] .cart-bar {
-  background: var(--accent);
+
+.grams-signoff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  font-family: var(--g-serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted);
 }
-.grams-page .menu-find,
-.grams-page .menu-nav,
-.grams-page .menu-find-count {
-  max-width: 640px;
-  margin-left: auto;
-  margin-right: auto;
+.grams-yum {
+  width: 64px;
+  height: 22px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+:root[data-theme='grams'] .cart-bar {
+  background: var(--g-cobalt);
+  font-family: var(--g-sans);
 }

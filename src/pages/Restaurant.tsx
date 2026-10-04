@@ -19,7 +19,7 @@ import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
 import { PaarrooMark, PaarrooWordmark } from '../components/PaarrooBrand'
-import { GramsHero } from '../components/GramsBrand'
+import { GramsHero, GramsYum } from '../components/GramsBrand'
 import { BeansFlourish, BeansMark, BeansWordmark } from '../components/BeansBrand'
 import type { RestaurantCard } from './Home'
 
@@ -208,7 +208,7 @@ export default function Restaurant() {
     return (
       <article
         key={item.id}
-        className={`item-card ${photo ? '' : 'item-compact'} ${item.isAvailable ? '' : 'item-unavailable'}`}
+        className={`item-card ${photo ? '' : 'item-compact'} ${item.isAvailable ? '' : 'item-unavailable'} ${qty > 0 && inThisCart ? 'in-cart' : ''}`}
       >
         {photo && <Art emoji={item.emoji} hue={item.hue} imageUrl={photo} alt={item.name} className="item-art" />}
         <div className="item-body">
@@ -393,7 +393,6 @@ export default function Restaurant() {
                   isOpen={data.restaurant.isOpen}
                   hours={data.restaurant.hours}
                   prepMinutes={data.restaurant.prepMinutes}
-                  line={data.restaurant.description}
                 />
                 {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && !intent && (
                   <div className="way-in grams-way-in">
@@ -406,7 +405,7 @@ export default function Restaurant() {
                         toast('Add what you’d like, then pay by UPI.', 'good')
                       }}
                     >
-                      Order to collect
+                      Order to collect <span aria-hidden>→</span>
                     </button>
                   </div>
                 )}
@@ -639,6 +638,12 @@ export default function Restaurant() {
                 </div>
               </section>
             ))}
+            {grams && !needle && (
+              <p className="grams-signoff">
+                <GramsYum />
+                <span>Baked in small batches, in Indore.</span>
+              </p>
+            )}
               </>
             )}
           </>

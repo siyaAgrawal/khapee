@@ -9009,3 +9009,238 @@ button.nav-link {
 .ins-body > .ins-grid {
   margin-top: 14px;
 }
+
+/* ============================================================ Khapee brand
+   The front page in Khapee's own look — and only the front page. Menus,
+   checkout, orders and the dashboards keep the interface they have.
+
+   Jamun (the deep purple of the Indian blackberry) for the brand, haldi
+   (turmeric) for the one warm accent, on white. One display face — Bricolage
+   Grotesque, chunky and friendly — for the name, the headline, section titles
+   and restaurant names. The signature is the torn edge of an order ticket
+   along the bottom of the block at the top. */
+.home-brand {
+  --k-jamun: #4b2390;
+  --k-haldi: #f2b23a;
+  --k-mint: #2f7d5b;
+  --k-cream: #f6f0e4;
+  --k-display: 'Bricolage Grotesque', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --ink: #1e1528;
+  --line: rgba(30, 21, 40, 0.1);
+  min-height: 100vh;
+  background: var(--bg);
+}
+:root[data-theme='dark'] .home-brand {
+  --bg: #120d18;
+  --surface: #1c1524;
+  --ink: #f4eefb;
+  --line: rgba(255, 255, 255, 0.1);
+}
+
+/* The wordmark: lowercase, chunky, tight, ending in a haldi dot. */
+.home-brand .brand {
+  font-family: var(--k-display);
+  font-variation-settings: 'opsz' 96;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.055em;
+  color: var(--ink);
+}
+.home-brand .brand-dot {
+  display: inline-block;
+  width: 0.26em;
+  height: 0.26em;
+  margin-left: 0.06em;
+  border-radius: 50%;
+  background: var(--k-haldi);
+  color: transparent;
+  overflow: hidden;
+}
+.home-brand .header .cart-pill {
+  background: var(--k-jamun);
+}
+.home-brand .header .cart-pill .cart-count {
+  background: var(--k-haldi);
+  color: #1e1528;
+  font-weight: 700;
+}
+
+/* The block at the top: jamun, with the ticket's torn edge underneath. */
+.home-brand .hero {
+  position: relative;
+  background: var(--k-jamun);
+  padding-bottom: 30px;
+  margin-bottom: 14px;
+}
+.home-brand .hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 10px;
+  background:
+    linear-gradient(135deg, var(--k-jamun) 50%, transparent 50%) 0 0 / 14px 10px repeat-x,
+    linear-gradient(225deg, var(--k-jamun) 50%, transparent 50%) 0 0 / 14px 10px repeat-x;
+}
+.home-brand .hero-place {
+  color: rgba(255, 255, 255, 0.92);
+}
+.home-brand .hero-place small {
+  color: rgba(255, 255, 255, 0.6);
+}
+.home-brand .hero-place svg {
+  color: var(--k-haldi);
+}
+.home-brand .hero h1 {
+  margin-bottom: 6px;
+  font-family: var(--k-display);
+  font-variation-settings: 'opsz' 96;
+  font-style: normal;
+  font-weight: 800;
+  font-size: clamp(40px, 11.5vw, 60px);
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+  color: var(--k-cream);
+}
+.home-brand .hero-khapee,
+.home-brand .hero-dot {
+  color: var(--k-haldi);
+}
+.home-brand .hero-sub {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.home-brand .hero .search-input {
+  background: var(--k-cream);
+  border-color: transparent;
+  color: #1e1528;
+}
+.home-brand .hero .veg-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* Headings in the display face. */
+.home-brand .list-head h2,
+.home-brand .area-section h2 {
+  font-family: var(--k-display);
+  font-variation-settings: 'opsz' 48;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.home-brand .cuisine.active {
+  border-bottom-color: var(--k-haldi);
+  border-bottom-width: 3px;
+}
+
+/* Areas: haldi tickets, punched at the sides. */
+.home-brand .area-tile {
+  position: relative;
+  background: var(--k-haldi);
+  color: #1e1528;
+  border-radius: 18px;
+}
+.home-brand .area-tile::before,
+.home-brand .area-tile::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--bg);
+}
+.home-brand .area-tile::before {
+  left: -7px;
+}
+.home-brand .area-tile::after {
+  right: -7px;
+}
+.home-brand .area-tile-kicker {
+  color: rgba(30, 21, 40, 0.6);
+}
+.home-brand .area-tile-name {
+  font-family: var(--k-display);
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: -0.04em;
+}
+.home-brand .area-tile-meta {
+  color: rgba(30, 21, 40, 0.7);
+}
+
+/* Restaurant cards. */
+.home-brand .r-card {
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.home-brand .r-card-title h3 {
+  font-family: var(--k-display);
+  font-variation-settings: 'opsz' 36;
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.035em;
+}
+.home-brand .badge-open {
+  color: var(--k-mint);
+}
+
+/* A place with no photograph: a brand tint, its name as a label, its emoji
+   as a sticker. */
+.r-card-art.brand-tile {
+  height: 150px;
+}
+.brand-tile {
+  display: flex;
+  align-items: flex-end;
+  padding: 16px 18px;
+  overflow: hidden;
+}
+.brand-tile-name {
+  max-width: 78%;
+  font-family: var(--k-display);
+  font-variation-settings: 'opsz' 96;
+  font-weight: 800;
+  font-size: 38px;
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  transition: transform 0.3s var(--ease);
+  transform-origin: left bottom;
+}
+.r-card:hover .brand-tile-name {
+  transform: scale(1.03) rotate(-1.5deg);
+}
+.brand-tile-emoji {
+  position: absolute;
+  right: 14px;
+  top: 26px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 22px;
+  box-shadow: 0 2px 8px rgba(30, 21, 40, 0.12);
+}
+.tint-haldi { background: #f8d98a; color: #6b4300; }
+.tint-jamun { background: #d9cbef; color: #3f1d7a; }
+.tint-mint { background: #cfe6d6; color: #1f5a3f; }
+.tint-chilli { background: #f6c9b6; color: #8a2a12; }
+.tint-sky { background: #cfe0f0; color: #1e4468; }
+.brand-tile.closed-art {
+  filter: grayscale(0.3);
+  opacity: 0.9;
+}
+:root[data-theme='dark'] .brand-tile-emoji {
+  background: rgba(0, 0, 0, 0.35);
+}

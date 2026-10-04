@@ -8912,7 +8912,9 @@ button.nav-link {
   height: 0.26em;
   margin-left: 0.06em;
   border-radius: 50%;
-  background: var(--k-haldi);
+  /* Spelled out: the brand's variables live on the front page alone, and
+     this dot is on every page. */
+  background: #f2b23a;
   color: transparent;
   overflow: hidden;
 }

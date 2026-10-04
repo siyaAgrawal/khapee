@@ -51,8 +51,9 @@ export type CuisineTile = { name: string; count: number }
 
 /**
  * A restaurant with no photograph, in Khapee's own colours instead of an emoji
- * on grey: one of five brand tints, its name set like a label in the display
- * face, and its emoji in the corner like a sticker on a ticket.
+ * on grey: one of five brand tints, and the restaurant's emoji served on a
+ * plate in the middle. The name is not repeated here — it is right
+ * underneath.
  */
 const TINTS = ['haldi', 'jamun', 'mint', 'chilli', 'sky']
 function BrandTile({ name, emoji, hue, closed }: { name: string; emoji: string; hue: number; closed: boolean }) {
@@ -61,11 +62,9 @@ function BrandTile({ name, emoji, hue, closed }: { name: string; emoji: string; 
   let h = Math.round(hue || 0)
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0
   const tint = TINTS[h % TINTS.length]
-  const label = name.split(/\s[—–-]\s/)[0]
   return (
     <div className={`r-card-art brand-tile tint-${tint} ${closed ? 'closed-art' : ''}`} aria-hidden>
-      <span className="brand-tile-name">{label}</span>
-      <span className="brand-tile-emoji">{emoji}</span>
+      <span className="brand-tile-plate">{emoji}</span>
     </div>
   )
 }

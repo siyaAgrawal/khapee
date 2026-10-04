@@ -9,6 +9,7 @@ import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { clearIntent, readIntent } from '../lib/intent'
+import { clearPendingPay, readPendingPay, savePendingPay } from '../lib/pending-pay'
 import { readMe, saveLastOrder, saveMe } from '../lib/me'
 import { EmptyState, LoadingBlock, Modal, money, Spinner, useToast } from '../components/ui'
 
@@ -293,6 +294,32 @@ export default function Checkout() {
   const lean = go && !needsTable && !needsProof && !isDelivery
 
   /*
+   * Back from the UPI app.
+   *
+   * The customer tapped Google Pay or PhonePe, which handed the phone to
+   * another app and left this page in the background. Very often the page
+   * that comes back is a fresh one — iOS discards background tabs as a matter
+   * of course — so the pay panel, which was React state, is gone, and with it
+   * the only route to actually placing the order. The money had left and the
+   * restaurant never saw a thing.
+   *
+   * So the panel is reopened exactly as it was, with the same request: the
+   * same amount, the same reference, the same payee. Somebody who has already
+   * paid presses the one button they were looking for; somebody who changed
+   * their mind closes it, which clears it for good.
+   *
+   * Only while there is still a basket to pay for — the order having been
+   * placed clears this on its own.
+   */
+  const [payRestored, setPayRestored] = useState(false)
+  useEffect(() => {
+    if (payRestored || payRequest || placing || !restaurantId || !count) return
+    const pending = readPendingPay(restaurantId)
+    setPayRestored(true)
+    if (pending) setPayRequest(pending)
+  }, [payRestored, payRequest, placing, restaurantId, count])
+
+  /*
    * One tap from the menu. Once the payment options are known (they decide
    * whether this is pay-later or UPI-first), an order with nothing missing is
    * placed — or, when it has to be paid first, the UPI screen opens — without
@@ -300,7 +327,7 @@ export default function Checkout() {
    */
   const [autoTried, setAutoTried] = useState(false)
   useEffect(() => {
-    if (!go || autoTried || !options || placing || payRequest || !count) return
+    if (!go || autoTried || !options || placing || payRequest || !payRestored || !count) return
     // Decided once, on arrival. If something was missing then, the customer
     // finishes it and presses the button — the order must never go off by
     // itself halfway through typing a name.
@@ -308,7 +335,7 @@ export default function Checkout() {
     if (!ready || shortOfMinimum > 0) return
     if (payNow) void startPayment()
     else void place()
-  }, [go, autoTried, options, ready, payNow, placing, payRequest, count]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [go, autoTried, options, ready, payNow, placing, payRequest, payRestored, count]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startPayment = async () => {
     setPlacing(true)
@@ -324,6 +351,16 @@ export default function Checkout() {
           // Written on the UPI payment, so the restaurant can match it by name.
           customerName: name.trim(),
         },
+      })
+      // Saved before the panel opens, because the very next thing the
+      // customer does is leave the browser for their UPI app.
+      savePendingPay({
+        restaurantId,
+        amountCents: r.amountCents,
+        upiLink: r.upiLink,
+        payeeName: r.payeeName,
+        vpa: r.vpa,
+        reference: r.reference,
       })
       setPayRequest(r)
     } catch (e) {
@@ -408,6 +445,7 @@ export default function Checkout() {
       // Said on the next screen rather than here, so the confirmation and the
       // thing being confirmed are the same page — a toast on a page that is
       // already disappearing is read by nobody.
+      clearPendingPay()
       navigate(`/order/${order.orderNumber}`, {
         replace: true,
         state: { justPlaced: true, paid: !!paymentClaim },
@@ -416,6 +454,7 @@ export default function Checkout() {
       setError((e as ApiError).message)
       setPlacing(false)
       setPayRequest(null)
+      clearPendingPay()
     }
   }
 
@@ -912,7 +951,14 @@ export default function Checkout() {
           }}
         />
 
-        <Modal open={!!payRequest} onClose={() => setPayRequest(null)} title="Pay for your order">
+        <Modal
+          open={!!payRequest}
+          onClose={() => {
+            setPayRequest(null)
+            clearPendingPay()
+          }}
+          title="Pay for your order"
+        >
           {payRequest && (
             <PayPanel
               amountCents={payRequest.amountCents}
@@ -921,7 +967,10 @@ export default function Checkout() {
               vpa={payRequest.vpa}
               busy={placing}
               onPaid={(upiRef) => place({ upiRef })}
-              onCancel={() => setPayRequest(null)}
+              onCancel={() => {
+                setPayRequest(null)
+                clearPendingPay()
+              }}
             />
           )}
         </Modal>

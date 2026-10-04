@@ -393,6 +393,7 @@ export default function Restaurant() {
                   isOpen={data.restaurant.isOpen}
                   hours={data.restaurant.hours}
                   prepMinutes={data.restaurant.prepMinutes}
+                  line={data.restaurant.description}
                 />
                 {data.restaurant.isOpen && data.restaurant.acceptsPickup && !dining && !intent && (
                   <div className="way-in grams-way-in">
@@ -405,7 +406,7 @@ export default function Restaurant() {
                         toast('Add what you’d like, then pay by UPI.', 'good')
                       }}
                     >
-                      <span aria-hidden>🛍️</span> Order to collect
+                      Order to collect
                     </button>
                   </div>
                 )}

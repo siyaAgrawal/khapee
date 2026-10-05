@@ -28,12 +28,7 @@ function seeded(seed: number) {
 }
 
 /** Where the sample orders are placed, and how many at each. */
-const PLACES: [slug: string, orders: number][] = [
-  ['revery', 41],
-  ['mr-beans-vijay-nagar', 8],
-  ['cafe-vijay-bhaiya-saket-wale', 5],
-  ['28-paarroo', 2],
-]
+const PLACES: [slug: string, orders: number][] = [['revery', 56]]
 const PEOPLE = 52
 
 /** First names for the order list — sample names, not anybody's order. */
@@ -141,7 +136,7 @@ function sample(): Database.Database {
         itemId += 1
         addItem.run(itemId, orderId, r.id, m.name, qty, m.price_cents, sqlTime(at))
       }
-      const mode = slug === 'revery' ? weighted<string>([['', 7], ['takeaway', 2], ['car', 1]]) : weighted<string>([['', 3], ['takeaway', 2]])
+      const mode = weighted<string>([['', 7], ['takeaway', 2], ['car', 1]])
       const app = mode === 'takeaway' || mode === 'car' || rand() < 0.65
       addFact.run(
         orderId,

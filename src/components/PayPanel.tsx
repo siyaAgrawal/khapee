@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { QRCanvas } from '../lib/qr'
-import { appsFor, isIOS, isMobile, linkFor } from '../lib/upi-apps'
+import { appsFor, isInAppBrowser, isIOS, isMobile, linkFor } from '../lib/upi-apps'
 import { money, Spinner } from './ui'
 
 /**
@@ -31,6 +31,25 @@ export default function PayPanel({
 }) {
   const [ref, setRef] = useState('')
   const [showRef, setShowRef] = useState(false)
+  const [copied, setCopied] = useState('')
+
+  /*
+   * Copying the UPI ID is the one route that works on every phone.
+   *
+   * Every other way in depends on something: a scheme iOS has to register, an
+   * intent Chrome has to honour, a camera pointed at a screen the customer is
+   * holding. Opening your own UPI app and pasting an ID depends on nothing,
+   * and it is what somebody does anyway the moment a button fails them.
+   */
+  const copy = (what: 'vpa' | 'amount', value: string) => {
+    try {
+      void navigator.clipboard?.writeText(value)
+      setCopied(what)
+      setTimeout(() => setCopied(''), 2000)
+    } catch {
+      /* no clipboard: the value is on screen to be read and typed */
+    }
+  }
 
   return (
     <div className="pay-panel">
@@ -50,6 +69,22 @@ export default function PayPanel({
         BHIM, your bank&rsquo;s own. The money goes straight to the restaurant.
       </p>
 
+      {/*
+        In a webview, every button below is a button that does nothing.
+
+        Most people arrive from a link somebody sent them, and tapping that
+        link opens WhatsApp's or Instagram's own browser rather than Chrome or
+        Safari. Those block custom schemes and intents silently — no error, no
+        movement, nothing. Said plainly here, with the two routes that still
+        work, because a customer who thinks UPI is broken pays cash instead.
+      */}
+      {isInAppBrowser() && (
+        <p className="pay-note" role="status">
+          You opened this from inside another app, which blocks UPI buttons. Copy the UPI ID
+          below and pay from your UPI app — or open khapee.com in Chrome or Safari.
+        </p>
+      )}
+
       {/* On the same phone the QR is on there is nothing to point a camera at,
           so the app has to be opened directly — and named, on both platforms.
           Android would take a plain upi:// and draw its own chooser, which
@@ -57,7 +92,7 @@ export default function PayPanel({
           package skips the chooser and lands inside the app with the amount
           already filled in. iOS has no choice in the matter: it registers no
           handler for upi:// at all. */}
-      {isMobile() && (
+      {isMobile() && !isInAppBrowser() && (
         <>
           <p className="tiny muted center" style={{ margin: '0 0 8px' }}>
             Paying on this phone? One tap:
@@ -69,22 +104,43 @@ export default function PayPanel({
               </a>
             ))}
           </div>
-          {/* The app nobody here has listed — a bank's own, something new.
-              Android can still hand the request to the system; iOS cannot,
-              and is told to use the QR instead. */}
+          {/* The generic intent, kept as a full button rather than a footnote.
+              Naming the package is faster when it works, and silent when the
+              app has moved or the browser will not honour an intent — so the
+              route that has always worked stays in plain sight beside it. */}
           {isIOS() ? (
-            <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
+            <p className="tiny muted center" style={{ margin: '10px 0 0' }}>
               Not there? Screenshot the QR above and scan it from inside your app.
             </p>
           ) : (
-            <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
-              <a className="upi-any" href={upiLink}>
-                Another UPI app
-              </a>
-            </p>
+            <a className="btn btn-secondary btn-block" style={{ marginTop: 10 }} href={upiLink}>
+              Open any other UPI app
+            </a>
           )}
         </>
       )}
+
+      {/*
+        The one way in that cannot fail.
+
+        Every other route depends on something — a scheme iOS has to register,
+        an intent Chrome has to honour, a camera pointed at the screen you are
+        holding. Opening your own UPI app and pasting an ID depends on nothing,
+        and it is what somebody does anyway the moment a button fails them.
+      */}
+      <div className="pay-manual">
+        <span className="tiny muted">Or pay by hand, from any UPI app:</span>
+        <div className="pay-copy-row">
+          <button type="button" className="pay-copy" onClick={() => copy('vpa', vpa)}>
+            <span className="mono">{vpa}</span>
+            <span className="tiny">{copied === 'vpa' ? 'Copied' : 'Copy'}</span>
+          </button>
+          <button type="button" className="pay-copy" onClick={() => copy('amount', (amountCents / 100).toFixed(2))}>
+            <span className="mono">{money(amountCents)}</span>
+            <span className="tiny">{copied === 'amount' ? 'Copied' : 'Copy'}</span>
+          </button>
+        </div>
+      </div>
 
       {/*
         Optional again.

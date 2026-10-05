@@ -5342,12 +5342,13 @@ async function runTests() {
       body: { groupToken: party.body.groupToken, items: [{ menuItemId: croissant.id, quantity: 1 }] },
     })
     ok('a round still goes on the ticket', round.status === 201 || round.status === 200, round.body)
-    // The kitchen's own view of it, which is where the hold has to show.
+    // And the kitchen is not told about it at all. Not a board row, not a
+    // bell, not a push: an order nobody has paid for is not an order yet, and
+    // a kitchen interrupted by something it must not act on is worse off than
+    // one that was never told.
     const board = await call('/staff/orders', { token: roadToken })
     const num = round.body.session?.order?.orderNumber ?? round.body.order?.orderNumber
-    const onBoard = board.body.orders.find((o: any) => o.orderNumber === num)
-    ok('the kitchen sees the round', !!onBoard, num)
-    ok('and is told to wait for payment', !!onBoard?.needsPrepay, onBoard)
+    ok('the kitchen is not shown it', !board.body.orders.some((o: any) => o.orderNumber === num), num)
 
     // TWO: a resend. It passes requirePhone: false, because the number is
     // copied from the order being resent — and the rule used to read exactly
@@ -5410,10 +5411,11 @@ async function runTests() {
     ok('waiting for that payment', !!going.body.order.needsPrepay, going.body.order)
     ok('and unpaid until it lands', going.body.order.paymentState === 'unpaid', going.body.order)
 
-    // Which is the whole point: it has a number before the customer leaves.
+    // It has a number before the customer leaves — that is the point — but
+    // the restaurant has not heard of it.
     const num = going.body.order.orderNumber
-    const board = await call('/staff/orders', { token: roadToken })
-    ok('the kitchen can see it waiting', board.body.orders.some((o: any) => o.orderNumber === num))
+    const before = await call('/staff/orders', { token: roadToken })
+    ok('the kitchen is not told until it is paid', !before.body.orders.some((o: any) => o.orderNumber === num))
 
     // And the customer pays it from its own page, whenever they get back.
     const paid = await call(`/orders/${num}/pay`, {
@@ -5421,6 +5423,11 @@ async function runTests() {
     })
     ok('paying it afterwards goes through', paid.status === 200, paid.body)
     ok('and it stops waiting', !paid.body.order.needsPrepay, paid.body.order)
+
+    // Now it arrives, as a new order rather than as a change to one they
+    // were already watching — because they were not.
+    const after = await call('/staff/orders', { token: roadToken })
+    ok('and only then does the kitchen see it', after.body.orders.some((o: any) => o.orderNumber === num), num)
 
     await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: false } })
   }

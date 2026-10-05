@@ -97,6 +97,25 @@ export function isIOS(): boolean {
   )
 }
 
+/**
+ * An in-app browser: WhatsApp, Instagram, Facebook, Snapchat.
+ *
+ * Most people in Indore reach a restaurant through a link somebody sent them,
+ * and tapping that link opens a webview rather than Chrome or Safari. A
+ * webview is where UPI goes quiet: custom schemes and `intent://` are blocked
+ * or ignored, with no error and nothing on screen, so every app button simply
+ * does nothing. That is exactly what "UPI is not connecting" looks like from
+ * the customer's side.
+ *
+ * Detected so the panel can say so and offer the ways out that do work, rather
+ * than leaving somebody tapping a button that was never going to fire.
+ */
+export function isInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /\b(FBAN|FBAV|FB_IAB|Instagram|Line|Snapchat)\b/i.test(ua) || /\bWhatsApp\b/i.test(ua)
+}
+
 /** A phone at all — a desktop has no UPI app to open, only a QR to scan. */
 export function isMobile(): boolean {
   if (typeof navigator === 'undefined') return false

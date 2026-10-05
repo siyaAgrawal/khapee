@@ -9207,3 +9207,44 @@ button.nav-link {
   color: inherit;
   opacity: 0.8;
 }
+
+/* The ways to pay that do not depend on a deep link firing. */
+.pay-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.pay-manual {
+  margin: 14px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.pay-copy-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+/* Wide enough to hit without looking, because this is the button somebody
+   reaches for after another one has already let them down. */
+.pay-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  cursor: pointer;
+}
+.pay-copy:active { background: var(--bg-tint); }
+.pay-copy .mono { font-size: 13px; word-break: break-all; }
+.pay-copy .tiny { color: var(--accent); font-weight: 700; }

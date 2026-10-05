@@ -415,6 +415,20 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * actually change hands.
    */
   const payFirst = mustPayInApp(input, liveSession, restaurant)
+  /*
+   * Held, and invisible to the restaurant until it is paid for.
+   *
+   * An unpaid order used to go over anyway — board, bell, push, and the till —
+   * with "waiting for online payment" written on it. That is a kitchen being
+   * interrupted by something it must not act on, and on a busy evening it is
+   * worse than useless: the orders that matter get harder to find.
+   *
+   * So nothing is sent. The order exists, so the customer has a number to come
+   * back and pay and so money is never sent against an order that does not
+   * exist — but the restaurant hears about it when it is paid for and not a
+   * moment before. payOrderByUpi does the telling.
+   */
+  const held = !!(payFirst && input.payingNow)
   if (payFirst) {
     /*
      * Paying right now is not the same as not paying.
@@ -581,7 +595,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
 
     const where =
       input.type === 'pickup' ? 'Pickup order' : `Table ${String(tableLabel).replace(/^Table\s*/i, '')}`
-    db.prepare(
+    // Held orders write no bell row: see `held` below.
+    if (!held) db.prepare(
       `INSERT INTO notifications (restaurant_id, order_id, title, body)
        VALUES (?, ?, ?, ?)`,
     ).run(
@@ -648,7 +663,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
 
   // And the restaurant, on whatever it has — a phone with the dashboard shut,
   // an inbox, or nothing at all, in which case the board is still the board.
-  alertRestaurant({
+  if (!held) alertRestaurant({
     restaurantId: input.restaurantId,
     restaurantName: order.restaurantName ?? restaurant.name,
     orderNumber,
@@ -664,9 +679,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   // And whatever the restaurant bills on, if they have pointed Khapee at it.
   // Not awaited: whether somebody else's till answered has nothing to do with
   // whether this order exists. See server/billing.ts.
-  tellBilling(input.restaurantId, orderId, 'order.placed')
+  if (!held) tellBilling(input.restaurantId, orderId, 'order.placed')
 
-  publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
+  if (!held) publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
   return { ok: true, order }
 }
 
@@ -855,11 +870,28 @@ export function payOrderByUpi(orderId: number, upiRef: string): { ok: boolean; s
     customerName: order.customer_name ?? '',
     customerPhone: order.contact_phone ?? '',
     total: money(owed),
-    items: '',
+    items: db
+      .prepare('SELECT name, quantity FROM order_items WHERE order_id = ?')
+      .all(orderId)
+      .map((i: any) => `${i.quantity} × ${i.name}`)
+      .join('\n'),
     needsAccepting: order.status === 'REQUESTED',
     paid: true,
   })
-  return { ok: true, order: getOrder(orderId) }
+
+  /*
+   * And now it is a real order, so it arrives like one.
+   *
+   * An order held for payment was never sent to the board or the till — the
+   * restaurant has not heard of it. This is its first appearance, so it is
+   * announced as new rather than as a change to something they were watching.
+   */
+  const fresh = getOrder(orderId)
+  if (order.needs_prepay) {
+    tellBilling(order.restaurant_id, orderId, 'order.placed')
+    publish('order:new', { restaurantId: order.restaurant_id, userId: order.user_id, orderId, order: fresh })
+  }
+  return { ok: true, order: fresh }
 }
 
 /**

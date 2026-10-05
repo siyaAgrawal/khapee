@@ -153,6 +153,7 @@ ordersRouter.post('/', (req, res) => {
     // A customer ordering for themselves has to be reachable; a counter sale
     // does not, which is why this is set here and not inside createOrder.
     requirePhone: true,
+    fromCustomer: true,
     userId: req.user?.id ?? null,
     note: body.note,
     paymentMethod: body.paymentMethod,
@@ -499,6 +500,9 @@ ordersRouter.post('/:orderNumber/resend', (req, res) => {
     customerName: row.customer_name,
     contactPhone: row.contact_phone,
     requirePhone: false,
+    // Still the customer's own order, so every payment rule applies. Only the
+    // phone is not asked for again — it is copied from the order being resent.
+    fromCustomer: true,
     userId: row.user_id,
     note: row.note,
     // Deliberately not carried over: a claim of payment belongs to the order

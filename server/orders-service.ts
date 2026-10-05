@@ -70,6 +70,17 @@ export type CreateOrderInput = {
   /** What the customer says they have already sent over UPI. */
   paymentClaim?: { amountCents?: number; upiRef?: string; method?: string } | null
   /**
+   * Placed by a customer for themselves, as opposed to rung up by the
+   * restaurant's own till.
+   *
+   * Every payment rule turns on this. It used to be read off `requirePhone`,
+   * which happened to be true on the one route that mattered and false on a
+   * resend — so a customer resending an unanswered order walked straight past
+   * a restaurant's "UPI only". A flag that means what it says cannot drift
+   * like that.
+   */
+  fromCustomer?: boolean
+  /**
    * The customer is going to their UPI app now.
    *
    * Lets an order that must be paid for be created unpaid, marked as waiting
@@ -137,14 +148,13 @@ function looksLikePhone(value: string): boolean {
  * restaurant. Null too for an order the restaurant's own till rang up, which
  * is where cash is actually handed over.
  */
-function mustPayInApp(
+export function mustPayInApp(
   input: CreateOrderInput,
   liveSession: any,
   restaurant: any,
 ): { reason: string } | null {
   if (input.paymentClaim) return null
-  // `requirePhone` marks an order a customer placed for themselves.
-  if (!input.requirePhone) return null
+  if (!input.fromCustomer) return null
 
   const r = db
     .prepare('SELECT cash_disabled, car_prepaid_only, upi_vpa FROM restaurants WHERE id = ?')

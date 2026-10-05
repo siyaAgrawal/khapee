@@ -506,6 +506,20 @@ export default function OrderTrack() {
               through — your place is held either way, and you can come back to this page from
               Orders if you need to.
             </p>
+            {/*
+              The way out.
+
+              A restaurant that takes UPI only is one failed payment away from
+              a customer who cannot order at all — a bank having a bad morning,
+              an app that will not open, a phone with no room left on it. The
+              order already exists and has a number, so the counter can see it
+              and settle it however they like. Saying so costs one line and
+              turns a dead end into a short walk.
+            */}
+            <p className="tiny muted">
+              UPI not working? Show <strong>#{order.orderNumber}</strong> at the counter
+              {order.restaurantHasPhone ? ' or call them' : ''} — they can take it from there.
+            </p>
           </div>
           {payReq ? (
             <PayPanel

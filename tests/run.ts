@@ -5324,6 +5324,57 @@ async function runTests() {
     ok('and switches off again', back.body.carPrepaidOnly === false, back.body.carPrepaidOnly)
   }
 
+  group('NO CASH MEANS NO CASH, BY EVERY ROUTE IN')
+  {
+    // Both holes a real cash order came through, at a restaurant that takes
+    // UPI only. Neither was in the checkout — they were the two paths that
+    // reach the orders table without going past it.
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: true } })
+
+    // ONE: a group round. It is built straight into the orders table rather
+    // than through createOrder, so no payment rule applied to it at all — a
+    // table could sit down, add a round and have it cooked unpaid.
+    const party = await call('/groups', {
+      body: { restaurantId: mornington.id, hostName: 'Rounds', tableToken: tableRow.token },
+    })
+    ok('a table opens a group', party.status === 201, party.body)
+    const round = await call('/groups/session/items', {
+      body: { groupToken: party.body.groupToken, items: [{ menuItemId: croissant.id, quantity: 1 }] },
+    })
+    ok('a round still goes on the ticket', round.status === 201 || round.status === 200, round.body)
+    // The kitchen's own view of it, which is where the hold has to show.
+    const board = await call('/staff/orders', { token: roadToken })
+    const num = round.body.session?.order?.orderNumber ?? round.body.order?.orderNumber
+    const onBoard = board.body.orders.find((o: any) => o.orderNumber === num)
+    ok('the kitchen sees the round', !!onBoard, num)
+    ok('and is told to wait for payment', !!onBoard?.needsPrepay, onBoard)
+
+    // TWO: a resend. It passes requirePhone: false, because the number is
+    // copied from the order being resent — and the rule used to read exactly
+    // that flag to decide whether a customer had placed the order.
+    const first = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'dine_in',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Unanswered',
+        contactPhone: '9876500777',
+        sessionToken: (await call('/sessions', { body: { value: `KHAPEE:TABLE:${tableRow.token}` } })).body.session.token,
+        paymentClaim: { upiRef: '123456789015' },
+      },
+    })
+    ok('an order goes in paid', first.status === 201, first.body)
+    const resent = await call(`/orders/${first.body.order.orderNumber}/resend`, {
+      body: { token: first.body.order.verifyToken },
+    })
+    ok('resending it does not smuggle cash in', resent.status === 201 || resent.status === 402, resent.body)
+    if (resent.status === 201) {
+      ok('and the resent one waits for payment too', !!resent.body.order.needsPrepay, resent.body.order)
+    }
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: false } })
+  }
+
   group('PAYING MEANS THE ORDER ALREADY EXISTS')
   {
     // The order used to be created only when the customer came back from

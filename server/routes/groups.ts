@@ -10,7 +10,8 @@ import {
   sessionPreview,
   shapeSession,
 } from '../groups.ts'
-import { getOrder } from '../orders-service.ts'
+import { getOrder, mustPayInApp } from '../orders-service.ts'
+import { outstandingCents } from '../payments.ts'
 import { alertRestaurant } from '../alerts.ts'
 import { pushOrder } from '../petpooja.ts'
 import { syncOrderPayment, upiLink } from '../payments.ts'
@@ -108,6 +109,35 @@ groupsRouter.post('/session/items', (req, res) => {
     priced.push({ item, quantity: Math.min(50, Math.max(1, Math.floor(Number(line.quantity) || 1))) })
   }
 
+  /*
+   * The payment rule, which this route never asked.
+   *
+   * A group order is built straight into the orders table rather than through
+   * createOrder, so every rule that lives there — a restaurant that takes no
+   * cash, a car that must be prepaid — simply did not apply to it. At Revery,
+   * which takes UPI only, a table could sit down, add a round and have it go
+   * to the kitchen unpaid. That is how a cash order got through a restaurant
+   * that does not take cash.
+   *
+   * The rule is asked here now, against the same function the single-order
+   * route uses, so the two can never drift apart again. A round that has to be
+   * paid for still goes on the ticket — the table keeps ordering as it always
+   * has — but the order is held as waiting for payment, so the kitchen does
+   * not start on food nobody has paid for. The session's own payment-request
+   * and paid routes are how it gets settled.
+   */
+  const payFirst = mustPayInApp(
+    {
+      restaurantId: ctx.session.restaurant_id,
+      type: 'dine_in',
+      items: [],
+      customerName: ctx.member.display_name,
+      fromCustomer: true,
+    },
+    null,
+    restaurant,
+  )
+
   const order = db.transaction(() => {
     const target = ensureSessionOrder(ctx.session, `${ctx.member.display_name}'s table`)
     const insert = db.prepare(
@@ -119,6 +149,12 @@ groupsRouter.post('/session/items', (req, res) => {
     }
     recalcOrderTotal(target.id)
     syncOrderPayment(target.id)
+    // Held until the money lands, unless it already has. Re-read after
+    // syncOrderPayment, because an earlier round may have been paid for and
+    // this one may not have taken the total past it.
+    if (payFirst && outstandingCents(target.id) > 0) {
+      db.prepare("UPDATE orders SET needs_prepay = datetime('now') WHERE id = ?").run(target.id)
+    }
     db.prepare(
       `INSERT INTO notifications (restaurant_id, order_id, title, body) VALUES (?, ?, ?, ?)`,
     ).run(

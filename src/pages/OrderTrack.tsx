@@ -532,9 +532,13 @@ export default function OrderTrack() {
         <div className="paying" role="status" aria-live="polite">
           <span className="paying-spin" aria-hidden />
           <div>
-            <strong>Sent to {order.restaurantName}</strong>
+            <strong>
+              {order.upiOnly && order.paymentState === 'sent' ? 'Payment sent' : `Sent to ${order.restaurantName}`}
+            </strong>
             <p className="tiny">
-              {noAnswer
+              {order.upiOnly && order.paymentState === 'sent'
+                ? `${order.restaurantName} is checking your UPI payment. Once it shows up in their UPI app they accept your order \u2014 this page updates itself.`
+                : noAnswer
                 ? `${order.restaurantName} hasn't answered for two minutes. They may not be at the screen.`
                 : 'Waiting for them to accept it. You\u2019ll see a tick here the moment they do — this page updates itself.'}
             </p>
@@ -563,7 +567,8 @@ export default function OrderTrack() {
           </div>
         </div>
       )}
-      {waitingOnPayment && (
+      {/* UPI only says this once, in the box above. */}
+      {waitingOnPayment && !(order.upiOnly && !accepted) && (
         <div className="paying" role="status" aria-live="polite">
           <span className="paying-spin" aria-hidden />
           <div>
@@ -577,6 +582,10 @@ export default function OrderTrack() {
         </div>
       )}
       <main className="page page-narrow">
+        {/* UPI only: the ticket — "Pickup order", the number, the QR to show at
+            the counter — only exists once the restaurant has accepted it. Until
+            then there is nothing to collect and nothing to show anybody. */}
+        {!(order.upiOnly && !accepted && !cancelled) && (
         <div className="card receipt">
           <span className={`badge ${order.type === 'pickup' ? 'badge-info' : 'badge-accent'}`}>
             {/* Where it is going, in the words the board uses. This only knew
@@ -612,6 +621,7 @@ export default function OrderTrack() {
           </p>
 
         </div>
+        )}
 
         {/* Free, and the only free way to reach somebody who has closed the
             page. Offered while there is still something to be told about. */}

@@ -131,3 +131,32 @@ export function outstandingCents(orderId: number): number {
   if (!order) return 0
   return Math.max(0, order.total_cents - paidCents(orderId) - claimedCents(orderId))
 }
+
+/**
+ * UPI only: the restaurant has switched cash off (Settings → "Take UPI only")
+ * and has a UPI ID to be paid into. A customer's order there is paid before it
+ * is placed, and it only reaches the kitchen once staff have seen the money in
+ * their own UPI app and accepted it.
+ */
+export function upiOnly(restaurantId: number): boolean {
+  const r = db.prepare('SELECT cash_disabled, upi_vpa FROM restaurants WHERE id = ?').get(restaurantId) as any
+  return !!r?.cash_disabled && !!String(r?.upi_vpa ?? '').trim()
+}
+
+/**
+ * Accepting a UPI-only order is staff saying "the money is in our UPI app",
+ * so every payment the customer said they sent is ticked off in the same tap.
+ */
+export function confirmClaims(orderId: number) {
+  const claims = db
+    .prepare(`SELECT id FROM payments WHERE order_id = ? AND status = 'CLAIMED'`)
+    .all(orderId) as { id: number }[]
+  if (!claims.length) return
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE payments SET status = 'CONFIRMED', settled_at = datetime('now') WHERE order_id = ? AND status = 'CLAIMED'`,
+    ).run(orderId)
+    markMemberItemsPaid(orderId, null)
+    syncOrderPayment(orderId)
+  })()
+}

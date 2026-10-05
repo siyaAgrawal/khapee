@@ -177,7 +177,10 @@ ordersRouter.post('/', (req, res) => {
    * they are told. A push that fails records why against the order and the
    * order carries on existing exactly as it did before any of this.
    */
-  void pushOrder(result.order.id, originOf(req)).catch(() => {})
+  //
+  // Not at a UPI-only restaurant: there the order goes to the till when staff
+  // accept it, which is when they have seen the money (routes/staff.ts).
+  if (!result.order.upiOnly) void pushOrder(result.order.id, originOf(req)).catch(() => {})
 })
 
 /** The host this request actually came in on, so webhooks point back here. */

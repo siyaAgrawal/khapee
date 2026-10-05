@@ -7,7 +7,15 @@ import { applyStatus } from '../order-status.ts'
 import { acceptRemainingItems, askForPrepay, createOrder, decideItem, getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
-import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
+import {
+  claimedCents,
+  confirmClaims,
+  markMemberItemsPaid,
+  paidCents,
+  shapePayment,
+  syncOrderPayment,
+  upiOnly,
+} from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
 import { tellCustomer, thankNudge } from '../customer-notify.ts'
@@ -201,6 +209,18 @@ staffRouter.post('/orders/:id/items/:itemId/decide', (req: any, res) => {
   res.json({ order: result.order, allDeclined: result.allDeclined })
 })
 
+/**
+ * A UPI-only order, accepted: the payment the customer claimed is confirmed,
+ * and the order goes to the restaurant's till and billing feed, which it was
+ * held back from until now. Petpooja keeps track of what it has already been
+ * sent, so this is safe for an order that somehow went earlier.
+ */
+function sendToKitchen(restaurantId: number, orderId: number, req: any) {
+  confirmClaims(orderId)
+  tellBilling(restaurantId, orderId, 'order.placed')
+  void pushOrder(orderId, originOf(req)).catch(() => {})
+}
+
 staffRouter.post('/orders/:id/status', async (req, res) => {
   const restaurantId = myRestaurant(req)
   const id = Number(req.params.id)
@@ -225,7 +245,11 @@ staffRouter.post('/orders/:id/status', async (req, res) => {
    */
   const moved = applyStatus(id, to, 'staff')
   if (!moved.ok) return res.status(moved.status).json({ error: moved.error })
-  const order = moved.order
+  // UPI only: accepting is confirming the money arrived, and only now does the
+  // order go to the kitchen's till.
+  const paysFirst = to === 'ACCEPTED' && upiOnly(restaurantId)
+  if (paysFirst) sendToKitchen(restaurantId, id, req)
+  const order = paysFirst ? getOrder(id) : moved.order
 
   // Said back, rather than left to be inferred from a notification that may
   // never come. Accepting an order with no number on it sends no thank-you —
@@ -2061,6 +2085,7 @@ staffRouter.post('/orders/:id/accept', async (req: any, res) => {
     "UPDATE orders SET status = 'ACCEPTED', accepted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
   ).run(order.id)
   db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'ACCEPTED', 'staff')").run(order.id)
+  if (upiOnly(restaurantId)) sendToKitchen(restaurantId, order.id, req)
   notifyCustomer(order, 'Order accepted', `${order.order_number} is being made now.`)
   // The same phones the board's own Accept tells. There are two ways to accept
   // an order — this one and the status route — and only one of them was

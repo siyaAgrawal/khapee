@@ -7,7 +7,7 @@ import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
 import { alertRestaurant } from './alerts.ts'
 import { askCustomer, askToPrepay } from './customer-notify.ts'
-import { claimedCents, outstandingCents } from './payments.ts'
+import { claimedCents, outstandingCents, upiOnly } from './payments.ts'
 import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
 
@@ -408,6 +408,14 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    */
   const payFirst = mustPayInApp(input, liveSession, restaurant)
   /*
+   * UPI only, and paid: the customer says they've sent the money, but only the
+   * restaurant's own UPI app can say whether it arrived. So the order waits for
+   * staff to accept it — which is them confirming the payment — and only then
+   * goes to the kitchen and the till (routes/staff.ts, sendToKitchen).
+   */
+  const checkPaymentFirst = !!input.paymentClaim && !!input.fromCustomer && upiOnly(input.restaurantId)
+  const startsAs = input.paymentClaim && !checkPaymentFirst ? 'NEW' : 'REQUESTED'
+  /*
    * Held, and invisible to the restaurant until it is paid for.
    *
    * An unpaid order used to go over anyway — board, bell, push, and the till —
@@ -495,7 +503,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         // restaurant has the cash and the customer has committed. Not paid, it
         // is a request to cook on the promise that somebody turns up — which a
         // kitchen has to be able to refuse, whatever way the order came in.
-        input.paymentClaim ? 'NEW' : 'REQUESTED',
+        startsAs,
         paymentMethod,
         totalCents,
         String(input.note ?? '').slice(0, 300),
@@ -547,7 +555,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     // saying it had already been accepted into one.
     db.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (?, ?, 'customer')`).run(
       orderId,
-      input.paymentClaim ? 'NEW' : 'REQUESTED',
+      startsAs,
     )
 
     if (input.paymentClaim) {
@@ -581,7 +589,11 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       input.restaurantId,
       orderId,
       // The title is the thing a glance has to answer: does this need me?
-      input.paymentClaim ? `Paid order #${orderNumber}` : `#${orderNumber} needs your yes`,
+      checkPaymentFirst
+        ? `Check payment for #${orderNumber}`
+        : input.paymentClaim
+          ? `Paid order #${orderNumber}`
+          : `#${orderNumber} needs your yes`,
       `${where} · ${customerName} · ${money(totalCents)}` +
         (input.paymentClaim ? ' · paid in the app' : ' · unpaid until you accept'),
     )
@@ -639,14 +651,15 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     customerPhone: phone,
     total: money(totalCents),
     items: priced.map((l) => `${l.quantity} × ${l.item.name}`).join('\n'),
-    needsAccepting: !input.paymentClaim,
+    needsAccepting: !input.paymentClaim || checkPaymentFirst,
     paid: !!input.paymentClaim,
   })
 
   // And whatever the restaurant bills on, if they have pointed Khapee at it.
   // Not awaited: whether somebody else's till answered has nothing to do with
   // whether this order exists. See server/billing.ts.
-  tellBilling(input.restaurantId, orderId, 'order.placed')
+  // Held back while staff check the payment; accepting sends it.
+  if (!checkPaymentFirst) tellBilling(input.restaurantId, orderId, 'order.placed')
 
   publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
   return { ok: true, order }
@@ -936,6 +949,8 @@ export function shapeOrder(row: any) {
     needsCustomerOk: row.needs_customer_ok ?? null,
     /** Set while the kitchen is waiting for this car order to be paid online. */
     needsPrepay: row.needs_prepay ?? null,
+    /** The restaurant takes UPI only: accepting means the payment has arrived. */
+    upiOnly: upiOnly(row.restaurant_id),
     declinedItems: row.declined_items ?? '',
     /** Set when the customer agreed to go ahead without the refused dishes. */
     customerOkAt: row.customer_ok_at ?? null,

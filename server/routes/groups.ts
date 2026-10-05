@@ -131,6 +131,7 @@ groupsRouter.post('/session/items', (req, res) => {
       type: 'dine_in',
       items: [],
       customerName: ctx.member.display_name,
+      userId: null,
       fromCustomer: true,
     },
     null,

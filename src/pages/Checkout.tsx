@@ -244,8 +244,13 @@ export default function Checkout() {
     if (prepaidOnly && !payNow) setPayNow(true)
   }, [prepaidOnly]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** Takes UPI only and has a UPI ID: paying by UPI is the only option, in every mode. */
+  const upiOnly = !!options?.cashDisabled && canPayInApp
+
   /** The line under the choice — what it actually means for this order. */
-  const paySub = !canPayInApp
+  const paySub = upiOnly
+    ? `${cart.restaurantName} takes UPI only. Pay, and they accept your order once the money arrives.`
+    : !canPayInApp
     ? 'Cash or UPI at the counter — this place has no UPI ID on Khapee yet'
     : payNow
       ? isDelivery
@@ -797,7 +802,8 @@ export default function Checkout() {
               <span className="pay-pick-dot" aria-hidden />
             </button>
 
-            {!collectOnly && (
+            {/* UPI only: no cash row at all, not even a greyed-out one. */}
+            {!collectOnly && !upiOnly && (
             <button
               type="button"
               className={`pay-pick ${payNow ? '' : 'on'} ${prepaidOnly ? 'off' : ''}`}

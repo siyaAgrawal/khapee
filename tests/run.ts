@@ -5890,6 +5890,71 @@ async function runTests() {
     ok("another restaurant does not see these", !foreign.body.accounts.some((a: any) => a.vpa === 'counter@ptys'), foreign.body.accounts)
   }
 
+  group('UPI ONLY: PAID, THEN THE RESTAURANT CHECKS AND ACCEPTS')
+  {
+    // Basil & Bay switches cash off, the way Revery has.
+    const off = await call('/staff/restaurant', { token: otherToken, method: 'PATCH', body: { cashDisabled: true } })
+    ok('a restaurant can take UPI only', off.status === 200, off.body)
+    const dish = (await call(`/restaurants/${basil.id}`)).body.menu.flatMap((c: any) => c.items)[0]
+    const table = db.prepare('SELECT token FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
+
+    const unpaidTable = await call('/orders', {
+      body: {
+        restaurantId: basil.id,
+        type: 'dine_in',
+        tableToken: table.token,
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Sat Down',
+      },
+    })
+    ok('eating in has to be paid by UPI too', unpaidTable.status === 402, unpaidTable.body)
+
+    const paid = await call('/orders', {
+      body: {
+        restaurantId: basil.id,
+        type: 'pickup',
+        items: [{ menuItemId: dish.id, quantity: 1 }],
+        customerName: 'Paid Up',
+      },
+    })
+    const o = paid.body.order
+    ok('a paid order is placed', paid.status === 201, paid.body)
+    ok('but waits for the restaurant to accept it', o?.status === 'REQUESTED', o?.status)
+    ok('marked as UPI only', o?.upiOnly === true, o?.upiOnly)
+    ok('with the payment still to be checked', o?.paymentState === 'sent', o?.paymentState)
+    const bell = db.prepare('SELECT title FROM notifications WHERE order_id = ?').get(o.id) as any
+    ok('and the restaurant is asked to check the payment', /^Check payment/.test(bell?.title ?? ''), bell)
+
+    const accepted = await call(`/staff/orders/${o.id}/status`, { token: otherToken, body: { status: 'ACCEPTED' } })
+    ok('staff accept it once the money is in', accepted.body.order?.status === 'ACCEPTED', accepted.body)
+    ok('and accepting confirms the payment', accepted.body.order?.paymentState === 'paid', accepted.body.order?.paymentState)
+
+    const second = (
+      await call('/orders', {
+        body: {
+          restaurantId: basil.id,
+          type: 'pickup',
+          items: [{ menuItemId: dish.id, quantity: 1 }],
+          customerName: 'Never Paid',
+        },
+      })
+    ).body.order
+    const claim = second.payments.find((p: any) => p.status === 'CLAIMED')
+    await call(`/staff/payments/${claim.id}/confirm`, { token: otherToken, body: { accept: false } })
+    const turned = await call(`/staff/orders/${second.id}/decline`, {
+      token: otherToken,
+      body: { reason: 'We could not find your UPI payment.' },
+    })
+    ok('a payment that never arrived turns the order down', turned.body.order?.status === 'DECLINED', turned.body)
+    ok('without marking it paid', turned.body.order?.paymentState !== 'paid', turned.body.order?.paymentState)
+
+    await call('/staff/restaurant', { token: otherToken, method: 'PATCH', body: { cashDisabled: false } })
+    const normal = await call('/orders', {
+      body: { restaurantId: basil.id, type: 'pickup', items: [{ menuItemId: dish.id, quantity: 1 }], customerName: 'Elsewhere' },
+    })
+    ok('a restaurant that takes cash is unchanged: paid orders go straight in', normal.body.order?.status === 'NEW', normal.body.order?.status)
+  }
+
   group('QR codes (generated and scanned locally)')
   const tableToScan = db.prepare('SELECT token, label FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(basil.id) as any
   const payloads = [

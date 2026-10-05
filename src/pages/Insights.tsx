@@ -740,7 +740,7 @@ export default function Insights() {
       <header className="ins-top">
         <div className="ins-brand">
           khapee<span>.</span> insights
-          {DEMO() && <em className="ins-sample-tag">Sample data</em>}
+          {DEMO() && <em className="ins-sample-tag">Our sample</em>}
         </div>
         <span className="ins-live">
           <i aria-hidden /> Live · last order {ago(live?.lastOrderAt ?? null)}

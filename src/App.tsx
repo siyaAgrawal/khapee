@@ -120,6 +120,7 @@ export default function App() {
       {/* Khapee's own numbers, for whoever runs Khapee. See server/insights.ts. */}
       <Route path="/insights" element={<Insights />} />
       <Route path="/insights/demo" element={<Insights />} />
+      <Route path="/insights/real" element={<Insights />} />
       <Route path="/alerts/:token" element={<AlertInvite />} />
       <Route path="/group" element={<GroupSession />} />
       <Route path="/cart" element={<Cart />} />

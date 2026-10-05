@@ -28,12 +28,26 @@ const PERIODS = [
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 /**
- * Where the numbers come from: the real record, or — on /insights/demo — the
- * sample one (server/insights-demo.ts), which looks the same and is labelled.
+ * Where the numbers come from. /insights (and /insights/demo) show the
+ * labelled sample (server/insights-demo.ts); the real record is kept at
+ * /insights/real, off the page for now, with a button to download it.
  */
-const DEMO = () => window.location.pathname.startsWith('/insights/demo')
+const DEMO = () => !window.location.pathname.startsWith('/insights/real')
 const BASE = () => (DEMO() ? '/insights/demo' : '/insights')
 const num = (n: number) => Math.round(n).toLocaleString('en-IN')
+
+/** Every real order, as a spreadsheet file (CSV) saved to this device. */
+async function downloadReal() {
+  const token = localStorage.getItem('khapee.token')
+  const res = await fetch('/api/insights/export', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!res.ok) return alert('Could not download the file. Sign in again and retry.')
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `khapee-real-orders-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 const rupees = (cents: number) => '₹' + Math.round(cents / 100).toLocaleString('en-IN')
 const pct = (x: number) => `${Math.round(x * 100)}%`
 function hourLabel(h: number): string {
@@ -745,12 +759,10 @@ export default function Insights() {
         <span className="ins-live">
           <i aria-hidden /> Live · last order {ago(live?.lastOrderAt ?? null)}
         </span>
-        {/* The labelled sample, one tap from the real numbers. A full page
-            load, so nothing from one is left showing in the other. */}
         {!DEMO() && (
-          <a className="ins-switch" href="/insights/demo">
-            Sample view
-          </a>
+          <button className="ins-switch" onClick={() => void downloadReal()}>
+            Download as a file
+          </button>
         )}
       </header>
 

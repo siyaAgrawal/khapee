@@ -515,3 +515,42 @@ export function setHidden(orderId: number, hidden: boolean): boolean {
 export function hiddenCount(): number {
   return Number((db.prepare('SELECT COUNT(*) AS n FROM order_facts WHERE hidden = 1').get() as any).n)
 }
+
+/**
+ * Every real order as CSV, for keeping in a file: when, where, who, how, how
+ * much, and what was on it. Called-off and removed ones are included and
+ * marked, so the file is the whole record.
+ */
+export function exportCsv(d: Database = db): string {
+  const rows = d
+    .prepare(
+      `SELECT f.*, COALESCE(r.name, 'Removed restaurant') AS restaurant_name, ${IST} AS at_ist
+         FROM order_facts f LEFT JOIN restaurants r ON r.id = f.restaurant_id
+        ORDER BY f.created_at`,
+    )
+    .all() as any[]
+  const itemsOf = d.prepare('SELECT name, quantity FROM order_item_facts WHERE order_id = ? ORDER BY item_id')
+  const cell = (v: unknown) => {
+    const t = String(v ?? '')
+    return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t
+  }
+  const head = ['Date and time (IST)', 'Restaurant', 'Order number', 'Customer', 'Phone', 'How', 'Total (Rs)', 'Paid', 'Status', 'Removed from insights', 'Items']
+  const lines = rows.map((o) =>
+    [
+      o.at_ist,
+      o.restaurant_name,
+      o.order_number,
+      o.customer_name,
+      o.customer_phone,
+      o.service_mode === 'car' ? 'Car' : o.order_type === 'pickup' || o.takeaway ? 'Takeaway' : 'At the restaurant',
+      (o.total_cents / 100).toFixed(2),
+      o.payment_status === 'PAID' ? 'Yes' : 'No',
+      o.status,
+      o.hidden ? 'Yes' : 'No',
+      (itemsOf.all(o.order_id) as any[]).map((i) => `${i.quantity} x ${i.name}`).join('; '),
+    ]
+      .map(cell)
+      .join(','),
+  )
+  return [head.join(','), ...lines].join('\n') + '\n'
+}

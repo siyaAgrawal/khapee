@@ -4,7 +4,7 @@ import os from 'node:os'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
-import { canSeeInsights, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
+import { canSeeInsights, exportCsv, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
 import { recordVisit, visitStats } from './visits.ts'
 import { demoInsights, demoLive, demoOrders, demoVisits } from './insights-demo.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
@@ -139,6 +139,11 @@ function insightsGate(req: any, res: any): boolean {
 const demoQuery = (req: any) => ({
   days: Number(req.query.days ?? 30),
   restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+})
+app.get('/api/insights/export', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.type('text/csv').send(exportCsv())
 })
 app.get('/api/insights/demo', (req: any, res) => {
   if (!insightsGate(req, res)) return

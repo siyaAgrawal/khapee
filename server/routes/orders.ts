@@ -137,7 +137,6 @@ ordersRouter.post('/payment-request', (req, res) => {
       note: String(req.body?.customerName ?? '').trim()
         ? `${r.name} · ${String(req.body.customerName).trim().slice(0, 30)}`
         : `${r.name} order`,
-      ref,
     }),
   })
 })
@@ -301,7 +300,7 @@ ordersRouter.post('/:orderNumber/payment-request', (req, res) => {
     vpa: r.upi_vpa,
     payeeName: r.upi_name || r.name,
     reference: ref,
-    upiLink: upiLink({ vpa: r.upi_vpa, name: r.upi_name || r.name, amountCents, note: `${r.name} #${row.order_number}`, ref }),
+    upiLink: upiLink({ vpa: r.upi_vpa, name: r.upi_name || r.name, amountCents, note: `${r.name} #${row.order_number}` }),
   })
 })
 

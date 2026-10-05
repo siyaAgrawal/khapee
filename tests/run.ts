@@ -1170,6 +1170,15 @@ async function runTests() {
   })
   ok('a UPI request is built locally', request.status === 200 && request.body.upiLink.startsWith('upi://pay?'), request.body)
   ok('the request carries the restaurant VPA and amount', request.body.upiLink.includes('pa=mornington%40okhdfcbank') && request.body.upiLink.includes(`am=${(croissant.priceCents * 2 / 100).toFixed(2)}`), request.body.upiLink)
+  /*
+   * And carries no merchant reference. `tr` marks a request as a MERCHANT
+   * collect, which only a merchant VPA can service — these are personal
+   * handles, so Google Pay and PhonePe refused the lot, QR included. The
+   * order number rides in the note instead, where the restaurant can read it
+   * in their own UPI app.
+   */
+  ok('and no merchant reference, which personal VPAs cannot service', !/[?&]tr=/.test(request.body.upiLink), request.body.upiLink)
+  ok('a plain person-to-person request', /^upi:\/\/pay\?pa=[^&]+&pn=[^&]+&am=[\d.]+&cu=INR(&tn=[^&]*)?$/.test(request.body.upiLink), request.body.upiLink)
   ok('the amount is priced server-side', request.body.amountCents === croissant.priceCents * 2)
 
   const paidPickup = await call('/orders', {

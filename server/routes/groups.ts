@@ -272,7 +272,6 @@ groupsRouter.post('/session/payment-request', (req, res) => {
       name: restaurant.upi_name || restaurant.name,
       amountCents,
       note: `${restaurant.name} ${state.tableLabel ?? ''} #${state.order.orderNumber}`.trim(),
-      ref,
     }),
   })
 })

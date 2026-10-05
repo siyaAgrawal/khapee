@@ -17,16 +17,35 @@ export function upiLink(opts: {
   vpa: string
   name: string
   amountCents: number
+  /** Shown in the restaurant's own UPI app — put the order number in it. */
   note: string
-  ref: string
 }): string {
+  /*
+   * Four parameters, and deliberately not five.
+   *
+   * `tr` — the merchant transaction reference — was on every request, and it
+   * is what broke them. `tr` tells the app this is a MERCHANT collect, and a
+   * merchant collect can only be serviced by a merchant VPA. These are
+   * personal handles (`@ybl`, `@okhdfcbank`), because that is what a café in
+   * Indore has. Google Pay and PhonePe see a merchant reference pointed at a
+   * personal VPA, cannot reconcile the two, and refuse — some with "unable to
+   * process", some by doing nothing at all. It failed in the QR too, because
+   * the QR encodes this same string, which is why it failed for everybody
+   * rather than for the people on one platform.
+   *
+   * What is left is the plain person-to-person request every UPI app in India
+   * has handled since the beginning: pay this VPA, this much, in rupees.
+   *
+   * The reference is not lost, it has moved. It rides in `tn`, the note —
+   * which is the field that actually shows up in the restaurant's own UPI
+   * app, so they can match a payment to an order by reading it.
+   */
   const params = new URLSearchParams({
     pa: opts.vpa,
     pn: opts.name || opts.vpa,
     am: (opts.amountCents / 100).toFixed(2),
     cu: 'INR',
     tn: opts.note.slice(0, 50),
-    tr: opts.ref.slice(0, 35),
   })
   /*
    * `+` for a space is a form-encoding convention, not a URI one, and a UPI

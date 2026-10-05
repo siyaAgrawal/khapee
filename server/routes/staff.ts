@@ -57,19 +57,10 @@ function myRestaurant(req: any): number {
 staffRouter.get('/orders', (req, res) => {
   const restaurantId = myRestaurant(req)
   const scope = String(req.query.scope ?? 'active')
-  /*
-   * An order waiting for its online payment is not on the board at all.
-   *
-   * It is not an order yet as far as this kitchen is concerned: nobody has
-   * paid for it and nobody should start it. It appears the moment the money
-   * lands, which is when payOrderByUpi rings the bell.
-   */
-  const unpaidHold = `AND NOT (o.needs_prepay IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM payments p WHERE p.order_id = o.id AND p.status IN ('CLAIMED','CONFIRMED')))`
   const clause =
     scope === 'all'
-      ? unpaidHold
-      : `AND o.status NOT IN ('COMPLETED','PICKED_UP','CANCELLED') ${unpaidHold}`
+      ? ''
+      : `AND o.status NOT IN ('COMPLETED','PICKED_UP','CANCELLED')`
   const rows = db
     .prepare(
       `SELECT o.*, r.name AS restaurant_name, r.emoji AS restaurant_emoji, r.hue AS restaurant_hue,

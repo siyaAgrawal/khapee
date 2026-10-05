@@ -81,14 +81,6 @@ export type CreateOrderInput = {
    */
   fromCustomer?: boolean
   /**
-   * The customer is going to their UPI app now.
-   *
-   * Lets an order that must be paid for be created unpaid, marked as waiting
-   * for payment, rather than refused — so the money is never sent against an
-   * order that does not exist yet.
-   */
-  payingNow?: boolean
-  /**
    * How many minutes from now the customer wants it ready. Absent or 0 means
    * as soon as possible, which is what every order was before this existed.
    *
@@ -428,22 +420,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * exist — but the restaurant hears about it when it is paid for and not a
    * moment before. payOrderByUpi does the telling.
    */
-  const held = !!(payFirst && input.payingNow)
   if (payFirst) {
-    /*
-     * Paying right now is not the same as not paying.
-     *
-     * Refusing here was what sent the customer away to their UPI app with no
-     * order behind them: the money left, nothing was recorded, and if the
-     * browser dropped the page on the way back there was nothing to come back
-     * to. So an order the customer is about to pay for is created — unpaid,
-     * marked `needs_prepay`, sitting on the board as waiting for payment —
-     * and it has a number and a URL from that moment on. The kitchen does not
-     * cook it until the money lands; the customer cannot lose it.
-     */
-    if (!input.payingNow) {
-      return { ok: false, status: 402, error: payFirst.reason }
-    }
+    return { ok: false, status: 402, error: payFirst.reason }
   }
 
   const orderNumber = generateOrderNumber()
@@ -596,7 +574,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     const where =
       input.type === 'pickup' ? 'Pickup order' : `Table ${String(tableLabel).replace(/^Table\s*/i, '')}`
     // Held orders write no bell row: see `held` below.
-    if (!held) db.prepare(
+    db.prepare(
       `INSERT INTO notifications (restaurant_id, order_id, title, body)
        VALUES (?, ?, ?, ?)`,
     ).run(
@@ -612,17 +590,6 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   })
 
   const orderId = run()
-  /*
-   * Marked as waiting for payment before anything else reads it.
-   *
-   * This is the state the board already draws as "waiting for online
-   * payment", built for the car orders a kitchen asks to be prepaid. The same
-   * state, for the same reason: the order exists and the kitchen is not
-   * cooking it yet. The customer's tracker takes it from here.
-   */
-  if (payFirst && input.payingNow) {
-    db.prepare("UPDATE orders SET needs_prepay = datetime('now') WHERE id = ?").run(orderId)
-  }
   const order: any = getOrder(orderId)
 
   // Every dine-in order is a room the rest of the table can join — no separate
@@ -663,7 +630,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
 
   // And the restaurant, on whatever it has — a phone with the dashboard shut,
   // an inbox, or nothing at all, in which case the board is still the board.
-  if (!held) alertRestaurant({
+  alertRestaurant({
     restaurantId: input.restaurantId,
     restaurantName: order.restaurantName ?? restaurant.name,
     orderNumber,
@@ -679,9 +646,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   // And whatever the restaurant bills on, if they have pointed Khapee at it.
   // Not awaited: whether somebody else's till answered has nothing to do with
   // whether this order exists. See server/billing.ts.
-  if (!held) tellBilling(input.restaurantId, orderId, 'order.placed')
+  tellBilling(input.restaurantId, orderId, 'order.placed')
 
-  if (!held) publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
+  publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
   return { ok: true, order }
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { QRCanvas } from '../lib/qr'
-import { appsFor, isInAppBrowser, isIOS, isMobile, linkFor } from '../lib/upi-apps'
+import { appLink, IOS_UPI_APPS, isIOS, isMobile } from '../lib/upi-apps'
 import { money, Spinner } from './ui'
 
 /**
@@ -31,25 +31,6 @@ export default function PayPanel({
 }) {
   const [ref, setRef] = useState('')
   const [showRef, setShowRef] = useState(false)
-  const [copied, setCopied] = useState('')
-
-  /*
-   * Copying the UPI ID is the one route that works on every phone.
-   *
-   * Every other way in depends on something: a scheme iOS has to register, an
-   * intent Chrome has to honour, a camera pointed at a screen the customer is
-   * holding. Opening your own UPI app and pasting an ID depends on nothing,
-   * and it is what somebody does anyway the moment a button fails them.
-   */
-  const copy = (what: 'vpa' | 'amount', value: string) => {
-    try {
-      void navigator.clipboard?.writeText(value)
-      setCopied(what)
-      setTimeout(() => setCopied(''), 2000)
-    } catch {
-      /* no clipboard: the value is on screen to be read and typed */
-    }
-  }
 
   return (
     <div className="pay-panel">
@@ -69,78 +50,38 @@ export default function PayPanel({
         BHIM, your bank&rsquo;s own. The money goes straight to the restaurant.
       </p>
 
-      {/*
-        In a webview, every button below is a button that does nothing.
-
-        Most people arrive from a link somebody sent them, and tapping that
-        link opens WhatsApp's or Instagram's own browser rather than Chrome or
-        Safari. Those block custom schemes and intents silently — no error, no
-        movement, nothing. Said plainly here, with the two routes that still
-        work, because a customer who thinks UPI is broken pays cash instead.
-      */}
-      {isInAppBrowser() && (
-        <p className="pay-note" role="status">
-          You opened this from inside another app, which blocks UPI buttons. Copy the UPI ID
-          below and pay from your UPI app — or open khapee.com in Chrome or Safari.
-        </p>
-      )}
-
-      {/* On the same phone the QR is on there is nothing to point a camera at,
-          so the app has to be opened directly — and named, on both platforms.
-          Android would take a plain upi:// and draw its own chooser, which
-          makes paying two taps: ours, then theirs. An intent that names the
-          package skips the chooser and lands inside the app with the amount
-          already filled in. iOS has no choice in the matter: it registers no
-          handler for upi:// at all. */}
-      {isMobile() && !isInAppBrowser() && (
-        <>
-          <p className="tiny muted center" style={{ margin: '0 0 8px' }}>
-            Paying on this phone? One tap:
-          </p>
-          <div className="upi-apps">
-            {appsFor(isIOS()).map((app) => (
-              <a key={app.id} className="upi-app" href={linkFor(app, upiLink, isIOS())}>
-                {app.name}
-              </a>
-            ))}
-          </div>
-          {/* The generic intent, kept as a full button rather than a footnote.
-              Naming the package is faster when it works, and silent when the
-              app has moved or the browser will not honour an intent — so the
-              route that has always worked stays in plain sight beside it. */}
-          {isIOS() ? (
-            <p className="tiny muted center" style={{ margin: '10px 0 0' }}>
+      {/* On the same phone the QR is on, there is nothing to point a camera at,
+          so the app has to be opened directly. Android does that from one
+          intent and draws its own picker; iOS registers no handler for upi://
+          at all, which is a button that does nothing and says nothing, so
+          there the apps are named one by one. */}
+      {isMobile() &&
+        (isIOS() ? (
+          <>
+            <p className="tiny muted center" style={{ margin: '0 0 8px' }}>
+              Paying on this phone? Open your app:
+            </p>
+            <div className="upi-apps">
+              {IOS_UPI_APPS.map((app) => (
+                <a key={app.id} className="upi-app" href={appLink(app, upiLink)}>
+                  {app.name}
+                </a>
+              ))}
+            </div>
+            <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
               Not there? Screenshot the QR above and scan it from inside your app.
             </p>
-          ) : (
-            <a className="btn btn-secondary btn-block" style={{ marginTop: 10 }} href={upiLink}>
-              Open any other UPI app
+          </>
+        ) : (
+          <>
+            <a className="btn btn-accent btn-block" href={upiLink}>
+              Open a UPI app on this phone
             </a>
-          )}
-        </>
-      )}
-
-      {/*
-        The one way in that cannot fail.
-
-        Every other route depends on something — a scheme iOS has to register,
-        an intent Chrome has to honour, a camera pointed at the screen you are
-        holding. Opening your own UPI app and pasting an ID depends on nothing,
-        and it is what somebody does anyway the moment a button fails them.
-      */}
-      <div className="pay-manual">
-        <span className="tiny muted">Or pay by hand, from any UPI app:</span>
-        <div className="pay-copy-row">
-          <button type="button" className="pay-copy" onClick={() => copy('vpa', vpa)}>
-            <span className="mono">{vpa}</span>
-            <span className="tiny">{copied === 'vpa' ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button type="button" className="pay-copy" onClick={() => copy('amount', (amountCents / 100).toFixed(2))}>
-            <span className="mono">{money(amountCents)}</span>
-            <span className="tiny">{copied === 'amount' ? 'Copied' : 'Copy'}</span>
-          </button>
-        </div>
-      </div>
+            <p className="tiny muted center" style={{ margin: '10px 0 14px' }}>
+              Your phone will offer every UPI app you have installed.
+            </p>
+          </>
+        ))}
 
       {/*
         Optional again.

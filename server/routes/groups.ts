@@ -11,7 +11,6 @@ import {
   shapeSession,
 } from '../groups.ts'
 import { getOrder, mustPayInApp } from '../orders-service.ts'
-import { outstandingCents } from '../payments.ts'
 import { alertRestaurant } from '../alerts.ts'
 import { pushOrder } from '../petpooja.ts'
 import { syncOrderPayment, upiLink } from '../payments.ts'
@@ -138,6 +137,11 @@ groupsRouter.post('/session/items', (req, res) => {
     restaurant,
   )
 
+  // A restaurant that takes no cash takes none here either. Refused before a
+  // round is written rather than after, so the ticket does not carry food the
+  // kitchen is not allowed to make.
+  if (payFirst) return res.status(402).json({ error: payFirst.reason })
+
   const order = db.transaction(() => {
     const target = ensureSessionOrder(ctx.session, `${ctx.member.display_name}'s table`)
     const insert = db.prepare(
@@ -149,12 +153,6 @@ groupsRouter.post('/session/items', (req, res) => {
     }
     recalcOrderTotal(target.id)
     syncOrderPayment(target.id)
-    // Held until the money lands, unless it already has. Re-read after
-    // syncOrderPayment, because an earlier round may have been paid for and
-    // this one may not have taken the total past it.
-    if (payFirst && outstandingCents(target.id) > 0) {
-      db.prepare("UPDATE orders SET needs_prepay = datetime('now') WHERE id = ?").run(target.id)
-    }
     db.prepare(
       `INSERT INTO notifications (restaurant_id, order_id, title, body) VALUES (?, ?, ?, ?)`,
     ).run(

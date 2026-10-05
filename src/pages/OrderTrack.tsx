@@ -500,25 +500,9 @@ export default function OrderTrack() {
       {order.needsPrepay && !cancelled && order.paymentState === 'unpaid' && (
         <div className="decided" role="alert">
           <div>
-            <strong>Pay {money(order.totalCents)} to send this to the kitchen</strong>
+            <strong>{order.restaurantName} is only taking online payment for this order right now</strong>
             <p className="tiny">
-              Order <strong>#{order.orderNumber}</strong> is saved. Pay by UPI and it goes straight
-              through — your place is held either way, and you can come back to this page from
-              Orders if you need to.
-            </p>
-            {/*
-              The way out.
-
-              A restaurant that takes UPI only is one failed payment away from
-              a customer who cannot order at all — a bank having a bad morning,
-              an app that will not open, a phone with no room left on it. The
-              order already exists and has a number, so the counter can see it
-              and settle it however they like. Saying so costs one line and
-              turns a dead end into a short walk.
-            */}
-            <p className="tiny muted">
-              UPI not working? Show <strong>#{order.orderNumber}</strong> at the counter
-              {order.restaurantHasPhone ? ' or call them' : ''} — they can take it from there.
+              Pay {money(order.totalCents)} by UPI and your order goes straight to the kitchen — or cancel it.
             </p>
           </div>
           {payReq ? (

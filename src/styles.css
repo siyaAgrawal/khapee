@@ -9196,3 +9196,14 @@ button.nav-link {
   color: #4b2390;
   font-weight: 600;
 }
+.ins-switch {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.8;
+}

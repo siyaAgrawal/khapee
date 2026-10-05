@@ -49,6 +49,26 @@ export type RestaurantCard = {
 
 export type CuisineTile = { name: string; count: number }
 
+/**
+ * A restaurant with no photograph, in Khapee's own colours instead of an emoji
+ * on grey: one of five brand tints, and the restaurant's emoji served on a
+ * plate in the middle. The name is not repeated here — it is right
+ * underneath.
+ */
+const TINTS = ['haldi', 'jamun', 'mint', 'chilli', 'sky']
+function BrandTile({ name, emoji, hue, closed }: { name: string; emoji: string; hue: number; closed: boolean }) {
+  // From the name, so neighbours on the list rarely share a colour and a
+  // restaurant keeps its own one from visit to visit.
+  let h = Math.round(hue || 0)
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  const tint = TINTS[h % TINTS.length]
+  return (
+    <div className={`r-card-art brand-tile tint-${tint} ${closed ? 'closed-art' : ''}`} aria-hidden>
+      <span className="brand-tile-plate">{emoji}</span>
+    </div>
+  )
+}
+
 export default function Home() {
   const [veg, setVeg] = useVegMode()
   const { user } = useSession()
@@ -211,7 +231,7 @@ export default function Home() {
   }, [restaurants, query, filter])
 
   return (
-    <div className="app">
+    <div className="app home-brand">
       <Header />
       {/* The one line a restaurant needs and a customer does not.
           Somebody setting up a second phone should not have to find their way
@@ -264,7 +284,10 @@ export default function Home() {
 
           {/* The app's name, said out loud. The only line in the product set
               in the loud face, which is what lets it be this loud. */}
-          <h1 className="hero-line">kuch khapee lo.</h1>
+          <h1 className="hero-line">
+            kuch <span className="hero-khapee">khapee</span> lo<span className="hero-dot">.</span>
+          </h1>
+          <p className="hero-sub">At your table, in your car, or on the way.</p>
 
           <div className="search-row">
             <span className="search-mark" aria-hidden>
@@ -399,14 +422,18 @@ export default function Home() {
             <div className="grid">
             {visible.map((r, i) => (
               <Link key={r.id} to={`/r/${r.id}`} className="r-card" style={{ animationDelay: `${i * 45}ms` }}>
-                <Art
-                  emoji={r.emoji}
-                  hue={r.hue}
-                  imageUrl={r.imageUrl ?? coverFor(r.theme)}
-                  crest={crestFor(r.theme)}
-                  alt={r.name}
-                  className={`r-card-art ${r.isOpen ? '' : 'closed-art'}`}
-                />
+                {r.imageUrl || coverFor(r.theme) || crestFor(r.theme) ? (
+                  <Art
+                    emoji={r.emoji}
+                    hue={r.hue}
+                    imageUrl={r.imageUrl ?? coverFor(r.theme)}
+                    crest={crestFor(r.theme)}
+                    alt={r.name}
+                    className={`r-card-art ${r.isOpen ? '' : 'closed-art'}`}
+                  />
+                ) : (
+                  <BrandTile name={r.name} emoji={r.emoji} hue={r.hue} closed={!r.isOpen} />
+                )}
                 <div className="r-card-body">
                   {/* Name and rating on one line, the way every list of
                       places to eat sets them: the score is what the eye goes

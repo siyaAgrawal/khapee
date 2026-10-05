@@ -4,7 +4,9 @@ import os from 'node:os'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { attachUser, purgeExpiredSessions } from './auth.ts'
-import { canSeeInsights, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
+import { canSeeInsights, exportCsv, hiddenCount, insights, liveCount, orderList, setHidden } from './insights.ts'
+import { recordVisit, visitStats } from './visits.ts'
+import { demoInsights, demoLive, demoOrders, demoVisits } from './insights-demo.ts'
 import { db, UPLOAD_DIR, WRITES_ARE_TEMPORARY } from './db.ts'
 import { addClient, heartbeat, removeClient } from './events.ts'
 import { keepAwake } from './keep-awake.ts'
@@ -129,6 +131,37 @@ function insightsGate(req: any, res: any): boolean {
   }
   return true
 }
+/*
+ * The same page with sample orders in it — /insights/demo — for showing what
+ * insights looks like with a month of business. Read from a separate database
+ * in memory (see insights-demo.ts); the real numbers are never touched.
+ */
+const demoQuery = (req: any) => ({
+  days: Number(req.query.days ?? 30),
+  restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+})
+app.get('/api/insights/export', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.type('text/csv').send(exportCsv())
+})
+app.get('/api/insights/demo', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.json({ ...demoInsights(demoQuery(req)), hiddenOrders: 0, sample: true })
+})
+app.get('/api/insights/demo/live', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.json(demoLive())
+})
+app.get('/api/insights/demo/orders', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.json(demoOrders({ ...demoQuery(req), which: 'ahead', limit: req.query.limit ? Number(req.query.limit) : 50, offset: req.query.offset ? Number(req.query.offset) : 0 }))
+})
+app.get('/api/insights/demo/visits', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.json(demoVisits(demoQuery(req)))
+})
 app.get('/api/insights/live', (req: any, res) => {
   if (!insightsGate(req, res)) return
   res.set('Cache-Control', 'no-store')
@@ -153,6 +186,29 @@ app.post('/api/insights/orders/:id/hide', (req: any, res) => {
   const ok = setHidden(Number(req.params.id), req.body?.hidden !== false)
   if (!ok) return res.status(404).json({ error: 'That order is not in insights.' })
   res.json({ ok: true, hidden: hiddenCount() })
+})
+/*
+ * One page view, sent by the browser as the customer moves around. Answers
+ * 204 whatever happens: a visit that cannot be recorded is not the
+ * customer's problem, and nothing about it should ever show on their screen.
+ */
+app.post('/api/visit', (req: any, res) => {
+  try {
+    recordVisit(req.body, String(req.headers['user-agent'] ?? ''))
+  } catch {
+    /* counting visits never gets in the way of the page */
+  }
+  res.status(204).end()
+})
+app.get('/api/insights/visits', (req: any, res) => {
+  if (!insightsGate(req, res)) return
+  res.set('Cache-Control', 'no-store')
+  res.json(
+    visitStats({
+      days: Number(req.query.days ?? 30),
+      restaurantId: req.query.restaurant ? Number(req.query.restaurant) : null,
+    }),
+  )
 })
 app.get('/api/insights', (req: any, res) => {
   if (!insightsGate(req, res)) return

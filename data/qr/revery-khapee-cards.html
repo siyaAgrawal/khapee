@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Revery — Khapee table cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@500;600;700&display=swap" />
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #ece8f2; }
+  body {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 8mm; padding: 8mm;
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .card {
+    position: relative;
+    width: 100mm; height: 150mm;
+    padding: 9mm 8mm 0;
+    border-radius: 5mm;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 60% at 85% 0%, rgba(242, 178, 58, 0.16), transparent 60%),
+      #4b2390;
+    color: #f6f0e4;
+    display: flex; flex-direction: column;
+    break-inside: avoid;
+  }
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .word {
+    font-family: 'Bricolage Grotesque', sans-serif; font-variation-settings: 'opsz' 96;
+    font-weight: 800; font-size: 9mm; letter-spacing: -0.055em; line-height: 1;
+  }
+  .word i {
+    display: inline-block; width: 2.3mm; height: 2.3mm; margin-left: 0.5mm;
+    border-radius: 50%; background: #f2b23a;
+  }
+  /* The table number as a ticket stub, punched on its left. */
+  .stub {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 1.6mm 4mm 1.6mm 5mm;
+    background: #f2b23a; color: #1e1528; border-radius: 2.5mm;
+    line-height: 1;
+  }
+  .stub::before {
+    content: ''; position: absolute; left: -1.6mm; top: 50%;
+    width: 3.2mm; height: 3.2mm; margin-top: -1.6mm; border-radius: 50%; background: #4b2390;
+  }
+  .stub small { font-size: 2.2mm; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+  .stub b { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 7.5mm; letter-spacing: -0.04em; }
+
+  /* Everything between the top bar and the footer, centred in the space. */
+  .middle {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding-bottom: 13mm;
+  }
+  .head {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif; font-variation-settings: 'opsz' 48;
+    font-weight: 700; font-size: 5.6mm; line-height: 1.2; letter-spacing: -0.03em;
+  }
+  .head em { font-style: normal; color: #f2b23a; }
+  .sub {
+    margin: 3mm 0 0; max-width: 70mm;
+    font-size: 3mm; line-height: 1.4; color: rgba(246, 240, 228, 0.75);
+  }
+
+  .qr-wrap { position: relative; margin-top: 5mm; padding: 3.5mm; }
+  .qr {
+    width: 50mm; height: 50mm; padding: 3mm;
+    background: #fff; border-radius: 3.5mm;
+    box-shadow: 0 2mm 6mm rgba(0, 0, 0, 0.25);
+  }
+  .qr svg { display: block; width: 100%; height: 100%; }
+  /* Haldi brackets, like a camera's viewfinder, saying "point here". */
+  .corner { position: absolute; width: 6mm; height: 6mm; border: 0.9mm solid #f2b23a; }
+  .tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 2mm; }
+  .tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 2mm; }
+  .bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 2mm; }
+  .br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 2mm; }
+
+  .steps {
+    list-style: none; margin: 4mm 0 0; padding: 0;
+    display: flex; justify-content: center; gap: 4mm;
+    font-size: 3mm; font-weight: 600; color: #f6f0e4;
+  }
+  .steps li { display: flex; align-items: center; gap: 1.4mm; white-space: nowrap; }
+  .steps b {
+    display: grid; place-items: center; width: 4.6mm; height: 4.6mm; border-radius: 50%;
+    background: rgba(246, 240, 228, 0.14); color: #f2b23a; font-size: 2.6mm;
+  }
+
+  /* The footer is a torn-off ticket: cream, with the zigzag along its top. */
+  .foot {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4mm 8mm 3.6mm;
+    background: #f6f0e4; color: #4b2390;
+    font-size: 3.1mm; font-weight: 700;
+  }
+  .foot span:first-child { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 4mm; letter-spacing: -0.03em; }
+  .foot::before {
+    content: ''; position: absolute; left: 0; right: 0; top: -2.4mm; height: 2.5mm;
+    background:
+      linear-gradient(135deg, transparent 50%, #f6f0e4 50%) 0 0 / 3.6mm 2.5mm repeat-x,
+      linear-gradient(225deg, transparent 50%, #f6f0e4 50%) 0 0 / 3.6mm 2.5mm repeat-x;
+  }
+  @media print {
+    html, body { background: #fff; }
+    body { padding: 10mm 0; gap: 8mm 6mm; }
+  }
+</style>
+</head>
+<body>
+  <section class="card">
+    <header class="top">
+      <span class="word">khapee<i></i></span>
+      <span class="stub"><small>Table</small><b>1</b></span>
+    </header>
+
+    <div class="middle">
+    <h1 class="head">Don’t get up.<br /><em>Order from your seat.</em></h1>
+
+    <div class="qr-wrap">
+      <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#2a1259" d="M0 0.5h7m1 0h3m2 0h1m1 0h1m2 0h2m1 0h1m1 0h6m1 0h7M0 1.5h1m5 0h1m3 0h1m1 0h1m1 0h1m2 0h2m1 0h2m3 0h1m1 0h2m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m3 0h1m1 0h2m1 0h1m2 0h1m2 0h1m4 0h1m3 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h2m2 0h1m2 0h1m2 0h5m3 0h1m3 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m3 0h2m2 0h1m2 0h1m1 0h2m1 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m1 0h2m3 0h1m5 0h1m2 0h1m1 0h2m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M14 7.5h6m3 0h1m1 0h2m1 0h1M2 8.5h1m1 0h3m1 0h1m1 0h1m3 0h2m1 0h4m2 0h1m2 0h4m3 0h1m2 0h1M1 9.5h4m6 0h1m1 0h1m2 0h2m3 0h1m1 0h2m1 0h4m1 0h1m3 0h2M1 10.5h2m2 0h2m1 0h1m5 0h1m2 0h1m1 0h4m2 0h1m1 0h2m1 0h1m1 0h5M0 11.5h1m1 0h3m2 0h3m5 0h2m1 0h1m1 0h2m2 0h3m1 0h2m1 0h3M0 12.5h1m1 0h1m3 0h2m1 0h2m1 0h6m2 0h6m1 0h1m1 0h3m1 0h1m2 0h1M0 13.5h1m1 0h1m1 0h2m3 0h2m1 0h3m1 0h1m1 0h1m1 0h1m9 0h2m1 0h2m1 0h1M0 14.5h4m1 0h2m2 0h2m1 0h2m2 0h1m1 0h1m1 0h1m4 0h1m2 0h2m1 0h2m1 0h3M3 15.5h3m2 0h5m1 0h1m2 0h2m1 0h2m3 0h2m2 0h2M0 16.5h2m2 0h3m1 0h4m2 0h1m1 0h6m1 0h1m1 0h1m2 0h3m2 0h1m2 0h1M0 17.5h2m3 0h1m1 0h5m4 0h4m2 0h1m2 0h2m1 0h4m1 0h1m1 0h2M0 18.5h1m1 0h6m1 0h1m1 0h5m1 0h1m2 0h1m1 0h2m2 0h1m2 0h4m1 0h3M0 19.5h2m3 0h1m1 0h5m2 0h1m1 0h1m1 0h2m1 0h1m1 0h4m1 0h3M1 20.5h1m2 0h3m5 0h1m5 0h1m2 0h2m1 0h5m1 0h2m3 0h2M1 21.5h2m4 0h1m3 0h2m3 0h2m1 0h1m1 0h1m1 0h1m2 0h1m3 0h1m2 0h1m1 0h2M1 22.5h1m1 0h1m1 0h3m2 0h1m2 0h2m1 0h2m1 0h1m1 0h1m3 0h1m2 0h2m2 0h1m2 0h2M2 23.5h2m3 0h7m6 0h3m6 0h2m2 0h1m1 0h2M0 24.5h3m2 0h3m2 0h1m2 0h2m1 0h1m2 0h2m1 0h3m2 0h1m1 0h1m1 0h1m1 0h1m1 0h2M1 25.5h3m1 0h1m2 0h1m2 0h2m2 0h1m5 0h1m1 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h2M0 26.5h1m4 0h2m3 0h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h4m3 0h1m2 0h4M1 27.5h5m2 0h2m1 0h2m7 0h2m2 0h4m2 0h2m4 0h1M0 28.5h1m2 0h5m2 0h3m1 0h1m2 0h1m1 0h1m1 0h5m2 0h5m2 0h1M8 29.5h2m4 0h1m1 0h2m3 0h1m2 0h2m1 0h2m3 0h1m2 0h2M0 30.5h7m2 0h3m3 0h2m1 0h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h3M0 31.5h1m5 0h1m1 0h5m3 0h1m1 0h2m1 0h5m2 0h1m3 0h1m2 0h1M0 32.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h4m2 0h1m3 0h2m1 0h6M0 33.5h1m1 0h3m1 0h1m2 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h2m2 0h2M0 34.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h5m1 0h1m4 0h1m2 0h1m1 0h4m1 0h1M0 35.5h1m5 0h1m2 0h4m1 0h1m1 0h2m1 0h2m2 0h1m1 0h5m1 0h2m2 0h1M0 36.5h7m4 0h1m4 0h1m1 0h2m1 0h2m2 0h5m1 0h2m2 0h2"/></svg>
+</div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <p class="sub">Scan, pay by UPI, and it goes straight to Revery’s kitchen.</p>
+
+    <ol class="steps">
+      <li><b>1</b>Scan</li>
+      <li><b>2</b>Order &amp; pay</li>
+      <li><b>3</b>It comes to you</li>
+    </ol>
+    </div>
+
+    <footer class="foot">
+      <span>kuch khapee lo.</span>
+      <span>khapee.com</span>
+    </footer>
+  </section>
+
+  <section class="card">
+    <header class="top">
+      <span class="word">khapee<i></i></span>
+      <span class="stub"><small>Table</small><b>2</b></span>
+    </header>
+
+    <div class="middle">
+    <h1 class="head">Don’t get up.<br /><em>Order from your seat.</em></h1>
+
+    <div class="qr-wrap">
+      <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h33v33H0z"/><path stroke="#2a1259" d="M0 0.5h7m1 0h2m3 0h1m1 0h1m2 0h1m2 0h4m1 0h7M0 1.5h1m5 0h1m2 0h4m9 0h2m2 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m3 0h2m1 0h2m3 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h5m1 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m2 0h1m1 0h1m2 0h1m5 0h1m1 0h2m2 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m1 0h5m2 0h2m2 0h2m2 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M10 7.5h4m1 0h3m3 0h1m1 0h2M2 8.5h1m1 0h3m1 0h2m5 0h2m2 0h4m1 0h2m3 0h1m2 0h1M2 9.5h2m3 0h1m2 0h1m1 0h1m2 0h2m3 0h3m1 0h1m1 0h1m3 0h3M3 10.5h4m3 0h2m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m1 0h1m1 0h5M1 11.5h3m1 0h1m1 0h1m2 0h6m1 0h2m4 0h3m3 0h1m2 0h1M0 12.5h2m1 0h1m2 0h1m1 0h3m3 0h2m1 0h2m1 0h1m1 0h1m1 0h5M1 13.5h1m1 0h1m4 0h3m1 0h1m1 0h1m3 0h3m4 0h3m1 0h1m1 0h2M3 14.5h1m2 0h4m1 0h1m1 0h4m1 0h1m2 0h1m3 0h1m3 0h4M4 15.5h2m1 0h1m1 0h2m1 0h1m2 0h1m2 0h2m1 0h4m1 0h1m2 0h1M1 16.5h1m2 0h1m1 0h3m4 0h1m1 0h1m1 0h2m2 0h2m3 0h1m2 0h1m1 0h1M4 17.5h2m3 0h3m2 0h3m2 0h3m4 0h2m1 0h2m1 0h1M0 18.5h1m2 0h5m1 0h2m2 0h1m5 0h4m3 0h1m1 0h1m1 0h1m1 0h1M2 19.5h2m1 0h1m1 0h1m1 0h1m4 0h1m2 0h6m2 0h1m5 0h2M0 20.5h1m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m3 0h1m1 0h1m2 0h1m4 0h2m1 0h1m1 0h2M1 21.5h1m5 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h3m2 0h1m1 0h2m2 0h4M0 22.5h1m2 0h1m2 0h2m1 0h2m4 0h1m1 0h2m1 0h1m1 0h1m3 0h3m1 0h3M1 23.5h4m3 0h3m1 0h2m2 0h2m2 0h4m1 0h1m1 0h1m4 0h1M0 24.5h1m1 0h1m1 0h3m4 0h1m2 0h2m1 0h2m2 0h2m1 0h5m2 0h1M8 25.5h4m3 0h2m3 0h3m1 0h1m3 0h1m1 0h3M0 26.5h7m2 0h2m1 0h2m1 0h1m2 0h1m2 0h1m1 0h2m1 0h1m1 0h2m1 0h2M0 27.5h1m5 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m1 0h4m3 0h1m3 0h1M0 28.5h1m1 0h3m1 0h1m1 0h1m2 0h2m4 0h3m2 0h1m1 0h6m1 0h1M0 29.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m3 0h1m1 0h1m2 0h1m4 0h1M0 30.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h2m3 0h5m2 0h1m1 0h3m2 0h1M0 31.5h1m5 0h1m2 0h1m1 0h1m1 0h1m3 0h2m4 0h2m2 0h1m3 0h1M0 32.5h7m3 0h1m1 0h1m1 0h2m2 0h1m4 0h6m2 0h2"/></svg>
+</div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <p class="sub">Scan, pay by UPI, and it goes straight to Revery’s kitchen.</p>
+
+    <ol class="steps">
+      <li><b>1</b>Scan</li>
+      <li><b>2</b>Order &amp; pay</li>
+      <li><b>3</b>It comes to you</li>
+    </ol>
+    </div>
+
+    <footer class="foot">
+      <span>kuch khapee lo.</span>
+      <span>khapee.com</span>
+    </footer>
+  </section>
+
+  <section class="card">
+    <header class="top">
+      <span class="word">khapee<i></i></span>
+      <span class="stub"><small>Table</small><b>3</b></span>
+    </header>
+
+    <div class="middle">
+    <h1 class="head">Don’t get up.<br /><em>Order from your seat.</em></h1>
+
+    <div class="qr-wrap">
+      <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#2a1259" d="M0 0.5h7m2 0h1m8 0h1m2 0h1m2 0h1m1 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m2 0h2m1 0h1m2 0h1m1 0h2m4 0h2m1 0h1m1 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h2m7 0h1m9 0h1m2 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m5 0h1m1 0h1m1 0h2m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m2 0h5m1 0h2m3 0h2m1 0h2m5 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m3 0h1m2 0h2m3 0h2m10 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 7.5h1m1 0h3m2 0h1m3 0h2m1 0h1m1 0h1m1 0h2M3 8.5h2m1 0h2m1 0h2m2 0h1m1 0h1m1 0h2m2 0h1m1 0h1m1 0h1m2 0h1m4 0h2M0 9.5h4m1 0h1m1 0h2m1 0h1m1 0h1m1 0h1m2 0h5m3 0h1m4 0h1m1 0h4M0 10.5h3m2 0h2m1 0h2m1 0h1m4 0h5m2 0h3m3 0h2m1 0h1m2 0h2M0 11.5h3m1 0h2m2 0h1m1 0h1m1 0h2m1 0h1m2 0h3m1 0h1m3 0h2m1 0h4m2 0h1M0 12.5h1m1 0h2m1 0h2m2 0h1m1 0h2m1 0h1m4 0h3m1 0h2m5 0h1m2 0h2m1 0h1M3 13.5h1m3 0h1m2 0h2m1 0h1m1 0h1m2 0h1m1 0h3m3 0h1m2 0h1m1 0h2m1 0h2M0 14.5h1m5 0h7m1 0h2m2 0h2m1 0h1m1 0h2m1 0h4m3 0h4M0 15.5h2m2 0h2m2 0h2m1 0h3m1 0h1m6 0h2m4 0h1m3 0h5M0 16.5h2m1 0h1m1 0h3m1 0h2m1 0h1m1 0h1m7 0h2m1 0h1m1 0h1m2 0h1m3 0h3M3 17.5h2m2 0h2m1 0h1m1 0h2m1 0h1m1 0h2m1 0h2m2 0h4m1 0h1m4 0h2M0 18.5h1m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m1 0h1m3 0h1m1 0h1m1 0h1m2 0h3m2 0h1m1 0h3m1 0h1M2 19.5h2m1 0h1m1 0h1m2 0h2m1 0h4m1 0h1m1 0h2m3 0h1m1 0h2m1 0h1m1 0h2m1 0h1M2 20.5h3m1 0h1m3 0h1m3 0h5m1 0h3m1 0h1m3 0h3m1 0h2M0 21.5h2m2 0h1m2 0h3m2 0h3m1 0h1m4 0h1m2 0h5m2 0h2m1 0h1m1 0h1M3 22.5h2m1 0h1m1 0h2m2 0h1m12 0h1m1 0h1m4 0h2m1 0h1M2 23.5h3m2 0h2m2 0h1m2 0h1m3 0h1m2 0h1m2 0h2m1 0h3m1 0h1m2 0h1m1 0h1M0 24.5h4m2 0h1m2 0h2m4 0h3m1 0h3m1 0h3m6 0h1m2 0h2M0 25.5h1m2 0h1m10 0h1m3 0h1m1 0h2m4 0h1m3 0h1m2 0h1M0 26.5h4m2 0h5m1 0h1m2 0h1m1 0h3m1 0h4m2 0h1m2 0h2m2 0h3M0 27.5h1m6 0h1m1 0h2m3 0h1m2 0h1m1 0h1m1 0h3m4 0h2m2 0h1m2 0h1M0 28.5h1m1 0h1m1 0h1m1 0h5m1 0h1m1 0h2m2 0h3m1 0h1m2 0h1m1 0h6M8 29.5h2m2 0h2m1 0h1m1 0h3m3 0h2m2 0h2m3 0h4M0 30.5h7m1 0h1m3 0h2m1 0h3m1 0h2m1 0h4m1 0h2m1 0h1m1 0h3m1 0h1M0 31.5h1m5 0h1m4 0h1m2 0h5m1 0h1m1 0h1m1 0h3m1 0h1m3 0h2m2 0h1M0 32.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h3m2 0h2m6 0h6M0 33.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m3 0h1m3 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h4M0 34.5h1m1 0h3m1 0h1m2 0h4m1 0h1m3 0h1m4 0h1m2 0h1m4 0h2m2 0h2M0 35.5h1m5 0h1m2 0h3m3 0h1m1 0h2m1 0h5m4 0h2m2 0h4M0 36.5h7m4 0h1m3 0h3m2 0h4m1 0h2m1 0h1m3 0h2m2 0h1"/></svg>
+</div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <p class="sub">Scan, pay by UPI, and it goes straight to Revery’s kitchen.</p>
+
+    <ol class="steps">
+      <li><b>1</b>Scan</li>
+      <li><b>2</b>Order &amp; pay</li>
+      <li><b>3</b>It comes to you</li>
+    </ol>
+    </div>
+
+    <footer class="foot">
+      <span>kuch khapee lo.</span>
+      <span>khapee.com</span>
+    </footer>
+  </section>
+
+  <section class="card">
+    <header class="top">
+      <span class="word">khapee<i></i></span>
+      <span class="stub"><small>Table</small><b>4</b></span>
+    </header>
+
+    <div class="middle">
+    <h1 class="head">Don’t get up.<br /><em>Order from your seat.</em></h1>
+
+    <div class="qr-wrap">
+      <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#2a1259" d="M0 0.5h7m3 0h2m5 0h1m1 0h3m2 0h3m1 0h1m1 0h7M0 1.5h1m5 0h1m2 0h3m2 0h2m3 0h1m3 0h3m2 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h3m7 0h1m3 0h1m2 0h3m2 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h2m2 0h2m1 0h3m1 0h2m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m2 0h1m1 0h2m1 0h3m2 0h1m3 0h2m1 0h1m3 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m3 0h2m3 0h1m2 0h1m1 0h2m2 0h1m5 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 7.5h1m1 0h1m1 0h2m1 0h1m3 0h2m2 0h2m1 0h2M3 8.5h2m1 0h2m1 0h3m2 0h1m2 0h2m2 0h5m2 0h1m4 0h2M0 9.5h1m1 0h1m1 0h2m1 0h4m1 0h1m2 0h6m3 0h2m4 0h1m1 0h1m1 0h2M1 10.5h3m1 0h2m1 0h4m2 0h3m1 0h3m2 0h1m1 0h1m3 0h4m1 0h3M1 11.5h4m3 0h2m2 0h2m4 0h3m1 0h2m2 0h2m1 0h3m1 0h4M0 12.5h5m1 0h1m2 0h1m1 0h2m1 0h2m2 0h3m1 0h1m5 0h1m1 0h2m1 0h1m1 0h1M3 13.5h1m4 0h1m2 0h1m1 0h1m3 0h1m3 0h1m1 0h2m1 0h4m2 0h1m1 0h2M0 14.5h1m3 0h1m1 0h4m2 0h1m1 0h2m3 0h1m1 0h1m4 0h2m1 0h1m2 0h5M0 15.5h2m2 0h1m2 0h1m1 0h1m3 0h1m1 0h2m1 0h2m2 0h2m4 0h1m2 0h6M0 16.5h7m1 0h1m1 0h1m1 0h1m1 0h1m2 0h3m2 0h2m1 0h1m1 0h1m2 0h1m3 0h3M0 17.5h1m2 0h2m5 0h1m1 0h2m1 0h1m1 0h1m1 0h2m3 0h1m1 0h2m1 0h1m4 0h2M0 18.5h1m1 0h1m1 0h1m1 0h3m3 0h1m9 0h1m2 0h3m1 0h2m1 0h3m1 0h1M2 19.5h2m3 0h2m1 0h1m1 0h6m2 0h1m4 0h1m1 0h3m2 0h2m1 0h2M0 20.5h1m1 0h5m1 0h2m2 0h2m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m3 0h3m1 0h2m1 0h2M1 21.5h1m1 0h3m1 0h4m2 0h1m1 0h1m2 0h2m4 0h2m1 0h2m2 0h5M1 22.5h1m2 0h1m1 0h2m1 0h1m1 0h1m3 0h1m5 0h1m1 0h1m1 0h1m1 0h1m4 0h2m1 0h2M0 23.5h1m1 0h1m1 0h1m3 0h1m2 0h2m1 0h3m1 0h3m1 0h1m1 0h2m1 0h3m1 0h1m1 0h4M0 24.5h1m1 0h2m2 0h2m1 0h3m3 0h3m1 0h2m3 0h2m7 0h1m1 0h2M0 25.5h1m3 0h1m4 0h1m4 0h1m2 0h2m1 0h1m5 0h1m3 0h3m2 0h1M0 26.5h3m1 0h1m1 0h4m2 0h1m3 0h1m2 0h1m3 0h2m2 0h1m2 0h1m3 0h1m1 0h1M0 27.5h1m1 0h1m1 0h2m1 0h1m1 0h2m2 0h3m2 0h2m2 0h2m4 0h2m1 0h5M0 28.5h1m1 0h3m1 0h2m4 0h1m1 0h1m3 0h2m5 0h1m1 0h8M8 29.5h2m2 0h3m1 0h2m1 0h1m2 0h1m1 0h1m3 0h1m3 0h4M0 30.5h7m1 0h1m4 0h1m1 0h2m2 0h2m1 0h2m1 0h1m2 0h1m1 0h1m1 0h3m1 0h1M0 31.5h1m5 0h1m2 0h2m3 0h1m1 0h1m1 0h3m1 0h7m3 0h2m2 0h1M0 32.5h1m1 0h3m1 0h1m1 0h1m5 0h1m1 0h5m6 0h6M0 33.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m4 0h1m2 0h1m1 0h1m1 0h2m2 0h2m1 0h2M0 34.5h1m1 0h3m1 0h1m2 0h1m3 0h1m4 0h2m1 0h1m1 0h1m2 0h2m4 0h1m2 0h2M0 35.5h1m5 0h1m6 0h1m1 0h1m1 0h2m1 0h1m2 0h2m1 0h1m2 0h2m2 0h4M0 36.5h7m2 0h1m4 0h6m3 0h2m3 0h1m3 0h2m2 0h1"/></svg>
+</div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <p class="sub">Scan, pay by UPI, and it goes straight to Revery’s kitchen.</p>
+
+    <ol class="steps">
+      <li><b>1</b>Scan</li>
+      <li><b>2</b>Order &amp; pay</li>
+      <li><b>3</b>It comes to you</li>
+    </ol>
+    </div>
+
+    <footer class="foot">
+      <span>kuch khapee lo.</span>
+      <span>khapee.com</span>
+    </footer>
+  </section>
+
+  <section class="card">
+    <header class="top">
+      <span class="word">khapee<i></i></span>
+      <span class="stub"><small>Table</small><b>5</b></span>
+    </header>
+
+    <div class="middle">
+    <h1 class="head">Don’t get up.<br /><em>Order from your seat.</em></h1>
+
+    <div class="qr-wrap">
+      <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#2a1259" d="M0 0.5h7m2 0h1m1 0h2m2 0h2m2 0h2m1 0h6m2 0h7M0 1.5h1m5 0h1m1 0h4m2 0h2m4 0h1m1 0h4m2 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m2 0h2m3 0h1m2 0h1m1 0h1m1 0h4m2 0h1m2 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m2 0h3m3 0h2m1 0h5m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m4 0h1m1 0h2m1 0h2m1 0h1m4 0h2m1 0h1m2 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h1m2 0h1m1 0h9m1 0h4m1 0h1m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m1 0h1m1 0h1m1 0h2m1 0h2m4 0h1m2 0h1M4 8.5h4m5 0h1m1 0h4m1 0h1m2 0h1m1 0h3m2 0h2m3 0h1M0 9.5h1m1 0h2m1 0h1m2 0h2m2 0h2m2 0h1m1 0h1m1 0h1m1 0h2m4 0h1m1 0h4m1 0h1M0 10.5h2m1 0h1m1 0h2m4 0h2m3 0h4m2 0h5m1 0h2m2 0h1m1 0h2M0 11.5h3m1 0h2m2 0h1m4 0h1m1 0h1m1 0h1m1 0h6m1 0h1m2 0h1m1 0h1m1 0h2M0 12.5h3m3 0h1m3 0h1m1 0h1m1 0h1m3 0h4m1 0h1m3 0h4m2 0h2m1 0h1M3 13.5h2m3 0h1m1 0h2m1 0h1m2 0h1m1 0h1m2 0h1m1 0h2m1 0h2m1 0h1m1 0h2m1 0h2M1 14.5h6m1 0h1m1 0h2m1 0h2m1 0h1m1 0h1m2 0h1m2 0h4m2 0h1m1 0h3M1 15.5h1m1 0h1m1 0h1m1 0h2m1 0h5m1 0h2m1 0h6m1 0h6m2 0h1M0 16.5h1m5 0h2m1 0h1m1 0h5m1 0h1m3 0h3m3 0h1m1 0h3m1 0h2m1 0h1M0 17.5h4m3 0h2m3 0h1m1 0h3m1 0h1m3 0h4m1 0h2m2 0h2M4 18.5h1m1 0h1m6 0h1m4 0h3m3 0h1m1 0h2m3 0h1m1 0h2M0 19.5h2m2 0h2m1 0h3m2 0h1m5 0h2m2 0h3m4 0h3m2 0h1M1 20.5h1m3 0h4m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m3 0h1m1 0h2m1 0h2m3 0h3M1 21.5h1m1 0h1m1 0h1m3 0h1m2 0h1m2 0h2m1 0h1m1 0h3m1 0h1m2 0h1m4 0h1m1 0h1M0 22.5h1m1 0h1m3 0h1m1 0h6m1 0h2m1 0h1m4 0h6m1 0h1m2 0h2M0 23.5h1m1 0h3m2 0h1m1 0h1m1 0h1m4 0h1m2 0h1m1 0h2m2 0h1m2 0h4m2 0h1M0 24.5h1m1 0h1m1 0h4m11 0h2m1 0h4m1 0h3m4 0h1m1 0h1M0 25.5h2m1 0h2m12 0h2m1 0h1m5 0h1m3 0h3M5 26.5h2m1 0h1m1 0h2m1 0h1m1 0h1m1 0h1m7 0h1m1 0h1m1 0h1m1 0h4M4 27.5h1m2 0h7m2 0h1m1 0h5m1 0h1m1 0h3m1 0h1m3 0h1m1 0h1M0 28.5h3m3 0h1m3 0h5m1 0h3m2 0h1m1 0h1m4 0h5m1 0h2M8 29.5h1m2 0h2m4 0h1m2 0h1m2 0h6m3 0h2M0 30.5h7m1 0h1m3 0h1m1 0h1m1 0h1m1 0h1m3 0h2m2 0h1m1 0h1m1 0h1m1 0h3M0 31.5h1m5 0h1m1 0h1m2 0h3m1 0h1m2 0h1m2 0h1m1 0h2m2 0h2m3 0h1m1 0h2M0 32.5h1m1 0h3m1 0h1m1 0h1m1 0h1m6 0h1m1 0h1m1 0h2m3 0h1m1 0h7M0 33.5h1m1 0h3m1 0h1m3 0h1m1 0h3m1 0h1m2 0h2m3 0h4m2 0h1m2 0h1M0 34.5h1m1 0h3m1 0h1m2 0h4m3 0h1m2 0h1m1 0h1m1 0h2m1 0h3m1 0h1m3 0h2M0 35.5h1m5 0h1m2 0h1m2 0h3m2 0h1m2 0h2m1 0h1m3 0h1m1 0h1m1 0h1m2 0h2M0 36.5h7m3 0h5m3 0h2m2 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h3"/></svg>
+</div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <p class="sub">Scan, pay by UPI, and it goes straight to Revery’s kitchen.</p>
+
+    <ol class="steps">
+      <li><b>1</b>Scan</li>
+      <li><b>2</b>Order &amp; pay</li>
+      <li><b>3</b>It comes to you</li>
+    </ol>
+    </div>
+
+    <footer class="foot">
+      <span>kuch khapee lo.</span>
+      <span>khapee.com</span>
+    </footer>
+  </section>
+
+  <section class="card">
+    <header class="top">
+      <span class="word">khapee<i></i></span>
+      <span class="stub"><small>Table</small><b>6</b></span>
+    </header>
+
+    <div class="middle">
+    <h1 class="head">Don’t get up.<br /><em>Order from your seat.</em></h1>
+
+    <div class="qr-wrap">
+      <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#2a1259" d="M0 0.5h7m1 0h1m3 0h3m1 0h1m1 0h2m1 0h4m5 0h7M0 1.5h1m5 0h1m1 0h1m1 0h1m1 0h3m8 0h2m1 0h3m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h2m4 0h1m1 0h1m1 0h2m1 0h1m4 0h3m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m2 0h1m3 0h3m1 0h1m1 0h8m3 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m2 0h1m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m2 0h1m5 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h2m2 0h1m1 0h1m1 0h9m2 0h2m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m3 0h2m1 0h2m3 0h1m3 0h1m1 0h1m1 0h1M2 8.5h3m1 0h1m1 0h2m3 0h1m3 0h2m2 0h1m1 0h2m4 0h3m2 0h3M0 9.5h1m4 0h1m1 0h1m4 0h1m5 0h2m1 0h1m3 0h4m1 0h1M1 10.5h6m3 0h1m5 0h1m2 0h1m5 0h2m3 0h4m1 0h2M1 11.5h1m1 0h1m4 0h1m1 0h4m2 0h2m1 0h3m4 0h1m1 0h1m1 0h2m1 0h1m1 0h2M0 12.5h1m1 0h1m3 0h3m1 0h1m1 0h2m4 0h1m5 0h3m2 0h4m1 0h1m1 0h1M1 13.5h1m5 0h1m3 0h1m2 0h1m4 0h2m3 0h2m2 0h2m3 0h3M0 14.5h2m1 0h4m1 0h1m1 0h1m1 0h5m4 0h2m1 0h4m1 0h1m1 0h1m1 0h1m1 0h2M0 15.5h5m2 0h2m4 0h4m2 0h3m4 0h2m4 0h1m2 0h2M0 16.5h4m1 0h2m4 0h1m3 0h1m1 0h3m2 0h2m1 0h2m2 0h2m1 0h1m1 0h1m1 0h1M7 17.5h3m2 0h2m2 0h1m2 0h1m2 0h3m1 0h1m1 0h1m4 0h1M1 18.5h1m3 0h3m2 0h1m2 0h2m1 0h2m3 0h3m3 0h5m1 0h1m1 0h2M8 19.5h3m3 0h1m1 0h2m4 0h1m3 0h1m1 0h2m1 0h1m3 0h2M0 20.5h1m1 0h2m1 0h2m2 0h5m1 0h2m1 0h4m2 0h2m4 0h7M1 21.5h2m2 0h1m2 0h1m2 0h1m4 0h1m1 0h1m1 0h3m1 0h3m2 0h1m1 0h1m1 0h1m1 0h1M0 22.5h3m1 0h6m1 0h2m2 0h1m1 0h1m1 0h4m2 0h3m1 0h1m3 0h2m1 0h1M1 23.5h3m1 0h1m1 0h1m1 0h4m1 0h1m2 0h4m1 0h4m5 0h1M0 24.5h1m3 0h3m1 0h2m1 0h1m1 0h1m1 0h2m2 0h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h4m1 0h1M0 25.5h1m1 0h1m1 0h1m2 0h3m3 0h1m1 0h1m1 0h3m1 0h1m3 0h1m1 0h1m2 0h1m2 0h3M0 26.5h1m3 0h3m1 0h1m1 0h1m1 0h2m2 0h1m5 0h4m1 0h2m1 0h1m1 0h1m3 0h1M0 27.5h1m1 0h4m1 0h2m1 0h1m2 0h1m1 0h2m2 0h3m1 0h1m2 0h2m1 0h1m1 0h1m3 0h1M0 28.5h1m5 0h4m1 0h2m2 0h3m1 0h2m2 0h13M8 29.5h2m1 0h7m1 0h1m1 0h1m1 0h1m4 0h1m3 0h1M0 30.5h7m3 0h2m2 0h2m2 0h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h2M0 31.5h1m5 0h1m6 0h1m2 0h2m3 0h2m4 0h2m3 0h1m3 0h1M0 32.5h1m1 0h3m1 0h1m1 0h1m3 0h3m5 0h1m1 0h1m2 0h1m1 0h6m1 0h1M0 33.5h1m1 0h3m1 0h1m1 0h2m1 0h2m2 0h2m2 0h2m3 0h1m2 0h1m2 0h3M0 34.5h1m1 0h3m1 0h1m1 0h2m4 0h1m2 0h2m6 0h1m3 0h1m6 0h1M0 35.5h1m5 0h1m2 0h3m4 0h1m1 0h1m2 0h2m1 0h1m2 0h2m1 0h2m4 0h1M0 36.5h7m2 0h2m1 0h1m1 0h2m2 0h1m2 0h2m1 0h3m2 0h1m1 0h1m1 0h4"/></svg>
+</div>
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+    </div>
+
+    <p class="sub">Scan, pay by UPI, and it goes straight to Revery’s kitchen.</p>
+
+    <ol class="steps">
+      <li><b>1</b>Scan</li>
+      <li><b>2</b>Order &amp; pay</li>
+      <li><b>3</b>It comes to you</li>
+    </ol>
+    </div>
+
+    <footer class="foot">
+      <span>kuch khapee lo.</span>
+      <span>khapee.com</span>
+    </footer>
+  </section>
+</body>
+</html>

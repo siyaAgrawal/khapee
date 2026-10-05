@@ -14,6 +14,11 @@
  *     node scripts/make-icons.mjs
  *
  * Needs a network fetch for the font, and Playwright's Chromium.
+ *
+ * The icons in public/ now are the newer mark — Bricolage Grotesque in cream
+ * on jamun (#4b2390) with a haldi (#f2b23a) dot, and "k." for the 32px
+ * favicon — drawn on a canvas in the browser. Running this as it stands draws
+ * the older Archivo mark; bring it in line before using it.
  */
 // Playwright is installed globally in this environment rather than as a
 // dependency — the app itself has no use for a browser at runtime.

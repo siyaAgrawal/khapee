@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useSession } from './lib/session'
 import { LoadingBlock } from './components/ui'
 import Splash from './components/Splash'
+import { useVisitCounter } from './lib/visits'
 
 import Home from './pages/Home'
 import Restaurant from './pages/Restaurant'
@@ -77,6 +78,8 @@ function StaffGate({ children }: { children: JSX.Element }) {
 }
 
 export default function App() {
+  // One visit per page a customer opens, for Khapee insights (lib/visits.ts).
+  useVisitCounter()
   // The title sequence covers the app for its first couple of seconds.
   /*
    * The title card plays on the front door, and nowhere else.
@@ -116,6 +119,8 @@ export default function App() {
       <Route path="/alerts" element={<AlertInvite />} />
       {/* Khapee's own numbers, for whoever runs Khapee. See server/insights.ts. */}
       <Route path="/insights" element={<Insights />} />
+      <Route path="/insights/demo" element={<Insights />} />
+      <Route path="/insights/real" element={<Insights />} />
       <Route path="/alerts/:token" element={<AlertInvite />} />
       <Route path="/group" element={<GroupSession />} />
       <Route path="/cart" element={<Cart />} />

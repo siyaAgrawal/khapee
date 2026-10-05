@@ -184,25 +184,70 @@ export default function Checkout() {
     if (user?.phone && !phone) setPhone(user.phone)
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!restaurantId || count === 0) {
-    return (
-      <div className="app">
-        <Header />
-        <main className="page page-narrow">
-          <EmptyState
-            emoji="🛒"
-            title="Nothing to order yet"
-            body="Add a few things first."
-            action={
-              <Link className="btn btn-accent" to="/">
-                Browse restaurants
-              </Link>
-            }
-          />
-        </main>
-      </div>
-    )
+  /*
+   * Into the UPI app, and back again — with no button in between.
+   *
+   * There used to be an "I've paid" to press on return. It was there because
+   * Khapee cannot see a bank: the money goes from the customer's app straight
+   * to the restaurant's VPA, and nothing in this app is told about it. The
+   * button was how the customer said so.
+   *
+   * It is gone. Leaving for a UPI app and coming back is itself the signal
+   * now: the page notices it was hidden and is visible again, records the
+   * payment against the order, and sends the customer to the tracker. Which
+   * means Khapee is trusting that somebody who opened their UPI app, waited,
+   * and came back actually paid — a thing it cannot check without a payment
+   * gateway. The restaurant still confirms it against their own UPI
+   * notification before the money is counted; that step is the real check and
+   * has not moved.
+   *
+   * `once` guards the whole thing: a phone can fire visibility and focus
+   * together, and two of these would record two payments on one order.
+   */
+  const [handingOff, setHandingOff] = useState<{ order: any; upiLink: string } | null>(null)
+  const handOff = (order: any, req: { upiLink: string }) => {
+    setHandingOff({ order, upiLink: req.upiLink })
+    // Opened on the next tick so React has drawn the waiting screen first —
+    // on a slow phone the app can take over before this page has repainted,
+    // and the customer comes back to the checkout they thought they had left.
+    setTimeout(() => {
+      window.location.href = req.upiLink
+    }, 60)
   }
+
+  useEffect(() => {
+    if (!handingOff) return
+    let once = false
+    let left = false
+    const settle = async () => {
+      if (once || !left || document.visibilityState !== 'visible') return
+      once = true
+      try {
+        await api(`/orders/${handingOff.order.orderNumber}/pay`, {
+          body: { token: handingOff.order.verifyToken, upiRef: '' },
+        })
+      } catch {
+        /* Already paid, or the network went. The tracker shows the truth and
+           offers the payment again if it is still owed. */
+      }
+      clear()
+      navigate(`/order/${handingOff.order.orderNumber}`, {
+        replace: true,
+        state: { justPlaced: true, paid: true },
+      })
+    }
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') left = true
+      else void settle()
+    }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('focus', () => void settle())
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('focus', () => void settle())
+    }
+  }, [handingOff]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const seated = tableId ?? dining?.tableId ?? null
   const seatedLabel = tableLabel ?? dining?.tableLabel ?? null
@@ -317,6 +362,10 @@ export default function Checkout() {
 
 
   const place = async (paymentClaim?: { upiRef: string }, withSession?: string, payingNow?: boolean) => {
+    // Nothing to place without one. Used to be guaranteed by the empty-basket
+    // return sitting above this; that has moved below the hooks, where it
+    // belongs, so the guarantee is made here instead of assumed.
+    if (!restaurantId) return
     setPlacing(true)
     setError('')
     try {
@@ -392,6 +441,23 @@ export default function Checkout() {
       // Said on the next screen rather than here, so the confirmation and the
       // thing being confirmed are the same page — a toast on a page that is
       // already disappearing is read by nobody.
+      /*
+       * Paying: straight into the UPI app, from here.
+       *
+       * No second page in between and no panel of choices — the customer
+       * pressed a button that says pay, so the next thing they should see is
+       * their own UPI app with the amount in it. The order is already placed
+       * and held, invisible to the restaurant, so there is something for the
+       * money to land against; `handOff` opens the app and arranges for the
+       * payment to be recorded when they come back.
+       */
+      if (payingNow) {
+        const req = await api<any>(`/orders/${order.orderNumber}/payment-request`, {
+          body: { token: order.verifyToken },
+        })
+        handOff(order, req)
+        return
+      }
       navigate(`/order/${order.orderNumber}`, {
         replace: true,
         state: { justPlaced: true, paid: !!paymentClaim },
@@ -400,6 +466,72 @@ export default function Checkout() {
       setError((e as ApiError).message)
       setPlacing(false)
     }
+  }
+
+  /*
+   * Nothing in the basket.
+   *
+   * Below every hook, deliberately. This sat above three of them, which is a
+   * rule React does not bend: a render that returns here runs fewer hooks than
+   * the one before it and the component tears itself down. Nothing noticed
+   * while the only way to empty the basket was to place the order and navigate
+   * away in the same breath — the component unmounted before it could render
+   * again. Clearing the cart and staying on the page found it at once.
+   */
+  /*
+   * Gone to pay: this page, and nothing else on it.
+   *
+   * The same page rather than a new one — the customer pressed pay and the
+   * next thing they see is their own UPI app, with this underneath it for
+   * when they come back. Everything the checkout was asking about is settled
+   * by now, and a half-empty basket and a time picker behind the waiting card
+   * read as a form they still have to finish.
+   */
+  if (handingOff) {
+    return (
+      <div className="app">
+        <Header />
+        <main className="page page-narrow">
+          <div className="pay-waiting" role="status">
+            <strong>Opening your UPI app…</strong>
+            <p className="tiny">
+              Order <strong>#{handingOff.order.orderNumber}</strong> is saved for{' '}
+              {money(handingOff.order.totalCents)}. It reaches the kitchen once you have paid —
+              come back here when you are done.
+            </p>
+            <a className="btn btn-accent btn-block" href={handingOff.upiLink}>
+              Open it again
+            </a>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => navigate(`/order/${handingOff.order.orderNumber}`, { replace: true })}
+            >
+              Nothing happened — show me the QR
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!restaurantId || count === 0) {
+    return (
+      <div className="app">
+        <Header />
+        <main className="page page-narrow">
+          <EmptyState
+            emoji="🛒"
+            title="Nothing to order yet"
+            body="Add a few things first."
+            action={
+              <Link className="btn btn-accent" to="/">
+                Browse restaurants
+              </Link>
+            }
+          />
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -895,7 +1027,7 @@ export default function Checkout() {
           codesEnabled={options?.codesEnabled !== false}
           open={verifyOpen}
           onClose={() => setVerifyOpen(false)}
-          restaurantId={restaurantId}
+          restaurantId={restaurantId ?? undefined}
           onVerified={(s) => {
             setDining(s)
             if (s.tableId) {

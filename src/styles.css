@@ -9248,3 +9248,20 @@ button.nav-link {
 .pay-copy:active { background: var(--bg-tint); }
 .pay-copy .mono { font-size: 13px; word-break: break-all; }
 .pay-copy .tiny { color: var(--accent); font-weight: 700; }
+
+/* The page behind the UPI app, for the second it is seen and the times it is
+   seen for longer than that. */
+.pay-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 22px 18px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+.pay-waiting .tiny { color: var(--muted); line-height: 1.55; margin: 0; }
+.pay-waiting .btn-block { margin-top: 4px; }

@@ -740,6 +740,7 @@ export default function Insights() {
       <header className="ins-top">
         <div className="ins-brand">
           khapee<span>.</span> insights
+          {DEMO() && <em className="ins-sample-tag">Sample data</em>}
         </div>
         <span className="ins-live">
           <i aria-hidden /> Live · last order {ago(live?.lastOrderAt ?? null)}
@@ -750,12 +751,6 @@ export default function Insights() {
           {DEMO() ? 'Real numbers' : 'Sample view'}
         </a>
       </header>
-      {DEMO() && (
-        <p className="ins-sample" role="note">
-          <strong>Sample data</strong> — made-up orders to show how insights looks with a month of business. Not real
-          orders. <Link to="/insights">See the real numbers →</Link>
-        </p>
-      )}
 
       {/* The one number this page leads with. */}
       <section className="ins-hero" aria-live="polite">

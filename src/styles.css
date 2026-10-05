@@ -9181,3 +9181,18 @@ button.nav-link {
     opacity: 1;
   }
 }
+
+/* Insights, sample mode: said plainly across the top. */
+.ins-sample {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fbedcc;
+  color: #5b3d00;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.ins-sample a {
+  color: #4b2390;
+  font-weight: 600;
+}

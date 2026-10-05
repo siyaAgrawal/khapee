@@ -11,6 +11,7 @@
  * itself are not counted, so the numbers are customers and not the people
  * running the place.
  */
+import type { Database } from 'better-sqlite3'
 import { db } from './db.ts'
 
 db.exec(`
@@ -85,7 +86,7 @@ export function recordVisit(body: any, userAgent: string): void {
 
 const IST = `datetime(v.at, '+330 minutes')`
 
-export function visitStats(opts: { days: number; restaurantId?: number | null }) {
+export function visitStats(opts: { days: number; restaurantId?: number | null }, d: Database = db) {
   const days = Math.max(0, Math.min(3650, Math.floor(opts.days || 0)))
   const where: string[] = []
   const params: any[] = []
@@ -96,8 +97,8 @@ export function visitStats(opts: { days: number; restaurantId?: number | null })
   }
   const W = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const AND = where.length ? ' AND ' : 'WHERE '
-  const one = (sql: string) => db.prepare(sql).get(...params) as any
-  const all = (sql: string) => db.prepare(sql).all(...params) as any[]
+  const one = (sql: string) => d.prepare(sql).get(...params) as any
+  const all = (sql: string) => d.prepare(sql).all(...params) as any[]
 
   const totals = one(`SELECT COUNT(*) AS views, COUNT(DISTINCT v.visitor) AS visitors FROM page_visits v ${W}`)
   const today = one(
@@ -133,7 +134,7 @@ export function visitStats(opts: { days: number; restaurantId?: number | null })
     `SELECT v.referrer AS host, COUNT(*) AS visits FROM page_visits v
       ${W}${AND}v.landing = 1 AND v.referrer <> '' GROUP BY v.referrer ORDER BY visits DESC LIMIT 10`,
   )
-  const first = db.prepare('SELECT MIN(at) AS at FROM page_visits').get() as any
+  const first = d.prepare('SELECT MIN(at) AS at FROM page_visits').get() as any
 
   return {
     since: first?.at ?? null,

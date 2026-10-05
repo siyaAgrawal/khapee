@@ -13,6 +13,7 @@
  * Times are stored as SQLite writes them (UTC) and read in India time, since
  * "which hour are we busiest" means the hour on the wall in Indore.
  */
+import type { Database } from 'better-sqlite3'
 import { db } from './db.ts'
 
 db.exec(`
@@ -171,17 +172,17 @@ const SHOWN = `f.hidden = 0`
 const REAL = `(${SHOWN} AND f.status NOT IN ('CANCELLED', 'DECLINED'))`
 
 /** The number on the wall: everyone who has ever ordered, updated with every order. */
-export function liveCount() {
-  const all = db
+export function liveCount(d: Database = db) {
+  const all = d
     .prepare(`SELECT COUNT(*) AS orders, COUNT(DISTINCT customer_key) AS people FROM order_facts f WHERE ${REAL}`)
     .get() as any
-  const today = db
+  const today = d
     .prepare(
       `SELECT COUNT(*) AS orders, COUNT(DISTINCT customer_key) AS people FROM order_facts f
         WHERE ${REAL} AND date(${IST}) = date('now', '+330 minutes')`,
     )
     .get() as any
-  const last = db.prepare(`SELECT MAX(created_at) AS at FROM order_facts f WHERE ${SHOWN}`).get() as any
+  const last = d.prepare(`SELECT MAX(created_at) AS at FROM order_facts f WHERE ${SHOWN}`).get() as any
   return {
     orders: Number(all.orders),
     people: Number(all.people),
@@ -197,7 +198,7 @@ export function liveCount() {
  * `days` 0 means all time. Every figure is computed over the same slice so the
  * numbers on the page agree with each other.
  */
-export function insights(opts: { days: number; restaurantId?: number | null }) {
+export function insights(opts: { days: number; restaurantId?: number | null }, d: Database = db) {
   const days = Math.max(0, Math.min(3650, Math.floor(opts.days || 0)))
   const where: string[] = [SHOWN]
   const params: any[] = []
@@ -208,8 +209,8 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
   }
   const W = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const AND = where.length ? ' AND ' : 'WHERE '
-  const all = (sql: string, extra: any[] = []) => db.prepare(sql).all(...params, ...extra) as any[]
-  const one = (sql: string, extra: any[] = []) => db.prepare(sql).get(...params, ...extra) as any
+  const all = (sql: string, extra: any[] = []) => d.prepare(sql).all(...params, ...extra) as any[]
+  const one = (sql: string, extra: any[] = []) => d.prepare(sql).get(...params, ...extra) as any
 
   // --- Headline -------------------------------------------------------------
   const totals = one(`
@@ -229,7 +230,7 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
       FROM order_facts f ${W}${AND}${REAL}
      GROUP BY f.customer_key`)
   const firstEver = new Map(
-    (db.prepare(`SELECT customer_key AS k, MIN(created_at) AS at FROM order_facts f WHERE ${REAL} GROUP BY customer_key`).all() as any[]).map(
+    (d.prepare(`SELECT customer_key AS k, MIN(created_at) AS at FROM order_facts f WHERE ${REAL} GROUP BY customer_key`).all() as any[]).map(
       (r) => [r.k, r.at],
     ),
   )
@@ -358,13 +359,13 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
            COUNT(*) AS placed
       FROM order_facts f LEFT JOIN restaurants r ON r.id = f.restaurant_id
       ${W} GROUP BY f.restaurant_id ORDER BY orders DESC, revenue DESC`).map((r) => {
-    const peak = db
+    const peak = d
       .prepare(
         `SELECT CAST(strftime('%H', ${IST}) AS INTEGER) AS h, COUNT(*) AS n FROM order_facts f
           ${W}${AND}${REAL} AND f.restaurant_id = ? GROUP BY h ORDER BY n DESC, h LIMIT 1`,
       )
       .get(...params, r.id) as any
-    const top = db
+    const top = d
       .prepare(
         `SELECT i.name, SUM(i.quantity) AS q FROM order_item_facts i JOIN order_facts f ON f.order_id = i.order_id
           ${W}${AND}${REAL} AND f.restaurant_id = ? AND (i.accepted IS NULL OR i.accepted = 1)
@@ -372,7 +373,7 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
       )
       .get(...params, r.id) as any
     const accepts = (
-      db
+      d
         .prepare(
           `SELECT (julianday(f.accepted_at) - julianday(f.created_at)) * 1440 AS m FROM order_facts f
             ${W}${AND}f.accepted_at IS NOT NULL AND f.restaurant_id = ?`,
@@ -422,7 +423,7 @@ export function insights(opts: { days: number; restaurantId?: number | null }) {
     modes,
     payments,
     places,
-    restaurants: (db.prepare('SELECT id, name FROM restaurants ORDER BY name').all() as any[]).map((r) => ({
+    restaurants: (d.prepare('SELECT id, name FROM restaurants ORDER BY name').all() as any[]).map((r) => ({
       id: r.id,
       name: r.name,
     })),
@@ -441,7 +442,7 @@ export function orderList(opts: {
   which?: 'all' | 'ahead' | 'off' | 'hidden'
   limit?: number
   offset?: number
-}) {
+}, d: Database = db) {
   const days = Math.max(0, Math.min(3650, Math.floor(opts.days || 0)))
   const where: string[] = []
   const params: any[] = []
@@ -458,8 +459,8 @@ export function orderList(opts: {
   const limit = Math.max(1, Math.min(200, Math.floor(opts.limit ?? 50)))
   const offset = Math.max(0, Math.floor(opts.offset ?? 0))
 
-  const total = (db.prepare(`SELECT COUNT(*) AS n FROM order_facts f ${W}`).get(...params) as any).n
-  const rows = db
+  const total = (d.prepare(`SELECT COUNT(*) AS n FROM order_facts f ${W}`).get(...params) as any).n
+  const rows = d
     .prepare(
       `SELECT f.*, COALESCE(r.name, 'Removed restaurant') AS restaurant_name,
               ${IST} AS at_ist,
@@ -468,7 +469,7 @@ export function orderList(opts: {
          ${W} ORDER BY f.created_at DESC, f.order_id DESC LIMIT ? OFFSET ?`,
     )
     .all(...params, limit, offset) as any[]
-  const itemsOf = db.prepare(
+  const itemsOf = d.prepare(
     'SELECT name, quantity, unit_price_cents, accepted FROM order_item_facts WHERE order_id = ? ORDER BY item_id',
   )
   return {

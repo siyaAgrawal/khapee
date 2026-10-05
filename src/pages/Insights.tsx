@@ -745,11 +745,13 @@ export default function Insights() {
         <span className="ins-live">
           <i aria-hidden /> Live · last order {ago(live?.lastOrderAt ?? null)}
         </span>
-        {/* Real numbers and the labelled sample, one tap apart. A full page load,
-            so nothing from one is left showing in the other. */}
-        <a className="ins-switch" href={DEMO() ? '/insights' : '/insights/demo'}>
-          {DEMO() ? 'Real numbers' : 'Sample view'}
-        </a>
+        {/* The labelled sample, one tap from the real numbers. A full page
+            load, so nothing from one is left showing in the other. */}
+        {!DEMO() && (
+          <a className="ins-switch" href="/insights/demo">
+            Sample view
+          </a>
+        )}
       </header>
 
       {/* The one number this page leads with. */}

@@ -4,7 +4,7 @@ import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
 import VerifyModal from '../components/VerifyModal'
 import { api, ApiError } from '../lib/api'
-import { useCart } from '../lib/cart'
+import { cartItems, useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
@@ -324,7 +324,7 @@ export default function Checkout() {
       const r = await api<any>('/orders/payment-request', {
         body: {
           restaurantId,
-          items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          items: cartItems(cart.lines),
           // So the amount asked for is the amount owed: a delivery adds a fee
           // that the dishes alone do not account for.
           sessionToken: dining?.token ?? null,
@@ -351,7 +351,7 @@ export default function Checkout() {
           restaurantId,
           type: where === 'later' ? 'pickup' : 'dine_in',
           takeaway: where === 'takeaway',
-          items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          items: cartItems(cart.lines),
           customerName: name.trim(),
           contactPhone: phone.trim(),
           note,

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { optionsFor, priceLine } from '../menu-options.ts'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
 import { requireAuth } from '../auth.ts'
@@ -85,12 +86,16 @@ ordersRouter.post('/payment-request', (req, res) => {
   }
   const lines = Array.isArray(req.body?.items) ? req.body.items : []
   let amountCents = 0
+  const dishOptions = optionsFor(lines.map((l: any) => Number(l?.menuItemId)).filter(Number.isFinite))
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line?.menuItemId)) as any
     if (!item || item.restaurant_id !== restaurantId) {
       return res.status(400).json({ error: 'One of the items is no longer on this menu.' })
     }
-    amountCents += item.price_cents * Math.max(1, Math.floor(Number(line.quantity) || 1))
+    // Priced with its variation and add-ons, exactly as the order will be.
+    const chosen = priceLine(item, line, dishOptions.get(item.id))
+    if (!chosen.ok) return res.status(409).json({ error: chosen.error })
+    amountCents += chosen.unitPriceCents * Math.max(1, Math.floor(Number(line.quantity) || 1))
   }
   if (amountCents <= 0) return res.status(400).json({ error: 'Your cart is empty.' })
 

@@ -783,7 +783,7 @@ export default function StaffOrders() {
                     {groupByPerson(o.items).map((person) => (
                       <div key={person.name}>
                         {o.isGroup && <span className="tiny muted">{person.name}: </span>}
-                        {person.items.map((i: any) => `${i.quantity}× ${i.name}`).join(', ')}
+                        {person.items.map((i: any) => `${i.quantity}× ${i.name}${i.options ? ` (${i.options})` : ''}`).join(', ')}
                       </div>
                     ))}
                   </td>
@@ -1039,6 +1039,7 @@ export default function StaffOrders() {
                         {o.items.map((i: any) => (
                           <li key={i.id} className={i.accepted === false ? 'item-off' : ''}>
                             <b>{i.quantity}×</b> {i.name}
+                            {i.options && <span className="item-options"> · {i.options}</span>}
                             {i.memberName ? <em> · {i.memberName}</em> : null}
                             <ItemCall
                               order={o}

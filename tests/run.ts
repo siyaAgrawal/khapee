@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import net from 'node:net'
 import Database from 'better-sqlite3'
+import http from 'node:http'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
@@ -119,6 +120,31 @@ await new Promise<void>((resolve) => {
   probe.listen(PORT, '127.0.0.1')
 })
 
+/*
+ * A stand-in for Petpooja's Save Order endpoint.
+ *
+ * Every order Khapee relays to a till is recorded here instead of going to
+ * Ahmedabad, so the payload can be checked field by field against their guide
+ * — and so a test run never sends anything to anybody's real till.
+ */
+const PETPOOJA_PORT = 4398
+const petpoojaSaw: any[] = []
+const petpoojaStub = http.createServer((req, res) => {
+  let raw = ''
+  req.on('data', (d) => (raw += d))
+  req.on('end', () => {
+    try {
+      petpoojaSaw.push({ path: req.url, body: JSON.parse(raw || '{}') })
+    } catch {
+      petpoojaSaw.push({ path: req.url, body: null })
+    }
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify({ success: '1', message: 'Your order is saved.', orderID: `PP${petpoojaSaw.length}`, clientOrderID: '' }))
+  })
+})
+await new Promise<void>((r) => petpoojaStub.listen(PETPOOJA_PORT, '127.0.0.1', () => r()))
+petpoojaStub.unref()
+
 for (const suffix of ['', '-wal', '-shm']) {
   const f = DB_PATH + suffix
   if (fs.existsSync(f)) fs.unlinkSync(f)
@@ -148,6 +174,8 @@ const server = spawn(path.join(root, 'node_modules', '.bin', 'tsx'), ['server/in
     // "rings for every restaurant" grant is read from this, so there has to be
     // somebody on it for that to be testable at all.
     KHAPEE_OWNER_EMAILS: 'dual@tablo.test',
+    // Orders relayed to a till land on the stand-in above.
+    PETPOOJA_BASE_URL: `http://127.0.0.1:${PETPOOJA_PORT}`,
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
@@ -5953,6 +5981,188 @@ async function runTests() {
       body: { restaurantId: basil.id, type: 'pickup', items: [{ menuItemId: dish.id, quantity: 1 }], customerName: 'Elsewhere' },
     })
     ok('a restaurant that takes cash is unchanged: paid orders go straight in', normal.body.order?.status === 'NEW', normal.body.order?.status)
+  }
+
+  group('PETPOOJA CERTIFICATION — the five cases they test, field by field')
+  {
+    /** The last Save Order the stand-in received for this order number. */
+    const sentFor = async (orderNumber: string) => {
+      for (let n = 0; n < 40; n++) {
+        const hit = [...petpoojaSaw]
+          .reverse()
+          .find((p) => p.body?.orderinfo?.OrderInfo?.Order?.details?.orderID === orderNumber)
+        if (hit) return hit.body
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      return null
+    }
+
+    const linked = await call('/staff/petpooja', {
+      token: roadToken,
+      body: { restId: '31zqndu7ar', appKey: 'k'.repeat(32), appSecret: 's'.repeat(40), accessToken: 't'.repeat(40) },
+    })
+    ok('connected with the mapping code Petpooja issued as restID', linked.status === 200, linked.body)
+    const secret = String(linked.body.urls.menu).split('/petpooja/')[1].split('/')[0]
+
+    const pushed = await call(`/petpooja/${secret}/menu`, {
+      body: {
+        success: '1',
+        restaurants: [{ restaurantid: '31zqndu7ar', details: {} }],
+        categories: [{ categoryid: 'C1', categoryname: 'Certification', categoryrank: '1' }],
+        taxes: [
+          { taxid: 'TX-C', taxname: 'CGST', tax: '2.5', taxtype: '1', active: '1' },
+          { taxid: 'TX-S', taxname: 'SGST', tax: '2.5', taxtype: '1', active: '1' },
+        ],
+        addongroups: [
+          {
+            addongroupid: 'AG1',
+            addongroup_name: 'Extra toppings',
+            active: '1',
+            addongroupitems: [
+              { addonitemid: 'AD1', addonitem_name: 'Extra Cheese', addonitem_price: '50', active: '1' },
+              { addonitemid: 'AD2', addonitem_name: 'Olives', addonitem_price: '30', active: '1' },
+            ],
+          },
+        ],
+        items: [
+          { itemid: 'LM1', itemname: 'Lemonade', item_categoryid: 'C1', price: '100', item_attributeid: '1', active: '1', in_stock: '1', item_tax: 'TX-C,TX-S' },
+          {
+            itemid: 'PZ1', itemname: 'Margherita', item_categoryid: 'C1', price: '250', item_attributeid: '1', active: '1', in_stock: '1',
+            item_tax: 'TX-C,TX-S', itemallowaddon: '1',
+            addon: [{ addon_group_id: 'AG1', addon_item_selection_min: '0', addon_item_selection_max: '2' }],
+          },
+          {
+            itemid: 'GB1', itemname: 'Garlic Bread', item_categoryid: 'C1', price: '0', item_attributeid: '1', active: '1', in_stock: '1',
+            item_tax: 'TX-C,TX-S', itemallowvariation: '1', itemallowaddon: '0', variation_groupname: 'Quantity',
+            variation: [
+              { id: 'GB1-V3', variationid: '89058', name: '3 Pieces', groupname: 'Quantity', price: '140', active: '1' },
+              {
+                id: 'GB1-V6', variationid: '89059', name: '6 Pieces', groupname: 'Quantity', price: '250', active: '1',
+                addon: [{ addon_group_id: 'AG1', addon_item_selection_min: '1', addon_item_selection_max: '1' }],
+              },
+            ],
+          },
+        ],
+      },
+    })
+    ok('a menu with taxes, variations and add-ons is taken', pushed.status === 200, pushed.body)
+
+    const menu = (await call(`/restaurants/${mornington.id}`)).body.menu.flatMap((c: any) => c.items)
+    const lemonade = menu.find((i: any) => i.name === 'Lemonade')
+    const pizza = menu.find((i: any) => i.name === 'Margherita')
+    const bread = menu.find((i: any) => i.name === 'Garlic Bread')
+    ok('a dish with variations shows its cheapest as its price', bread?.priceCents === 14000, bread?.priceCents)
+    ok('and offers its variations to choose from', bread?.options?.variations?.length === 2, bread?.options)
+    ok('a dish with add-ons offers them', pizza?.options?.addonGroups?.[0]?.items?.length === 2, pizza?.options)
+    const three = bread.options.variations.find((v: any) => v.name === '3 Pieces')
+    const six = bread.options.variations.find((v: any) => v.name === '6 Pieces')
+    const cheese = pizza.options.addonGroups[0].items.find((a: any) => a.name === 'Extra Cheese')
+    const olives = pizza.options.addonGroups[0].items.find((a: any) => a.name === 'Olives')
+
+    const order = (items: any[], name: string) =>
+      call('/orders', { body: { restaurantId: mornington.id, type: 'pickup', items, customerName: name } })
+
+    // ---- 1) Items + Tax ----
+    const o1 = await order([{ menuItemId: lemonade.id, quantity: 2 }], 'Case One')
+    ok('case 1: an order with tax is placed', o1.status === 201, o1.body)
+    const p1 = await sentFor(o1.body.order.orderNumber)
+    const d1 = p1?.orderinfo?.OrderInfo?.Order?.details
+    const i1 = p1?.orderinfo?.OrderInfo?.Order?.OrderItem?.details?.[0]
+    ok('case 1: relayed to the till', !!p1, petpoojaSaw.length)
+    ok('case 1: restID is the mapping code', p1?.orderinfo?.OrderInfo?.Restaurant?.details?.restID === '31zqndu7ar')
+    ok('case 1: item id is theirs', i1?.id === 'LM1', i1)
+    ok('case 1: price and final_price are per unit', i1?.price === '100.00' && i1?.final_price === '100.00' && i1?.quantity === '2', i1)
+    ok('case 1: the price is marked tax-inclusive', i1?.tax_inclusive === true, i1)
+    ok(
+      'case 1: each tax by its id, name and percentage',
+      i1?.item_tax?.length === 2 && i1.item_tax[0].id === 'TX-C' && i1.item_tax[0].name === 'CGST' && i1.item_tax[0].tax_percentage === '2.5',
+      i1?.item_tax,
+    )
+    ok('case 1: the tax inside ₹200 at 5% is ₹9.52', d1?.tax_total === '9.52', d1?.tax_total)
+    ok(
+      'case 1: CGST and SGST add up to it',
+      Math.round((Number(i1.item_tax[0].amount) + Number(i1.item_tax[1].amount)) * 100) === 952,
+      i1?.item_tax,
+    )
+    const tax1 = p1?.orderinfo?.OrderInfo?.Order?.Tax?.details
+    ok('case 1: the order lists each tax once', tax1?.length === 2 && tax1[0].title === 'CGST' && tax1[0].type === 'P', tax1)
+    ok('case 1: the total is what the customer paid', d1?.total === '200.00', d1?.total)
+    ok('case 1: no "Discount" object, as the guide asks', !('Discount' in (p1?.orderinfo?.OrderInfo?.Order ?? {})))
+    ok('case 1: paid in the app goes as ONLINE', d1?.payment_type === 'ONLINE', d1?.payment_type)
+    ok('case 1: a pickup is a parcel', d1?.order_type === 'P', d1?.order_type)
+    ok('case 1: every required field is there', ['enable_delivery', 'dc_tax_percentage', 'pc_tax_percentage', 'callback_url', 'created_on', 'preorder_date', 'preorder_time', 'advanced_order'].every((k) => k in (d1 ?? {})), d1)
+    ok('case 1: the customer has an address even for a pickup', !!p1?.orderinfo?.OrderInfo?.Customer?.details?.address)
+
+    // ---- 2) Item with Addons + Tax ----
+    const o2 = await order([{ menuItemId: pizza.id, quantity: 1, addonIds: [cheese.id] }], 'Case Two')
+    ok('case 2: an order with an add-on is placed', o2.status === 201, o2.body)
+    ok('case 2: priced with the add-on', o2.body.order?.totalCents === 30000, o2.body.order?.totalCents)
+    ok('case 2: the add-on shows on the order', o2.body.order?.items?.[0]?.options === 'Extra Cheese', o2.body.order?.items)
+    const i2 = (await sentFor(o2.body.order.orderNumber))?.orderinfo?.OrderInfo?.Order?.OrderItem?.details?.[0]
+    ok('case 2: price is the dish plus its add-ons', i2?.price === '300.00', i2?.price)
+    const ad2 = i2?.AddonItem?.details?.[0]
+    ok(
+      'case 2: the add-on goes by their ids, with its group',
+      ad2?.id === 'AD1' && ad2?.name === 'Extra Cheese' && ad2?.group_id === 'AG1' && ad2?.group_name === 'Extra toppings' && ad2?.price === '50.00',
+      i2?.AddonItem,
+    )
+
+    // ---- 3) Item with Variation + Tax ----
+    const noChoice = await order([{ menuItemId: bread.id, quantity: 1 }], 'No Choice')
+    ok('a dish with variations cannot be ordered without choosing one', noChoice.status === 409, noChoice.body)
+    const o3 = await order([{ menuItemId: bread.id, quantity: 1, variationId: three.id }], 'Case Three')
+    ok('case 3: an order with a variation is placed', o3.status === 201, o3.body)
+    const i3 = (await sentFor(o3.body.order.orderNumber))?.orderinfo?.OrderInfo?.Order?.OrderItem?.details?.[0]
+    ok('case 3: the line is the variation, by its own id', i3?.id === 'GB1-V3', i3?.id)
+    ok('case 3: with the variation named and its id', i3?.variation_name === '3 Pieces' && i3?.variation_id === '89058', i3)
+    ok('case 3: priced by the variation', i3?.price === '140.00', i3?.price)
+
+    // ---- 5) Item with Addon and Variation + Tax ----
+    const missing = await order([{ menuItemId: bread.id, quantity: 1, variationId: six.id }], 'Missing Addon')
+    ok('a variation that needs an add-on refuses without one', missing.status === 409, missing.body)
+    const tooMany = await order([{ menuItemId: pizza.id, quantity: 1, addonIds: [cheese.id, olives.id, 999999] }], 'Too Many')
+    ok('an add-on that is not on the dish is refused', tooMany.status === 409, tooMany.body)
+    const o5 = await order([{ menuItemId: bread.id, quantity: 1, variationId: six.id, addonIds: [olives.id] }], 'Case Five')
+    ok('case 5: an order with a variation and an add-on is placed', o5.status === 201, o5.body)
+    const i5 = (await sentFor(o5.body.order.orderNumber))?.orderinfo?.OrderInfo?.Order?.OrderItem?.details?.[0]
+    ok('case 5: variation and add-on both go', i5?.id === 'GB1-V6' && i5?.variation_name === '6 Pieces' && i5?.AddonItem?.details?.[0]?.id === 'AD2', i5)
+    ok('case 5: priced as the variation plus the add-on', i5?.price === '280.00', i5?.price)
+
+    // ---- 4) Item with Discount + Tax ----
+    // The payload builder is pure, so the discount case is checked on it directly.
+    process.env.TABLO_DB = DB_PATH
+    const { buildRound, orderPayload } = await import('../server/petpooja.ts')
+    const round = buildRound(
+      [{ id: 1, name: 'Lemonade', quantity: 2, unit_price_cents: 10000, pos_item_id: 'LM1', pos_tax_ids: 'TX-C,TX-S' }],
+      new Map([['TX-C', { name: 'CGST', rateBp: 250 }], ['TX-S', { name: 'SGST', rateBp: 250 }]]),
+      { discountCents: 2000, deliveryCents: 0 },
+    )
+    const p4 = orderPayload(
+      { restId: '31zqndu7ar', appKey: 'k', appSecret: 's', accessToken: 't' } as any,
+      { order_number: 'CASE4', customer_name: 'Case Four', service_mode: 'pickup', created_at: '2026-10-07 18:00:00', payment_status: 'PAID' },
+      round,
+      { name: 'Test' },
+      'https://khapee.com/cb',
+    )
+    const d4 = p4.orderinfo.OrderInfo.Order.details
+    ok('case 4: the discount goes on the order as a fixed amount', d4.discount_total === '20.00' && d4.discount_type === 'F', d4)
+    ok('case 4: the total is items less the discount', d4.total === '180.00', d4.total)
+    ok('case 4: tax is worked out on the discounted price', d4.tax_total === '8.57', d4.tax_total)
+    ok('case 4: item prices stay as listed', p4.orderinfo.OrderInfo.Order.OrderItem.details[0].price === '100.00')
+    ok('times go in Indian time, as their till reads them', d4.created_on === '2026-10-07 23:30:00' && d4.preorder_time === '23:30:00', d4)
+
+    // Delivery and dine-in map onto their order types.
+    const asDelivery = orderPayload(
+      { restId: 'x' } as any,
+      { order_number: 'D1', service_mode: 'delivery', delivery_address: '12 MG Road', created_at: '2026-10-07 18:00:00' },
+      round,
+      {},
+      '',
+    )
+    ok('a delivery goes as home delivery (H)', asDelivery.orderinfo.OrderInfo.Order.details.order_type === 'H')
+    ok('and an unpaid order as cash', asDelivery.orderinfo.OrderInfo.Order.details.payment_type === 'COD')
+
+    await call('/staff/petpooja', { token: roadToken, method: 'DELETE' })
   }
 
   group('QR codes (generated and scanned locally)')

@@ -756,6 +756,7 @@ export default function OrderTrack() {
               <Art emoji={item.emoji} hue={200} className="cart-line-art" rounded={14} />
               <div className="cart-line-body">
                 <strong>{item.name}</strong>
+                {item.options && <span className="tiny item-options">{item.options}</span>}
                 <span className="tiny muted">
                   {item.quantity} × {money(item.unitPriceCents)}
                   {item.memberName ? ` · ${item.memberName}` : ''}

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { optionsFor } from '../menu-options.ts'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushToRestaurant, renewSubscription, saveSubscription } from '../push.ts'
 import { limitedNotice, limitedState, orderableNow } from '../limited.ts'
@@ -191,7 +192,36 @@ publicRouter.get('/restaurants/:id', (req, res) => {
    * tonight rather than to wonder whether they imagined it.
    */
   const limited = limitedState(id)
-  const shape = (i: any) => ({ ...shapeMenuItem(i), isAvailable: orderableNow(i, limited) })
+  // Variations and add-ons, for the dishes that have them.
+  const dishOptions = optionsFor(items.map((i: any) => i.id))
+  const shape = (i: any) => {
+    const o = dishOptions.get(i.id)
+    return {
+      ...shapeMenuItem(i),
+      isAvailable: orderableNow(i, limited),
+      ...(o && (o.variations.length || o.addonGroups.length)
+        ? {
+            options: {
+              variations: o.variations.map((v) => ({
+                id: v.id,
+                name: v.name,
+                groupName: v.groupName,
+                priceCents: v.priceCents,
+                isAvailable: v.isAvailable,
+              })),
+              addonGroups: o.addonGroups.map((g) => ({
+                id: g.id,
+                name: g.name,
+                min: g.min,
+                max: g.max,
+                variationId: g.variationId,
+                items: g.items.map((a) => ({ id: a.id, name: a.name, priceCents: a.priceCents, isAvailable: a.isAvailable })),
+              })),
+            },
+          }
+        : {}),
+    }
+  }
 
   const specials = items.filter((i) => i.is_special && i.is_available)
   const sections = categories.map((c) => ({

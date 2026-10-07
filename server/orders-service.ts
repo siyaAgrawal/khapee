@@ -1,4 +1,5 @@
 import { db } from './db.ts'
+import { addonsOf, optionsFor, priceLine, type ChosenAddon } from './menu-options.ts'
 import { generateOrderNumber, randomToken } from './ids.ts'
 import { publish } from './events.ts'
 import { isTerminal, money, type OrderStatus, type OrderType, type ServiceType } from '../shared/orders.ts'
@@ -42,7 +43,7 @@ export function checkAccessCode(code: string, restaurantId: number): CodeCheck {
   return { ok: true, row }
 }
 
-export type CartLine = { menuItemId: number; quantity: number }
+export type CartLine = { menuItemId: number; quantity: number; variationId?: number | null; addonIds?: number[] }
 
 export type CreateOrderInput = {
   restaurantId: number
@@ -312,7 +313,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * edge case — it is the normal way somebody meets the closing kitchen.
    */
   const limited = limitedState(input.restaurantId)
-  const priced: { item: any; quantity: number }[] = []
+  const priced: { item: any; quantity: number; unitPriceCents: number; variation: any; addons: ChosenAddon[]; label: string }[] = []
+  // Variations and add-ons for every dish in the cart, read once.
+  const dishOptions = optionsFor(lines.map((l) => Number(l?.menuItemId)).filter(Number.isFinite))
   const closedOut: string[] = []
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line.menuItemId)) as any
@@ -327,7 +330,26 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       continue
     }
     const quantity = Math.min(50, Math.max(1, Math.floor(Number(line.quantity))))
-    priced.push({ item, quantity })
+    // The variation and add-ons chosen, checked and priced from the menu.
+    // The restaurant's own till may ring up a dish with options without
+    // picking one: it gets the first option, as a waiter's quick add does.
+    const opts = dishOptions.get(item.id)
+    const chosen = priceLine(
+      item,
+      input.fromCustomer || line.variationId != null
+        ? line
+        : { ...line, variationId: opts?.variations.find((v) => v.isAvailable)?.id ?? null },
+      opts,
+    )
+    if (!chosen.ok) return { ok: false, status: 409, error: chosen.error }
+    priced.push({
+      item,
+      quantity,
+      unitPriceCents: chosen.unitPriceCents,
+      variation: chosen.variation,
+      addons: chosen.addons,
+      label: chosen.label,
+    })
   }
   if (closedOut.length) {
     return { ok: false, status: 409, error: limitedRefusal(limited, closedOut) }
@@ -354,7 +376,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       error: 'The kitchen has closed for the night, so these have to be paid for in the app. Pay by UPI to place the order.',
     }
   }
-  const subtotalCents = priced.reduce((sum, l) => sum + l.item.price_cents * l.quantity, 0)
+  const subtotalCents = priced.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0)
 
   // --- What it costs to carry it ------------------------------------------
   // The area screen promises a fee and a minimum before anyone picks a dish.
@@ -543,11 +565,21 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     const orderId = Number(info.lastInsertRowid)
 
     const insertItem = db.prepare(
-      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, variation_id, variation_name, addons)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     for (const l of priced) {
-      insertItem.run(orderId, l.item.id, l.item.name, l.item.emoji, l.item.price_cents, l.quantity)
+      insertItem.run(
+        orderId,
+        l.item.id,
+        l.item.name,
+        l.item.emoji,
+        l.unitPriceCents,
+        l.quantity,
+        l.variation?.id ?? null,
+        l.variation?.name ?? '',
+        l.addons.length ? JSON.stringify(l.addons) : '',
+      )
     }
 
     // The first event is whatever the order actually started as. It was always
@@ -650,7 +682,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     customerName,
     customerPhone: phone,
     total: money(totalCents),
-    items: priced.map((l) => `${l.quantity} × ${l.item.name}`).join('\n'),
+    items: priced.map((l) => `${l.quantity} × ${l.item.name}${l.label ? ` (${l.label})` : ''}`).join('\n'),
     needsAccepting: !input.paymentClaim || checkPaymentFirst,
     paid: !!input.paymentClaim,
   })
@@ -900,7 +932,7 @@ export function getOrder(orderId: number) {
 export function shapeOrder(row: any) {
   const items = db
     .prepare(
-      `SELECT i.id, i.name, i.emoji, i.unit_price_cents, i.quantity, i.paid_at, i.member_id,
+      `SELECT i.id, i.name, i.emoji, i.unit_price_cents, i.quantity, i.paid_at, i.member_id, i.variation_name, i.addons,
               i.added_by_staff, i.accepted, m.display_name AS member_name
        FROM order_items i LEFT JOIN group_members m ON m.id = i.member_id
        WHERE i.order_id = ? ORDER BY i.id`,
@@ -1027,6 +1059,8 @@ export function shapeOrder(row: any) {
       id: i.id,
       name: i.name,
       emoji: i.emoji,
+      /** The variation and add-ons chosen, "Large · Extra cheese", or ''. */
+      options: [i.variation_name, addonsOf(i).map((a) => a.name).join(', ')].filter(Boolean).join(' · '),
       unitPriceCents: i.unit_price_cents,
       quantity: i.quantity,
       memberId: i.member_id ?? null,

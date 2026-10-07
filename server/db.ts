@@ -722,6 +722,84 @@ addColumn('orders', 'pos_error', "TEXT NOT NULL DEFAULT ''")
  */
 addColumn('order_items', 'pos_order_id', 'TEXT')
 addColumn('order_items', 'pos_pushed_at', 'TEXT')
+
+/*
+ * Variations and add-ons: "Half / Full", "Small / Large", "Extra cheese".
+ *
+ * Petpooja menus carry both, and an order relayed to their till has to name
+ * the exact variation and add-ons the customer chose, by Petpooja's own ids —
+ * so they are kept here as they arrive on the menu push, and a dish line on an
+ * order remembers what was picked and what it cost at the time.
+ *
+ * A dish's price on menu_items stays its base price. A dish with variations is
+ * priced by the variation chosen; add-ons are added on top. Every place an
+ * order is priced does it through server/menu-options.ts, so the checkout, the
+ * UPI request and the till all agree on one number.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS menu_item_variations (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  menu_item_id     INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  name             TEXT    NOT NULL,
+  group_name       TEXT    NOT NULL DEFAULT '',
+  price_cents      INTEGER NOT NULL,
+  is_available     INTEGER NOT NULL DEFAULT 1,
+  sort_order       INTEGER NOT NULL DEFAULT 0,
+  pos_variation_id TEXT,
+  pos_global_id    TEXT    NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_variations_item ON menu_item_variations(menu_item_id);
+
+CREATE TABLE IF NOT EXISTS menu_addon_groups (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id  INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  name           TEXT    NOT NULL,
+  is_active      INTEGER NOT NULL DEFAULT 1,
+  sort_order     INTEGER NOT NULL DEFAULT 0,
+  pos_group_id   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_addon_groups_restaurant ON menu_addon_groups(restaurant_id);
+
+CREATE TABLE IF NOT EXISTS menu_addon_items (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  group_id      INTEGER NOT NULL REFERENCES menu_addon_groups(id) ON DELETE CASCADE,
+  name          TEXT    NOT NULL,
+  price_cents   INTEGER NOT NULL DEFAULT 0,
+  is_available  INTEGER NOT NULL DEFAULT 1,
+  sort_order    INTEGER NOT NULL DEFAULT 0,
+  pos_addon_id  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_addon_items_group ON menu_addon_items(group_id);
+
+-- Which add-on groups a dish offers, and how many may be picked from each.
+-- variation_id set: the group belongs to that variation only.
+CREATE TABLE IF NOT EXISTS menu_item_addon_groups (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  menu_item_id  INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  group_id      INTEGER NOT NULL REFERENCES menu_addon_groups(id) ON DELETE CASCADE,
+  variation_id  INTEGER REFERENCES menu_item_variations(id) ON DELETE CASCADE,
+  min_select    INTEGER NOT NULL DEFAULT 0,
+  max_select    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_item_addon_groups_item ON menu_item_addon_groups(menu_item_id);
+
+-- Petpooja's own taxes (CGST 2.5%, SGST 2.5%…), by their id, from the menu push.
+CREATE TABLE IF NOT EXISTS pos_taxes (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id  INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  pos_tax_id     TEXT    NOT NULL,
+  name           TEXT    NOT NULL,
+  rate_bp        INTEGER NOT NULL DEFAULT 0,
+  is_active      INTEGER NOT NULL DEFAULT 1,
+  UNIQUE (restaurant_id, pos_tax_id)
+);
+`)
+// What was picked on this line, kept as it was when ordered.
+addColumn('order_items', 'variation_id', 'INTEGER')
+addColumn('order_items', 'variation_name', "TEXT NOT NULL DEFAULT ''")
+addColumn('order_items', 'addons', "TEXT NOT NULL DEFAULT ''")
+// Taken off the order as a whole (a fixed amount in paise), sent to the till as such.
+addColumn('orders', 'discount_cents', 'INTEGER NOT NULL DEFAULT 0')
 /* Their name for the table, which is the one their till knows it by. A dine-in
    order names a table in table_no, and a name we invented is a table they do
    not have. */

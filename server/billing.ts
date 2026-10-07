@@ -11,6 +11,13 @@
  * gets a bill with no tax line, because that is the correct bill for them.
  */
 import { db } from './db.ts'
+import { addonsOf } from './menu-options.ts'
+
+/** A bill line's name with what was chosen: "Pizza (Large · Extra cheese)". */
+function lineName(i: any): string {
+  const options = [i.variation_name, addonsOf(i).map((a) => a.name).join(', ')].filter(Boolean).join(' · ')
+  return options ? `${i.name} (${options})` : i.name
+}
 import { computeBill, financialYear, type BillInput } from './tax.ts'
 
 export type Actor = { id: number | null; name: string }
@@ -71,7 +78,7 @@ export function quoteOrder(
     lines: items.map((i) => {
       const r = rateForItem(restaurant, i.menu_item_id)
       return {
-        name: i.name,
+        name: lineName(i),
         hsnSac: r.hsnSac,
         quantity: i.quantity,
         unitPriceCents: i.unit_price_cents,
@@ -148,7 +155,7 @@ export function finaliseInvoice(input: FinaliseInput): FinaliseResult {
     lines: items.map((i) => {
       const r = rateForItem(restaurant, i.menu_item_id)
       return {
-        name: i.name,
+        name: lineName(i),
         hsnSac: r.hsnSac,
         quantity: i.quantity,
         unitPriceCents: i.unit_price_cents,

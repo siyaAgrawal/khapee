@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
-import { useCart } from '../lib/cart'
+import { cartItems, useCart } from '../lib/cart'
 import { api, ApiError } from '../lib/api'
 import { saveGroup, useGroup } from '../lib/group'
 import { ownOrderOnly, readDining } from '../lib/dining'
@@ -36,7 +36,7 @@ export default function Cart() {
       await api('/groups/session/items', {
         body: {
           groupToken: group.token,
-          items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          items: cartItems(cart.lines),
         },
       })
       clear()
@@ -149,18 +149,19 @@ export default function Cart() {
                 )}
               </div>
               {cart.lines.map((line) => (
-                <div key={line.menuItemId} className="cart-line">
+                <div key={line.key} className="cart-line">
                   <Art emoji={line.emoji} hue={line.hue} className="cart-line-art" rounded={14} />
                   <div className="cart-line-body">
                     <strong>{line.name}</strong>
+                    {line.options && <span className="tiny cart-line-options">{line.options}</span>}
                     <span className="tiny muted">{money(line.priceCents)} each</span>
                   </div>
                   <div className="stepper">
-                    <button onClick={() => setQuantity(line.menuItemId, line.quantity - 1)} aria-label="Decrease">
+                    <button onClick={() => setQuantity(line.key, line.quantity - 1)} aria-label="Decrease">
                       −
                     </button>
                     <span>{line.quantity}</span>
-                    <button onClick={() => setQuantity(line.menuItemId, line.quantity + 1)} aria-label="Increase">
+                    <button onClick={() => setQuantity(line.key, line.quantity + 1)} aria-label="Increase">
                       +
                     </button>
                   </div>

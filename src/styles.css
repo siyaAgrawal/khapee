@@ -9265,3 +9265,44 @@ button.nav-link {
 }
 .pay-waiting .tiny { color: var(--muted); line-height: 1.55; margin: 0; }
 .pay-waiting .btn-block { margin-top: 4px; }
+
+/* ── Choosing a size and extras ───────────────────────────────────────────────
+   One block per choice, rows that are the whole tap target, the price at the
+   right edge where a column of prices can be compared at a glance. */
+.opt-sheet { display: grid; gap: 18px; }
+.opt-group { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.opt-group legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+  padding: 0 0 6px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.opt-group legend em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted);
+}
+.opt-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md, 12px);
+  cursor: pointer;
+}
+.opt-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt-row.off { opacity: 0.5; cursor: not-allowed; }
+.opt-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.opt-name { font-size: 14.5px; }
+.opt-price { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* What was chosen, under a dish's name wherever an order is shown. */
+.cart-line-options,
+.item-options { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.qrow-items .item-options { display: inline; }

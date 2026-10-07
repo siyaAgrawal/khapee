@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -1401,6 +1402,46 @@ if (BACKED_UP) {
     const t6 = db.prepare("SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND label = 'Table 6'").get(r.id) as any
     if (t6) db.prepare('UPDATE restaurant_tables SET token = ? WHERE id = ?').run('1be9748ea2db49f7', t6.id)
     else db.prepare("INSERT INTO restaurant_tables (restaurant_id, label, seats, token) VALUES (?, 'Table 6', 4, ?)").run(r.id, '1be9748ea2db49f7')
+  })
+  /*
+   * A test café for Petpooja's sandbox, for Mr. Beans Saket's integration.
+   *
+   * The sandbox is a demo restaurant with a demo menu. Linked to the real Mr.
+   * Beans Saket, its menu push would put that demo menu on their page and take
+   * their own dishes off — so the sandbox is linked here instead: unlisted,
+   * closed, and open to the people who run Khapee (KHAPEE_INSIGHTS_EMAILS) from
+   * their own dashboard, where Settings → Petpooja takes the sandbox keys and
+   * shows the webhook URLs. The keys are typed there, never kept in code.
+   * restID 31zqndu7ar is the mapping code Petpooja issued for the sandbox.
+   */
+  dataFix('2026-10-08-petpooja-sandbox-cafe', () => {
+    let r = db.prepare("SELECT id FROM restaurants WHERE slug = 'petpooja-sandbox'").get() as any
+    if (!r) {
+      const info = db
+        .prepare(
+          `INSERT INTO restaurants
+             (slug, name, description, address, categories, emoji, hue, is_open, hours, prep_minutes, city,
+              accepts_pickup, accepts_takeaway, accepts_car, accepts_groups, accepts_delivery, codes_enabled, unlisted, rating)
+           VALUES ('petpooja-sandbox', 'Mr. Beans Saket — Petpooja test', 'Petpooja sandbox testing. Not a real café.',
+                   'Indore', 'Cafe', '🧪', 260, 0, '9:00 AM – 11:00 PM', 20, 'Indore', 1, 1, 0, 0, 0, 0, 1, 0)`,
+        )
+        .run()
+      r = { id: Number(info.lastInsertRowid) }
+    }
+    const emails = String(process.env.KHAPEE_INSIGHTS_EMAILS ?? '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+    for (const email of emails) {
+      const u = db.prepare('SELECT id FROM users WHERE lower(email) = ?').get(email) as any
+      if (u) db.prepare("INSERT OR IGNORE INTO restaurant_staff (user_id, restaurant_id, job_title) VALUES (?, ?, 'Owner')").run(u.id, r.id)
+    }
+    if (!db.prepare('SELECT 1 FROM petpooja_links WHERE restaurant_id = ?').get(r.id)) {
+      db.prepare(
+        `INSERT INTO petpooja_links (restaurant_id, rest_id, webhook_secret, enabled, push_orders)
+         VALUES (?, '31zqndu7ar', ?, 1, 1)`,
+      ).run(r.id, crypto.randomBytes(24).toString('base64url'))
+    }
   })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()

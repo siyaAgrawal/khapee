@@ -1,0 +1,1483 @@
+{
+ "note": "Mr. Beans Saket menu, from FINAL SAKET MENU.pdf (Oct 2026). Prices in rupees, before taxes and service charge.",
+ "addonGroups": {
+  "egg-extras": {
+   "name": "Add on",
+   "max": 4,
+   "items": [
+    [
+     "Choice of vegetable",
+     60,
+     "veg"
+    ],
+    [
+     "Bacon rashers",
+     170,
+     "nonveg"
+    ],
+    [
+     "Chicken sausage / chicken salami",
+     170,
+     "nonveg"
+    ],
+    [
+     "Chicken breast",
+     185,
+     "nonveg"
+    ]
+   ]
+  },
+  "avocado": {
+   "name": "Avocado",
+   "max": 1,
+   "items": [
+    [
+     "Avocado",
+     165,
+     "veg"
+    ]
+   ]
+  },
+  "cheddar": {
+   "name": "Add cheese",
+   "max": 1,
+   "items": [
+    [
+     "Cheddar cheese",
+     80,
+     "veg"
+    ]
+   ]
+  },
+  "lavash": {
+   "name": "Add lavash",
+   "max": 1,
+   "items": [
+    [
+     "Lavash",
+     50,
+     "veg"
+    ]
+   ]
+  },
+  "salad-chicken": {
+   "name": "Add chicken",
+   "max": 1,
+   "items": [
+    [
+     "Grilled chicken",
+     185,
+     "nonveg"
+    ]
+   ]
+  },
+  "crust": {
+   "name": "Choose your base",
+   "max": 1,
+   "items": [
+    [
+     "Pala Romano sourdough crust",
+     150,
+     "veg"
+    ]
+   ]
+  },
+  "pizza-eggs": {
+   "name": "Add eggs",
+   "max": 1,
+   "items": [
+    [
+     "Eggs",
+     100,
+     "egg"
+    ]
+   ]
+  },
+  "pasta-extras": {
+   "name": "Add on",
+   "max": 2,
+   "items": [
+    [
+     "Chicken",
+     185,
+     "nonveg"
+    ],
+    [
+     "One vegetable",
+     80,
+     "veg"
+    ]
+   ]
+  },
+  "notpasta-extras": {
+   "name": "Add on",
+   "max": 2,
+   "items": [
+    [
+     "Grilled chicken",
+     185,
+     "nonveg"
+    ],
+    [
+     "Guacamole",
+     160,
+     "veg"
+    ]
+   ]
+  },
+  "curry-extras": {
+   "name": "Add on",
+   "max": 4,
+   "items": [
+    [
+     "Chicken",
+     185,
+     "nonveg"
+    ],
+    [
+     "Fish",
+     265,
+     "nonveg"
+    ],
+    [
+     "Prawns",
+     370,
+     "nonveg"
+    ],
+    [
+     "Tofu",
+     185,
+     "veg"
+    ]
+   ]
+  },
+  "beverage-extras": {
+   "name": "Add to beverage",
+   "max": 4,
+   "items": [
+    [
+     "Choice of any flavour",
+     40,
+     "veg"
+    ],
+    [
+     "Ice cream / whipped cream",
+     40,
+     "veg"
+    ],
+    [
+     "Chocolate sauce (30 ml)",
+     40,
+     "veg"
+    ],
+    [
+     "Almond milk / soya milk",
+     60,
+     "veg"
+    ]
+   ]
+  }
+ },
+ "menu": [
+  {
+   "section": "Freshly Baked",
+   "items": [
+    {
+     "name": "Butter Croissants",
+     "price": 300,
+     "description": "Freshly baked from The Gourmet Store Bakery",
+     "type": "veg"
+    },
+    {
+     "name": "Chocolate Croissants",
+     "price": 300,
+     "description": "Freshly baked from The Gourmet Store Bakery",
+     "type": "veg"
+    }
+   ]
+  },
+  {
+   "section": "Eggs, Eggs & More Eggs",
+   "items": [
+    {
+     "name": "Fried Eggs",
+     "price": 350,
+     "description": "2 eggs pan fried to your liking. Served with a slice of toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "avocado",
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "Gordon Ramsay's Creamy Scrambled Egg",
+     "price": 425,
+     "description": "A creamy amalgamation of eggs & butter. Served with a slice of toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "Pickled Omelette",
+     "price": 425,
+     "description": "Gherkins, jalapenos & onions in an omelette make an interesting choice. Served with toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "French Rolled Omelette",
+     "price": 425,
+     "description": "Sundried tomato, spinach, spring onions & cheddar cheese make it a perfect breakfast. Served with toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "Classic Indian Masala Omelette",
+     "price": 425,
+     "description": "Tomatoes, onion, green chillies & coriander are always a perfect choice. Served with toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "Omelette Verde",
+     "price": 425,
+     "description": "Our signature omelette with basil leaves & cream cheese. Served with toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "Gourmet Mushroom & Ricotta Omelette",
+     "price": 475,
+     "description": "Ricotta omelette stuffed with mushroom à la crème with hints of truffle. Served with toasted sourdough.",
+     "type": "egg",
+     "addons": [
+      "egg-extras"
+     ]
+    },
+    {
+     "name": "Peri Peri, Red Pepper & Chicken Piquant Omelette",
+     "price": 475,
+     "description": "Omelette stuffed with pesto calabrese, parmesan cheese & spicy chicken sausages. Served with toasted sourdough.",
+     "type": "nonveg",
+     "addons": [
+      "egg-extras"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Tartine, Toasty & Flat Breads",
+   "items": [
+    {
+     "name": "Classic Tomato Bruschetta",
+     "price": 450,
+     "description": "Tomato, garlic & basil on crisp sourdough bread",
+     "type": "veg"
+    },
+    {
+     "name": "Creamy Mushroom Tartine",
+     "price": 450,
+     "description": "Crisp sourdough topped with creamy mushroom mince & cheese",
+     "type": "veg"
+    },
+    {
+     "name": "Crisp Green Avocado Cucumber Tartine",
+     "price": 575,
+     "description": "Avocado, cucumber, lettuce & feta cheese make it special",
+     "type": "veg"
+    },
+    {
+     "name": "Cold Japanese Avocado Flat Bread",
+     "price": 850,
+     "description": "Multigrain flat bread, avocado carpaccio & wasabi make it a house special",
+     "type": "veg"
+    },
+    {
+     "name": "Burrata, Grilled Pepper, Olives & Herbs on a Flat Bread",
+     "price": 650,
+     "description": "Multigrain flat bread topped with goodness",
+     "type": "veg"
+    },
+    {
+     "name": "Korean Cream Cheese Bun",
+     "price": 450,
+     "description": "Brioche infused with herb garlic butter with a layer of cream cheese",
+     "type": "veg"
+    },
+    {
+     "name": "Garlic Bread",
+     "price": 350,
+     "description": "Crispy pieces of bread topped with spicy garlic butter",
+     "type": "veg",
+     "addons": [
+      "cheddar"
+     ]
+    },
+    {
+     "name": "Desi Chilli Cheese Toast",
+     "price": 400,
+     "description": "A crisp toast of cheese, green chillies & coriander",
+     "type": "veg"
+    }
+   ]
+  },
+  {
+   "section": "Salads & Healthy Bowls",
+   "items": [
+    {
+     "name": "Fresh Green Goodness",
+     "price": 675,
+     "description": "Avocado hummus served with cucumbers, onions, broccoli & feta cheese",
+     "type": "veg",
+     "addons": [
+      "lavash"
+     ]
+    },
+    {
+     "name": "Thai Tri Quinoa Salad",
+     "price": 675,
+     "description": "Quinoa with sweet & sour dressing, corn, edamame & peppers",
+     "type": "veg"
+    },
+    {
+     "name": "Avocado Chicken Salad",
+     "price": 675,
+     "description": "Tangy, creamy avocado served with smoked chicken & crispy greens",
+     "type": "nonveg"
+    },
+    {
+     "name": "Beirut on a Platter",
+     "price": 675,
+     "description": "Tahini yogurt topped with roasted beetroot, onion, apples, feta & pecans",
+     "type": "veg",
+     "addons": [
+      "lavash"
+     ]
+    },
+    {
+     "name": "Wellness Boost",
+     "price": 675,
+     "description": "Avocado, greens, cherry tomato, broccoli, seeds & nuts make this a bowl of health with a lemon vinaigrette",
+     "type": "veg",
+     "addons": [
+      "salad-chicken"
+     ]
+    },
+    {
+     "name": "Super Food Quinoa Tabouleh",
+     "price": 675,
+     "description": "Chia, sunflower seeds, cranberry, walnuts, micro greens & quinoa tossed in an emulsion of lemon & sumac",
+     "type": "veg",
+     "addons": [
+      "salad-chicken"
+     ]
+    },
+    {
+     "name": "Spring Greens & Orange Feta Salad",
+     "price": 600,
+     "description": "Romaine lettuce, basil & iceberg lettuce served with orange segments & apricots in an orange feta dressing",
+     "type": "veg",
+     "addons": [
+      "salad-chicken"
+     ]
+    },
+    {
+     "name": "Caesar Salad",
+     "price": 600,
+     "description": "Fresh salad greens & Caesar dressing topped with parmesan & croutons",
+     "type": "veg",
+     "addons": [
+      "salad-chicken"
+     ]
+    },
+    {
+     "name": "Greek Salad",
+     "price": 600,
+     "description": "Feta, lettuce, cucumbers, tomatoes, onions, olives & lemon dressing make this salad an all time favourite",
+     "type": "veg",
+     "addons": [
+      "salad-chicken"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Comforting Soups",
+   "items": [
+    {
+     "name": "Roasted Cherry Tomato & Fennel Soup",
+     "price": 450,
+     "description": "A classic Italian soup made with slow roasted tomatoes with hints of star anise",
+     "type": "veg"
+    },
+    {
+     "name": "Broccoli Cappuccino",
+     "price": 450,
+     "description": "Chef recommends this creamy broccoli soup finished with cappuccino milk foam",
+     "type": "veg"
+    },
+    {
+     "name": "Mushroom & Artichoke Soup",
+     "price": 450,
+     "description": "An Italian classic soup of mushroom & artichoke drizzled with truffle oil",
+     "type": "veg"
+    },
+    {
+     "name": "Mexican Red Pepper Soup",
+     "price": 450,
+     "description": "Served with paprika",
+     "type": "veg"
+    },
+    {
+     "name": "Chicken Consommé for the Soul",
+     "price": 450,
+     "description": "A clear chicken broth served with petit tortellini",
+     "type": "nonveg"
+    }
+   ]
+  },
+  {
+   "section": "Sandwiches",
+   "items": [
+    {
+     "name": "Croissant Sandwich",
+     "price": 550,
+     "description": "Served with fresh greens",
+     "type": "veg",
+     "variations": [
+      [
+       "Tomato Emmenthal",
+       550
+      ],
+      [
+       "Cheddar & Grilled Peppers",
+       550
+      ]
+     ]
+    },
+    {
+     "name": "Grilled Four Cheese Panini",
+     "price": 575,
+     "description": "Bocconcini, Emmenthal, Parmesan, Gouda & tomatoes make it a cheese burst",
+     "type": "veg"
+    },
+    {
+     "name": "Hi-Tea Cucumber Mint Sandwich",
+     "price": 525,
+     "description": "Think of a quiet British afternoon & you think of this refreshing sandwich",
+     "type": "veg"
+    },
+    {
+     "name": "Pesto Tomato Bocconcini Sandwich",
+     "price": 575,
+     "description": "Thin focaccia with the Italian classics make it perfect",
+     "type": "veg"
+    },
+    {
+     "name": "Low Calorie Hummus Pickled Veg Sandwich",
+     "price": 550,
+     "description": "Whole wheat bread, zero dairy fat & pickled carrots, beetroots, cucumber & lettuce explain it well",
+     "type": "veg"
+    },
+    {
+     "name": "Veg Club Sandwich",
+     "price": 500,
+     "description": "Our take on a double layer Bombay sandwich of potatoes, capsicum, tomato & cheese",
+     "type": "veg"
+    },
+    {
+     "name": "Fresh Harissa Chicken & Avocado Sandwich",
+     "price": 675,
+     "description": "Chicken marinated in herby harissa dressing, tomato & avocado on sourdough bread",
+     "type": "nonveg"
+    },
+    {
+     "name": "Asian Chicken Sandwich",
+     "price": 575,
+     "description": "A fusion sandwich of shredded chicken, green onions & sesame seeds",
+     "type": "nonveg"
+    },
+    {
+     "name": "Ham Chicken Bocconcini Sandwich",
+     "price": 650,
+     "description": "Thin focaccia sandwich of pork ham, chicken salami & bocconcini",
+     "type": "nonveg"
+    },
+    {
+     "name": "Smoked Pulled Chicken Sandwich",
+     "price": 650,
+     "description": "Slow cooked pulled chicken with hints of smoke, grilled with scamorza cheese",
+     "type": "nonveg"
+    }
+   ]
+  },
+  {
+   "section": "Entree",
+   "items": [
+    {
+     "name": "Tri Hummus with Pita",
+     "price": 500,
+     "description": "Three flavours of hummus served like never before",
+     "type": "veg"
+    },
+    {
+     "name": "Truffle Wedges",
+     "price": 550,
+     "description": "Potato wedges tossed with truffle oil, parmesan cheese & parsley",
+     "type": "veg"
+    },
+    {
+     "name": "Mexican Jar with Cheesy Nachos",
+     "price": 575,
+     "description": "Cherry tomato salsa & guacamole served with tortilla chips",
+     "type": "veg"
+    },
+    {
+     "name": "Petit Tortellini",
+     "price": 575,
+     "description": "Our signature dish — mini tortellini stuffed with roasted garlic & ricotta cheese",
+     "type": "veg"
+    },
+    {
+     "name": "Bell Pepper & Cheese Quesadilla",
+     "price": 575,
+     "description": "Signature Mr. Beans appetizer makes it a house special",
+     "type": "veg"
+    },
+    {
+     "name": "Baked Feta with Honey & Nuts",
+     "price": 600,
+     "description": "Served with crostini",
+     "type": "veg"
+    },
+    {
+     "name": "Argentinian Chimichurri Chicken Skewer",
+     "price": 600,
+     "description": "Spicy chimichurri marinated chicken served on skewers with romesco dip",
+     "type": "nonveg"
+    },
+    {
+     "name": "Grilled Chicken Sausages",
+     "price": 600,
+     "description": "Cocktail sausages sautéed with smoked barbeque flavours",
+     "type": "nonveg"
+    },
+    {
+     "name": "Go Brit with Fish and Chips",
+     "price": 650,
+     "description": "Crispy fillet of fish deep fried in beer batter, served with country fries",
+     "type": "nonveg"
+    }
+   ]
+  },
+  {
+   "section": "Pizzas",
+   "items": [
+    {
+     "name": "Pizza Margherita",
+     "price": 575,
+     "description": "Named after Princess Margherita of Savoy, topped with fresh tomato, basil, mozzarella & parmesan. Classic thin crust.",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Authentic Italian Pizza",
+     "price": 600,
+     "description": "Thin pizza crust topped with tomato purée, bocconcini cheese, basil pesto & fresh herbs",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Tri Chilli Pizza",
+     "price": 600,
+     "description": "Tingle your senses with this spicy pizza",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Pizza Verde",
+     "price": 600,
+     "description": "Pesto base, broccoli, cherry tomato, peri peri, goat cheese & mushrooms",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Garden in a Basket",
+     "price": 600,
+     "description": "A vegetarian's delight — red & yellow peppers, corn, onion & broccoli",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Mediterranean Veg Pizza",
+     "price": 600,
+     "description": "Mushroom, zucchini, squash, sundried tomato, olives & peppers make it very special",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Tabasco Pizza",
+     "price": 600,
+     "description": "Spicy tomato sauce topped with red jalapeños, onions & tabasco peppers",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Quattro Fromage Pizza",
+     "price": 600,
+     "description": "An Italian classic of blue Roquefort, goat cheese, mozzarella & parmesan",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Taste of Italy Pizza",
+     "price": 600,
+     "description": "Artichokes, basil, peppers, cherry & sundried tomato, parmesan & goat cheese bring you the flavours of Italy",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Spinach & Ricotta Florentine Pizza",
+     "price": 600,
+     "description": "Ricotta, spinach & garlic baked to perfection",
+     "type": "veg",
+     "addons": [
+      "crust",
+      "pizza-eggs"
+     ]
+    },
+    {
+     "name": "Fungi Blanc Pizza",
+     "price": 600,
+     "description": "Creamy mushroom mince on a white base, topped with truffle, parmesan & mascarpone",
+     "type": "veg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Totally Smoked Chicken & Scamorza Pizza",
+     "price": 700,
+     "description": "Spice marinated chicken served with bell peppers & smoked cheese",
+     "type": "nonveg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Full on Chicken Pizza",
+     "price": 700,
+     "description": "Chicken breast, salami & sausages make this a full on chicken pizza",
+     "type": "nonveg",
+     "addons": [
+      "crust"
+     ]
+    },
+    {
+     "name": "Pepperoni Pizza",
+     "price": 700,
+     "description": "Spicy pork pepperoni on a thin crust",
+     "type": "nonveg",
+     "addons": [
+      "crust"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Pasta & Noodles",
+   "items": [
+    {
+     "name": "Pasta Arrabiata",
+     "price": 600,
+     "description": "Pasta tossed in tomato & basil sauce",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Aglio E Olio",
+     "price": 600,
+     "description": "Burnt garlic, chilli flakes, parsley & extra virgin olive oil explain it best",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Cream Alfredo",
+     "price": 600,
+     "description": "A cream based sauce flavoured with rosemary & thyme",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ],
+     "variations": [
+      [
+       "Mushroom",
+       600
+      ],
+      [
+       "Broccoli",
+       600
+      ]
+     ]
+    },
+    {
+     "name": "Spinach & Ricotta Ravioli",
+     "price": 600,
+     "description": "Hand crafted ravioli stuffed with spinach & ricotta, served with a sauce of your liking",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ],
+     "variations": [
+      [
+       "Red sauce",
+       600
+      ],
+      [
+       "White sauce",
+       600
+      ]
+     ]
+    },
+    {
+     "name": "Fettuccine in Rose Sauce",
+     "price": 600,
+     "description": "Freshly made pasta ribbons tossed in creamy marinara sauce",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Spaghetti with Pesto Genovese",
+     "price": 600,
+     "description": "Spaghetti in basil pesto tossed with peppers & zucchini ribbons",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Truffle Macaroni & Cheese",
+     "price": 600,
+     "description": "An all time comfort food",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Shiitake Mushroom & Truffle Udon Noodles",
+     "price": 650,
+     "description": "Sweet & sour umami flavoured noodles",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Homemade Gnocchi",
+     "price": 600,
+     "description": "Served with truffle, butter garlic, zucchini, cherry tomato & mushrooms",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Spaghetti Bolognese",
+     "price": 650,
+     "description": "An all time meat lovers pick",
+     "type": "nonveg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Thai Style Pan Fried Noodles",
+     "price": 600,
+     "description": "Served with a medley of vegetables, mushrooms & sweet sour Thai sauce",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    },
+    {
+     "name": "Korean Chilli Garlic Wok-Fried Noodles",
+     "price": 600,
+     "description": "Noodles tossed with tofu, edamame, bok choy & zucchini",
+     "type": "veg",
+     "addons": [
+      "pasta-extras"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Not Pasta",
+   "items": [
+    {
+     "name": "Risotto of the Month",
+     "price": 650,
+     "description": "Mr. Beans' experiments with risotto, with seasonal vegetables & flavours",
+     "type": "veg",
+     "addons": [
+      "notpasta-extras"
+     ]
+    },
+    {
+     "name": "Mediterranean Tri-Quinoa Pepper Risotto",
+     "price": 600,
+     "description": "Served with Mediterranean vegetables, pumpkin seeds & mascarpone cheese",
+     "type": "veg",
+     "addons": [
+      "notpasta-extras"
+     ]
+    },
+    {
+     "name": "Mexican Spice Bowl",
+     "price": 600,
+     "description": "Served with chipotle rice, guacamole, peppers & sour cream",
+     "type": "veg",
+     "addons": [
+      "notpasta-extras"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Meat Feasts",
+   "items": [
+    {
+     "name": "Thai Style Peanut Crumbed Fish",
+     "price": 675,
+     "description": "Served with rice & lemongrass sauce",
+     "type": "nonveg"
+    },
+    {
+     "name": "Chicken Cordon Bleu",
+     "price": 675,
+     "description": "Chef's special — chicken roulade stuffed with Swiss cheese, wrapped with bacon",
+     "type": "nonveg"
+    },
+    {
+     "name": "Classic Grilled Fish",
+     "price": 675,
+     "description": "Served with creamy green peppercorn sauce, salsa verde & crisp greens",
+     "type": "nonveg"
+    },
+    {
+     "name": "Shepherd's Pie",
+     "price": 675,
+     "description": "A rustic country dish of mashed potatoes & spicy meat mince",
+     "type": "nonveg"
+    },
+    {
+     "name": "Grilled Rosemary Thyme Chicken",
+     "price": 675,
+     "description": "Chicken breast marinated in olive oil & herbs, served with brown mushroom sauce",
+     "type": "nonveg"
+    }
+   ]
+  },
+  {
+   "section": "Asian Selection",
+   "items": [
+    {
+     "name": "Veg Maki",
+     "price": 550,
+     "description": "Nori sheets & rice rolled with cucumber, carrot & peppers",
+     "type": "veg"
+    },
+    {
+     "name": "Veg Tempura Uramaki",
+     "price": 600,
+     "description": "Uramaki — \"reversed sushi\" — rolled with fried veg tempura",
+     "type": "veg"
+    },
+    {
+     "name": "California Roll",
+     "price": 675,
+     "description": "A rebel roll made with avocado, cream cheese & veg",
+     "type": "veg"
+    },
+    {
+     "name": "Chicken Teriyaki & Avocado Uramaki",
+     "price": 675,
+     "description": "Nori sheets, rice & succulent teriyaki chicken pair up with avocado in this rebel roll",
+     "type": "nonveg"
+    },
+    {
+     "name": "Prawn Tempura Uramaki",
+     "price": 725,
+     "description": "Crunchy tempura fried prawns rolled with cream cheese & veg",
+     "type": "nonveg"
+    },
+    {
+     "name": "Asian Chicken Wings",
+     "price": 600,
+     "description": "Thai style deep fried chicken wings served with tangy sauce",
+     "type": "nonveg"
+    },
+    {
+     "name": "Edamame Pod Bowl",
+     "price": 600,
+     "description": "Steamed edamame pods dressed in soy chilli dressing",
+     "type": "veg"
+    }
+   ]
+  },
+  {
+   "section": "Asian Curry",
+   "items": [
+    {
+     "name": "Spicy Thai Red Curry",
+     "price": 650,
+     "description": "Coconut milk infused with homemade red chilli Thai curry paste, cooked with exotic vegetables. Served with burnt garlic rice.",
+     "type": "veg",
+     "addons": [
+      "curry-extras"
+     ]
+    },
+    {
+     "name": "Aromatic Green Thai Curry",
+     "price": 650,
+     "description": "Green chilli, coriander & Thai herbs ground to a paste & cooked with coconut milk & exotic vegetables. Served with burnt garlic rice.",
+     "type": "veg",
+     "addons": [
+      "curry-extras"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Desserts",
+   "items": [
+    {
+     "name": "Nutella Croissant Pudding",
+     "price": 500,
+     "description": "Chocolate croissants baked with Nutella custard. Served with ice cream.",
+     "type": "egg"
+    },
+    {
+     "name": "Warm Chocolate Chip Nutella Piz-ookie",
+     "price": 600,
+     "description": "Pizza + cookie = piz-ookie. Jumbo fudgy freshly baked chocolate chip cookie with a Nutella layer, served with ice cream",
+     "type": "veg"
+    },
+    {
+     "name": "Tiramisu — Spiked",
+     "price": 415,
+     "description": "Meaning \"pick me up\" in Italian, our specialty",
+     "type": "egg"
+    },
+    {
+     "name": "Belgian Chocolate Brownies",
+     "price": 375,
+     "description": "Dark chocolate & walnut brownies served with ice cream & fudge",
+     "type": "veg"
+    },
+    {
+     "name": "Double Dark Chocolate Cheese Cake",
+     "price": 375,
+     "description": "Every morsel is heavenly in this chocolate & cream cheese dessert",
+     "type": "veg"
+    },
+    {
+     "name": "Cheese Cake in a Jar",
+     "price": 375,
+     "description": "A modern take on a classic recipe",
+     "type": "veg"
+    }
+   ]
+  },
+  {
+   "section": "The Gourmet Store Bakery Cabinet",
+   "items": [
+    {
+     "name": "Chocolate Chip Cookie",
+     "price": 75,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Almond Florentine",
+     "price": 75,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Almond Biscottis",
+     "price": 50,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "New York Cheese Cake (1 Slice)",
+     "price": 410,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Biscoff Cheese Cake (1 Slice)",
+     "price": 410,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Devil Fudge Cake (1 Slice)",
+     "price": 425,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Mississippi Mud Pie",
+     "price": 385,
+     "description": "",
+     "type": "veg"
+    }
+   ]
+  },
+  {
+   "section": "Spill The Tea",
+   "items": [
+    {
+     "name": "Jasmine Mandarin Tea",
+     "price": 285,
+     "description": "A unique combination of a fruit & flower tea",
+     "type": "veg"
+    },
+    {
+     "name": "Kesar Rose Chai",
+     "price": 285,
+     "description": "A fragrant blend for a soothing yet aromatic experience",
+     "type": "veg"
+    },
+    {
+     "name": "All Day Immunity Elixir",
+     "price": 285,
+     "description": "A herbal infusion to keep you energised through the day",
+     "type": "veg"
+    },
+    {
+     "name": "Tranquil Berry",
+     "price": 285,
+     "description": "Fruity berries & calming herbs to unwind after a long day",
+     "type": "veg"
+    },
+    {
+     "name": "Green Tea with Muskmelon",
+     "price": 285,
+     "description": "Sweet, subtle melon flavours with green tea",
+     "type": "veg"
+    },
+    {
+     "name": "Mint Mojito Tea",
+     "price": 285,
+     "description": "Organic green peppermint tea with fresh notes",
+     "type": "veg"
+    },
+    {
+     "name": "Cinnamon & Rooibos Tea",
+     "price": 285,
+     "description": "South African red bush tea with hints of cinnamon",
+     "type": "veg"
+    },
+    {
+     "name": "Organic Rose Tea",
+     "price": 285,
+     "description": "Fresh rose green tea transcends calmness",
+     "type": "veg"
+    },
+    {
+     "name": "Peach Hibiscus Tea",
+     "price": 285,
+     "description": "A chemistry between peach & floral notes",
+     "type": "veg"
+    },
+    {
+     "name": "Irani Sulaimani Chai",
+     "price": 285,
+     "description": "Exotic Irani tea served with milk & cardamom",
+     "type": "veg"
+    },
+    {
+     "name": "Lemon Grass & Orange Tea",
+     "price": 285,
+     "description": "A wellness tea to help rejuvenate",
+     "type": "veg"
+    }
+   ]
+  },
+  {
+   "section": "Coffee",
+   "items": [
+    {
+     "name": "Espresso",
+     "price": 130,
+     "description": "",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Americano",
+     "price": 185,
+     "description": "",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Cappuccino",
+     "price": 250,
+     "description": "",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Cafe Latte",
+     "price": 250,
+     "description": "",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Mochaccino",
+     "price": 250,
+     "description": "",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Activated Charcoal Cafe Latte",
+     "price": 250,
+     "description": "",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Irish Coffee",
+     "price": 300,
+     "description": "Diluted black coffee with a shot of Irish cream flavour, topped with whipped cream",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "French Kiss",
+     "price": 300,
+     "description": "Espresso with steamed milk, a shot of caramel & vanilla flavour",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Caramel Mocha",
+     "price": 300,
+     "description": "Espresso with steamed milk, a shot of caramel & chocolate flavour",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Cafe Pasha",
+     "price": 300,
+     "description": "Tiramisu flavour dark chocolate topped with hot milk & cream",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Piping Hot Cinnamon Macchiato",
+     "price": 300,
+     "description": "Double shot of espresso marked with strong cinnamon flavours & steamed milk",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Not Coffee",
+   "items": [
+    {
+     "name": "American Hot Chocolate",
+     "price": 300,
+     "description": "Pure dark chocolate topped with comforting hot milk",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Matcha Latte",
+     "price": 300,
+     "description": "Served hot or cold, to your liking",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ],
+     "variations": [
+      [
+       "Hot",
+       300
+      ],
+      [
+       "Cold",
+       300
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Cold Coffee",
+   "items": [
+    {
+     "name": "Café Frappé",
+     "price": 325,
+     "description": "A soothing coffee blended with vanilla ice cream",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Vietnamese Coffee",
+     "price": 325,
+     "description": "Coffee served with condensed milk & ice",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Frozen Mochaccino",
+     "price": 325,
+     "description": "Frozen coffee blended with chocolate ice cream",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Café Anaconda",
+     "price": 325,
+     "description": "Signature coffee of Mr. Beans — mint & chocolate, served with fudge & whipped cream",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Choco Irish",
+     "price": 325,
+     "description": "Our signature chocolate Irish cream flavoured coffee",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Café Veronica",
+     "price": 325,
+     "description": "A coffee dessert with layers of whipped cream, crushed cookies & chocolate fudge",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Affogato",
+     "price": 325,
+     "description": "An Italian classic — vanilla ice cream topped with espresso",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Nutella & Coffee Delight",
+     "price": 375,
+     "description": "A blend of hazelnut cream, chocolate fudge & coffee",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Brownie Millionaire",
+     "price": 375,
+     "description": "A signature dessert beverage of Mr. Beans",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    },
+    {
+     "name": "Ferrero Rocher Shake",
+     "price": 375,
+     "description": "Signature of Mr. Beans — hazelnut & chocolate are blissful",
+     "type": "veg",
+     "addons": [
+      "beverage-extras"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "Shakes, Juices & More",
+   "items": [
+    {
+     "name": "Chocolate Chill",
+     "price": 325,
+     "description": "Mr. Beans' take on a very, very chocolaty milkshake",
+     "type": "veg"
+    },
+    {
+     "name": "Kit Kat Shake",
+     "price": 325,
+     "description": "A chocolate milkshake blended & served with a chocolate wafer finger",
+     "type": "veg"
+    },
+    {
+     "name": "Oreo Shake",
+     "price": 325,
+     "description": "A classic cookie cream shake",
+     "type": "veg"
+    },
+    {
+     "name": "Vegan Almond Milk Berry Banana Smoothie",
+     "price": 375,
+     "description": "Lactose free refreshing smoothie with blueberry, strawberry & banana",
+     "type": "veg"
+    },
+    {
+     "name": "Vegan Almond Milk Mocha Cinnamon Shake",
+     "price": 375,
+     "description": "Lactose free chocolate, coffee, almond milk & cinnamon shake",
+     "type": "veg"
+    },
+    {
+     "name": "Virgin Mojito",
+     "price": 350,
+     "description": "Lemon, mint & sparkling soda are a sure shot to freshness",
+     "type": "veg"
+    },
+    {
+     "name": "Truly Lemon Lemonade",
+     "price": 350,
+     "description": "A refreshing beverage infused with lemongrass & kaffir lime leaves",
+     "type": "veg"
+    },
+    {
+     "name": "Morning De-tox Juice",
+     "price": 385,
+     "description": "Orange blended with blueberries & strawberry",
+     "type": "veg"
+    },
+    {
+     "name": "Berry De-tox Juice",
+     "price": 385,
+     "description": "Super food berries blended with watermelon to energise you",
+     "type": "veg"
+    },
+    {
+     "name": "Fresh Garden Juice",
+     "price": 385,
+     "description": "A concoction of orange, carrot & beetroot juice, infused with rosemary",
+     "type": "veg"
+    },
+    {
+     "name": "Specialised Orange Juice",
+     "price": 385,
+     "description": "Mr. Beans makes a glass full of Vitamin C different with infusions",
+     "type": "veg"
+    },
+    {
+     "name": "Fresh Water Melon Juice",
+     "price": 300,
+     "description": "Hydrate yourself with fresh watermelon",
+     "type": "veg"
+    },
+    {
+     "name": "Fresh Ginger Ale",
+     "price": 330,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Lemon Mint Iced Tea",
+     "price": 300,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Boston Cranberry Iced Tea",
+     "price": 300,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Orange Ginger Iced Tea",
+     "price": 300,
+     "description": "",
+     "type": "veg"
+    },
+    {
+     "name": "Mineral Water",
+     "price": 50,
+     "description": "",
+     "type": "veg"
+    }
+   ]
+  }
+ ]
+}

@@ -1443,6 +1443,63 @@ if (BACKED_UP) {
       ).run(r.id, crypto.randomBytes(24).toString('base64url'))
     }
   })
+  /*
+   * Mr. Beans Saket's new menu, from FINAL SAKET MENU.pdf, as written out in
+   * data/mrbeans-saket-oct-2026.json: 20 sections, add-ons and choices as the
+   * printed menu offers them. Replaces the old menu outright — none of it had
+   * photographs, and past orders keep their own copy of each dish's name.
+   * Egg dishes are marked non-veg and say "Contains egg."; Khapee has only
+   * veg and non-veg.
+   */
+  dataFix('2026-10-08-mr-beans-saket-menu', () => {
+    const r = db.prepare("SELECT id FROM restaurants WHERE slug = 'mr-beans-saket'").get() as any
+    if (!r) return
+    const spec = JSON.parse(fs.readFileSync(path.join(dataDir, 'mrbeans-saket-oct-2026.json'), 'utf8'))
+    const rid = r.id
+    db.prepare(
+      'DELETE FROM menu_item_addon_groups WHERE menu_item_id IN (SELECT id FROM menu_items WHERE restaurant_id = ?)',
+    ).run(rid)
+    db.prepare('DELETE FROM menu_item_variations WHERE menu_item_id IN (SELECT id FROM menu_items WHERE restaurant_id = ?)').run(rid)
+    db.prepare('DELETE FROM menu_addon_items WHERE group_id IN (SELECT id FROM menu_addon_groups WHERE restaurant_id = ?)').run(rid)
+    db.prepare('DELETE FROM menu_addon_groups WHERE restaurant_id = ?').run(rid)
+    db.prepare('DELETE FROM menu_items WHERE restaurant_id = ?').run(rid)
+    db.prepare('DELETE FROM menu_categories WHERE restaurant_id = ?').run(rid)
+
+    const groupId = new Map<string, { id: number; max: number }>()
+    let g = 0
+    for (const [key, grp] of Object.entries<any>(spec.addonGroups)) {
+      const gid = Number(
+        db.prepare('INSERT INTO menu_addon_groups (restaurant_id, name, sort_order) VALUES (?, ?, ?)').run(rid, grp.name, g++)
+          .lastInsertRowid,
+      )
+      grp.items.forEach(([name, rupees]: [string, number], n: number) =>
+        db.prepare('INSERT INTO menu_addon_items (group_id, name, price_cents, sort_order) VALUES (?, ?, ?, ?)').run(gid, name, rupees * 100, n),
+      )
+      groupId.set(key, { id: gid, max: grp.max })
+    }
+    const EMOJI: Record<string, string> = { veg: '🥗', egg: '🍳', nonveg: '🍗' }
+    spec.menu.forEach((sec: any, c: number) => {
+      const cid = Number(db.prepare('INSERT INTO menu_categories (restaurant_id, name, sort_order) VALUES (?, ?, ?)').run(rid, sec.section, c).lastInsertRowid)
+      sec.items.forEach((it: any, n: number) => {
+        const vars: [string, number][] = it.variations ?? []
+        const base = vars.length ? Math.min(...vars.map((v) => v[1])) : it.price
+        const desc = it.type === 'egg' ? `${it.description ? `${it.description} ` : ''}Contains egg.` : it.description
+        const mid = Number(
+          db.prepare(
+            `INSERT INTO menu_items (restaurant_id, category_id, name, description, price_cents, emoji, is_veg, is_available, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+          ).run(rid, cid, it.name, desc, base * 100, EMOJI[it.type] ?? '🍽️', it.type === 'veg' ? 1 : 0, n).lastInsertRowid,
+        )
+        vars.forEach(([name, rupees], k) =>
+          db.prepare('INSERT INTO menu_item_variations (menu_item_id, name, group_name, price_cents, sort_order) VALUES (?, ?, ?, ?, ?)').run(mid, name, 'Choose', rupees * 100, k),
+        )
+        for (const key of it.addons ?? []) {
+          const grp = groupId.get(key)
+          if (grp) db.prepare('INSERT INTO menu_item_addon_groups (menu_item_id, group_id, min_select, max_select) VALUES (?, ?, 0, ?)').run(mid, grp.id, grp.max)
+        }
+      })
+    })
+  })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
     db.prepare('UPDATE delivery_areas SET is_active = 0').run()

@@ -61,6 +61,10 @@ export default function Checkout() {
     return 'here'
   })
   const [tables, setTables] = useState<Table[] | null>(null)
+  // Compact by default, Zomato-style: what is already known is one line.
+  const [editDetails, setEditDetails] = useState(false)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [couponOpen, setCouponOpen] = useState(false)
   // A scanned table QR already answered "which table", so start on its answer
   // rather than an empty grid.
   const scannedTable = restaurantId ? readTableContext(restaurantId) : null
@@ -361,6 +365,10 @@ export default function Checkout() {
    */
   /** A bakery that only hands orders over the counter: nothing to change, nothing to pay later. */
   const collectOnly = !!options?.collectOnly
+  // A place with no eating in: the order is collected, whatever was picked before.
+  useEffect(() => {
+    if (collectOnly) setWhere('later')
+  }, [collectOnly])
   const prepaidOnly =
     !!options?.prepaidOnly ||
     (isCar && !!options?.carPrepaidOnly) ||
@@ -567,10 +575,12 @@ export default function Checkout() {
     <div className="app">
       <Header />
       <main className="page page-narrow">
-        <h1 style={{ marginBottom: 4 }}>Your order</h1>
-        <p className="muted mb-2">
-          {count} item{count > 1 ? 's' : ''} from {cart.restaurantName}
-        </p>
+        <div className="co-head">
+          <h1>Checkout</h1>
+          <p className="muted">
+            {count} item{count > 1 ? 's' : ''} · {cart.restaurantName}
+          </p>
+        </div>
 
         {error && <div className="form-error">{error}</div>}
 
@@ -782,6 +792,22 @@ export default function Checkout() {
             </div>
           )}
 
+          {/* Known from last time: one line, editable. Unknown: the two boxes. */}
+          {!editDetails && !needsName && !(needsPhone && !isNearby && !isDelivery) ? (
+            <div className="co-row">
+              <span className="co-row-icon" aria-hidden>
+                👤
+              </span>
+              <span className="co-row-main">
+                <strong>{name.trim()}</strong>
+                {!isNearby && !isDelivery && <span className="tiny muted">{phone.trim()}</span>}
+              </span>
+              <button type="button" className="link-btn" onClick={() => setEditDetails(true)}>
+                Edit
+              </button>
+            </div>
+          ) : (
+            <>
           <div className="field">
             <label htmlFor="co-name">Name for the order</label>
             <input
@@ -814,8 +840,16 @@ export default function Checkout() {
             </div>
           )}
 
+            </>
+          )}
+
+          {!lean && !noteOpen && !note ? (
+            <button type="button" className="co-add-note link-btn" onClick={() => setNoteOpen(true)}>
+              + Add a note for the kitchen
+            </button>
+          ) : (
           <div className="field" style={lean ? { display: 'none' } : undefined}>
-            <label htmlFor="co-note">Anything we should know? (optional)</label>
+            <label htmlFor="co-note">Note for the kitchen</label>
             <textarea
               id="co-note"
               className="textarea"
@@ -825,6 +859,7 @@ export default function Checkout() {
               placeholder="Less spicy, no onions…"
             />
           </div>
+          )}
 
 
           {/* The code — only mentioned when it is actually the missing piece.
@@ -896,11 +931,14 @@ export default function Checkout() {
                   🎓
                 </span>
                 <span className="coupon-body">
-                  <strong>
-                    {offer.label ? `${offer.label}? ` : ''}
-                    {offer.percent}% off coupon
-                  </strong>
-                  {offer.codesOn === false ? (
+                  <button type="button" className="coupon-toggle" onClick={() => setCouponOpen((v) => !v)}>
+                    <strong>
+                      {offer.label ? `${offer.label}? ` : ''}
+                      {offer.percent}% off coupon
+                    </strong>
+                    <span aria-hidden>{couponOpen ? '▴' : 'Unlock ›'}</span>
+                  </button>
+                  {!couponOpen ? null : offer.codesOn === false ? (
                     <span className="tiny muted">Unlocking by email is coming soon.</span>
                   ) : !codeSent ? (
                     <>
@@ -1023,6 +1061,19 @@ export default function Checkout() {
           {lean && !payNow ? (
             <p className="tiny muted pay-picks-foot">{payLaterLabel} — nothing to pay now.</p>
           ) : (
+          collectOnly || upiOnly || prepaidOnly ? (
+            <div className="co-row co-pay">
+              <span className="co-row-icon" aria-hidden>
+                ⚡
+              </span>
+              <span className="co-row-main">
+                <strong>Pay by UPI</strong>
+                <span className="tiny muted">
+                  {canPayInApp ? 'GPay, PhonePe, Paytm — any UPI app' : `${cart.restaurantName} has not added a UPI ID yet`}
+                </span>
+              </span>
+            </div>
+          ) : (
           <>
           <p className="pay-head-label">Pay using</p>
           <div className="pay-picks">
@@ -1059,13 +1110,8 @@ export default function Checkout() {
               </span>
               <strong>{payLaterLabel}</strong>
               <span className="pay-pick-sub">
-                {prepaidOnly
-                  ? isCar && options?.carPrepaidOnly && !options?.prepaidOnly
-                    ? 'Orders brought out to your car are paid for in the app'
-                    : (where === 'later' || where === 'takeaway') && !options?.prepaidOnly
-                      ? 'Takeaway orders are paid by UPI in the app'
-                    : 'Not tonight — the kitchen has closed, so these have to be paid for in the app'
-                  : isDelivery
+                {/* Only shown when cash is a real choice; a pay-first order gets the single UPI line instead. */}
+                {isDelivery
                   ? 'Cash or UPI when it reaches you'
                   : isCar
                     ? 'Cash or UPI at the car'
@@ -1079,10 +1125,16 @@ export default function Checkout() {
           </div>
           <p className="tiny muted pay-picks-foot">{paySub}</p>
           </>
+          )
           )}
 
+          <div className="co-bar">
+          <div className="co-bar-total">
+            <strong>{money(payableCents)}</strong>
+            <span>{discountCents > 0 ? `you save ${money(discountCents)}` : 'total'}</span>
+          </div>
           <button
-            className="btn btn-accent btn-lg btn-block"
+            className="btn btn-accent btn-lg co-bar-btn"
             disabled={placing}
             onClick={() => {
               if (needsName) {
@@ -1132,6 +1184,7 @@ export default function Checkout() {
               `Place order · ${money(payableCents)}`
             )}
           </button>
+          </div>
 
           {!ready && !placing && (
             <p className="tiny muted center" style={{ marginTop: 10 }}>

@@ -15,6 +15,7 @@ import { pushToRestaurant } from '../push.ts'
 import { publish } from '../events.ts'
 import { checkCode, discountOn, newCode, offerFor, passEmail, qualifyingEmail } from '../offers.ts'
 import { mailConfigured, sendMail } from '../mail.ts'
+import { mailboxExists } from '../mailbox.ts'
 
 export const ordersRouter = Router()
 
@@ -73,9 +74,10 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
      */
     collectOnly:
       !!r.accepts_pickup &&
-      !r.accepts_takeaway &&
       !r.accepts_car &&
-      !db.prepare('SELECT 1 FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(r.id),
+      // No eating in: switched off outright, or no tables and no carry-out.
+      (r.accepts_dine_in === 0 ||
+        (!r.accepts_takeaway && !db.prepare('SELECT 1 FROM restaurant_tables WHERE restaurant_id = ? LIMIT 1').get(r.id))),
   })
 })
 
@@ -89,6 +91,10 @@ ordersRouter.post('/offer/:restaurantId/send-code', async (req, res) => {
   const email = qualifyingEmail(offer, req.body?.email)
   if (!offer) return res.status(404).json({ error: 'There is no offer here.' })
   if (!email) return res.status(400).json({ error: `Enter your @${offer.domain} email.` })
+  // A made-up address is told so, before a code is sent into nothing.
+  if ((await mailboxExists(email)) === 'no') {
+    return res.status(404).json({ error: `That email isn't available — there's no ${email} account. Check for typos.` })
+  }
   if (!mailConfigured()) return res.status(503).json({ error: 'Email codes are not switched on yet.' })
   const made = newCode(email)
   if (!made.ok) return res.status(429).json({ error: made.error })

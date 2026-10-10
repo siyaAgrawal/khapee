@@ -1,4 +1,5 @@
 import { db } from './db.ts'
+import { addonsOf, optionsFor, priceLine, type ChosenAddon } from './menu-options.ts'
 import { generateOrderNumber, randomToken } from './ids.ts'
 import { publish } from './events.ts'
 import { isTerminal, money, type OrderStatus, type OrderType, type ServiceType } from '../shared/orders.ts'
@@ -7,10 +8,11 @@ import { openRoomForOrder } from './rooms.ts'
 import { sendOrderConfirmation } from './whatsapp.ts'
 import { alertRestaurant } from './alerts.ts'
 import { askCustomer, askToPrepay } from './customer-notify.ts'
-import { claimedCents, outstandingCents } from './payments.ts'
+import { claimedCents, outstandingCents, upiOnly } from './payments.ts'
 import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
 import { cardForOrder, cardToSpend, customerKey, discountFor, maybeAward, spend } from './scratch.ts'
+import { discountOn, offerFor, qualifyingEmail } from './offers.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -43,7 +45,7 @@ export function checkAccessCode(code: string, restaurantId: number): CodeCheck {
   return { ok: true, row }
 }
 
-export type CartLine = { menuItemId: number; quantity: number }
+export type CartLine = { menuItemId: number; quantity: number; variationId?: number | null; addonIds?: number[] }
 
 export type CreateOrderInput = {
   restaurantId: number
@@ -92,6 +94,11 @@ export type CreateOrderInput = {
    * the clock and does the arithmetic.
    */
   wantInMinutes?: number | null
+  /**
+   * The customer pressed Apply on the restaurant's coupon. It counts only for a
+   * signed-in account whose email qualifies (see server/offers.ts).
+   */
+  applyOffer?: boolean
 }
 
 /**
@@ -313,7 +320,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * edge case — it is the normal way somebody meets the closing kitchen.
    */
   const limited = limitedState(input.restaurantId)
-  const priced: { item: any; quantity: number }[] = []
+  const priced: { item: any; quantity: number; unitPriceCents: number; variation: any; addons: ChosenAddon[]; label: string }[] = []
+  // Variations and add-ons for every dish in the cart, read once.
+  const dishOptions = optionsFor(lines.map((l) => Number(l?.menuItemId)).filter(Number.isFinite))
   const closedOut: string[] = []
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line.menuItemId)) as any
@@ -328,7 +337,26 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       continue
     }
     const quantity = Math.min(50, Math.max(1, Math.floor(Number(line.quantity))))
-    priced.push({ item, quantity })
+    // The variation and add-ons chosen, checked and priced from the menu.
+    // The restaurant's own till may ring up a dish with options without
+    // picking one: it gets the first option, as a waiter's quick add does.
+    const opts = dishOptions.get(item.id)
+    const chosen = priceLine(
+      item,
+      input.fromCustomer || line.variationId != null
+        ? line
+        : { ...line, variationId: opts?.variations.find((v) => v.isAvailable)?.id ?? null },
+      opts,
+    )
+    if (!chosen.ok) return { ok: false, status: 409, error: chosen.error }
+    priced.push({
+      item,
+      quantity,
+      unitPriceCents: chosen.unitPriceCents,
+      variation: chosen.variation,
+      addons: chosen.addons,
+      label: chosen.label,
+    })
   }
   if (closedOut.length) {
     return { ok: false, status: 409, error: limitedRefusal(limited, closedOut) }
@@ -355,7 +383,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       error: 'The kitchen has closed for the night, so these have to be paid for in the app. Pay by UPI to place the order.',
     }
   }
-  const subtotalCents = priced.reduce((sum, l) => sum + l.item.price_cents * l.quantity, 0)
+  const subtotalCents = priced.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0)
 
   // --- What it costs to carry it ------------------------------------------
   // The area screen promises a fee and a minimum before anyone picks a dish.
@@ -383,30 +411,39 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     }
     deliveryFeeCents = area.fee_cents
   }
+  // The restaurant's offer, for a customer whose email qualifies: a share of
+  // the dishes, never of the delivery fee.
+  const offer = input.applyOffer && input.userId ? offerFor(input.restaurantId) : null
+  // The email Google confirmed, not the one typed at sign-up (routes/auth.ts).
+  const accountEmail = offer
+    ? ((db.prepare('SELECT verified_email FROM users WHERE id = ?').get(input.userId) as any)?.verified_email ?? '')
+    : ''
+  const offerEmail = qualifyingEmail(offer, accountEmail)
+  const offerPercent = offerEmail && offer ? offer.percent : 0
+  const offerCents = discountOn(subtotalCents, offerPercent)
+
   const phone = customerPhone(input.contactPhone, input.userId, liveSession?.phone ?? '')
   if (input.requirePhone && !looksLikePhone(phone)) {
     return { ok: false, status: 400, error: 'Add a 10-digit mobile number so the restaurant can reach you.' }
   }
 
   /*
-   * A scratch card they have already won, coming off this bill.
+   * And a scratch card they rubbed on an earlier order.
    *
-   * Worked out here and nowhere else: the client is told what the discount
-   * will be so the checkout can show it, and then the server works it out
-   * again from the card itself. Anything a customer could type is a number
-   * they could have typed differently.
+   * One or the other, never both. Two discounts stacked on one café order is
+   * how a bill ends up under what the food cost, and neither of these was
+   * offered on the understanding that it would be combined with the other.
+   * The bigger saving wins, which is the one the customer would have picked.
    *
-   * On the food, not the delivery fee — a prize that pays somebody's courier
-   * is a prize the restaurant did not mean to give.
+   * A card that loses is left unspent — it is still theirs, and burning it on
+   * an order where it took nothing off would be the worst of both.
    */
   const spender = customerKey(input.userId, phone)
-  // Prepaid orders included — at a UPI-only restaurant that is all of them,
-  // and a prize that never reached the bill would be no prize at all. The
-  // checkout asks for the same figure through /scratch-quote before it builds
-  // the UPI request, so the amount the customer pays is the discounted one.
   const card = input.requirePhone ? cardToSpend(input.restaurantId, spender, subtotalCents) : null
-  const discountCents = card ? discountFor(card, subtotalCents) : 0
-  const totalCents = Math.max(0, subtotalCents - discountCents) + deliveryFeeCents
+  const cardCents = card ? discountFor(card, subtotalCents) : 0
+  const useCard = cardCents > offerCents
+  const discountCents = Math.max(offerCents, cardCents)
+  const totalCents = subtotalCents - discountCents + deliveryFeeCents
 
   /*
    * Must this order be paid for in the app, and can it be?
@@ -426,6 +463,14 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * actually change hands.
    */
   const payFirst = mustPayInApp(input, liveSession, restaurant)
+  /*
+   * UPI only, and paid: the customer says they've sent the money, but only the
+   * restaurant's own UPI app can say whether it arrived. So the order waits for
+   * staff to accept it — which is them confirming the payment — and only then
+   * goes to the kitchen and the till (routes/staff.ts, sendToKitchen).
+   */
+  const checkPaymentFirst = !!input.paymentClaim && !!input.fromCustomer && upiOnly(input.restaurantId)
+  const startsAs = input.paymentClaim && !checkPaymentFirst ? 'NEW' : 'REQUESTED'
   /*
    * Held, and invisible to the restaurant until it is paid for.
    *
@@ -515,11 +560,11 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         // restaurant has the cash and the customer has committed. Not paid, it
         // is a request to cook on the promise that somebody turns up — which a
         // kitchen has to be able to refuse, whatever way the order came in.
-        input.paymentClaim ? 'NEW' : 'REQUESTED',
+        startsAs,
         paymentMethod,
         totalCents,
         discountCents,
-        card ? card.id : null,
+        card && useCard ? card.id : null,
         String(input.note ?? '').slice(0, 300),
         verifyToken,
         accessCodeId,
@@ -555,13 +600,34 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         wantedAt,
       )
     const orderId = Number(info.lastInsertRowid)
+    if (discountCents > 0) {
+      // Whichever one won gets its name on the order. A customer who had both
+      // an offer and a card still has only one discount, and an order that
+      // claimed both would reconcile against neither.
+      db.prepare('UPDATE orders SET discount_cents = ?, offer_percent = ?, offer_email = ? WHERE id = ?').run(
+        discountCents,
+        useCard ? 0 : offerPercent,
+        useCard ? '' : offerEmail,
+        orderId,
+      )
+    }
 
     const insertItem = db.prepare(
-      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, variation_id, variation_name, addons)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     for (const l of priced) {
-      insertItem.run(orderId, l.item.id, l.item.name, l.item.emoji, l.item.price_cents, l.quantity)
+      insertItem.run(
+        orderId,
+        l.item.id,
+        l.item.name,
+        l.item.emoji,
+        l.unitPriceCents,
+        l.quantity,
+        l.variation?.id ?? null,
+        l.variation?.name ?? '',
+        l.addons.length ? JSON.stringify(l.addons) : '',
+      )
     }
 
     // The first event is whatever the order actually started as. It was always
@@ -569,7 +635,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     // saying it had already been accepted into one.
     db.prepare(`INSERT INTO order_events (order_id, status, actor) VALUES (?, ?, 'customer')`).run(
       orderId,
-      input.paymentClaim ? 'NEW' : 'REQUESTED',
+      startsAs,
     )
 
     if (input.paymentClaim) {
@@ -603,7 +669,11 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       input.restaurantId,
       orderId,
       // The title is the thing a glance has to answer: does this need me?
-      input.paymentClaim ? `Paid order #${orderNumber}` : `#${orderNumber} needs your yes`,
+      checkPaymentFirst
+        ? `Check payment for #${orderNumber}`
+        : input.paymentClaim
+          ? `Paid order #${orderNumber}`
+          : `#${orderNumber} needs your yes`,
       `${where} · ${customerName} · ${money(totalCents)}` +
         (input.paymentClaim ? ' · paid in the app' : ' · unpaid until you accept'),
     )
@@ -621,7 +691,9 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
    * twice in the same second — the discount is given back, because a bill that
    * says ₹20 off has to have a card behind it.
    */
-  if (card && discountCents > 0 && !spend(card.id, orderId)) {
+  // Only the card that actually won is spent — an offer beating it leaves the
+  // card where it was, still theirs.
+  if (card && useCard && discountCents > 0 && !spend(card.id, orderId)) {
     db.prepare(
       "UPDATE orders SET total_cents = total_cents + ?, discount_cents = 0, scratch_card_id = NULL WHERE id = ?",
     ).run(discountCents, orderId)
@@ -682,15 +754,16 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     customerName,
     customerPhone: phone,
     total: money(totalCents),
-    items: priced.map((l) => `${l.quantity} × ${l.item.name}`).join('\n'),
-    needsAccepting: !input.paymentClaim,
+    items: priced.map((l) => `${l.quantity} × ${l.item.name}${l.label ? ` (${l.label})` : ''}`).join('\n'),
+    needsAccepting: !input.paymentClaim || checkPaymentFirst,
     paid: !!input.paymentClaim,
   })
 
   // And whatever the restaurant bills on, if they have pointed Khapee at it.
   // Not awaited: whether somebody else's till answered has nothing to do with
   // whether this order exists. See server/billing.ts.
-  tellBilling(input.restaurantId, orderId, 'order.placed')
+  // Held back while staff check the payment; accepting sends it.
+  if (!checkPaymentFirst) tellBilling(input.restaurantId, orderId, 'order.placed')
 
   publish('order:new', { restaurantId: input.restaurantId, userId: input.userId, orderId, order })
   return { ok: true, order }
@@ -707,7 +780,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
  * somebody presses Accept is a figure that is wrong while it is being read.
  */
 export function retotalOrder(orderId: number): number {
-  const row = db.prepare('SELECT delivery_fee_cents FROM orders WHERE id = ?').get(orderId) as any
+  const row = db.prepare('SELECT delivery_fee_cents, offer_percent FROM orders WHERE id = ?').get(orderId) as any
   if (!row) return 0
   const sum = db
     .prepare(
@@ -715,8 +788,14 @@ export function retotalOrder(orderId: number): number {
          FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)`,
     )
     .get(orderId) as any
-  const total = Number(sum.n) + Number(row.delivery_fee_cents ?? 0)
-  db.prepare("UPDATE orders SET total_cents = ?, updated_at = datetime('now') WHERE id = ?").run(total, orderId)
+  // An offer is a percentage of the dishes, so it follows what is left of them.
+  const discount = discountOn(Number(sum.n), Number(row.offer_percent ?? 0))
+  const total = Number(sum.n) - discount + Number(row.delivery_fee_cents ?? 0)
+  db.prepare("UPDATE orders SET total_cents = ?, discount_cents = ?, updated_at = datetime('now') WHERE id = ?").run(
+    total,
+    discount,
+    orderId,
+  )
   return total
 }
 
@@ -931,7 +1010,7 @@ export function getOrder(orderId: number) {
 export function shapeOrder(row: any) {
   const items = db
     .prepare(
-      `SELECT i.id, i.name, i.emoji, i.unit_price_cents, i.quantity, i.paid_at, i.member_id,
+      `SELECT i.id, i.name, i.emoji, i.unit_price_cents, i.quantity, i.paid_at, i.member_id, i.variation_name, i.addons,
               i.added_by_staff, i.accepted, m.display_name AS member_name
        FROM order_items i LEFT JOIN group_members m ON m.id = i.member_id
        WHERE i.order_id = ? ORDER BY i.id`,
@@ -980,6 +1059,8 @@ export function shapeOrder(row: any) {
     needsCustomerOk: row.needs_customer_ok ?? null,
     /** Set while the kitchen is waiting for this car order to be paid online. */
     needsPrepay: row.needs_prepay ?? null,
+    /** The restaurant takes UPI only: accepting means the payment has arrived. */
+    upiOnly: upiOnly(row.restaurant_id),
     declinedItems: row.declined_items ?? '',
     /** Set when the customer agreed to go ahead without the refused dishes. */
     customerOkAt: row.customer_ok_at ?? null,
@@ -1040,11 +1121,15 @@ export function shapeOrder(row: any) {
     paymentMethod: row.payment_method,
     // The dishes, then what was added to carry them, then what is owed. Kept
     // apart so a customer can see why the total is more than the menu prices.
-    // The dishes before anything came off, so the saving can be shown against
-    // a number the customer recognises from the menu.
+    // The dishes before anything came off, so a saving can be shown against a
+    // number the customer recognises from the menu.
     subtotalCents: row.total_cents - (row.delivery_fee_cents ?? 0) + (row.discount_cents ?? 0),
     deliveryFeeCents: row.delivery_fee_cents ?? 0,
+    // What came off, and which of the two it was: an offer the account
+    // qualified for (server/offers.ts), or a scratch card they rubbed.
     discountCents: row.discount_cents ?? 0,
+    offerPercent: row.offer_percent ?? 0,
+    offerEmail: row.offer_email ?? '',
     totalCents: row.total_cents,
     note: row.note,
     verifyToken: row.verify_token,
@@ -1060,6 +1145,8 @@ export function shapeOrder(row: any) {
       id: i.id,
       name: i.name,
       emoji: i.emoji,
+      /** The variation and add-ons chosen, "Large · Extra cheese", or ''. */
+      options: [i.variation_name, addonsOf(i).map((a) => a.name).join(', ')].filter(Boolean).join(' · '),
       unitPriceCents: i.unit_price_cents,
       quantity: i.quantity,
       memberId: i.member_id ?? null,

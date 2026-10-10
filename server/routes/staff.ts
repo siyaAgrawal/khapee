@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { optionsFor, priceLine } from '../menu-options.ts'
 import { db, WRITES_ARE_TEMPORARY } from '../db.ts'
 import { requireStaff, setActiveRestaurant, userFromToken } from '../auth.ts'
 import { generateAccessCode, normalizeCode, tableToken } from '../ids.ts'
@@ -7,7 +8,15 @@ import { applyStatus } from '../order-status.ts'
 import { acceptRemainingItems, askForPrepay, createOrder, decideItem, getOrder, shapeOrder } from '../orders-service.ts'
 import { deleteUpload, imageUrl, saveDataUrl } from '../uploads.ts'
 import { canTransition, STATUS_LABEL, type OrderStatus } from '../../shared/orders.ts'
-import { claimedCents, markMemberItemsPaid, paidCents, shapePayment, syncOrderPayment } from '../payments.ts'
+import {
+  claimedCents,
+  confirmClaims,
+  markMemberItemsPaid,
+  paidCents,
+  shapePayment,
+  syncOrderPayment,
+  upiOnly,
+} from '../payments.ts'
 import { shapeSession } from '../groups.ts'
 import { opsBoard, runQueue } from '../ops.ts'
 import { tellCustomer, thankNudge } from '../customer-notify.ts'
@@ -201,6 +210,18 @@ staffRouter.post('/orders/:id/items/:itemId/decide', (req: any, res) => {
   res.json({ order: result.order, allDeclined: result.allDeclined })
 })
 
+/**
+ * A UPI-only order, accepted: the payment the customer claimed is confirmed,
+ * and the order goes to the restaurant's till and billing feed, which it was
+ * held back from until now. Petpooja keeps track of what it has already been
+ * sent, so this is safe for an order that somehow went earlier.
+ */
+function sendToKitchen(restaurantId: number, orderId: number, req: any) {
+  confirmClaims(orderId)
+  tellBilling(restaurantId, orderId, 'order.placed')
+  void pushOrder(orderId, originOf(req)).catch(() => {})
+}
+
 staffRouter.post('/orders/:id/status', async (req, res) => {
   const restaurantId = myRestaurant(req)
   const id = Number(req.params.id)
@@ -225,7 +246,11 @@ staffRouter.post('/orders/:id/status', async (req, res) => {
    */
   const moved = applyStatus(id, to, 'staff')
   if (!moved.ok) return res.status(moved.status).json({ error: moved.error })
-  const order = moved.order
+  // UPI only: accepting is confirming the money arrived, and only now does the
+  // order go to the kitchen's till.
+  const paysFirst = to === 'ACCEPTED' && upiOnly(restaurantId)
+  if (paysFirst) sendToKitchen(restaurantId, id, req)
+  const order = paysFirst ? getOrder(id) : moved.order
 
   // Said back, rather than left to be inferred from a notification that may
   // never come. Accepting an order with no number on it sends no thank-you —
@@ -1462,22 +1487,49 @@ staffRouter.post('/orders/:id/items', (req: any, res) => {
   const lines = Array.isArray(req.body?.items) ? req.body.items : []
   if (!lines.length) return res.status(400).json({ error: 'Pick at least one dish.' })
 
-  const priced: { item: any; quantity: number }[] = []
+  const priced: { item: any; quantity: number; unitPriceCents: number; variation: any; addons: any[] }[] = []
+  const dishOptions = optionsFor(lines.map((l: any) => Number(l?.menuItemId)).filter(Number.isFinite))
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line?.menuItemId)) as any
     if (!item || item.restaurant_id !== restaurantId) {
       return res.status(400).json({ error: 'That dish is not on your menu.' })
     }
-    priced.push({ item, quantity: Math.min(50, Math.max(1, Math.floor(Number(line.quantity) || 1))) })
+    const options = dishOptions.get(item.id)
+    // A waiter adding a dish with options without picking one gets the first
+    // option and no extras, rather than a refusal at a busy table.
+    const chosen = priceLine(
+      item,
+      { variationId: line.variationId ?? options?.variations.find((v) => v.isAvailable)?.id ?? null, addonIds: line.addonIds },
+      options,
+    )
+    if (!chosen.ok) return res.status(409).json({ error: chosen.error })
+    priced.push({
+      item,
+      quantity: Math.min(50, Math.max(1, Math.floor(Number(line.quantity) || 1))),
+      unitPriceCents: chosen.unitPriceCents,
+      variation: chosen.variation,
+      addons: chosen.addons,
+    })
   }
 
   db.transaction(() => {
     const insert = db.prepare(
-      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, added_by_staff)
-       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, added_by_staff,
+                                variation_id, variation_name, addons)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
     )
     for (const l of priced) {
-      insert.run(order.id, l.item.id, l.item.name, l.item.emoji, l.item.price_cents, l.quantity)
+      insert.run(
+        order.id,
+        l.item.id,
+        l.item.name,
+        l.item.emoji,
+        l.unitPriceCents,
+        l.quantity,
+        l.variation?.id ?? null,
+        l.variation?.name ?? '',
+        l.addons.length ? JSON.stringify(l.addons) : '',
+      )
     }
     const total = db
       .prepare('SELECT COALESCE(SUM(unit_price_cents * quantity), 0) AS n FROM order_items WHERE order_id = ?')
@@ -2068,6 +2120,7 @@ staffRouter.post('/orders/:id/accept', async (req: any, res) => {
     "UPDATE orders SET status = 'ACCEPTED', accepted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
   ).run(order.id)
   db.prepare("INSERT INTO order_events (order_id, status, actor) VALUES (?, 'ACCEPTED', 'staff')").run(order.id)
+  if (upiOnly(restaurantId)) sendToKitchen(restaurantId, order.id, req)
   notifyCustomer(order, 'Order accepted', `${order.order_number} is being made now.`)
   // The same phones the board's own Accept tells. There are two ways to accept
   // an order — this one and the status route — and only one of them was

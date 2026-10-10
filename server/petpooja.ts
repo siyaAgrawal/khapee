@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { db } from './db.ts'
 import { flowFor } from '../shared/orders.ts'
 import { serviceOf } from './order-status.ts'
-import { computeBill } from './tax.ts'
+import { addonsOf } from './menu-options.ts'
 
 /**
  * Petpooja, the till that is already on the counter.
@@ -35,7 +35,8 @@ import { computeBill } from './tax.ts'
 
 /** Live endpoints are per-integration; these are the documented dev ones. */
 const DEV = {
-  saveOrder: 'https://47pfzh5sf2.execute-api.ap-southeast-1.amazonaws.com/V1/save_order',
+  // As given in Petpooja's "API Guide for Placing Orders" (sandbox).
+  saveOrder: 'https://qle1yy2ydc.execute-api.ap-southeast-1.amazonaws.com/V1/save_order',
   orderStatus: 'https://qle1yy2ydc.execute-api.ap-southeast-1.amazonaws.com/V1/update_order_status',
   fetchMenu: 'https://qle1yy2ydc.execute-api.ap-southeast-1.amazonaws.com/V1/mapped_restaurant_menus',
 }
@@ -203,28 +204,138 @@ async function call(url: string, body: any, headers: Record<string, string> = {}
 
 const money = (cents: number) => (cents / 100).toFixed(2)
 
+/** One dish line as it goes to the till, already worked out. */
+export type RoundLine = {
+  /** Their item id — or, for a dish ordered as a variation, that variation's own id. */
+  id: string
+  name: string
+  /** One unit, add-ons included, in paise. */
+  unitCents: number
+  quantity: number
+  variationId: string
+  variationName: string
+  addons: { id: string; name: string; groupName: string; groupId: string; priceCents: number }[]
+  /** Tax inside this line's price, per tax, for the whole quantity. */
+  taxes: { id: string; name: string; ratePercent: string; amountCents: number }[]
+}
+
+export type Round = {
+  lines: RoundLine[]
+  discountCents: number
+  deliveryCents: number
+  taxTotalCents: number
+  /** Per tax id across the round: what the till files it under. */
+  taxDetails: { id: string; title: string; ratePercent: string; amountCents: number }[]
+  /** Item prices − discount + delivery: exactly what the customer paid for this round. */
+  totalCents: number
+}
+
 /**
- * One Khapee order, in the shape Petpooja's till expects.
+ * The money in one round, worked out the way Petpooja's guide defines it.
  *
- * Kept as a pure function of rows that have already been read, so it can be
- * tested and looked at without a network anywhere near it — and so the exact
- * payload can be shown to a restaurant that asks what we are sending.
- *
- * Two mappings matter and both are ours to get right:
- *
- * order_type is D for anything eaten in, P for anything carried out. Khapee
- * has six service modes and Petpooja has three, so a car and a precinct
- * pickup are both parcels — which is what they are.
- *
- * The item ids must be theirs. An order containing a dish that has never come
- * through a menu push has no id to send, and rather than invent one the push
- * is refused: an order that arrives at a till with an item the till does not
- * know is worse than an order that arrives by the normal route.
+ * Khapee's prices are what the customer pays, so every item goes over as
+ * tax-inclusive and the GST inside it is worked out from Petpooja's own tax
+ * rates (from the menu push), on the price after the order's discount has been
+ * shared across the lines. Total = item final prices − order discount +
+ * delivery, which is the amount actually taken — the till never adds tax on
+ * top of a price that already included it.
  */
-export function orderPayload(link: Link, order: any, items: any[], restaurant: any, callbackUrl: string) {
-  const dineIn = order.service_mode === 'dine_in' || (order.order_type === 'dine_in' && !order.takeaway)
-  const created = String(order.created_at ?? '').replace('T', ' ').slice(0, 19)
-  const [date, time] = created.split(' ')
+export function buildRound(
+  items: any[],
+  taxesById: Map<string, { name: string; rateBp: number }>,
+  opts: { discountCents: number; deliveryCents: number },
+): Round {
+  const grossOf = (i: any) => i.unit_price_cents * i.quantity
+  const gross = items.reduce((n, i) => n + grossOf(i), 0)
+  const discountCents = Math.max(0, Math.min(gross, Math.round(opts.discountCents || 0)))
+
+  // The discount, shared across lines by value; the remainder on the largest.
+  const shares = items.map((i) => (gross > 0 ? Math.floor((grossOf(i) * discountCents) / gross) : 0))
+  const spare = discountCents - shares.reduce((n, x) => n + x, 0)
+  if (spare > 0 && items.length) {
+    const big = items.reduce((best, i, k) => (grossOf(i) > grossOf(items[best]) ? k : best), 0)
+    shares[big] += spare
+  }
+
+  const totals = new Map<string, { title: string; ratePercent: string; amountCents: number }>()
+  const lines: RoundLine[] = items.map((i, k) => {
+    const net = grossOf(i) - shares[k]
+    const ids = String(i.pos_tax_ids ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter((x) => taxesById.has(x))
+    const totalBp = ids.reduce((n, id) => n + (taxesById.get(id)?.rateBp ?? 0), 0)
+    // Inclusive: the tax inside `net` at the combined rate, split by each rate.
+    const taxInside = totalBp > 0 ? Math.round(net - net / (1 + totalBp / 10000)) : 0
+    let left = taxInside
+    const taxes = ids.map((id, n) => {
+      const t = taxesById.get(id)!
+      const amount = n === ids.length - 1 ? left : Math.round((taxInside * t.rateBp) / totalBp)
+      left -= amount
+      const ratePercent = String(t.rateBp / 100)
+      const sum = totals.get(id) ?? { title: t.name, ratePercent, amountCents: 0 }
+      sum.amountCents += amount
+      totals.set(id, sum)
+      return { id, name: t.name, ratePercent, amountCents: amount }
+    })
+    const addons = addonsOf(i)
+    return {
+      id: String((i.variation_id && i.pos_variation_id) || i.pos_item_id || ''),
+      name: i.name,
+      unitCents: i.unit_price_cents,
+      quantity: i.quantity,
+      variationId: i.variation_id ? String(i.pos_global_id || i.pos_variation_id || '') : '',
+      variationName: i.variation_name ?? '',
+      addons: addons.map((a) => ({
+        id: String(a.posId ?? ''),
+        name: a.name,
+        groupName: a.groupName,
+        groupId: String(a.posGroupId ?? ''),
+        priceCents: a.priceCents,
+      })),
+      taxes,
+    }
+  })
+
+  const taxDetails = [...totals.entries()].map(([id, t]) => ({ id, ...t }))
+  const deliveryCents = Math.max(0, opts.deliveryCents || 0)
+  return {
+    lines,
+    discountCents,
+    deliveryCents,
+    taxTotalCents: taxDetails.reduce((n, t) => n + t.amountCents, 0),
+    taxDetails,
+    totalCents: gross - discountCents + deliveryCents,
+  }
+}
+
+/**
+ * One Khapee order, in the shape Petpooja's Save Order API expects.
+ *
+ * Kept as a pure function, so it can be tested and shown to a restaurant (or
+ * to Petpooja) without a network anywhere near it. Field by field it follows
+ * their "API Guide for Placing Orders":
+ *
+ *   order_type        H home delivery, P parcel (takeaway, car, pickup), D dine-in
+ *   price             one unit including its add-ons; final_price the same, as
+ *                     discounts go on the order rather than the item
+ *   item_tax          each tax (CGST, SGST…) by their id, with its percentage
+ *   discount_total    the order's discount as a fixed amount (discount_type F);
+ *                     no "Discount" object, as the guide asks
+ *   total             item final prices − discount + delivery
+ */
+export function orderPayload(link: Link, order: any, round: Round, restaurant: any, callbackUrl: string) {
+  const mode = String(order.service_mode ?? '')
+  const dineIn = mode === 'dine_in' || (!mode && order.order_type === 'dine_in' && !order.takeaway)
+  const delivery = mode === 'delivery'
+  const created = indiaTime(order.created_at)
+  // When it is wanted, which for an order placed for later is not when it was placed.
+  const due = indiaTime(order.wanted_at || order.created_at)
+  const [date, time] = due.split(' ')
+  /* Paid in the app — confirmed, or sent and waiting for the restaurant to
+     tick it off — is ONLINE. Sending a UPI-paid order as cash is a till
+     asking the customer to pay twice. */
+  const paid = order.payment_status === 'PAID' || !!order.paid_in_app
 
   return {
     app_key: link.appKey,
@@ -244,8 +355,14 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
           details: {
             email: '',
             name: order.customer_name ?? '',
-            address: order.delivery_address ?? '',
-            phone: String(order.contact_phone ?? order.delivery_phone ?? '').replace(/\D/g, '').slice(-10),
+            /* Required by their schema even when nobody is delivering: the
+               address for a delivery, and otherwise where the customer is. */
+            address:
+              order.delivery_address ||
+              (dineIn
+                ? `Dine-in${order.pos_table_id || order.table_label ? `, table ${order.pos_table_id || order.table_label}` : ''}`
+                : 'Collect from the restaurant'),
+            phone: String(order.contact_phone || order.delivery_phone || '').replace(/\D/g, '').slice(-10),
             latitude: '',
             longitude: '',
           },
@@ -257,62 +374,99 @@ export function orderPayload(link: Link, order: any, items: any[], restaurant: a
             preorder_time: time ?? '',
             service_charge: '0.00',
             sc_tax_amount: '0.00',
-            delivery_charges: money(order.delivery_fee_cents ?? 0),
+            delivery_charges: money(round.deliveryCents),
             dc_tax_percentage: '0',
             dc_tax_amount: '0.00',
             packing_charges: '0.00',
             pc_tax_amount: '0.00',
             pc_tax_percentage: '0',
-            /* The tax the customer is actually being charged.
-               See the note on taxOf below for why this is not simply left to
-               their till to work out. */
-            order_type: dineIn ? 'D' : 'P',
+            order_type: delivery ? 'H' : dineIn ? 'D' : 'P',
             /* Their name for the table when we know it, ours only as a last
                resort — a table_no their till does not recognise is an order
                that lands nowhere. */
+            table_no: dineIn ? String(order.pos_table_id || order.table_label || '') : '',
+            no_of_persons: '0',
+            ondc_bap: '',
             advanced_order: order.wanted_at ? 'Y' : 'N',
             /* Paid in the app is ONLINE; anything settled at the counter is
-               cash on delivery as far as their till is concerned, which is
-               what stops it asking a customer to pay twice. */
-            payment_type: order.payment_status === 'PAID' ? 'ONLINE' : 'COD',
-            table_no: dineIn ? String(order.pos_table_id || order.table_label || '') : '',
-            no_of_persons: '',
-            discount_total: '0.00',
-            tax_total: money(order.tax_total_cents ?? 0),
+               cash as far as their till is concerned, which is what stops it
+               asking a customer to pay twice. */
+            payment_type: paid ? 'ONLINE' : 'COD',
+            urgent_order: false,
+            urgent_time: 0,
+            // The restaurant's own people carry anything that goes out.
+            enable_delivery: 1,
+            discount_total: money(round.discountCents),
             discount_type: 'F',
-            total: money(order.total_cents ?? 0),
+            tax_total: money(round.taxTotalCents),
+            total: money(round.totalCents),
             description: order.note ?? '',
             created_on: created,
             /* The pre-order, which is the one thing Khapee has that their
                till does not: how long until the customer is actually here. */
             min_prep_time: minutesUntil(order.wanted_at),
             callback_url: callbackUrl,
-            collect_cash: order.payment_status === 'PAID' ? '' : money(order.total_cents ?? 0),
+            collect_cash: paid ? '0' : money(round.totalCents),
+            otp: '',
           },
           OrderItem: {
-            details: items.map((i) => ({
-              id: String(i.pos_item_id),
-              name: i.name,
+            details: round.lines.map((l) => ({
+              id: l.id,
+              name: l.name,
               gst_liability: 'restaurant',
-              /* Keyed by their own tax ids, which arrive on the menu push.
-                 An amount with no id for it is an amount their till cannot
-                 file, so a dish we have no mapping for sends none. */
-              item_tax: Array.isArray(i.item_tax) ? i.item_tax : [],
+              tax_inclusive: true,
+              item_tax: l.taxes.map((t) => ({
+                id: t.id,
+                name: t.name,
+                tax_percentage: t.ratePercent,
+                amount: money(t.amountCents),
+              })),
               item_discount: '0.00',
-              price: money(i.unit_price_cents),
-              final_price: money(i.unit_price_cents * i.quantity),
-              quantity: String(i.quantity),
+              price: money(l.unitCents),
+              final_price: money(l.unitCents),
+              quantity: String(l.quantity),
               description: '',
+              variation_name: l.variationName,
+              variation_id: l.variationId,
+              AddonItem: {
+                details: l.addons.map((a) => ({
+                  id: a.id,
+                  name: a.name,
+                  group_name: a.groupName,
+                  price: money(a.priceCents),
+                  group_id: a.groupId,
+                  quantity: '1',
+                })),
+              },
             })),
           },
-          Tax: { details: Array.isArray(order.tax_details) ? order.tax_details : [] },
-          Discount: { details: [] },
+          Tax: {
+            details: round.taxDetails.map((t) => ({
+              id: t.id,
+              title: t.title,
+              type: 'P',
+              price: t.ratePercent,
+              tax: money(t.amountCents),
+              restaurant_liable_amt: money(t.amountCents),
+            })),
+          },
         },
       },
       udid: '',
       device_type: 'Web',
     },
   }
+}
+
+/**
+ * A stored time ("2026-10-07 13:00:00", UTC) as their till reads it: Indian
+ * time, "yyyy-mm-dd H:i:s". Sent as UTC, an order placed at 6:30 in the
+ * evening showed on the till as placed at one in the afternoon.
+ */
+export function indiaTime(utc: unknown): string {
+  const at = Date.parse(`${String(utc ?? '').replace(' ', 'T').slice(0, 19)}Z`)
+  if (Number.isNaN(at)) return ''
+  return new Date(at + 330 * 60_000).toISOString().replace('T', ' ').slice(0, 19)
 }
 
 /** Whole minutes from now until the customer wants it; 0 when they want it now. */
@@ -323,78 +477,12 @@ function minutesUntil(wantedAt: string | null): number {
   return Math.max(0, Math.round((at - Date.now()) / 60_000))
 }
 
-/**
- * The tax on the round being sent, in the shape their till files it under.
- *
- * Khapee used to send zero here and leave their POS to work it out. That is
- * fine for an unpaid order and wrong for a paid one: the customer has already
- * been charged our total, tax included, and a till that recomputes tax on top
- * of a price it believes is net prints a different number to the one taken.
- * For a prepaid dine-in order that is the customer being asked for the
- * difference at the counter.
- *
- * So the amounts sent are the ones actually charged, computed by the same
- * engine that prints Khapee's own GST invoice, and filed under Petpooja's own
- * tax ids — which arrive on the menu push and are kept on menu_items as
- * pos_tax_ids. A dish with no mapping sends no tax rather than an amount their
- * till cannot account for.
- *
- * A restaurant with tax switched off sends nothing at all, which is the
- * correct bill for them.
- */
-function taxOf(order: any, items: any[], restaurant: any) {
-  if (!restaurant?.tax_enabled) return { totalCents: 0, byItem: new Map<number, any[]>(), details: [] as any[] }
-
-  const bill = computeBill({
-    lines: items.map((i) => ({
-      name: i.name,
-      hsnSac: '',
-      quantity: i.quantity,
-      unitPriceCents: i.unit_price_cents,
-      rateBp: i.tax_rate_bp ?? 0,
-      inclusive: i.tax_inclusive !== 0,
-    })),
-    billDiscountCents: 0,
-    charges: [],
-    // CGST and SGST split, or one IGST line, exactly as the invoice does it.
-    interState: !!order.inter_state,
-    roundToRupee: false,
-  })
-
-  const byItem = new Map<number, any[]>()
-  let totalCents = 0
-  bill.lines.forEach((line: any, n: number) => {
-    const item = items[n]
-    const cents = line.cgstCents + line.sgstCents + line.igstCents
-    totalCents += cents
-    const ids = String(item?.pos_tax_ids ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    if (!ids.length || cents <= 0) return
-    // Split evenly across their ids, with the remainder on the first, so the
-    // parts add back up to the amount charged.
-    const each = Math.floor(cents / ids.length)
-    byItem.set(
-      item.id,
-      ids.map((id, k) => ({ id, amount: money(k === 0 ? cents - each * (ids.length - 1) : each) })),
-    )
-  })
-
-  const details = totalCents > 0
-    ? [
-        {
-          id: '',
-          title: order.inter_state ? 'IGST' : 'GST',
-          type: 'P',
-          price: '',
-          tax: money(totalCents),
-          restaurant_liable_amt: money(totalCents),
-        },
-      ]
-    : []
-
-  return { totalCents, byItem, details }
+/** Their taxes for this restaurant, from the menu push, by their id. */
+export function posTaxes(restaurantId: number): Map<string, { name: string; rateBp: number }> {
+  const rows = db
+    .prepare('SELECT pos_tax_id, name, rate_bp FROM pos_taxes WHERE restaurant_id = ? AND is_active = 1')
+    .all(restaurantId) as any[]
+  return new Map(rows.map((r) => [String(r.pos_tax_id), { name: r.name, rateBp: Number(r.rate_bp) || 0 }]))
 }
 
 export type PushResult = { ok: boolean; skipped?: string; posOrderId?: string; error?: string }
@@ -435,19 +523,17 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
    */
   const items = db
     .prepare(
-      `SELECT oi.id, oi.name, oi.quantity, oi.unit_price_cents,
+      `SELECT oi.id, oi.name, oi.quantity, oi.unit_price_cents, oi.variation_id, oi.variation_name, oi.addons,
               m.pos_item_id, m.pos_tax_ids,
-              COALESCE(t.rate_bp, d.rate_bp, 0)     AS tax_rate_bp,
-              COALESCE(t.inclusive, d.inclusive, 1) AS tax_inclusive
+              v.pos_variation_id, v.pos_global_id
          FROM order_items oi
          LEFT JOIN menu_items m ON m.id = oi.menu_item_id
-         LEFT JOIN tax_rates  t ON t.id = m.tax_rate_id AND t.restaurant_id = ?
-         LEFT JOIN tax_rates  d ON d.restaurant_id = ? AND d.is_default = 1
+         LEFT JOIN menu_item_variations v ON v.id = oi.variation_id
         WHERE oi.order_id = ? AND oi.pos_order_id IS NULL
           AND (oi.accepted IS NULL OR oi.accepted = 1)
         ORDER BY oi.id`,
     )
-    .all(order.restaurant_id, order.restaurant_id, orderId) as any[]
+    .all(orderId) as any[]
 
   if (!items.length) {
     return order.pos_order_id
@@ -455,7 +541,7 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
       : { ok: false, skipped: 'nothing to send' }
   }
 
-  const unknown = items.filter((i) => !i.pos_item_id)
+  const unknown = items.filter((i) => !i.pos_item_id || (i.variation_id && !i.pos_variation_id))
   if (unknown.length) {
     const why = `Not sent to Petpooja: ${unknown.map((i) => i.name).join(', ')} ${unknown.length > 1 ? 'are' : 'is'} not in the Petpooja menu yet.`
     db.prepare('UPDATE orders SET pos_error = ? WHERE id = ?').run(why, orderId)
@@ -475,17 +561,24 @@ export async function pushOrder(orderId: number, origin: string): Promise<PushRe
       .get(orderId) as any)?.n ?? 0) + 1
   const clientOrderId = roundNo === 1 ? order.order_number : `${order.order_number}-${roundNo}`
 
-  const tax = taxOf(order, items, restaurant)
+  /* The order's discount and delivery fee belong to the order once, so they
+     ride on its first round and not on every round after it. */
+  const round = buildRound(items, posTaxes(order.restaurant_id), {
+    discountCents: roundNo === 1 ? Number(order.discount_cents ?? 0) : 0,
+    deliveryCents: roundNo === 1 ? Number(order.delivery_fee_cents ?? 0) : 0,
+  })
   const payload = orderPayload(
     link,
     {
       ...order,
       order_number: clientOrderId,
       pos_table_id: posTableId,
-      tax_total_cents: tax.totalCents,
-      tax_details: tax.details,
+      paid_in_app:
+        ((db
+          .prepare(`SELECT COALESCE(SUM(amount_cents), 0) AS n FROM payments WHERE order_id = ? AND status IN ('CLAIMED','CONFIRMED')`)
+          .get(orderId) as any)?.n ?? 0) >= Number(order.total_cents ?? 0) && Number(order.total_cents ?? 0) > 0,
     },
-    items.map((i) => ({ ...i, item_tax: tax.byItem.get(i.id) ?? [] })),
+    round,
     restaurant,
     `${origin}/api/petpooja/${link.webhookSecret}/callback`,
   )
@@ -593,6 +686,8 @@ export function applyMenuPush(link: Link, payload: any): { categories: number; i
   }
 
   const seen = new Set<string>()
+  /** Their item id → ours, for attaching variations and add-ons below. */
+  const localIdFor = new Map<string, number>()
   let addedCategories = 0
   let wrote = 0
 
@@ -675,6 +770,7 @@ export function applyMenuPush(link: Link, payload: any): { categories: number; i
                   is_available = ?, pos_tax_ids = ?
             WHERE id = ?`,
         ).run(name, description, priceCents, categoryId, isVeg, available, taxIds, existing.id)
+        localIdFor.set(posId, existing.id)
       } else {
         // A dish the restaurant already typed into Khapee by hand, matched on
         // its name, is adopted rather than duplicated.
@@ -690,8 +786,9 @@ export function applyMenuPush(link: Link, payload: any): { categories: number; i
                     is_available = ?, pos_tax_ids = ?
               WHERE id = ?`,
           ).run(posId, description, priceCents, categoryId, isVeg, available, taxIds, byName.id)
+          localIdFor.set(posId, byName.id)
         } else {
-          db.prepare(
+          const inserted = db.prepare(
             `INSERT INTO menu_items
                (restaurant_id, category_id, name, description, price_cents, is_veg, is_available, sort_order, pos_item_id, pos_tax_ids)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -707,9 +804,17 @@ export function applyMenuPush(link: Link, payload: any): { categories: number; i
             posId,
             taxIds,
           )
+          localIdFor.set(posId, Number(inserted.lastInsertRowid))
         }
       }
       wrote++
+    }
+
+    applyTaxes(restaurantId, payload)
+    const groupIdFor = applyAddonGroups(restaurantId, payload)
+    for (const it of items) {
+      const localId = localIdFor.get(String(it.itemid ?? ''))
+      if (localId) applyItemOptions(localId, it, groupIdFor)
     }
   })
 
@@ -737,6 +842,206 @@ export function applyMenuPush(link: Link, payload: any): { categories: number; i
     link.restaurantId,
   )
   return { categories: addedCategories, items: wrote, retired, tables }
+}
+
+/* --- Variations, add-ons and taxes, from the menu push ------------------------ */
+
+/** Rupees as their payloads write them ("140.00", 140, "") into paise. */
+function paise(value: unknown): number {
+  const n = Number(value ?? 0)
+  return Math.max(0, Math.round((Number.isFinite(n) ? n : 0) * 100))
+}
+
+const on = (value: unknown) => String(value ?? '1') !== '0'
+
+/**
+ * Their taxes — CGST 2.5%, SGST 2.5% and so on — by their own ids, so an order
+ * relayed back can name each tax the way their till files it.
+ */
+function applyTaxes(restaurantId: number, payload: any) {
+  const taxes = Array.isArray(payload?.taxes) ? payload.taxes : []
+  const upsert = db.prepare(
+    `INSERT INTO pos_taxes (restaurant_id, pos_tax_id, name, rate_bp, is_active) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT (restaurant_id, pos_tax_id) DO UPDATE SET
+       name = excluded.name, rate_bp = excluded.rate_bp, is_active = excluded.is_active`,
+  )
+  for (const t of taxes) {
+    const id = String(t.taxid ?? t.tax_id ?? '').trim()
+    if (!id) continue
+    // taxtype 1 is a percentage; a fixed-amount tax has no rate to apply here.
+    const percent = String(t.taxtype ?? '1') === '1' ? Number(t.tax ?? 0) : 0
+    upsert.run(restaurantId, id, String(t.taxname ?? t.name ?? 'Tax'), Math.round((Number.isFinite(percent) ? percent : 0) * 100), on(t.active) ? 1 : 0)
+  }
+}
+
+/**
+ * Add-on groups ("Extra toppings") and the add-ons in them, matched on their
+ * ids and updated in place. Anything that stops arriving is switched off
+ * rather than deleted — a past order still names it.
+ */
+function applyAddonGroups(restaurantId: number, payload: any): Map<string, number> {
+  const groups = Array.isArray(payload?.addongroups) ? payload.addongroups : []
+  const idFor = new Map<string, number>()
+  if (!groups.length) return idFor
+
+  const seenGroups: number[] = []
+  for (const g of groups) {
+    const posId = String(g.addongroupid ?? g.addon_group_id ?? '').trim()
+    const name = String(g.addongroup_name ?? g.name ?? '').trim()
+    if (!posId || !name) continue
+    const existing = db
+      .prepare('SELECT id FROM menu_addon_groups WHERE restaurant_id = ? AND pos_group_id = ?')
+      .get(restaurantId, posId) as any
+    let groupId: number
+    if (existing) {
+      db.prepare('UPDATE menu_addon_groups SET name = ?, is_active = ?, sort_order = ? WHERE id = ?').run(
+        name,
+        on(g.active) ? 1 : 0,
+        Number(g.addongroup_rank ?? 0) || 0,
+        existing.id,
+      )
+      groupId = existing.id
+    } else {
+      groupId = Number(
+        db
+          .prepare('INSERT INTO menu_addon_groups (restaurant_id, name, is_active, sort_order, pos_group_id) VALUES (?, ?, ?, ?, ?)')
+          .run(restaurantId, name, on(g.active) ? 1 : 0, Number(g.addongroup_rank ?? 0) || 0, posId).lastInsertRowid,
+      )
+    }
+    idFor.set(posId, groupId)
+    seenGroups.push(groupId)
+
+    const seenItems: number[] = []
+    for (const a of Array.isArray(g.addongroupitems) ? g.addongroupitems : []) {
+      const aPos = String(a.addonitemid ?? a.id ?? '').trim()
+      const aName = String(a.addonitem_name ?? a.name ?? '').trim()
+      if (!aPos || !aName) continue
+      const row = db
+        .prepare('SELECT id FROM menu_addon_items WHERE group_id = ? AND pos_addon_id = ?')
+        .get(groupId, aPos) as any
+      if (row) {
+        db.prepare('UPDATE menu_addon_items SET name = ?, price_cents = ?, is_available = ?, sort_order = ? WHERE id = ?').run(
+          aName,
+          paise(a.addonitem_price ?? a.price),
+          on(a.active) && on(a.in_stock) ? 1 : 0,
+          Number(a.addonitem_rank ?? 0) || 0,
+          row.id,
+        )
+        seenItems.push(row.id)
+      } else {
+        seenItems.push(
+          Number(
+            db
+              .prepare(
+                'INSERT INTO menu_addon_items (group_id, name, price_cents, is_available, sort_order, pos_addon_id) VALUES (?, ?, ?, ?, ?, ?)',
+              )
+              .run(groupId, aName, paise(a.addonitem_price ?? a.price), on(a.active) && on(a.in_stock) ? 1 : 0, Number(a.addonitem_rank ?? 0) || 0, aPos)
+              .lastInsertRowid,
+          ),
+        )
+      }
+    }
+    if (seenItems.length) {
+      db.prepare(
+        `UPDATE menu_addon_items SET is_available = 0 WHERE group_id = ? AND pos_addon_id IS NOT NULL
+           AND id NOT IN (${seenItems.map(() => '?').join(',')})`,
+      ).run(groupId, ...seenItems)
+    }
+  }
+  if (seenGroups.length) {
+    db.prepare(
+      `UPDATE menu_addon_groups SET is_active = 0 WHERE restaurant_id = ? AND pos_group_id IS NOT NULL
+         AND id NOT IN (${seenGroups.map(() => '?').join(',')})`,
+    ).run(restaurantId, ...seenGroups)
+  }
+  return idFor
+}
+
+/**
+ * One dish's variations ("Half", "Full") and which add-on groups it offers,
+ * with the minimum and maximum the customer may pick. A dish with variations
+ * is priced by the variation, so the dish's own price becomes the cheapest one
+ * — what the menu shows as "from ₹…".
+ */
+function applyItemOptions(menuItemId: number, it: any, groupIdFor: Map<string, number>) {
+  const variations = Array.isArray(it.variation) ? it.variation : []
+  const seenVariations: number[] = []
+  const localVariation = new Map<string, number>()
+
+  variations.forEach((v: any, n: number) => {
+    // `id` is this dish's own variation id — the one an order relay names;
+    // `variationid` is the shared one ("3 Pieces" across dishes).
+    const posId = String(v.id ?? v.variationid ?? '').trim()
+    const name = String(v.name ?? '').trim()
+    if (!posId || !name) return
+    const row = db
+      .prepare('SELECT id FROM menu_item_variations WHERE menu_item_id = ? AND pos_variation_id = ?')
+      .get(menuItemId, posId) as any
+    const values = [
+      name,
+      String(v.groupname ?? it.variation_groupname ?? ''),
+      paise(v.price),
+      on(v.active) && on(v.in_stock) ? 1 : 0,
+      Number(v.variationrank ?? n) || n,
+      String(v.variationid ?? ''),
+    ]
+    let id: number
+    if (row) {
+      db.prepare(
+        `UPDATE menu_item_variations SET name = ?, group_name = ?, price_cents = ?, is_available = ?, sort_order = ?, pos_global_id = ?
+          WHERE id = ?`,
+      ).run(...values, row.id)
+      id = row.id
+    } else {
+      id = Number(
+        db
+          .prepare(
+            `INSERT INTO menu_item_variations (name, group_name, price_cents, is_available, sort_order, pos_global_id, menu_item_id, pos_variation_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .run(...values, menuItemId, posId).lastInsertRowid,
+      )
+    }
+    seenVariations.push(id)
+    localVariation.set(posId, id)
+  })
+
+  // Variations that stopped arriving are switched off, not deleted.
+  db.prepare(
+    `UPDATE menu_item_variations SET is_available = 0 WHERE menu_item_id = ? AND pos_variation_id IS NOT NULL
+       ${seenVariations.length ? `AND id NOT IN (${seenVariations.map(() => '?').join(',')})` : ''}`,
+  ).run(menuItemId, ...seenVariations)
+
+  if (seenVariations.length) {
+    const cheapest = db
+      .prepare('SELECT MIN(price_cents) AS p FROM menu_item_variations WHERE menu_item_id = ? AND is_available = 1')
+      .get(menuItemId) as any
+    if (cheapest?.p != null) db.prepare('UPDATE menu_items SET price_cents = ? WHERE id = ?').run(cheapest.p, menuItemId)
+  }
+
+  // Which add-on groups, rebuilt each push: the dish's own, then each variation's.
+  db.prepare('DELETE FROM menu_item_addon_groups WHERE menu_item_id = ?').run(menuItemId)
+  const link = db.prepare(
+    'INSERT INTO menu_item_addon_groups (menu_item_id, group_id, variation_id, min_select, max_select) VALUES (?, ?, ?, ?, ?)',
+  )
+  const attach = (list: any, variationId: number | null) => {
+    for (const a of Array.isArray(list) ? list : []) {
+      const groupId = groupIdFor.get(String(a.addon_group_id ?? a.addongroupid ?? ''))
+      if (!groupId) continue
+      link.run(
+        menuItemId,
+        groupId,
+        variationId,
+        Math.max(0, Number(a.addon_item_selection_min ?? 0) || 0),
+        Math.max(0, Number(a.addon_item_selection_max ?? 0) || 0),
+      )
+    }
+  }
+  if (on(it.itemallowaddon ?? '1')) attach(it.addon, null)
+  for (const v of variations) {
+    const vid = localVariation.get(String(v.id ?? v.variationid ?? '').trim())
+    if (vid) attach(v.addon, vid)
+  }
 }
 
 /**

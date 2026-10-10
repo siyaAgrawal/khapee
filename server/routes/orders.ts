@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { optionsFor, priceLine } from '../menu-options.ts'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
 import { requireAuth } from '../auth.ts'
@@ -12,6 +13,7 @@ import { pushOrder } from '../petpooja.ts'
 import { limitedState } from '../limited.ts'
 import { pushToRestaurant } from '../push.ts'
 import { publish } from '../events.ts'
+import { discountOn, offerFor, qualifyingEmail } from '../offers.ts'
 
 export const ordersRouter = Router()
 
@@ -77,6 +79,12 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
 })
 
 /** Builds a UPI request for a cart before the order exists. */
+/** The offer at a restaurant, for the menu and the checkout to show. */
+ordersRouter.get('/offer/:restaurantId', (req, res) => {
+  const offer = offerFor(Number(req.params.restaurantId))
+  res.json({ offer: offer ? { domain: offer.domain, percent: offer.percent, label: offer.label } : null })
+})
+
 ordersRouter.post('/payment-request', (req, res) => {
   const restaurantId = Number(req.body?.restaurantId)
   const r = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(restaurantId) as any
@@ -86,14 +94,22 @@ ordersRouter.post('/payment-request', (req, res) => {
   }
   const lines = Array.isArray(req.body?.items) ? req.body.items : []
   let amountCents = 0
+  const dishOptions = optionsFor(lines.map((l: any) => Number(l?.menuItemId)).filter(Number.isFinite))
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line?.menuItemId)) as any
     if (!item || item.restaurant_id !== restaurantId) {
       return res.status(400).json({ error: 'One of the items is no longer on this menu.' })
     }
-    amountCents += item.price_cents * Math.max(1, Math.floor(Number(line.quantity) || 1))
+    // Priced with its variation and add-ons, exactly as the order will be.
+    const chosen = priceLine(item, line, dishOptions.get(item.id))
+    if (!chosen.ok) return res.status(409).json({ error: chosen.error })
+    amountCents += chosen.unitPriceCents * Math.max(1, Math.floor(Number(line.quantity) || 1))
   }
   if (amountCents <= 0) return res.status(400).json({ error: 'Your cart is empty.' })
+  // The offer comes off the dishes before anything is asked for, so the UPI
+  // request is for what the order will actually come to.
+  const offer = req.body?.applyOffer ? offerFor(restaurantId) : null
+  if (offer && qualifyingEmail(offer, (req as any).user?.verifiedEmail)) amountCents -= discountOn(amountCents, offer.percent)
 
   // What the customer is actually charged, not just what the dishes cost.
   // This summed the menu lines alone, so a delivery quoted at ₹480 in the
@@ -180,6 +196,7 @@ ordersRouter.post('/', (req, res) => {
     paymentClaim: body.paymentClaim ?? null,
     // The pre-order. Minutes from now, because the server owns the clock.
     wantInMinutes: body.wantInMinutes === undefined ? null : Number(body.wantInMinutes),
+    applyOffer: !!body.applyOffer,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({ order: result.order })
@@ -193,7 +210,10 @@ ordersRouter.post('/', (req, res) => {
    * they are told. A push that fails records why against the order and the
    * order carries on existing exactly as it did before any of this.
    */
-  void pushOrder(result.order.id, originOf(req)).catch(() => {})
+  //
+  // Not at a UPI-only restaurant: there the order goes to the till when staff
+  // accept it, which is when they have seen the money (routes/staff.ts).
+  if (!result.order.upiOnly) void pushOrder(result.order.id, originOf(req)).catch(() => {})
 })
 
 /** The host this request actually came in on, so webhooks point back here. */
@@ -564,6 +584,8 @@ ordersRouter.post('/:orderNumber/resend', (req, res) => {
     // arrived twice.
     tableId: row.table_id,
     takeaway: !!row.takeaway,
+    // The same customer, so the same offer.
+    applyOffer: !!row.offer_email,
   })
   if (!again.ok) return res.status(again.status).json({ error: again.error })
 

@@ -9266,6 +9266,105 @@ button.nav-link {
 .pay-waiting .tiny { color: var(--muted); line-height: 1.55; margin: 0; }
 .pay-waiting .btn-block { margin-top: 4px; }
 
+/* ── Choosing a size and extras ───────────────────────────────────────────────
+   One block per choice, rows that are the whole tap target, the price at the
+   right edge where a column of prices can be compared at a glance. */
+.opt-sheet { display: grid; gap: 18px; }
+.opt-group { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.opt-group legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+  padding: 0 0 6px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.opt-group legend em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted);
+}
+.opt-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md, 12px);
+  cursor: pointer;
+}
+.opt-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt-row.off { opacity: 0.5; cursor: not-allowed; }
+.opt-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.opt-name { font-size: 14.5px; }
+.opt-price { font-size: 13.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* What was chosen, under a dish's name wherever an order is shown. */
+.cart-line-options,
+.item-options { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.qrow-items .item-options { display: inline; }
+
+/* Not open yet, and about to be. */
+.badge-soon {
+  color: #a8730f;
+}
+
+/* An order given a restaurant offer, on the board. */
+.o-offer {
+  margin-top: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #a8730f;
+}
+
+/* A restaurant coupon at checkout: a ticket the customer taps to apply. */
+.coupon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1.5px dashed rgba(168, 115, 15, 0.5);
+  border-radius: 14px;
+  background: rgba(242, 178, 58, 0.1);
+}
+.coupon.is-on {
+  border-style: solid;
+  border-color: rgba(47, 125, 91, 0.55);
+  background: rgba(47, 125, 91, 0.07);
+}
+.coupon.is-locked {
+  background: transparent;
+}
+.coupon-mark {
+  font-size: 22px;
+}
+.coupon-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.offer-ok {
+  color: #2f7d5b;
+  font-weight: 600;
+}
+.offer-note {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(242, 178, 58, 0.14);
+  color: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.google-button {
+  margin-top: 8px;
+  min-height: 40px;
 /* ── The scratch card ─────────────────────────────────────────────────────────
    Won on an order, rubbed on the tracker, spent on the next one. Sized like a
    real card so it reads as a thing rather than a banner. */
@@ -9375,5 +9474,4 @@ button.nav-link {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--good);
-}
+  color: var(--good);}

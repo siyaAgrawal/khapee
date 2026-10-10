@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { optionsFor, priceLine } from '../menu-options.ts'
 import { db } from '../db.ts'
 import { publish } from '../events.ts'
 import {
@@ -96,7 +97,8 @@ groupsRouter.post('/session/items', (req, res) => {
   const lines = Array.isArray(req.body?.items) ? req.body.items : []
   if (!lines.length) return res.status(400).json({ error: 'Your cart is empty.' })
 
-  const priced: { item: any; quantity: number }[] = []
+  const priced: { item: any; quantity: number; unitPriceCents: number; variation: any; addons: any[] }[] = []
+  const dishOptions = optionsFor(lines.map((l: any) => Number(l?.menuItemId)).filter(Number.isFinite))
   for (const line of lines) {
     const item = db.prepare('SELECT * FROM menu_items WHERE id = ?').get(Number(line?.menuItemId)) as any
     if (!item || item.restaurant_id !== ctx.session.restaurant_id) {
@@ -105,7 +107,15 @@ groupsRouter.post('/session/items', (req, res) => {
     if (!item.is_available) {
       return res.status(409).json({ error: `${item.name} just sold out. Remove it to continue.` })
     }
-    priced.push({ item, quantity: Math.min(50, Math.max(1, Math.floor(Number(line.quantity) || 1))) })
+    const chosen = priceLine(item, line, dishOptions.get(item.id))
+    if (!chosen.ok) return res.status(409).json({ error: chosen.error })
+    priced.push({
+      item,
+      quantity: Math.min(50, Math.max(1, Math.floor(Number(line.quantity) || 1))),
+      unitPriceCents: chosen.unitPriceCents,
+      variation: chosen.variation,
+      addons: chosen.addons,
+    })
   }
 
   /*
@@ -131,6 +141,7 @@ groupsRouter.post('/session/items', (req, res) => {
       type: 'dine_in',
       items: [],
       customerName: ctx.member.display_name,
+      userId: null,
       fromCustomer: true,
     },
     null,
@@ -145,11 +156,23 @@ groupsRouter.post('/session/items', (req, res) => {
   const order = db.transaction(() => {
     const target = ensureSessionOrder(ctx.session, `${ctx.member.display_name}'s table`)
     const insert = db.prepare(
-      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, member_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, member_id,
+                                variation_id, variation_name, addons)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     for (const l of priced) {
-      insert.run(target.id, l.item.id, l.item.name, l.item.emoji, l.item.price_cents, l.quantity, ctx.member.id)
+      insert.run(
+        target.id,
+        l.item.id,
+        l.item.name,
+        l.item.emoji,
+        l.unitPriceCents,
+        l.quantity,
+        ctx.member.id,
+        l.variation?.id ?? null,
+        l.variation?.name ?? '',
+        l.addons.length ? JSON.stringify(l.addons) : '',
+      )
     }
     recalcOrderTotal(target.id)
     syncOrderPayment(target.id)
@@ -191,7 +214,7 @@ groupsRouter.post('/session/items', (req, res) => {
     where: String(ctx.session.table_label ?? 'Table'),
     customerName: `${ctx.member.display_name} (added to the table)`,
     customerPhone: '',
-    total: `₹${(priced.reduce((n, l) => n + l.item.price_cents * l.quantity, 0) / 100).toFixed(0)}`,
+    total: `₹${(priced.reduce((n, l) => n + l.unitPriceCents * l.quantity, 0) / 100).toFixed(0)}`,
     items: priced.map((l) => `${l.quantity} × ${l.item.name}`).join('\n'),
     // The table already said yes when it opened. This is more food, not a new
     // decision, so it must not read as something waiting to be accepted.

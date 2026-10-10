@@ -15,6 +15,8 @@ export type User = {
   restaurantId: number | null
   restaurantName: string | null
   jobTitle: string | null
+  /** An email Google has confirmed this person owns, or ''. */
+  verifiedEmail?: string
 }
 
 type SessionValue = {
@@ -25,6 +27,8 @@ type SessionValue = {
   logout: () => Promise<void>
   /** Re-reads the session after a token is set outside this provider. */
   refresh: () => Promise<User | null>
+  /** Takes a session made elsewhere — "Continue with Google". */
+  adopt: (token: string, user: User) => void
 }
 
 const SessionContext = createContext<SessionValue | null>(null)
@@ -86,9 +90,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const adopt = useCallback((token: string, next: User) => {
+    setToken(token)
+    setUser(next)
+  }, [])
+
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refresh }),
-    [user, loading, login, register, logout, refresh],
+    () => ({ user, loading, login, register, logout, refresh, adopt }),
+    [user, loading, login, register, logout, refresh, adopt],
   )
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }

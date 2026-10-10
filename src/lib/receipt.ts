@@ -27,7 +27,7 @@ export type ReceiptBill = {
   tableLabel?: string | null
   customerName?: string
   placedAt?: string
-  items: { id: number; name: string; quantity: number; unitPriceCents: number }[]
+  items: { id: number; name: string; quantity: number; unitPriceCents: number; options?: string }[]
   deliveryFeeCents?: number
   totalCents: number
   paidCents?: number
@@ -63,7 +63,7 @@ export function receiptHtml(bill: ReceiptBill): string {
   const lines = bill.items
     .map(
       (i) =>
-        `<tr><td>${esc(i.quantity)} × ${esc(i.name)}</td><td class="amt">${money(
+        `<tr><td>${esc(i.quantity)} × ${esc(i.name)}${i.options ? `<br><small>${esc(i.options)}</small>` : ''}</td><td class="amt">${money(
           i.unitPriceCents * i.quantity,
         )}</td></tr>`,
     )
@@ -328,7 +328,7 @@ export function kotHtml(bill: ReceiptBill & { note?: string }): string {
     : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const lines = bill.items
-    .map((i) => `<tr><td class="q">${esc(i.quantity)}</td><td class="n">${esc(i.name)}</td></tr>`)
+    .map((i) => `<tr><td class="q">${esc(i.quantity)}</td><td class="n">${esc(i.name)}${i.options ? `<br><small>${esc(i.options)}</small>` : ''}</td></tr>`)
     .join('')
 
   return `<!doctype html>

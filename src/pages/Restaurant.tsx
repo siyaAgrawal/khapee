@@ -14,6 +14,8 @@ import { useGroup } from '../lib/group'
 import DiningBar from '../components/DiningBar'
 import { PeopleIcon, SearchIcon } from '../components/icons'
 import NoirMenu from '../components/NoirMenu'
+import OptionsSheet, { hasOptions, type DishOptions } from '../components/OptionsSheet'
+import type { Choice } from '../lib/cart'
 import { applyTheme } from '../lib/themes'
 import { NoirMark, NoirWordmark } from '../components/NoirBrand'
 import { HutMark, HutWordmark } from '../components/HutBrand'
@@ -34,6 +36,8 @@ type MenuItem = {
   isVeg: boolean
   isAvailable: boolean
   isSpecial: boolean
+  /** Variations and add-ons, for the dishes that have them. */
+  options?: DishOptions
 }
 type Category = { id: number; name: string; items: MenuItem[] }
 
@@ -155,15 +159,33 @@ export default function Restaurant() {
         .filter((c) => c.items.length > 0)
   const foundCount = shown.reduce((n, c) => n + c.items.length, 0)
 
-  const onAdd = (item: MenuItem) => {
+  /** The dish whose size and extras are being chosen, if any. */
+  const [choosing, setChoosing] = useState<MenuItem | null>(null)
+
+  const onAdd = (item: MenuItem, choice?: Choice) => {
     if (!data) return
     if (!data.restaurant.isOpen) {
-      toast(`${data.restaurant.name} is closed right now.`, 'bad')
+      toast(data.restaurant.comingSoon ? `${data.restaurant.name} is coming soon to Khapee.` : `${data.restaurant.name} is closed right now.`, 'bad')
       return
     }
-    const outcome = add({ id: data.restaurant.id, name: data.restaurant.name }, item)
+    // A dish with a size or extras is chosen first; the themed menus hand
+    // over their own copy of the dish, so the options are read from ours.
+    const full = (data.menu ?? []).flatMap((c) => c.items).find((i) => i.id === item.id) ?? item
+    if (!choice && hasOptions(full.options)) {
+      setChoosing(full)
+      return
+    }
+    const outcome = add({ id: data.restaurant.id, name: data.restaurant.name }, full, choice)
     if (outcome === 'switched') toast('Started a new cart for this restaurant', 'info')
   }
+
+  /* The restaurant's offer, if it has one — see server/offers.ts. */
+  const [offer, setOffer] = useState<{ domain: string; percent: number; label: string } | null>(null)
+  useEffect(() => {
+    api<{ offer: any }>(`/orders/offer/${restaurantId}`)
+      .then((r) => setOffer(r.offer))
+      .catch(() => setOffer(null))
+  }, [restaurantId])
 
   /* What people actually order here, first — see /restaurants/:id/popular. */
   const [popularIds, setPopularIds] = useState<number[]>([])
@@ -183,7 +205,8 @@ export default function Restaurant() {
     if (!data) return
     for (const l of last) {
       const item = byId.get(l.menuItemId)
-      if (!item) continue
+      // A dish with options needs choosing again, so it is not re-added blind.
+      if (!item || hasOptions(item.options)) continue
       onAdd(item)
       if (l.quantity > 1) setQuantity(item.id, l.quantity)
     }
@@ -308,7 +331,7 @@ export default function Restaurant() {
                   <p className="noir-hero-line">{data.restaurant.description}</p>
                   <div className="noir-hero-meta">
                     <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>
-                      {data.restaurant.isOpen ? 'Open now' : 'Closed'}
+                      {data.restaurant.isOpen ? 'Open now' : data.restaurant.comingSoon ? 'Coming soon' : 'Closed'}
                     </span>
                     <span>{data.restaurant.hours}</span>
                     <span>~{data.restaurant.prepMinutes} min</span>
@@ -427,8 +450,8 @@ export default function Restaurant() {
               <div className="r-hero-body">
                 <div className="row row-wrap" style={{ justifyContent: 'space-between' }}>
                   <h1>{data.restaurant.name}</h1>
-                  <span className={`badge ${data.restaurant.isOpen ? 'badge-open' : 'badge-closed'}`}>
-                    {data.restaurant.isOpen ? 'Open now' : 'Closed'}
+                  <span className={`badge ${data.restaurant.isOpen ? 'badge-open' : data.restaurant.comingSoon ? 'badge-soon' : 'badge-closed'}`}>
+                    {data.restaurant.isOpen ? 'Open now' : data.restaurant.comingSoon ? 'Coming soon' : 'Closed'}
                   </span>
                 </div>
                 {!seated && data.restaurant.description && (
@@ -532,6 +555,13 @@ export default function Restaurant() {
             {/* Above the section chips, because someone who knows what they
                 want should not have to read the chips to find out it is not
                 there. */}
+            {offer && (
+              <p className="offer-note">
+                🎓 {offer.label ? `${offer.label}: ` : ''}
+                <strong>{offer.percent}% off coupon</strong> — continue with your @{offer.domain} Google account at
+                checkout to unlock it.
+              </p>
+            )}
             <div className="menu-find">
               <span className="menu-find-mark" aria-hidden>
                 <SearchIcon size={16} />
@@ -649,6 +679,15 @@ export default function Restaurant() {
           </>
         )}
       </main>
+
+      <OptionsSheet
+        dish={choosing && choosing.options ? { name: choosing.name, priceCents: choosing.priceCents, options: choosing.options } : null}
+        onClose={() => setChoosing(null)}
+        onAdd={(choice) => {
+          if (choosing) onAdd(choosing, choice)
+          setChoosing(null)
+        }}
+      />
 
       {count > 0 && cart.restaurantId === restaurantId && (
         <div className="cart-bar">

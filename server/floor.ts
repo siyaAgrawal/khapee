@@ -15,6 +15,7 @@
  * round is recorded when it is sent rather than worked out again afterwards.
  */
 import { db } from './db.js'
+import { addonsOf } from './menu-options.ts'
 import { paidCents, claimedCents } from './payments.js'
 import { type Actor, finaliseInvoice, paidOnInvoice, takePayment } from './billing.js'
 
@@ -244,7 +245,7 @@ export function tableBill(restaurantId: number, tableId: number) {
     )
     .all(restaurantId, tableId) as any[]
 
-  const merged = new Map<string, { id: number; name: string; quantity: number; unitPriceCents: number }>()
+  const merged = new Map<string, { id: number; name: string; options: string; quantity: number; unitPriceCents: number }>()
   let itemCents = 0
   for (const o of orders) {
     const items = db
@@ -253,10 +254,12 @@ export function tableBill(restaurantId: number, tableId: number) {
       )
       .all(o.id) as any[]
     for (const i of items) {
-      const key = `${i.name}|${i.unit_price_cents}`
+      // The same dish with different choices is a different line on the bill.
+      const options = [i.variation_name, addonsOf(i).map((x) => x.name).join(', ')].filter(Boolean).join(' · ')
+      const key = `${i.name}|${options}|${i.unit_price_cents}`
       const at = merged.get(key)
       if (at) at.quantity += i.quantity
-      else merged.set(key, { id: i.id, name: i.name, quantity: i.quantity, unitPriceCents: i.unit_price_cents })
+      else merged.set(key, { id: i.id, name: i.name, options, quantity: i.quantity, unitPriceCents: i.unit_price_cents })
       itemCents += i.unit_price_cents * i.quantity
     }
   }

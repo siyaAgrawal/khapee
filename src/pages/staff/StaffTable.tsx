@@ -194,6 +194,7 @@ export default function StaffTable() {
                   <li key={i.id}>
                     <span>
                       {i.quantity} × {i.name}
+                      {i.options && <span className="item-options"> · {i.options}</span>}
                       {i.addedByStaff && <span className="tiny muted"> · added here</span>}
                     </span>
                     <span className={i.paid ? 'muted' : ''}>

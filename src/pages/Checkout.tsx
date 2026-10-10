@@ -4,8 +4,9 @@ import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
 import VerifyModal from '../components/VerifyModal'
 import { api, ApiError } from '../lib/api'
-import { useCart } from '../lib/cart'
+import { cartItems, useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
+import GoogleButton from '../components/GoogleButton'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { clearIntent, readIntent } from '../lib/intent'
@@ -127,7 +128,6 @@ export default function Checkout() {
    * courier, not the restaurant's margin to give away.
    */
   const [saving, setSaving] = useState<{ label: string; discountCents: number } | null>(null)
-  const payableCents = Math.max(0, totalCents - (saving?.discountCents ?? 0)) + deliveryFeeCents
 
   /*
    * Asked for when the basket or the number changes, and debounced, because
@@ -159,6 +159,40 @@ export default function Checkout() {
       clearTimeout(t)
     }
   }, [restaurantId, phone, count, totalCents]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /*
+   * The restaurant's coupon for people from one place — 20% off at Mr. Beans
+   * Saket for a signed-in @dalycollege.org account. Shown as a coupon the
+   * customer taps to apply, never applied on its own; the server checks the
+   * account and works the discount out itself, so this is only what is shown.
+   */
+  const [offer, setOffer] = useState<{ domain: string; percent: number; label: string } | null>(null)
+  const [offerApplied, setOfferApplied] = useState(false)
+  useEffect(() => {
+    if (!restaurantId) return
+    api<{ offer: any }>(`/orders/offer/${restaurantId}`)
+      .then((r) => setOffer(r.offer))
+      .catch(() => setOffer(null))
+  }, [restaurantId])
+  // Only an email Google has confirmed counts — anybody can type an address.
+  const offerEligible = !!offer && !!user && String(user.verifiedEmail ?? '').toLowerCase().endsWith(`@${offer.domain}`)
+  const offerCents =
+    offerEligible && offerApplied && offer ? Math.min(totalCents, Math.round((totalCents * offer.percent) / 100 / 100) * 100) : 0
+
+  /*
+   * One discount, not two.
+   *
+   * A customer can have both an offer their account qualifies for and a
+   * scratch card they rubbed. Stacking them is how a café bill ends up under
+   * what the food cost, and neither was offered on the understanding it would
+   * be combined — so the bigger saving wins, which is the one they would have
+   * chosen. The server decides this again the same way; this is only what is
+   * shown while they decide.
+   */
+  const savingCents = saving?.discountCents ?? 0
+  const useCard = savingCents > offerCents
+  const discountCents = Math.max(offerCents, savingCents)
+  const payableCents = Math.max(0, totalCents - discountCents) + deliveryFeeCents
   const shortOfMinimum = isDelivery ? Math.max(0, (dining?.minOrderCents ?? 0) - totalCents) : 0
 
   /**
@@ -287,8 +321,13 @@ export default function Checkout() {
     if (prepaidOnly && !payNow) setPayNow(true)
   }, [prepaidOnly]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** Takes UPI only and has a UPI ID: paying by UPI is the only option, in every mode. */
+  const upiOnly = !!options?.cashDisabled && canPayInApp
+
   /** The line under the choice — what it actually means for this order. */
-  const paySub = !canPayInApp
+  const paySub = upiOnly
+    ? `${cart.restaurantName} takes UPI only. Pay, and they accept your order once the money arrives.`
+    : !canPayInApp
     ? 'Cash or UPI at the counter — this place has no UPI ID on Khapee yet'
     : payNow
       ? isDelivery
@@ -362,15 +401,17 @@ export default function Checkout() {
       const r = await api<any>('/orders/payment-request', {
         body: {
           restaurantId,
-          items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          items: cartItems(cart.lines),
           // So the amount asked for is the amount owed: a delivery adds a fee
           // that the dishes alone do not account for.
           sessionToken: dining?.token ?? null,
           // Written on the UPI payment, so the restaurant can match it by name.
           customerName: name.trim(),
-          // Who they are, so a scratch card they have won comes off the amount
-          // their bank is about to ask for and not just off the screen.
+          // Who they are, so a scratch card they have won comes off the
+          // amount their bank is about to ask for and not just off the screen.
           customerPhone: phone.trim(),
+          // And the offer, when that is the one winning.
+          applyOffer: offerCents > 0 && !useCard,
         },
       })
       setPayRequest(r)
@@ -392,7 +433,7 @@ export default function Checkout() {
           restaurantId,
           type: where === 'later' ? 'pickup' : 'dine_in',
           takeaway: where === 'takeaway',
-          items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+          items: cartItems(cart.lines),
           customerName: name.trim(),
           contactPhone: phone.trim(),
           note,
@@ -407,6 +448,7 @@ export default function Checkout() {
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
           // Only meaningful for an order placed before setting off.
           wantInMinutes: where === 'later' ? arriveIn : 0,
+          applyOffer: discountCents > 0,
         },
       })
       const order = r.order
@@ -773,17 +815,70 @@ export default function Checkout() {
             )
           )}
 
+          {offer &&
+            (offerEligible ? (
+              <div className={`coupon ${offerApplied ? 'is-on' : ''}`}>
+                <span className="coupon-mark" aria-hidden>
+                  🎓
+                </span>
+                <span className="coupon-body">
+                  <strong>
+                    {offer.label ? `${offer.label} · ` : ''}
+                    {offer.percent}% off
+                  </strong>
+                  <span className="tiny muted">For your @{offer.domain} account · on the dishes</span>
+                </span>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${offerApplied ? 'btn-secondary' : 'btn-accent'}`}
+                  onClick={() => setOfferApplied((v) => !v)}
+                >
+                  {offerApplied ? 'Remove' : 'Apply'}
+                </button>
+              </div>
+            ) : (
+              <div className="coupon is-locked">
+                <span className="coupon-mark" aria-hidden>
+                  🎓
+                </span>
+                <span className="coupon-body">
+                  <strong>
+                    {offer.label ? `${offer.label}? ` : ''}
+                    {offer.percent}% off coupon
+                  </strong>
+                  <span className="tiny muted">
+                    Continue with your @{offer.domain} Google account to unlock it.
+                  </span>
+                  <GoogleButton
+                    hint={offer.domain}
+                    onSignedIn={(u) => {
+                      if (!String(u.verifiedEmail ?? '').endsWith(`@${offer.domain}`)) {
+                        setError(`That Google account isn't an @${offer.domain} one — the coupon is for those only.`)
+                      }
+                    }}
+                    onError={(m) => setError(m)}
+                  />
+                </span>
+              </div>
+            ))}
+
+          {(isDelivery || discountCents > 0) && (
+            <div className="summary-row">
+              <span>Dishes</span>
+              <span>{money(totalCents)}</span>
+            </div>
+          )}
+          {discountCents > 0 && (
+            <div className="summary-row offer-ok">
+              <span>{offer!.percent}% off{offer!.label ? ` (${offer!.label})` : ''}</span>
+              <span>−{money(discountCents)}</span>
+            </div>
+          )}
           {isDelivery && (
-            <>
-              <div className="summary-row">
-                <span>Dishes</span>
-                <span>{money(totalCents)}</span>
-              </div>
-              <div className="summary-row">
-                <span>Delivery{dining?.areaName ? ` to ${dining.areaName}` : ''}</span>
-                <span>{deliveryFeeCents > 0 ? money(deliveryFeeCents) : 'Free'}</span>
-              </div>
-            </>
+            <div className="summary-row">
+              <span>Delivery{dining?.areaName ? ` to ${dining.areaName}` : ''}</span>
+              <span>{deliveryFeeCents > 0 ? money(deliveryFeeCents) : 'Free'}</span>
+            </div>
           )}
 
           {saving && (
@@ -852,7 +947,8 @@ export default function Checkout() {
               <span className="pay-pick-dot" aria-hidden />
             </button>
 
-            {!collectOnly && (
+            {/* UPI only: no cash row at all, not even a greyed-out one. */}
+            {!collectOnly && !upiOnly && (
             <button
               type="button"
               className={`pay-pick ${payNow ? '' : 'on'} ${prepaidOnly ? 'off' : ''}`}

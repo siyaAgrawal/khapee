@@ -127,6 +127,13 @@ petpoojaRouter.post('/:secret/callback', (req: any, res) => {
   const orderNumber = String(req.body?.orderID ?? '')
   const status = String(req.body?.status ?? '')
   const decided = applyCallback(link, orderNumber, status, String(req.body?.cancel_reason ?? ''))
+  /* An order Khapee never placed — the certification orders sent straight to
+     their sandbox by scripts/petpooja-certify.ts — is acknowledged rather than
+     refused: there is nothing here to move, and answering an error to a
+     callback that did its job fails their callback test for no reason. */
+  if (!decided.ok && decided.error === 'No such order') {
+    return res.json({ success: '1', message: 'Callback received; no matching Khapee order' })
+  }
   if (!decided.ok) return res.status(400).json({ success: '0', message: decided.error })
 
   // Through the ordinary status machinery, so the event log, the live stream

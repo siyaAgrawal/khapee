@@ -390,6 +390,34 @@ export default function StaffOrders() {
    * "could not be taken" on its own leaves somebody waiting for food wondering
    * whether to order again or go somewhere else.
    */
+  /**
+   * UPI only: the customer said they paid and it is not in your UPI app. Their
+   * payment is marked not received and the order is turned down with that
+   * reason, so they know to check their bank rather than wait for food.
+   */
+  const notReceived = async (order: Order) => {
+    const claim = (order.payments ?? []).find((p: any) => p.status === 'CLAIMED')
+    if (
+      !window.confirm(
+        `No ${money(order.totalCents)} from ${order.customerName || 'this customer'} in your UPI app? The order will be turned down.`,
+      )
+    )
+      return
+    setBusyId(order.id)
+    try {
+      if (claim) await api(`/staff/payments/${claim.id}/confirm`, { body: { accept: false } })
+      await api(`/staff/orders/${order.id}/decline`, {
+        body: { reason: 'We could not find your UPI payment. If money left your account, show us the payment.' },
+      })
+      toast(`#${order.orderNumber} turned down: payment not received`, 'info')
+      load()
+    } catch (e) {
+      toast((e as ApiError).message, 'bad')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const decline = async (order: Order) => {
     const reason = window.prompt(
       `Why can't you take #${order.orderNumber}? The customer sees this.`,
@@ -755,7 +783,7 @@ export default function StaffOrders() {
                     {groupByPerson(o.items).map((person) => (
                       <div key={person.name}>
                         {o.isGroup && <span className="tiny muted">{person.name}: </span>}
-                        {person.items.map((i: any) => `${i.quantity}× ${i.name}`).join(', ')}
+                        {person.items.map((i: any) => `${i.quantity}× ${i.name}${i.options ? ` (${i.options})` : ''}`).join(', ')}
                       </div>
                     ))}
                   </td>
@@ -964,6 +992,17 @@ export default function StaffOrders() {
                               Prepaid only
                             </button>
                           )}
+                        {/* UPI only: the customer says they've paid, and only your
+                            own UPI app can say whether they have. */}
+                        {o.upiOnly && next === 'ACCEPTED' && o.paymentState === 'sent' && (
+                          <button
+                            className="btn btn-ghost btn-sm qrow-no"
+                            disabled={busyId === o.id}
+                            onClick={() => void notReceived(o)}
+                          >
+                            Not received
+                          </button>
+                        )}
                         {next && (
                           <button
                             className="btn btn-accent btn-sm qrow-go"
@@ -974,7 +1013,9 @@ export default function StaffOrders() {
                                 has been taken off. "Accept" on a ticket with
                                 two dishes struck through does not say which
                                 order is being agreed to. */}
-                            {o.customerOkAt && o.declinedItems && next === 'ACCEPTED'
+                            {o.upiOnly && next === 'ACCEPTED' && o.paymentState === 'sent'
+                              ? 'Payment received · Accept'
+                              : o.customerOkAt && o.declinedItems && next === 'ACCEPTED'
                               ? 'Accept the rest'
                               : goLabel(o, next)}
                           </button>
@@ -998,6 +1039,7 @@ export default function StaffOrders() {
                         {o.items.map((i: any) => (
                           <li key={i.id} className={i.accepted === false ? 'item-off' : ''}>
                             <b>{i.quantity}×</b> {i.name}
+                            {i.options && <span className="item-options"> · {i.options}</span>}
                             {i.memberName ? <em> · {i.memberName}</em> : null}
                             <ItemCall
                               order={o}
@@ -1125,6 +1167,12 @@ export default function StaffOrders() {
                             </>
                           )}
                         </div>
+                        {/* An offer by email, shown so the counter can ask for the ID. */}
+                        {o.discountCents > 0 && (
+                          <div className="o-offer">
+                            {o.offerPercent}% off · {o.offerEmail} · −{money(o.discountCents)}
+                          </div>
+                        )}
 
                         <div className="o-items">
                           {o.isGroup

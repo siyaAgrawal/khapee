@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -555,6 +556,13 @@ addColumn('restaurants', 'published_at', 'TEXT')
 // Reachable by its link, left off the list on the front page — for a place
 // that shares its own link rather than wanting to be found by browsing.
 addColumn('restaurants', 'unlisted', 'INTEGER NOT NULL DEFAULT 0')
+// An email Google has confirmed the person owns, and their Google account id —
+// set by "Continue with Google" (routes/auth.ts). What a restaurant offer for
+// one email domain is checked against, because anyone can type an address.
+addColumn('users', 'verified_email', "TEXT NOT NULL DEFAULT ''")
+addColumn('users', 'google_sub', 'TEXT')
+// Not open yet and about to be: says "Coming soon" where a shut place says "Closed".
+addColumn('restaurants', 'coming_soon', 'INTEGER NOT NULL DEFAULT 0')
 
 // A dine-in order the customer is carrying out rather than eating at a table.
 addColumn('orders', 'takeaway', 'INTEGER NOT NULL DEFAULT 0')
@@ -733,6 +741,87 @@ addColumn('orders', 'pos_error', "TEXT NOT NULL DEFAULT ''")
  */
 addColumn('order_items', 'pos_order_id', 'TEXT')
 addColumn('order_items', 'pos_pushed_at', 'TEXT')
+
+/*
+ * Variations and add-ons: "Half / Full", "Small / Large", "Extra cheese".
+ *
+ * Petpooja menus carry both, and an order relayed to their till has to name
+ * the exact variation and add-ons the customer chose, by Petpooja's own ids —
+ * so they are kept here as they arrive on the menu push, and a dish line on an
+ * order remembers what was picked and what it cost at the time.
+ *
+ * A dish's price on menu_items stays its base price. A dish with variations is
+ * priced by the variation chosen; add-ons are added on top. Every place an
+ * order is priced does it through server/menu-options.ts, so the checkout, the
+ * UPI request and the till all agree on one number.
+ */
+db.exec(`
+CREATE TABLE IF NOT EXISTS menu_item_variations (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  menu_item_id     INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  name             TEXT    NOT NULL,
+  group_name       TEXT    NOT NULL DEFAULT '',
+  price_cents      INTEGER NOT NULL,
+  is_available     INTEGER NOT NULL DEFAULT 1,
+  sort_order       INTEGER NOT NULL DEFAULT 0,
+  pos_variation_id TEXT,
+  pos_global_id    TEXT    NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_variations_item ON menu_item_variations(menu_item_id);
+
+CREATE TABLE IF NOT EXISTS menu_addon_groups (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id  INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  name           TEXT    NOT NULL,
+  is_active      INTEGER NOT NULL DEFAULT 1,
+  sort_order     INTEGER NOT NULL DEFAULT 0,
+  pos_group_id   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_addon_groups_restaurant ON menu_addon_groups(restaurant_id);
+
+CREATE TABLE IF NOT EXISTS menu_addon_items (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  group_id      INTEGER NOT NULL REFERENCES menu_addon_groups(id) ON DELETE CASCADE,
+  name          TEXT    NOT NULL,
+  price_cents   INTEGER NOT NULL DEFAULT 0,
+  is_available  INTEGER NOT NULL DEFAULT 1,
+  sort_order    INTEGER NOT NULL DEFAULT 0,
+  pos_addon_id  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_addon_items_group ON menu_addon_items(group_id);
+
+-- Which add-on groups a dish offers, and how many may be picked from each.
+-- variation_id set: the group belongs to that variation only.
+CREATE TABLE IF NOT EXISTS menu_item_addon_groups (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  menu_item_id  INTEGER NOT NULL REFERENCES menu_items(id) ON DELETE CASCADE,
+  group_id      INTEGER NOT NULL REFERENCES menu_addon_groups(id) ON DELETE CASCADE,
+  variation_id  INTEGER REFERENCES menu_item_variations(id) ON DELETE CASCADE,
+  min_select    INTEGER NOT NULL DEFAULT 0,
+  max_select    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_item_addon_groups_item ON menu_item_addon_groups(menu_item_id);
+
+-- Petpooja's own taxes (CGST 2.5%, SGST 2.5%…), by their id, from the menu push.
+CREATE TABLE IF NOT EXISTS pos_taxes (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  restaurant_id  INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  pos_tax_id     TEXT    NOT NULL,
+  name           TEXT    NOT NULL,
+  rate_bp        INTEGER NOT NULL DEFAULT 0,
+  is_active      INTEGER NOT NULL DEFAULT 1,
+  UNIQUE (restaurant_id, pos_tax_id)
+);
+`)
+// What was picked on this line, kept as it was when ordered.
+addColumn('order_items', 'variation_id', 'INTEGER')
+addColumn('order_items', 'variation_name', "TEXT NOT NULL DEFAULT ''")
+addColumn('order_items', 'addons', "TEXT NOT NULL DEFAULT ''")
+// Taken off the order as a whole (a fixed amount in paise), sent to the till as such.
+addColumn('orders', 'discount_cents', 'INTEGER NOT NULL DEFAULT 0')
+// The restaurant offer this order was given, if any (server/offers.ts).
+addColumn('orders', 'offer_percent', 'INTEGER NOT NULL DEFAULT 0')
+addColumn('orders', 'offer_email', "TEXT NOT NULL DEFAULT ''")
 /* Their name for the table, which is the one their till knows it by. A dine-in
    order names a table in table_no, and a name we invented is a table they do
    not have. */
@@ -1334,6 +1423,108 @@ if (BACKED_UP) {
     const t6 = db.prepare("SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND label = 'Table 6'").get(r.id) as any
     if (t6) db.prepare('UPDATE restaurant_tables SET token = ? WHERE id = ?').run('1be9748ea2db49f7', t6.id)
     else db.prepare("INSERT INTO restaurant_tables (restaurant_id, label, seats, token) VALUES (?, 'Table 6', 4, ?)").run(r.id, '1be9748ea2db49f7')
+  })
+  /*
+   * A test café for Petpooja's sandbox, for Mr. Beans Saket's integration.
+   *
+   * The sandbox is a demo restaurant with a demo menu. Linked to the real Mr.
+   * Beans Saket, its menu push would put that demo menu on their page and take
+   * their own dishes off — so the sandbox is linked here instead: unlisted,
+   * closed, and open to the people who run Khapee (KHAPEE_INSIGHTS_EMAILS) from
+   * their own dashboard, where Settings → Petpooja takes the sandbox keys and
+   * shows the webhook URLs. The keys are typed there, never kept in code.
+   * restID 31zqndu7ar is the mapping code Petpooja issued for the sandbox.
+   */
+  dataFix('2026-10-08-petpooja-sandbox-cafe', () => {
+    let r = db.prepare("SELECT id FROM restaurants WHERE slug = 'petpooja-sandbox'").get() as any
+    if (!r) {
+      const info = db
+        .prepare(
+          `INSERT INTO restaurants
+             (slug, name, description, address, categories, emoji, hue, is_open, hours, prep_minutes, city,
+              accepts_pickup, accepts_takeaway, accepts_car, accepts_groups, accepts_delivery, codes_enabled, unlisted, rating)
+           VALUES ('petpooja-sandbox', 'Mr. Beans Saket — Petpooja test', 'Petpooja sandbox testing. Not a real café.',
+                   'Indore', 'Cafe', '🧪', 260, 0, '9:00 AM – 11:00 PM', 20, 'Indore', 1, 1, 0, 0, 0, 0, 1, 0)`,
+        )
+        .run()
+      r = { id: Number(info.lastInsertRowid) }
+    }
+    const emails = String(process.env.KHAPEE_INSIGHTS_EMAILS ?? '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
+    for (const email of emails) {
+      const u = db.prepare('SELECT id FROM users WHERE lower(email) = ?').get(email) as any
+      if (u) db.prepare("INSERT OR IGNORE INTO restaurant_staff (user_id, restaurant_id, job_title) VALUES (?, ?, 'Owner')").run(u.id, r.id)
+    }
+    if (!db.prepare('SELECT 1 FROM petpooja_links WHERE restaurant_id = ?').get(r.id)) {
+      db.prepare(
+        `INSERT INTO petpooja_links (restaurant_id, rest_id, webhook_secret, enabled, push_orders)
+         VALUES (?, '31zqndu7ar', ?, 1, 1)`,
+      ).run(r.id, crypto.randomBytes(24).toString('base64url'))
+    }
+  })
+  /*
+   * Mr. Beans Saket's new menu, from FINAL SAKET MENU.pdf, as written out in
+   * data/mrbeans-saket-oct-2026.json: 20 sections, add-ons and choices as the
+   * printed menu offers them. Replaces the old menu outright — none of it had
+   * photographs, and past orders keep their own copy of each dish's name.
+   * Egg dishes are marked non-veg and say "Contains egg."; Khapee has only
+   * veg and non-veg.
+   */
+  dataFix('2026-10-08-mr-beans-saket-menu', () => {
+    const r = db.prepare("SELECT id FROM restaurants WHERE slug = 'mr-beans-saket'").get() as any
+    if (!r) return
+    const spec = JSON.parse(fs.readFileSync(path.join(dataDir, 'mrbeans-saket-oct-2026.json'), 'utf8'))
+    const rid = r.id
+    db.prepare(
+      'DELETE FROM menu_item_addon_groups WHERE menu_item_id IN (SELECT id FROM menu_items WHERE restaurant_id = ?)',
+    ).run(rid)
+    db.prepare('DELETE FROM menu_item_variations WHERE menu_item_id IN (SELECT id FROM menu_items WHERE restaurant_id = ?)').run(rid)
+    db.prepare('DELETE FROM menu_addon_items WHERE group_id IN (SELECT id FROM menu_addon_groups WHERE restaurant_id = ?)').run(rid)
+    db.prepare('DELETE FROM menu_addon_groups WHERE restaurant_id = ?').run(rid)
+    db.prepare('DELETE FROM menu_items WHERE restaurant_id = ?').run(rid)
+    db.prepare('DELETE FROM menu_categories WHERE restaurant_id = ?').run(rid)
+
+    const groupId = new Map<string, { id: number; max: number }>()
+    let g = 0
+    for (const [key, grp] of Object.entries<any>(spec.addonGroups)) {
+      const gid = Number(
+        db.prepare('INSERT INTO menu_addon_groups (restaurant_id, name, sort_order) VALUES (?, ?, ?)').run(rid, grp.name, g++)
+          .lastInsertRowid,
+      )
+      grp.items.forEach(([name, rupees]: [string, number], n: number) =>
+        db.prepare('INSERT INTO menu_addon_items (group_id, name, price_cents, sort_order) VALUES (?, ?, ?, ?)').run(gid, name, rupees * 100, n),
+      )
+      groupId.set(key, { id: gid, max: grp.max })
+    }
+    const EMOJI: Record<string, string> = { veg: '🥗', egg: '🍳', nonveg: '🍗' }
+    spec.menu.forEach((sec: any, c: number) => {
+      const cid = Number(db.prepare('INSERT INTO menu_categories (restaurant_id, name, sort_order) VALUES (?, ?, ?)').run(rid, sec.section, c).lastInsertRowid)
+      sec.items.forEach((it: any, n: number) => {
+        const vars: [string, number][] = it.variations ?? []
+        const base = vars.length ? Math.min(...vars.map((v) => v[1])) : it.price
+        const desc = it.type === 'egg' ? `${it.description ? `${it.description} ` : ''}Contains egg.` : it.description
+        const mid = Number(
+          db.prepare(
+            `INSERT INTO menu_items (restaurant_id, category_id, name, description, price_cents, emoji, is_veg, is_available, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+          ).run(rid, cid, it.name, desc, base * 100, EMOJI[it.type] ?? '🍽️', it.type === 'veg' ? 1 : 0, n).lastInsertRowid,
+        )
+        vars.forEach(([name, rupees], k) =>
+          db.prepare('INSERT INTO menu_item_variations (menu_item_id, name, group_name, price_cents, sort_order) VALUES (?, ?, ?, ?, ?)').run(mid, name, 'Choose', rupees * 100, k),
+        )
+        for (const key of it.addons ?? []) {
+          const grp = groupId.get(key)
+          if (grp) db.prepare('INSERT INTO menu_item_addon_groups (menu_item_id, group_id, min_select, max_select) VALUES (?, ?, 0, ?)').run(mid, grp.id, grp.max)
+        }
+      })
+    })
+  })
+  // Mr. Beans Saket: listed right after Revery, and "Coming soon" rather than
+  // "Closed" while its Petpooja link is being finished.
+  dataFix('2026-10-10-mr-beans-saket-coming-soon', () => {
+    db.prepare("UPDATE restaurants SET coming_soon = 1, top_rank = 90 WHERE slug = 'mr-beans-saket'").run()
   })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()

@@ -10006,4 +10006,27 @@ button.nav-link {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--good);}
+  color: var(--good);}/* Unlocking the coupon by email: the address, then the code. */
+.coupon-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+}
+.coupon-form .input {
+  width: 100%;
+}
+.coupon-code {
+  margin-top: 8px;
+  max-width: 180px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+.coupon-error {
+  margin-top: 6px;
+  color: var(--bad);
+  font-weight: 600;
+}

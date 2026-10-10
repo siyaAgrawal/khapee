@@ -13,7 +13,8 @@ import { pushOrder } from '../petpooja.ts'
 import { limitedState } from '../limited.ts'
 import { pushToRestaurant } from '../push.ts'
 import { publish } from '../events.ts'
-import { discountOn, offerFor, qualifyingEmail } from '../offers.ts'
+import { checkCode, discountOn, newCode, offerFor, passEmail, qualifyingEmail } from '../offers.ts'
+import { mailConfigured, sendMail } from '../mail.ts'
 
 export const ordersRouter = Router()
 
@@ -79,10 +80,46 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
 })
 
 /** Builds a UPI request for a cart before the order exists. */
+/**
+ * Proving an address for the offer: a code sent to it, then typed back.
+ * Says plainly when email is not switched on, rather than pretending to send.
+ */
+ordersRouter.post('/offer/:restaurantId/send-code', async (req, res) => {
+  const offer = offerFor(Number(req.params.restaurantId))
+  const email = qualifyingEmail(offer, req.body?.email)
+  if (!offer) return res.status(404).json({ error: 'There is no offer here.' })
+  if (!email) return res.status(400).json({ error: `Enter your @${offer.domain} email.` })
+  if (!mailConfigured()) return res.status(503).json({ error: 'Email codes are not switched on yet.' })
+  const made = newCode(email)
+  if (!made.ok) return res.status(429).json({ error: made.error })
+  const restaurant = db.prepare('SELECT name FROM restaurants WHERE id = ?').get(Number(req.params.restaurantId)) as any
+  const sent = await sendMail({
+    to: email,
+    subject: `${made.code} is your ${restaurant?.name ?? 'Khapee'} code`,
+    text:
+      `Your code is ${made.code}\n\n` +
+      `Type it on Khapee to unlock ${offer.percent}% off${offer.label ? ` (${offer.label})` : ''} at ${restaurant?.name ?? 'the café'}.\n` +
+      `It works for 15 minutes. If you didn't ask for it, ignore this email.\n\n— Khapee`,
+  })
+  if (sent !== 'sent') return res.status(502).json({ error: 'The email could not be sent. Try again in a minute.' })
+  res.json({ ok: true })
+})
+
+ordersRouter.post('/offer/:restaurantId/check-code', (req, res) => {
+  const offer = offerFor(Number(req.params.restaurantId))
+  const email = qualifyingEmail(offer, req.body?.email)
+  if (!offer || !email) return res.status(400).json({ error: 'Enter your email again.' })
+  const checked = checkCode(email, String(req.body?.code ?? ''))
+  if (!checked.ok) return res.status(400).json({ error: checked.error })
+  res.json({ pass: checked.pass, email })
+})
+
 /** The offer at a restaurant, for the menu and the checkout to show. */
 ordersRouter.get('/offer/:restaurantId', (req, res) => {
   const offer = offerFor(Number(req.params.restaurantId))
-  res.json({ offer: offer ? { domain: offer.domain, percent: offer.percent, label: offer.label } : null })
+  res.json({
+    offer: offer ? { domain: offer.domain, percent: offer.percent, label: offer.label, codesOn: mailConfigured() } : null,
+  })
 })
 
 ordersRouter.post('/payment-request', (req, res) => {
@@ -108,8 +145,10 @@ ordersRouter.post('/payment-request', (req, res) => {
   if (amountCents <= 0) return res.status(400).json({ error: 'Your cart is empty.' })
   // The offer comes off the dishes before anything is asked for, so the UPI
   // request is for what the order will actually come to.
+  const dishesCents = amountCents
   const offer = req.body?.applyOffer ? offerFor(restaurantId) : null
-  if (offer && qualifyingEmail(offer, (req as any).user?.verifiedEmail)) amountCents -= discountOn(amountCents, offer.percent)
+  const offerOk = !!(passEmail(offer, req.body?.offerPass) ?? qualifyingEmail(offer, (req as any).user?.verifiedEmail))
+  const offerCents = offerOk && offer ? discountOn(dishesCents, offer.percent) : 0
 
   // What the customer is actually charged, not just what the dishes cost.
   // This summed the menu lines alone, so a delivery quoted at ₹480 in the
@@ -127,8 +166,9 @@ ordersRouter.post('/payment-request', (req, res) => {
    * On the food, before the delivery fee, exactly as the order does it.
    */
   const payerKey = customerKey(req.user?.id ?? null, String(req.body?.customerPhone ?? req.body?.phone ?? ''))
-  const held = payerKey ? cardToSpend(restaurantId, payerKey, amountCents) : null
-  if (held) amountCents = Math.max(0, amountCents - discountFor(held, amountCents))
+  const held = payerKey ? cardToSpend(restaurantId, payerKey, dishesCents) : null
+  // One discount, never both — the bigger — exactly as createOrder decides it.
+  amountCents = Math.max(0, dishesCents - Math.max(offerCents, held ? discountFor(held, dishesCents) : 0))
 
   const session = req.body?.sessionToken ? sessionByToken(String(req.body.sessionToken)) : null
   if (session && session.restaurant_id === restaurantId && session.service_mode === 'delivery' && session.area_id) {
@@ -197,6 +237,7 @@ ordersRouter.post('/', (req, res) => {
     // The pre-order. Minutes from now, because the server owns the clock.
     wantInMinutes: body.wantInMinutes === undefined ? null : Number(body.wantInMinutes),
     applyOffer: !!body.applyOffer,
+    offerPass: body.offerPass ?? null,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({ order: result.order })

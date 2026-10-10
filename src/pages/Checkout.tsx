@@ -6,7 +6,6 @@ import VerifyModal from '../components/VerifyModal'
 import { api, ApiError } from '../lib/api'
 import { cartItems, useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
-import GoogleButton from '../components/GoogleButton'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { clearIntent, readIntent } from '../lib/intent'
@@ -162,11 +161,61 @@ export default function Checkout() {
 
   /*
    * The restaurant's coupon for people from one place — 20% off at Mr. Beans
-   * Saket for a signed-in @dalycollege.org account. Shown as a coupon the
-   * customer taps to apply, never applied on its own; the server checks the
-   * account and works the discount out itself, so this is only what is shown.
+   * Saket for a @dalycollege.org address. The address is proved with a 6-digit
+   * code emailed to it — typed back, it leaves a pass on this phone — and the
+   * coupon then waits for the customer to press Apply; it is never applied on
+   * its own. The server checks the pass and works the discount out itself, so
+   * this is only what is shown.
    */
-  const [offer, setOffer] = useState<{ domain: string; percent: number; label: string } | null>(null)
+  const [offer, setOffer] = useState<{ domain: string; percent: number; label: string; codesOn?: boolean } | null>(null)
+  const passKey = `khapee.offerPass.${restaurantId}`
+  const [offerPass, setOfferPass] = useState<{ pass: string; email: string } | null>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`khapee.offerPass.${restaurantId}`) || 'null')
+    } catch {
+      return null
+    }
+  })
+  const [offerEmail, setOfferEmail] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
+  const [offerCode, setOfferCode] = useState('')
+  const [offerBusy, setOfferBusy] = useState(false)
+  const [offerNote, setOfferNote] = useState('')
+  const sendOfferCode = async () => {
+    setOfferBusy(true)
+    setOfferNote('')
+    try {
+      await api(`/orders/offer/${restaurantId}/send-code`, { body: { email: offerEmail.trim() } })
+      setCodeSent(true)
+      setOfferCode('')
+    } catch (e) {
+      setOfferNote((e as ApiError).message)
+    } finally {
+      setOfferBusy(false)
+    }
+  }
+  // Checked the moment the sixth digit is in — no button to press.
+  const checkOfferCode = async (code: string) => {
+    setOfferBusy(true)
+    setOfferNote('')
+    try {
+      const r = await api<{ pass: string; email: string }>(`/orders/offer/${restaurantId}/check-code`, {
+        body: { email: offerEmail.trim(), code },
+      })
+      const kept = { pass: r.pass, email: r.email }
+      setOfferPass(kept)
+      try {
+        localStorage.setItem(passKey, JSON.stringify(kept))
+      } catch {
+        /* a private window forgets it */
+      }
+    } catch (e) {
+      setOfferNote((e as ApiError).message)
+      setOfferCode('')
+    } finally {
+      setOfferBusy(false)
+    }
+  }
   const [offerApplied, setOfferApplied] = useState(false)
   useEffect(() => {
     if (!restaurantId) return
@@ -174,8 +223,11 @@ export default function Checkout() {
       .then((r) => setOffer(r.offer))
       .catch(() => setOffer(null))
   }, [restaurantId])
-  // Only an email Google has confirmed counts — anybody can type an address.
-  const offerEligible = !!offer && !!user && String(user.verifiedEmail ?? '').toLowerCase().endsWith(`@${offer.domain}`)
+  // Only a proved address counts — anybody can type one.
+  const offerEligible =
+    !!offer &&
+    (!!offerPass?.email.endsWith(`@${offer.domain}`) ||
+      (!!user && String(user.verifiedEmail ?? '').toLowerCase().endsWith(`@${offer.domain}`)))
   const offerCents =
     offerEligible && offerApplied && offer ? Math.min(totalCents, Math.round((totalCents * offer.percent) / 100 / 100) * 100) : 0
 
@@ -412,6 +464,7 @@ export default function Checkout() {
           customerPhone: phone.trim(),
           // And the offer, when that is the one winning.
           applyOffer: offerCents > 0 && !useCard,
+          offerPass: offerPass?.pass ?? null,
         },
       })
       setPayRequest(r)
@@ -448,7 +501,8 @@ export default function Checkout() {
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
           // Only meaningful for an order placed before setting off.
           wantInMinutes: where === 'later' ? arriveIn : 0,
-          applyOffer: discountCents > 0,
+          applyOffer: offerCents > 0 && !useCard,
+          offerPass: offerPass?.pass ?? null,
         },
       })
       const order = r.order
@@ -826,7 +880,7 @@ export default function Checkout() {
                     {offer.label ? `${offer.label} · ` : ''}
                     {offer.percent}% off
                   </strong>
-                  <span className="tiny muted">For your @{offer.domain} account · on the dishes</span>
+                  <span className="tiny muted">For {offerPass?.email ?? `your @${offer.domain} account`} · on the dishes</span>
                 </span>
                 <button
                   type="button"
@@ -846,18 +900,62 @@ export default function Checkout() {
                     {offer.label ? `${offer.label}? ` : ''}
                     {offer.percent}% off coupon
                   </strong>
-                  <span className="tiny muted">
-                    Continue with your @{offer.domain} Google account to unlock it.
-                  </span>
-                  <GoogleButton
-                    hint={offer.domain}
-                    onSignedIn={(u) => {
-                      if (!String(u.verifiedEmail ?? '').endsWith(`@${offer.domain}`)) {
-                        setError(`That Google account isn't an @${offer.domain} one — the coupon is for those only.`)
-                      }
-                    }}
-                    onError={(m) => setError(m)}
-                  />
+                  {offer.codesOn === false ? (
+                    <span className="tiny muted">Unlocking by email is coming soon.</span>
+                  ) : !codeSent ? (
+                    <>
+                      <span className="tiny muted">Enter your @{offer.domain} email — we'll send you a code.</span>
+                      <span className="coupon-form">
+                        <input
+                          className="input"
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder={`yourname@${offer.domain}`}
+                          value={offerEmail}
+                          onChange={(e) => setOfferEmail(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && void sendOfferCode()}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-accent"
+                          disabled={offerBusy || !offerEmail.trim().toLowerCase().endsWith(`@${offer.domain}`)}
+                          onClick={() => void sendOfferCode()}
+                        >
+                          {offerBusy ? 'Sending…' : 'Send code'}
+                        </button>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="tiny muted">
+                        Enter the 6-digit code we sent to {offerEmail.trim()}.{' '}
+                        <button type="button" className="link-btn" onClick={() => setCodeSent(false)}>
+                          Change
+                        </button>
+                      </span>
+                      <input
+                        className="input coupon-code"
+                        autoFocus
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        placeholder="••••••"
+                        value={offerCode}
+                        disabled={offerBusy}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, 6)
+                          setOfferCode(digits)
+                          if (digits.length === 6) void checkOfferCode(digits)
+                        }}
+                      />
+                      <button type="button" className="link-btn tiny" disabled={offerBusy} onClick={() => void sendOfferCode()}>
+                        Send it again
+                      </button>
+                    </>
+                  )}
+                  {offerNote && <span className="tiny coupon-error">{offerNote}</span>}
                 </span>
               </div>
             ))}

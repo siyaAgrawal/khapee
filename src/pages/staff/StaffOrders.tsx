@@ -1167,6 +1167,12 @@ export default function StaffOrders() {
                             </>
                           )}
                         </div>
+                        {/* An offer by email, shown so the counter can ask for the ID. */}
+                        {o.discountCents > 0 && (
+                          <div className="o-offer">
+                            {o.offerPercent}% off · {o.offerEmail} · −{money(o.discountCents)}
+                          </div>
+                        )}
 
                         <div className="o-items">
                           {o.isGroup

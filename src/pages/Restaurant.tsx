@@ -179,6 +179,14 @@ export default function Restaurant() {
     if (outcome === 'switched') toast('Started a new cart for this restaurant', 'info')
   }
 
+  /* The restaurant's offer, if it has one — see server/offers.ts. */
+  const [offer, setOffer] = useState<{ domain: string; percent: number; label: string } | null>(null)
+  useEffect(() => {
+    api<{ offer: any }>(`/orders/offer/${restaurantId}`)
+      .then((r) => setOffer(r.offer))
+      .catch(() => setOffer(null))
+  }, [restaurantId])
+
   /* What people actually order here, first — see /restaurants/:id/popular. */
   const [popularIds, setPopularIds] = useState<number[]>([])
   useEffect(() => {
@@ -547,6 +555,12 @@ export default function Restaurant() {
             {/* Above the section chips, because someone who knows what they
                 want should not have to read the chips to find out it is not
                 there. */}
+            {offer && (
+              <p className="offer-note">
+                🎓 {offer.label ? `${offer.label}: ` : ''}
+                <strong>{offer.percent}% off</strong> with your @{offer.domain} email — add it at checkout.
+              </p>
+            )}
             <div className="menu-find">
               <span className="menu-find-mark" aria-hidden>
                 <SearchIcon size={16} />

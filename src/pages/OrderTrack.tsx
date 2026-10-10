@@ -778,6 +778,12 @@ export default function OrderTrack() {
               <span>{money(order.deliveryFeeCents)}</span>
             </div>
           )}
+          {order.discountCents > 0 && (
+            <div className="summary-row" style={{ marginTop: 8 }}>
+              <span>{order.offerPercent}% off · {order.offerEmail}</span>
+              <span>−{money(order.discountCents)}</span>
+            </div>
+          )}
           <div className="summary-total">
             <span>Total</span>
             <span>{money(order.totalCents)}</span>

@@ -803,6 +803,9 @@ addColumn('order_items', 'variation_name', "TEXT NOT NULL DEFAULT ''")
 addColumn('order_items', 'addons', "TEXT NOT NULL DEFAULT ''")
 // Taken off the order as a whole (a fixed amount in paise), sent to the till as such.
 addColumn('orders', 'discount_cents', 'INTEGER NOT NULL DEFAULT 0')
+// The restaurant offer this order was given, if any (server/offers.ts).
+addColumn('orders', 'offer_percent', 'INTEGER NOT NULL DEFAULT 0')
+addColumn('orders', 'offer_email', "TEXT NOT NULL DEFAULT ''")
 /* Their name for the table, which is the one their till knows it by. A dine-in
    order names a table in table_no, and a name we invented is a table they do
    not have. */

@@ -12,6 +12,7 @@ import { pushOrder } from '../petpooja.ts'
 import { limitedState } from '../limited.ts'
 import { pushToRestaurant } from '../push.ts'
 import { publish } from '../events.ts'
+import { discountOn, offerFor, qualifyingEmail } from '../offers.ts'
 
 export const ordersRouter = Router()
 
@@ -77,6 +78,12 @@ ordersRouter.get('/payment-options/:restaurantId', (req, res) => {
 })
 
 /** Builds a UPI request for a cart before the order exists. */
+/** The offer at a restaurant, for the menu and the checkout to show. */
+ordersRouter.get('/offer/:restaurantId', (req, res) => {
+  const offer = offerFor(Number(req.params.restaurantId))
+  res.json({ offer: offer ? { domain: offer.domain, percent: offer.percent, label: offer.label } : null })
+})
+
 ordersRouter.post('/payment-request', (req, res) => {
   const restaurantId = Number(req.body?.restaurantId)
   const r = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(restaurantId) as any
@@ -98,6 +105,10 @@ ordersRouter.post('/payment-request', (req, res) => {
     amountCents += chosen.unitPriceCents * Math.max(1, Math.floor(Number(line.quantity) || 1))
   }
   if (amountCents <= 0) return res.status(400).json({ error: 'Your cart is empty.' })
+  // The offer comes off the dishes before anything is asked for, so the UPI
+  // request is for what the order will actually come to.
+  const offer = offerFor(restaurantId)
+  if (qualifyingEmail(offer, req.body?.offerEmail)) amountCents -= discountOn(amountCents, offer!.percent)
 
   // What the customer is actually charged, not just what the dishes cost.
   // This summed the menu lines alone, so a delivery quoted at ₹480 in the
@@ -169,6 +180,7 @@ ordersRouter.post('/', (req, res) => {
     paymentClaim: body.paymentClaim ?? null,
     // The pre-order. Minutes from now, because the server owns the clock.
     wantInMinutes: body.wantInMinutes === undefined ? null : Number(body.wantInMinutes),
+    offerEmail: body.offerEmail ?? null,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({ order: result.order })
@@ -514,6 +526,8 @@ ordersRouter.post('/:orderNumber/resend', (req, res) => {
     // arrived twice.
     tableId: row.table_id,
     takeaway: !!row.takeaway,
+    // The same customer, so the same offer.
+    offerEmail: row.offer_email || null,
   })
   if (!again.ok) return res.status(again.status).json({ error: again.error })
 

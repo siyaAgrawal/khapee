@@ -11,6 +11,7 @@ import { askCustomer, askToPrepay } from './customer-notify.ts'
 import { claimedCents, outstandingCents, upiOnly } from './payments.ts'
 import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
+import { discountOn, offerFor, qualifyingEmail } from './offers.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -92,6 +93,8 @@ export type CreateOrderInput = {
    * the clock and does the arithmetic.
    */
   wantInMinutes?: number | null
+  /** An email that qualifies for the restaurant's offer (see server/offers.ts). */
+  offerEmail?: string | null
 }
 
 /**
@@ -404,7 +407,13 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     }
     deliveryFeeCents = area.fee_cents
   }
-  const totalCents = subtotalCents + deliveryFeeCents
+  // The restaurant's offer, for a customer whose email qualifies: a share of
+  // the dishes, never of the delivery fee.
+  const offer = offerFor(input.restaurantId)
+  const offerEmail = qualifyingEmail(offer, input.offerEmail)
+  const offerPercent = offerEmail && offer ? offer.percent : 0
+  const discountCents = discountOn(subtotalCents, offerPercent)
+  const totalCents = subtotalCents - discountCents + deliveryFeeCents
 
   const phone = customerPhone(input.contactPhone, input.userId, liveSession?.phone ?? '')
   if (input.requirePhone && !looksLikePhone(phone)) {
@@ -563,6 +572,14 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         wantedAt,
       )
     const orderId = Number(info.lastInsertRowid)
+    if (discountCents > 0) {
+      db.prepare('UPDATE orders SET discount_cents = ?, offer_percent = ?, offer_email = ? WHERE id = ?').run(
+        discountCents,
+        offerPercent,
+        offerEmail,
+        orderId,
+      )
+    }
 
     const insertItem = db.prepare(
       `INSERT INTO order_items (order_id, menu_item_id, name, emoji, unit_price_cents, quantity, variation_id, variation_name, addons)
@@ -708,7 +725,7 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
  * somebody presses Accept is a figure that is wrong while it is being read.
  */
 export function retotalOrder(orderId: number): number {
-  const row = db.prepare('SELECT delivery_fee_cents FROM orders WHERE id = ?').get(orderId) as any
+  const row = db.prepare('SELECT delivery_fee_cents, offer_percent FROM orders WHERE id = ?').get(orderId) as any
   if (!row) return 0
   const sum = db
     .prepare(
@@ -716,8 +733,14 @@ export function retotalOrder(orderId: number): number {
          FROM order_items WHERE order_id = ? AND (accepted IS NULL OR accepted = 1)`,
     )
     .get(orderId) as any
-  const total = Number(sum.n) + Number(row.delivery_fee_cents ?? 0)
-  db.prepare("UPDATE orders SET total_cents = ?, updated_at = datetime('now') WHERE id = ?").run(total, orderId)
+  // An offer is a percentage of the dishes, so it follows what is left of them.
+  const discount = discountOn(Number(sum.n), Number(row.offer_percent ?? 0))
+  const total = Number(sum.n) - discount + Number(row.delivery_fee_cents ?? 0)
+  db.prepare("UPDATE orders SET total_cents = ?, discount_cents = ?, updated_at = datetime('now') WHERE id = ?").run(
+    total,
+    discount,
+    orderId,
+  )
   return total
 }
 
@@ -1043,8 +1066,12 @@ export function shapeOrder(row: any) {
     paymentMethod: row.payment_method,
     // The dishes, then what was added to carry them, then what is owed. Kept
     // apart so a customer can see why the total is more than the menu prices.
-    subtotalCents: row.total_cents - (row.delivery_fee_cents ?? 0),
+    subtotalCents: row.total_cents - (row.delivery_fee_cents ?? 0) + (row.discount_cents ?? 0),
     deliveryFeeCents: row.delivery_fee_cents ?? 0,
+    // An offer taken off the dishes (server/offers.ts), and who it was for.
+    discountCents: row.discount_cents ?? 0,
+    offerPercent: row.offer_percent ?? 0,
+    offerEmail: row.offer_email ?? '',
     totalCents: row.total_cents,
     note: row.note,
     verifyToken: row.verify_token,

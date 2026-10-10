@@ -115,7 +115,37 @@ export default function Checkout() {
    */
   const isDelivery = dining?.serviceMode === 'delivery'
   const deliveryFeeCents = isDelivery ? (dining?.deliveryFeeCents ?? 0) : 0
-  const payableCents = totalCents + deliveryFeeCents
+  /*
+   * The restaurant's offer for people from one place — 20% off at Mr. Beans
+   * Saket with a @dalycollege.org email. Typed once and remembered on this
+   * phone; the server checks the address again and works the discount out
+   * itself, so this is only what the customer is shown.
+   */
+  const [offer, setOffer] = useState<{ domain: string; percent: number; label: string } | null>(null)
+  const [offerEmail, setOfferEmail] = useState(() => {
+    try {
+      return localStorage.getItem('khapee.offerEmail') ?? ''
+    } catch {
+      return ''
+    }
+  })
+  useEffect(() => {
+    if (!restaurantId) return
+    api<{ offer: any }>(`/orders/offer/${restaurantId}`)
+      .then((r) => setOffer(r.offer))
+      .catch(() => setOffer(null))
+  }, [restaurantId])
+  const offerOk =
+    !!offer && new RegExp(`^[a-z0-9._%+-]+@${offer.domain.replace(/\./g, '\\.')}$`).test(offerEmail.trim().toLowerCase())
+  const discountCents = offerOk && offer ? Math.min(totalCents, Math.round((totalCents * offer.percent) / 100 / 100) * 100) : 0
+  useEffect(() => {
+    try {
+      if (offerOk) localStorage.setItem('khapee.offerEmail', offerEmail.trim().toLowerCase())
+    } catch {
+      /* a private window forgets it */
+    }
+  }, [offerOk, offerEmail])
+  const payableCents = totalCents - discountCents + deliveryFeeCents
   const shortOfMinimum = isDelivery ? Math.max(0, (dining?.minOrderCents ?? 0) - totalCents) : 0
 
   /**
@@ -330,6 +360,7 @@ export default function Checkout() {
           sessionToken: dining?.token ?? null,
           // Written on the UPI payment, so the restaurant can match it by name.
           customerName: name.trim(),
+          offerEmail: offerOk ? offerEmail.trim() : null,
         },
       })
       setPayRequest(r)
@@ -366,6 +397,7 @@ export default function Checkout() {
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
           // Only meaningful for an order placed before setting off.
           wantInMinutes: where === 'later' ? arriveIn : 0,
+          offerEmail: offerOk ? offerEmail.trim() : null,
         },
       })
       const order = r.order
@@ -732,17 +764,49 @@ export default function Checkout() {
             )
           )}
 
+          {offer && (
+            <div className={`offer-box ${offerOk ? 'is-on' : ''}`}>
+              <label htmlFor="offer-email">
+                <strong>
+                  {offer.label ? `${offer.label}? ` : ''}Get {offer.percent}% off
+                </strong>
+                <span className="tiny muted"> — enter your @{offer.domain} email</span>
+              </label>
+              <input
+                id="offer-email"
+                className="input"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder={`yourname@${offer.domain}`}
+                value={offerEmail}
+                onChange={(e) => setOfferEmail(e.target.value)}
+              />
+              {offerOk ? (
+                <p className="tiny offer-ok">✓ {offer.percent}% off applied</p>
+              ) : offerEmail.trim() ? (
+                <p className="tiny muted">Only @{offer.domain} emails get this offer.</p>
+              ) : null}
+            </div>
+          )}
+
+          {(isDelivery || discountCents > 0) && (
+            <div className="summary-row">
+              <span>Dishes</span>
+              <span>{money(totalCents)}</span>
+            </div>
+          )}
+          {discountCents > 0 && (
+            <div className="summary-row offer-ok">
+              <span>{offer!.percent}% off{offer!.label ? ` (${offer!.label})` : ''}</span>
+              <span>−{money(discountCents)}</span>
+            </div>
+          )}
           {isDelivery && (
-            <>
-              <div className="summary-row">
-                <span>Dishes</span>
-                <span>{money(totalCents)}</span>
-              </div>
-              <div className="summary-row">
-                <span>Delivery{dining?.areaName ? ` to ${dining.areaName}` : ''}</span>
-                <span>{deliveryFeeCents > 0 ? money(deliveryFeeCents) : 'Free'}</span>
-              </div>
-            </>
+            <div className="summary-row">
+              <span>Delivery{dining?.areaName ? ` to ${dining.areaName}` : ''}</span>
+              <span>{deliveryFeeCents > 0 ? money(deliveryFeeCents) : 'Free'}</span>
+            </div>
           )}
 
           <div className="summary-total" style={{ marginBottom: 14 }}>

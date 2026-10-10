@@ -1,11 +1,11 @@
 /**
- * Mr. Beans, in the look of their own new menu.
+ * Mr. Beans, in the look of their own printed menu.
  *
  * The pieces are theirs: the brush-script "Mr Beans" with the gentleman in the
- * top hat (the logo from mrbeans.in, white on transparent), the sage-olive
- * green and cream the menu is printed on, its lowercase serif headings, and
- * the wavy scalloped edge that finishes its pages. Since 2002, and Times Food
- * Award winners — both from their own site.
+ * top hat (the logo from mrbeans.in, redrawn in their espresso ink), the
+ * blush-pink arch their desserts page sits in, the line sketches from the
+ * menu (the cake, the sandwich), its lowercase serif headings, and the wavy
+ * "~~~" rules that set off its little captions. Since 2002 — from their site.
  */
 export function MrBeansHero({
   name,
@@ -24,9 +24,14 @@ export function MrBeansHero({
   const branch = name.split(/\s[—–-]\s/)[1] ?? ''
   return (
     <header className="mb-hero">
-      <div className="mb-band">
-        <img className="mb-logo" src="/mrbeans-logo.png" alt="Mr. Beans" width={180} height={131} />
-        <p className="mb-since">bistro &amp; café · since 2002</p>
+      <div className="mb-arch">
+        <img className="mb-logo" src="/mrbeans-logo-ink.png" alt="Mr. Beans" width={180} height={131} />
+        <p className="mb-since">
+          <span className="mb-wave" aria-hidden />
+          bistro &amp; café · since 2002
+          <span className="mb-wave" aria-hidden />
+        </p>
+        <img className="mb-cake" src="/mrbeans-cake.png" alt="" aria-hidden width={132} height={112} />
       </div>
       <div className="mb-intro">
         {branch && <h1 className="mb-branch">{branch.toLowerCase()}</h1>}
@@ -43,4 +48,9 @@ export function MrBeansHero({
       </div>
     </header>
   )
+}
+
+/** The sandwich from their sandwiches page, between the header and the menu. */
+export function MrBeansSketch() {
+  return <img className="mb-sketch" src="/mrbeans-sandwich.png" alt="" aria-hidden width={222} height={135} />
 }

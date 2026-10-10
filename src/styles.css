@@ -9625,6 +9625,11 @@ button.nav-link {
   max-width: 340px;
   aspect-ratio: 1.7;
   margin: 0 auto;
+  /* Rubbing is a drag across words, and a drag across words selects them —
+     so the prize came up highlighted in blue under the finger that was
+     revealing it. Nothing on this card is text anybody needs to copy. */
+  user-select: none;
+  -webkit-user-select: none;
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid var(--line-strong);

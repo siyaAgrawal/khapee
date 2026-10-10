@@ -22,6 +22,7 @@ import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
 import { PaarrooMark, PaarrooWordmark } from '../components/PaarrooBrand'
 import { GramsHero, GramsYum } from '../components/GramsBrand'
+import { MrBeansHero } from '../components/MrBeansHero'
 import { BeansFlourish, BeansMark, BeansWordmark } from '../components/BeansBrand'
 import type { RestaurantCard } from './Home'
 
@@ -138,7 +139,7 @@ export default function Restaurant() {
    */
   const [query, setQuery] = useState('')
   /** Themed restaurants share the menu and page shell, dressed differently. */
-  const themed = noir || hut || revery || paarroo || beans
+  const themed = noir || hut || revery || paarroo
   const noirPage = themed
 
   /**
@@ -177,6 +178,11 @@ export default function Restaurant() {
     }
     const outcome = add({ id: data.restaurant.id, name: data.restaurant.name }, full, choice)
     if (outcome === 'switched') toast('Started a new cart for this restaurant', 'info')
+    // No tables to order at: the only way left is takeaway, so it is chosen.
+    if (data.restaurant.acceptsDineIn === false && data.restaurant.acceptsPickup && !intent && !dining) {
+      saveIntent(restaurantId)
+      setIntent(true)
+    }
   }
 
   /* The restaurant's offer, if it has one — see server/offers.ts. */
@@ -269,7 +275,7 @@ export default function Restaurant() {
   return (
     <div className="app">
       <Header />
-      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''} ${beans ? 'beans-page' : ''} ${grams ? 'grams-page' : ''}`}>
+      <main className={`page ${themed ? 'noir-page' : ''} ${hut ? 'hut-page' : ''} ${revery ? 'revery-page' : ''} ${paarroo ? 'paarroo-page' : ''} ${beans ? 'mb-page' : ''} ${grams ? 'grams-page' : ''}`}>
         {error && <ErrorState message={error} onRetry={load} />}
         {!data && !error && <LoadingBlock label="Loading the menu…" />}
 
@@ -410,6 +416,43 @@ export default function Restaurant() {
                   </Link>
                 )}
               </header>
+            ) : beans ? (
+              <>
+                <MrBeansHero
+                  name={data.restaurant.name}
+                  isOpen={data.restaurant.isOpen}
+                  comingSoon={data.restaurant.comingSoon}
+                  hours={data.restaurant.hours}
+                  prepMinutes={data.restaurant.prepMinutes}
+                />
+                {data.restaurant.isOpen && !dining && (data.restaurant.acceptsCar || data.restaurant.acceptsPickup) && (
+                  <div className="way-in mb-way-in">
+                    {data.restaurant.acceptsCar && (
+                      <Link className="way-in-btn" to={`/r/${restaurantId}/car`}>
+                        In my car
+                      </Link>
+                    )}
+                    {data.restaurant.acceptsPickup && (
+                      <button
+                        type="button"
+                        className={`way-in-btn ${intent ? 'is-chosen' : ''}`}
+                        onClick={() => {
+                          saveIntent(restaurantId)
+                          setIntent(true)
+                          toast('Takeaway — add what you’d like, then pay by UPI.', 'good')
+                        }}
+                      >
+                        {intent ? 'Takeaway ✓' : 'Order takeaway'}
+                      </button>
+                    )}
+                  </div>
+                )}
+                {data.restaurant.isOpen && data.restaurant.acceptsDineIn !== false && (
+                  <div className="mb-dining">
+                    <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
+                  </div>
+                )}
+              </>
             ) : grams ? (
               <>
                 <GramsHero
@@ -515,7 +558,7 @@ export default function Restaurant() {
                     )}
                   </div>
                 )}
-                {data.restaurant.isOpen && (
+                {data.restaurant.isOpen && data.restaurant.acceptsDineIn !== false && (
                   <div style={{ marginTop: 10 }}>
                     <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
                   </div>

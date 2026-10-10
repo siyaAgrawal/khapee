@@ -23,6 +23,8 @@ export type RestaurantCard = {
   isOpen: boolean
   /** Not open yet, and about to be. */
   comingSoon?: boolean
+  /** False for a place that only does takeaway and the car — no tables. */
+  acceptsDineIn?: boolean
   hours: string
   prepMinutes: number
   rating: number | null

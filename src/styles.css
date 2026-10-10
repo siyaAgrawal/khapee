@@ -9381,6 +9381,282 @@ button.nav-link {
   box-shadow: var(--shadow-md);
   isolation: isolate;
 }
+
+/* ======================================== Mr. Beans (theme 'beans'), redone
+   From their own new menu: sage-olive green and cream, blush, tan, terracotta
+   and mustard as accents, lowercase serif headings (Gloock) over a clean
+   geometric sans (Jost), and the wavy scalloped edge their pages end on. The
+   logo is theirs, from mrbeans.in. Set after the older beans rules, which
+   style the engraved layout this page no longer uses. */
+:root[data-theme='beans'] {
+  --bg: #f8f4e8;
+  --bg-tint: #efe9d6;
+  --surface: #fffcf3;
+  --surface-2: #f4efdf;
+  --ink: #262b1a;
+  --ink-2: #3c4229;
+  --muted: #6b6a55;
+  --line: rgba(60, 66, 41, 0.14);
+  --line-strong: rgba(60, 66, 41, 0.28);
+  --accent: #5b6a3a;
+  --accent-ink: #fffcf3;
+  --accent-soft: #e7ead9;
+  --good: #4f6b34;
+  --good-soft: #e5ecd9;
+  --bad: #b04a3c;
+  --bad-soft: #f5e1dc;
+  --shadow-sm: none;
+  --shadow-md: 0 8px 22px rgba(60, 66, 41, 0.1);
+  --shadow-lg: 0 22px 48px rgba(60, 66, 41, 0.14);
+  --mb-olive: #5b6a3a;
+  --mb-olive-deep: #4a5730;
+  --mb-cream: #f8f4e8;
+  --mb-blush: #e8c9b9;
+  --mb-tan: #9b7d5a;
+  --mb-terra: #c25a49;
+  --mb-mustard: #d8b54a;
+  --mb-serif: 'Gloock', 'Didot', Georgia, serif;
+  --mb-sans: 'Jost', 'Futura', ui-sans-serif, system-ui, sans-serif;
+}
+:root[data-theme='beans'] body {
+  background: var(--bg);
+  overflow-x: clip;
+}
+.mb-page {
+  font-family: var(--mb-sans);
+}
+
+/* The band: olive, the logo in white, finished with their scalloped edge. */
+.mb-band {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  margin: -32px calc(50% - 50vw) 0;
+  padding: 46px 16px 40px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.08), transparent 60%),
+    var(--mb-olive);
+  color: var(--mb-cream);
+}
+.mb-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 14px;
+  background: radial-gradient(circle at 14px 14px, var(--mb-cream) 9.5px, transparent 10px) -2px 0 / 28px 14px repeat-x;
+}
+.mb-logo {
+  width: 170px;
+  height: auto;
+  display: block;
+}
+.mb-since {
+  margin: 0;
+  font-family: var(--mb-sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(248, 244, 232, 0.82);
+}
+
+.mb-intro {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 22px 4px 4px;
+  text-align: center;
+}
+.mb-branch {
+  margin: 0;
+  font-family: var(--mb-serif);
+  font-weight: 400;
+  font-size: clamp(34px, 10vw, 46px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--mb-olive);
+}
+.mb-line {
+  margin: 10px auto 0;
+  max-width: 34ch;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.mb-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 8px;
+  margin: 12px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.mb-open {
+  color: var(--good);
+  font-weight: 600;
+}
+.mb-soon {
+  color: #a8730f;
+  font-weight: 600;
+}
+.mb-shut {
+  color: var(--bad);
+  font-weight: 600;
+}
+.mb-way-in {
+  max-width: 560px;
+  margin: 18px auto 0;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+.mb-page .way-in-btn {
+  border: 1.5px solid var(--mb-olive);
+  border-radius: 999px;
+  background: var(--mb-olive);
+  color: var(--mb-cream);
+  font-family: var(--mb-sans);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  padding: 12px 18px;
+}
+.mb-page .way-in-btn.is-chosen {
+  background: transparent;
+  color: var(--mb-olive);
+}
+.mb-dining {
+  max-width: 560px;
+  margin: 12px auto 0;
+}
+
+/* Search and section links. */
+.mb-page .menu-find,
+.mb-page .menu-nav,
+.mb-page .menu-find-count,
+.mb-page .menu-section,
+.mb-page .offer-note {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.mb-page .menu-find-input {
+  border-radius: 999px;
+  background: var(--surface);
+  border-color: var(--line-strong);
+  font-family: var(--mb-sans);
+}
+.mb-page .menu-nav {
+  background: var(--bg);
+}
+.mb-page .chip {
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  border-radius: 999px;
+  font-family: var(--mb-sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.mb-page .chip:hover {
+  border-color: var(--mb-olive);
+  color: var(--mb-olive);
+}
+
+/* The menu: lowercase serif sections, each with one of their accent colours,
+   and dishes set in rows as the printed menu sets them. */
+.mb-page .menu-section {
+  margin-top: 30px;
+}
+.mb-page .menu-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mb-serif);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: lowercase;
+  color: var(--mb-olive);
+  margin-bottom: 6px;
+}
+.mb-page .menu-section h2::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--mb-blush);
+}
+.mb-page .menu-section:nth-of-type(5n + 2) h2::before { background: var(--mb-tan); }
+.mb-page .menu-section:nth-of-type(5n + 3) h2::before { background: var(--mb-terra); }
+.mb-page .menu-section:nth-of-type(5n + 4) h2::before { background: var(--mb-mustard); }
+.mb-page .menu-section:nth-of-type(5n + 5) h2::before { background: var(--mb-olive); }
+.mb-page .item-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.mb-page .item-card {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 14px 0 15px;
+}
+.mb-page .item-card:hover {
+  box-shadow: none;
+}
+.mb-page .item-title {
+  font-family: var(--mb-sans);
+  font-weight: 600;
+  font-size: 16.5px;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+.mb-page .item-desc,
+.mb-page .item-compact .item-desc {
+  -webkit-line-clamp: unset;
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.mb-page .item-price {
+  font-family: var(--mb-sans);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--mb-olive);
+}
+.mb-page .btn-add {
+  border: 1.5px solid var(--mb-olive);
+  background: transparent;
+  color: var(--mb-olive);
+  border-radius: 999px;
+  font-family: var(--mb-sans);
+  font-weight: 600;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.mb-page .btn-add:hover {
+  background: var(--mb-olive);
+  color: var(--mb-cream);
+}
+.mb-page .stepper {
+  background: var(--mb-olive);
+  border-radius: 999px;
+}
+.mb-page .offer-note {
+  background: rgba(232, 201, 185, 0.45);
+  font-family: var(--mb-sans);
+}
+:root[data-theme='beans'] .cart-bar {
+  background: var(--mb-olive-deep);
+}
 .scratch-prize {
   position: absolute;
   inset: 0;

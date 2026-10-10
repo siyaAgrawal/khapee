@@ -33,6 +33,7 @@ type Profile = {
   codesEnabled: boolean
   carPrepaidOnly: boolean
   cashDisabled: boolean
+  scratchEvery: number
   takeawayPrepaidOnly: boolean
   publishedAt: string | null
   itemCount: number
@@ -345,6 +346,7 @@ export default function StaffProfile() {
           codesEnabled: form.codesEnabled,
           carPrepaidOnly: form.carPrepaidOnly,
           cashDisabled: form.cashDisabled,
+          scratchEvery: form.scratchEvery,
           takeawayPrepaidOnly: form.takeawayPrepaidOnly,
           lat: form.lat,
           lng: form.lng,
@@ -571,6 +573,35 @@ export default function StaffProfile() {
                 />
               </div>
             ))}
+
+            {/*
+              How often a customer wins a scratch card.
+              A count rather than a switch, because the answer is not yes or
+              no — it is how much of your own margin you are handing back, and
+              every order is a very different number from every third.
+            */}
+            <div className="list-row">
+              <span style={{ fontSize: 14 }}>
+                Scratch card prize
+                <span className="tiny muted" style={{ display: 'block' }}>
+                  A percentage off their next order, 5% to 20%, capped. Won after an order.
+                </span>
+              </span>
+              <span className="spacer" />
+              <select
+                className="input"
+                style={{ width: 'auto', minWidth: 140 }}
+                value={form.scratchEvery}
+                aria-label="How often a scratch card is won"
+                onChange={(e) => set('scratchEvery', Number(e.target.value) as never)}
+              >
+                <option value={0}>Never</option>
+                <option value={1}>Every order</option>
+                <option value={2}>Every 2nd order</option>
+                <option value={3}>Every 3rd order</option>
+                <option value={5}>Every 5th order</option>
+              </select>
+            </div>
           </section>
 
           <UpiAccounts restaurantName={form.name} />

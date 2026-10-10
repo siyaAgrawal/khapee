@@ -115,7 +115,50 @@ export default function Checkout() {
    */
   const isDelivery = dining?.serviceMode === 'delivery'
   const deliveryFeeCents = isDelivery ? (dining?.deliveryFeeCents ?? 0) : 0
-  const payableCents = totalCents + deliveryFeeCents
+  /*
+   * A scratch card they already won, coming off this bill.
+   *
+   * Quoted from the server while they are still deciding, because at a
+   * UPI-only restaurant this number is the amount they are about to be asked
+   * for — springing a discount after the payment request is built would mean
+   * asking for one figure and charging another.
+   *
+   * On the food only, like the server works it: the delivery fee is somebody's
+   * courier, not the restaurant's margin to give away.
+   */
+  const [saving, setSaving] = useState<{ label: string; discountCents: number } | null>(null)
+  const payableCents = Math.max(0, totalCents - (saving?.discountCents ?? 0)) + deliveryFeeCents
+
+  /*
+   * Asked for when the basket or the number changes, and debounced, because
+   * this runs while somebody is still typing their phone number.
+   */
+  useEffect(() => {
+    const digits = phone.replace(/\D/g, '')
+    if (!restaurantId || digits.length < 10 || !count) {
+      setSaving(null)
+      return
+    }
+    let live = true
+    const t = setTimeout(() => {
+      api<{ card: { label: string } | null; discountCents: number }>('/orders/scratch-quote', {
+        body: {
+          restaurantId,
+          phone: digits,
+          items: cart.lines.map((l) => ({ menuItemId: l.menuItemId, quantity: l.quantity })),
+        },
+      })
+        .then((r) => {
+          if (!live) return
+          setSaving(r.card && r.discountCents > 0 ? { label: r.card.label, discountCents: r.discountCents } : null)
+        })
+        .catch(() => live && setSaving(null))
+    }, 350)
+    return () => {
+      live = false
+      clearTimeout(t)
+    }
+  }, [restaurantId, phone, count, totalCents]) // eslint-disable-line react-hooks/exhaustive-deps
   const shortOfMinimum = isDelivery ? Math.max(0, (dining?.minOrderCents ?? 0) - totalCents) : 0
 
   /**
@@ -325,6 +368,9 @@ export default function Checkout() {
           sessionToken: dining?.token ?? null,
           // Written on the UPI payment, so the restaurant can match it by name.
           customerName: name.trim(),
+          // Who they are, so a scratch card they have won comes off the amount
+          // their bank is about to ask for and not just off the screen.
+          customerPhone: phone.trim(),
         },
       })
       setPayRequest(r)
@@ -738,6 +784,15 @@ export default function Checkout() {
                 <span>{deliveryFeeCents > 0 ? money(deliveryFeeCents) : 'Free'}</span>
               </div>
             </>
+          )}
+
+          {saving && (
+            <div className="summary-row saving">
+              <span>
+                Scratch card <small>{saving.label}</small>
+              </span>
+              <span>&minus;{money(saving.discountCents)}</span>
+            </div>
           )}
 
           <div className="summary-total" style={{ marginBottom: 14 }}>

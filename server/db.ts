@@ -506,6 +506,17 @@ addColumn('restaurants', 'takeaway_prepaid_only', 'INTEGER NOT NULL DEFAULT 0')
  */
 addColumn('restaurants', 'cash_disabled', 'INTEGER NOT NULL DEFAULT 0')
 
+/*
+ * How often a scratch card is won: 0 never, 1 every order, 2 every second,
+ * and so on. Off everywhere until a restaurant turns it on, because it is
+ * their margin being given away and nobody else's.
+ */
+addColumn('restaurants', 'scratch_every', 'INTEGER NOT NULL DEFAULT 0')
+
+/* What a scratch card took off this order, and which card it was. */
+addColumn('orders', 'discount_cents', 'INTEGER NOT NULL DEFAULT 0')
+addColumn('orders', 'scratch_card_id', 'INTEGER')
+
 addColumn('orders', 'arrived_at', 'TEXT')
 /** What they chose on the doorstep: 'takeaway' or 'dine_in'. */
 addColumn('orders', 'arrival_choice', 'TEXT')
@@ -1351,6 +1362,11 @@ dataFix('2026-10-02-beans-theme', () => {
  */
 dataFix('2026-10-04-revery-no-cash', () => {
   db.prepare("UPDATE restaurants SET cash_disabled = 1 WHERE slug = 'revery'").run()
+})
+
+/* Revery gives a scratch card on every order. Theirs to turn down. */
+dataFix('2026-10-10-revery-scratch-every-order', () => {
+  db.prepare("UPDATE restaurants SET scratch_every = 1 WHERE slug = 'revery'").run()
 })
 
 if (BACKED_UP) {

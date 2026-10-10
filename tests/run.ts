@@ -5379,6 +5379,93 @@ async function runTests() {
     await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { cashDisabled: false } })
   }
 
+  group('SCRATCH CARDS — a prize you have to rub')
+  {
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { scratchEvery: 1 } })
+    const phone = '9876590001'
+
+    const first = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'Scratcher',
+        contactPhone: phone,
+      },
+    })
+    const card = first.body.order.scratchCard
+    ok('an order wins a card', !!card, first.body.order)
+    ok('and it is a percentage, never a flat amount', card?.kind === 'percent', card)
+    ok('capped, so a big table cannot run away with it', (card?.maxOffCents ?? 0) > 0, card)
+    ok('and nobody has rubbed it yet', card?.scratchedAt === null, card)
+
+    // The whole point of the scratching: unrubbed, it is worth nothing.
+    const cold = await call('/orders/scratch-quote', {
+      body: { restaurantId: mornington.id, phone, items: [{ menuItemId: croissant.id, quantity: 2 }] },
+    })
+    ok('an unscratched card takes nothing off', cold.body.discountCents === 0, cold.body)
+
+    const rubbed = await call(`/orders/${first.body.order.orderNumber}/scratch`, {
+      body: { token: first.body.order.verifyToken, cardId: card.id },
+    })
+    ok('rubbing it records the prize', !!rubbed.body.card.scratchedAt, rubbed.body)
+    ok('and rubbing twice is not an error', (await call(`/orders/${first.body.order.orderNumber}/scratch`, {
+      body: { token: first.body.order.verifyToken, cardId: card.id },
+    })).status === 200)
+
+    const quote = await call('/orders/scratch-quote', {
+      body: { restaurantId: mornington.id, phone, items: [{ menuItemId: croissant.id, quantity: 2 }] },
+    })
+    ok('now it is worth something', quote.body.discountCents > 0, quote.body)
+
+    // And it comes off the next order by itself, with nothing typed in.
+    const next = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 2 }],
+        customerName: 'Scratcher',
+        contactPhone: phone,
+      },
+    })
+    ok('it comes off the next order', next.body.order.discountCents === quote.body.discountCents, next.body.order)
+    ok('and the total is the lower one', next.body.order.totalCents === next.body.order.subtotalCents - next.body.order.discountCents, next.body.order)
+
+    // Spent is spent.
+    const after = await call('/orders/scratch-quote', {
+      body: { restaurantId: mornington.id, phone, items: [{ menuItemId: croissant.id, quantity: 2 }] },
+    })
+    ok('and it cannot be spent twice', after.body.discountCents === 0, after.body)
+
+    // The amount the bank is asked for is the amount the screen promised.
+    await call(`/orders/${next.body.order.orderNumber}/scratch`, {
+      body: { token: next.body.order.verifyToken, cardId: next.body.order.scratchCard.id },
+    })
+    const shown = await call('/orders/scratch-quote', {
+      body: { restaurantId: mornington.id, phone, items: [{ menuItemId: croissant.id, quantity: 2 }] },
+    })
+    const asked = await call('/orders/payment-request', {
+      body: { restaurantId: mornington.id, items: [{ menuItemId: croissant.id, quantity: 2 }], customerPhone: phone },
+    })
+    ok(
+      'the UPI request asks for what the checkout showed',
+      asked.body.amountCents === croissant.priceCents * 2 - shown.body.discountCents,
+      { asked: asked.body.amountCents, shown: shown.body.discountCents },
+    )
+
+    await call('/staff/restaurant', { token: roadToken, method: 'PATCH', body: { scratchEvery: 0 } })
+    const none = await call('/orders', {
+      body: {
+        restaurantId: mornington.id,
+        type: 'pickup',
+        items: [{ menuItemId: croissant.id, quantity: 1 }],
+        customerName: 'No prize',
+        contactPhone: '9876590002',
+      },
+    })
+    ok('switched off, no card is minted', !none.body.order.scratchCard, none.body.order)
+  }
+
   group('UPI ONLY — a restaurant that takes no cash')
   {
     // The flags above it are per-mode, because for most places paying

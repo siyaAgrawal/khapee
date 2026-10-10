@@ -10,6 +10,7 @@ import { askCustomer, askToPrepay } from './customer-notify.ts'
 import { claimedCents, outstandingCents } from './payments.ts'
 import { limitedRefusal, limitedState, orderableNow } from './limited.ts'
 import { tellBilling } from './order-feed.ts'
+import { cardForOrder, cardToSpend, customerKey, discountFor, maybeAward, spend } from './scratch.ts'
 
 export type CodeCheck =
   | { ok: true; row: any }
@@ -382,12 +383,30 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     }
     deliveryFeeCents = area.fee_cents
   }
-  const totalCents = subtotalCents + deliveryFeeCents
-
   const phone = customerPhone(input.contactPhone, input.userId, liveSession?.phone ?? '')
   if (input.requirePhone && !looksLikePhone(phone)) {
     return { ok: false, status: 400, error: 'Add a 10-digit mobile number so the restaurant can reach you.' }
   }
+
+  /*
+   * A scratch card they have already won, coming off this bill.
+   *
+   * Worked out here and nowhere else: the client is told what the discount
+   * will be so the checkout can show it, and then the server works it out
+   * again from the card itself. Anything a customer could type is a number
+   * they could have typed differently.
+   *
+   * On the food, not the delivery fee — a prize that pays somebody's courier
+   * is a prize the restaurant did not mean to give.
+   */
+  const spender = customerKey(input.userId, phone)
+  // Prepaid orders included — at a UPI-only restaurant that is all of them,
+  // and a prize that never reached the bill would be no prize at all. The
+  // checkout asks for the same figure through /scratch-quote before it builds
+  // the UPI request, so the amount the customer pays is the discounted one.
+  const card = input.requirePhone ? cardToSpend(input.restaurantId, spender, subtotalCents) : null
+  const discountCents = card ? discountFor(card, subtotalCents) : 0
+  const totalCents = Math.max(0, subtotalCents - discountCents) + deliveryFeeCents
 
   /*
    * Must this order be paid for in the app, and can it be?
@@ -477,10 +496,11 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
       .prepare(
         `INSERT INTO orders
           (order_number, restaurant_id, user_id, customer_name, order_type, table_id, table_label,
-           status, payment_status, payment_method, total_cents, note, verify_token, access_code_id, takeaway,
+           status, payment_status, payment_method, total_cents, discount_cents, scratch_card_id,
+           note, verify_token, access_code_id, takeaway,
            service_mode, zone_id, dining_session_id, delivery_area_id, delivery_address, delivery_phone,
            delivery_fee_cents, precinct_id, spot_id, look_for, contact_phone, wanted_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         orderNumber,
@@ -498,6 +518,8 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
         input.paymentClaim ? 'NEW' : 'REQUESTED',
         paymentMethod,
         totalCents,
+        discountCents,
+        card ? card.id : null,
         String(input.note ?? '').slice(0, 300),
         verifyToken,
         accessCodeId,
@@ -590,7 +612,29 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   })
 
   const orderId = run()
+
+  /*
+   * Spend the card that came off this bill, and hand over a new one.
+   *
+   * Spending is guarded on the card still being unspent, so two orders racing
+   * cannot both take it. If the guard loses — the same customer checking out
+   * twice in the same second — the discount is given back, because a bill that
+   * says ₹20 off has to have a card behind it.
+   */
+  if (card && discountCents > 0 && !spend(card.id, orderId)) {
+    db.prepare(
+      "UPDATE orders SET total_cents = total_cents + ?, discount_cents = 0, scratch_card_id = NULL WHERE id = ?",
+    ).run(discountCents, orderId)
+  }
+  /*
+   * And the prize for this one, if they are due it. Minted now so it is on the
+   * order the customer is about to be shown — the tracker is where they find
+   * it, and that page is already open by the time they wonder what they got.
+   */
+  const won = input.requirePhone ? maybeAward({ restaurantId: input.restaurantId, orderId, userId: input.userId, phone }) : null
+
   const order: any = getOrder(orderId)
+  order.scratchCard = won
 
   // Every dine-in order is a room the rest of the table can join — no separate
   // "start a group" step, it is simply how ordering works.
@@ -996,12 +1040,16 @@ export function shapeOrder(row: any) {
     paymentMethod: row.payment_method,
     // The dishes, then what was added to carry them, then what is owed. Kept
     // apart so a customer can see why the total is more than the menu prices.
-    subtotalCents: row.total_cents - (row.delivery_fee_cents ?? 0),
+    // The dishes before anything came off, so the saving can be shown against
+    // a number the customer recognises from the menu.
+    subtotalCents: row.total_cents - (row.delivery_fee_cents ?? 0) + (row.discount_cents ?? 0),
     deliveryFeeCents: row.delivery_fee_cents ?? 0,
+    discountCents: row.discount_cents ?? 0,
     totalCents: row.total_cents,
     note: row.note,
     verifyToken: row.verify_token,
     verifiedAt: row.verified_at,
+    scratchCard: cardForOrder(row.id),
     roomCode: row.group_session_id
       ? ((db.prepare('SELECT code FROM group_sessions WHERE id = ?').get(row.group_session_id) as any)?.code ?? null)
       : null,

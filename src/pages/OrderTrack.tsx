@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import Header from '../components/Header'
 import PayPanel from '../components/PayPanel'
+import ScratchCard from '../components/ScratchCard'
 import { api, ApiError, openStream } from '../lib/api'
 import { Art, ErrorState, LoadingBlock, Spinner, clockTime, money } from '../components/ui'
 import { QRCanvas } from '../lib/qr'
@@ -165,6 +166,34 @@ export default function OrderTrack() {
       clearInterval(poll)
     }
   }, [load, orderNumber])
+
+  /*
+   * The card won on this order.
+   *
+   * Held in state rather than read straight off `order`, because scratching it
+   * changes it and the order is refetched on every status change — a prize
+   * that flipped back to unscratched when the kitchen pressed Accept would be
+   * a cruel bug.
+   */
+  const [card, setCard] = useState<any>(null)
+  useEffect(() => {
+    if (order?.scratchCard) setCard((was: any) => was ?? order.scratchCard)
+  }, [order?.scratchCard])
+
+  const rubIt = async () => {
+    if (!card) return
+    // Marked here first: the animation has already finished and the prize is
+    // already theirs, so the screen should not wait on the network to agree.
+    setCard({ ...card, scratchedAt: new Date().toISOString() })
+    try {
+      await api(`/orders/${order.orderNumber}/scratch`, {
+        body: { token: receiptToken(order.orderNumber), cardId: card.id },
+      })
+    } catch {
+      /* It will be recorded the next time the page loads; the card is drawn
+         from the server's copy, which still says unscratched. */
+    }
+  }
 
   if (error && !order) {
     return (
@@ -613,6 +642,32 @@ export default function OrderTrack() {
 
         </div>
 
+        {/*
+          The prize for this order.
+          Above the alerts and below the order number, because it is the one
+          thing on this page somebody will go looking for — and it is spent on
+          the next order, so it is also the reason to come back.
+        */}
+        {card && (
+          <section className="order-card-won" aria-label="Your scratch card">
+            {card.scratchedAt ? (
+              <div className="scratch is-open is-done">
+                <div className="scratch-prize">
+                  <strong className="scratch-label">{card.label}</strong>
+                  <span className="scratch-applied">Applied</span>
+                  <span className="scratch-caption">{cardCaption(card)}</span>
+                </div>
+              </div>
+            ) : (
+              <ScratchCard
+                label={card.label}
+                caption={cardCaption(card)}
+                onScratched={() => void rubIt()}
+              />
+            )}
+          </section>
+        )}
+
         {/* Free, and the only free way to reach somebody who has closed the
             page. Offered while there is still something to be told about. */}
         {canFollow && !following && (
@@ -833,4 +888,17 @@ function ReadyFor({ at }: { at: string }) {
       <span className="tiny muted">You don’t wait for it. It waits for you.</span>
     </p>
   )
+}
+
+/**
+ * The one line under the prize.
+ *
+ * Short on purpose: the number is the news, and a paragraph of terms under it
+ * turns a prize into a contract. The cap is the one term that has to be there,
+ * because a customer who reads "20% off" and is given ₹80 on a ₹600 table has
+ * been told something that was not quite true.
+ */
+function cardCaption(card: { kind: string; value: number; minOrderCents: number; maxOffCents: number | null }): string {
+  const cap = card.maxOffCents ? ` up to ${money(card.maxOffCents)}` : ''
+  return `Applied to your next order${cap}.`
 }

@@ -3,6 +3,7 @@ import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
 import { requireAuth } from '../auth.ts'
 import { checkAccessCode, createOrder, customerAgrees, getOrder, payOrderByUpi, shapeOrder } from '../orders-service.ts'
+import { cardToSpend, customerKey, discountFor, scratch as scratchCard } from '../scratch.ts'
 import { normalizeCode } from '../ids.ts'
 import { claimedCents, outstandingCents, upiLink } from '../payments.ts'
 import { sessionByToken } from '../dining.ts'
@@ -98,6 +99,21 @@ ordersRouter.post('/payment-request', (req, res) => {
   // This summed the menu lines alone, so a delivery quoted at ₹480 in the
   // checkout asked their UPI app for ₹450 and left the restaurant carrying the
   // fee it had just told them about.
+  /*
+   * A scratch card comes off before the amount is asked for.
+   *
+   * Worked out from the same function createOrder uses, so the figure in the
+   * UPI request is the figure the order will record. Without this the customer
+   * is shown a discounted total on the checkout, asked for the full amount by
+   * their bank, and the order goes in saying ₹10 came off — three numbers,
+   * one of them money that was actually taken.
+   *
+   * On the food, before the delivery fee, exactly as the order does it.
+   */
+  const payerKey = customerKey(req.user?.id ?? null, String(req.body?.customerPhone ?? req.body?.phone ?? ''))
+  const held = payerKey ? cardToSpend(restaurantId, payerKey, amountCents) : null
+  if (held) amountCents = Math.max(0, amountCents - discountFor(held, amountCents))
+
   const session = req.body?.sessionToken ? sessionByToken(String(req.body.sessionToken)) : null
   if (session && session.restaurant_id === restaurantId && session.service_mode === 'delivery' && session.area_id) {
     const area = db
@@ -302,6 +318,48 @@ ordersRouter.post('/:orderNumber/payment-request', (req, res) => {
 })
 
 /** "I've paid" — the UPI reference for an order that already exists. */
+/**
+ * Rub off the card won on an order.
+ *
+ * The prize was drawn and written down when the order was placed, so there is
+ * nothing to decide here and nothing a caller can lean on — this only records
+ * that the customer has seen it. Asking twice gives the same answer, because a
+ * phone that lost the first reply still has a card and should not be told it
+ * has lost it.
+ */
+ordersRouter.post('/:orderNumber/scratch', (req, res) => {
+  const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
+  const row = db.prepare('SELECT id, user_id, verify_token FROM orders WHERE order_number = ?').get(orderNumber) as any
+  if (!row) return res.status(404).json({ error: 'We could not find that order.' })
+  if (!ownsOrder(req, row)) return res.status(403).json({ error: 'That order belongs to someone else.' })
+  const card = scratchCard(Number(req.body?.cardId), row.id)
+  if (!card) return res.status(404).json({ error: 'There is no card on that order.' })
+  res.json({ card })
+})
+
+/**
+ * What a scratch card would take off a basket, before it is ordered.
+ *
+ * So the checkout can show the saving while the customer is still deciding,
+ * rather than springing it on them at the end. Priced from the menu here, the
+ * same way the order will be, because a quote worked out from numbers the
+ * client sent is a quote the client wrote.
+ */
+ordersRouter.post('/scratch-quote', (req, res) => {
+  const restaurantId = Number(req.body?.restaurantId)
+  const key = customerKey(req.user?.id ?? null, String(req.body?.phone ?? ''))
+  if (!key) return res.json({ card: null, discountCents: 0 })
+
+  let subtotalCents = 0
+  for (const line of Array.isArray(req.body?.items) ? req.body.items : []) {
+    const item = db.prepare('SELECT price_cents, restaurant_id FROM menu_items WHERE id = ?').get(Number(line?.menuItemId)) as any
+    if (!item || item.restaurant_id !== restaurantId) continue
+    subtotalCents += item.price_cents * Math.max(1, Math.floor(Number(line?.quantity) || 1))
+  }
+  const card = cardToSpend(restaurantId, key, subtotalCents)
+  res.json({ card, discountCents: card ? discountFor(card, subtotalCents) : 0 })
+})
+
 ordersRouter.post('/:orderNumber/pay', (req, res) => {
   const orderNumber = String(req.params.orderNumber).replace('#', '').toUpperCase()
   const row = db.prepare('SELECT id, user_id, verify_token, restaurant_id FROM orders WHERE order_number = ?').get(orderNumber) as any

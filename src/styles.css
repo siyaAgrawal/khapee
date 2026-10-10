@@ -9265,3 +9265,115 @@ button.nav-link {
 }
 .pay-waiting .tiny { color: var(--muted); line-height: 1.55; margin: 0; }
 .pay-waiting .btn-block { margin-top: 4px; }
+
+/* ── The scratch card ─────────────────────────────────────────────────────────
+   Won on an order, rubbed on the tracker, spent on the next one. Sized like a
+   real card so it reads as a thing rather than a banner. */
+.scratch {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 1.7;
+  margin: 0 auto;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  background: linear-gradient(160deg, var(--accent-soft), var(--surface));
+  box-shadow: var(--shadow-md);
+  isolation: isolate;
+}
+.scratch-prize {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+  padding: 16px;
+}
+.scratch-won {
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scratch-label {
+  font-family: var(--serif, Georgia, serif);
+  font-size: clamp(30px, 11vw, 44px);
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+.scratch-caption {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 26ch;
+}
+/* The foil, over the top until it is rubbed away. */
+.scratch-foil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  transition: opacity 0.45s var(--ease);
+}
+.scratch-foil:active { cursor: grabbing; }
+.scratch.is-open .scratch-foil { opacity: 0; pointer-events: none; }
+.scratch-hint {
+  position: absolute;
+  inset: auto 0 14px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a524d;
+  pointer-events: none;
+}
+.scratch.is-open .scratch-hint { opacity: 0; }
+/* Sits on the foil, so it is reachable by keyboard and by anyone who would
+   rather press a button than rub a screen. */
+.scratch-skip {
+  position: absolute;
+  inset: auto 0 -2px;
+  margin: 0 auto;
+  width: max-content;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: transparent;
+  cursor: pointer;
+}
+.scratch-skip:focus-visible {
+  color: var(--ink);
+  background: var(--surface);
+  border-radius: 8px;
+  outline: 2px solid var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .scratch-foil { transition: none; }
+}
+
+/* What it took off, on the checkout and the order. */
+.saving {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--good);
+  font-weight: 600;
+}
+.saving small { font-weight: 500; color: var(--muted); font-size: 12px; }
+/* Once it is rubbed: the number, then the one word that matters. */
+.scratch.is-done { background: linear-gradient(160deg, var(--good-soft), var(--surface)); border-color: var(--good); }
+.scratch-applied {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--good);
+}

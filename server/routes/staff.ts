@@ -722,6 +722,7 @@ function shapeOwnRestaurant(row: any) {
     /** Whether an order carried out to a car has to be paid for first. */
     carPrepaidOnly: !!row.car_prepaid_only,
     cashDisabled: !!row.cash_disabled,
+    scratchEvery: Number(row.scratch_every ?? 0),
     /** And the same for one collected from the counter. */
     takeawayPrepaidOnly: !!row.takeaway_prepaid_only,
     publishedAt: row.published_at ?? null,
@@ -773,6 +774,12 @@ staffRouter.patch('/restaurant', (req, res) => {
   if (body.codesEnabled !== undefined) updates.codes_enabled = body.codesEnabled ? 1 : 0
   if (body.carPrepaidOnly !== undefined) updates.car_prepaid_only = body.carPrepaidOnly ? 1 : 0
   if (body.cashDisabled !== undefined) updates.cash_disabled = body.cashDisabled ? 1 : 0
+  // 0 never, 1 every order, 2 every second, 3 every third. Clamped, because a
+  // typo here is a restaurant giving away its margin on a schedule it did not
+  // choose — or never giving anything away while believing it does.
+  if (body.scratchEvery !== undefined) {
+    updates.scratch_every = Math.max(0, Math.min(10, Math.floor(Number(body.scratchEvery) || 0)))
+  }
   if (body.takeawayPrepaidOnly !== undefined)
     updates.takeaway_prepaid_only = body.takeawayPrepaidOnly ? 1 : 0
   if (body.lat !== undefined && body.lng !== undefined) {

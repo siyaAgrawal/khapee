@@ -189,9 +189,26 @@ export default function Checkout() {
     setOfferBusy(true)
     setOfferNote('')
     try {
-      await api(`/orders/offer/${restaurantId}/send-code`, { body: { email: offerEmail.trim() } })
+      const sentTo = offerEmail.trim()
+      await api(`/orders/offer/${restaurantId}/send-code`, { body: { email: sentTo } })
       setCodeSent(true)
       setOfferCode('')
+      // The code box is open; meanwhile, find out whether the address bounced,
+      // and if it did, say so instead of leaving them waiting for a code.
+      void (async () => {
+        for (let i = 0; i < 6; i++) {
+          await new Promise((r) => setTimeout(r, 2500))
+          const r = await api<{ status: string; error?: string }>(
+            `/orders/offer/${restaurantId}/code-status?email=${encodeURIComponent(sentTo)}`,
+          ).catch(() => null)
+          if (!r || r.status === 'fine') return
+          if (r.status === 'bounced') {
+            setCodeSent(false)
+            setOfferNote(r.error ?? "That email isn't available.")
+            return
+          }
+        }
+      })()
     } catch (e) {
       setOfferNote((e as ApiError).message)
     } finally {

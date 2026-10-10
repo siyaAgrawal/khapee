@@ -16,6 +16,7 @@ import { publish } from '../events.ts'
 import { checkCode, discountOn, newCode, offerFor, passEmail, qualifyingEmail } from '../offers.ts'
 import { mailConfigured, sendMail } from '../mail.ts'
 import { mailboxExists } from '../mailbox.ts'
+import { bounced } from '../bounce.ts'
 
 export const ordersRouter = Router()
 
@@ -108,7 +109,25 @@ ordersRouter.post('/offer/:restaurantId/send-code', async (req, res) => {
       `It works for 15 minutes. If you didn't ask for it, ignore this email.\n\n— Khapee`,
   })
   if (sent !== 'sent') return res.status(502).json({ error: 'The email could not be sent. Try again in a minute.' })
+  // Google sends back "address not found" within seconds when the mailbox
+  // does not exist. The code box opens straight away; this watches for the
+  // bounce in the background, and the checkout asks how it went (code-status).
+  bounceWatch.set(email, 'checking')
+  void bounced(email).then((b) => bounceWatch.set(email, b ? 'bounced' : 'fine'))
   res.json({ ok: true })
+})
+
+/** What became of the last code sent to an address: still checking, fine, or bounced. */
+const bounceWatch = new Map<string, 'checking' | 'fine' | 'bounced'>()
+ordersRouter.get('/offer/:restaurantId/code-status', (req, res) => {
+  const offer = offerFor(Number(req.params.restaurantId))
+  const email = qualifyingEmail(offer, req.query.email)
+  const status = email ? (bounceWatch.get(email) ?? 'fine') : 'fine'
+  res.json(
+    status === 'bounced'
+      ? { status, error: `That email isn't available — there's no ${email} account. Check for typos.` }
+      : { status },
+  )
 })
 
 ordersRouter.post('/offer/:restaurantId/check-code', (req, res) => {

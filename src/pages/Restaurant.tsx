@@ -22,7 +22,7 @@ import { HutMark, HutWordmark } from '../components/HutBrand'
 import { ReveryMark, ReveryWordmark } from '../components/ReveryBrand'
 import { PaarrooMark, PaarrooWordmark } from '../components/PaarrooBrand'
 import { GramsHero, GramsYum } from '../components/GramsBrand'
-import { MrBeansHero, MrBeansSketch } from '../components/MrBeansHero'
+import { MrBeansHero } from '../components/MrBeansHero'
 import { BeansFlourish, BeansMark, BeansWordmark } from '../components/BeansBrand'
 import type { RestaurantCard } from './Home'
 
@@ -424,6 +424,7 @@ export default function Restaurant() {
                   comingSoon={data.restaurant.comingSoon}
                   hours={data.restaurant.hours}
                   prepMinutes={data.restaurant.prepMinutes}
+                  takeawayOnly={data.restaurant.acceptsDineIn === false && !data.restaurant.acceptsCar}
                 />
                 {data.restaurant.isOpen && !dining && (data.restaurant.acceptsCar || data.restaurant.acceptsPickup) && (
                   <div className="way-in mb-way-in">
@@ -452,7 +453,6 @@ export default function Restaurant() {
                     <DiningBar restaurantId={restaurantId} codesEnabled={data.restaurant.codesEnabled !== false} />
                   </div>
                 )}
-                <MrBeansSketch />
               </>
             ) : grams ? (
               <>

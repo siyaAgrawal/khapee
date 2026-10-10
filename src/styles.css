@@ -9365,6 +9365,7 @@ button.nav-link {
 .google-button {
   margin-top: 8px;
   min-height: 40px;
+}
 /* ── The scratch card ─────────────────────────────────────────────────────────
    Won on an order, rubbed on the tracker, spent on the next one. Sized like a
    real card so it reads as a thing rather than a banner. */
@@ -9383,23 +9384,23 @@ button.nav-link {
 }
 
 /* ======================================== Mr. Beans (theme 'beans'), redone
-   From their own printed menu: cream paper, a blush-pink arch, sand, tan,
-   terracotta and mustard pages, espresso-brown ink, lowercase serif headings
-   (Gloock) over a clean geometric sans (Jost), wavy scalloped edges, and the
-   menu's own line sketches. The logo is theirs (mrbeans.in), redrawn in ink. Set after the older beans rules, which style the engraved layout
-   this page no longer uses. */
+   Their colours, kept plain: the blush pink of their menu as one band across
+   the top, their logo (mrbeans.in) in espresso ink, cream for the menu,
+   lowercase serif headings (Gloock) over a clean geometric sans (Jost). One
+   style for every section — no shapes, no coloured boxes. Set after the older
+   beans rules, which style the engraved layout this page no longer uses. */
 :root[data-theme='beans'] {
-  --bg: #fbf8ef;
-  --bg-tint: #f3ecdc;
-  --surface: #fffdf7;
-  --surface-2: #f6f0e2;
+  --bg: #fbf6f1;
+  --bg-tint: #f4e8e0;
+  --surface: #fffcfa;
+  --surface-2: #f7ede7;
   --ink: #2f2419;
   --ink-2: #4a3a2b;
-  --muted: #7a6a59;
-  --line: rgba(74, 58, 43, 0.14);
-  --line-strong: rgba(74, 58, 43, 0.28);
+  --muted: #7a6a5c;
+  --line: rgba(74, 58, 43, 0.13);
+  --line-strong: rgba(74, 58, 43, 0.26);
   --accent: #b9533f;
-  --accent-ink: #fffdf7;
+  --accent-ink: #fffcfa;
   --accent-soft: #f5e1d9;
   --good: #5f7a3d;
   --good-soft: #e7eedb;
@@ -9409,12 +9410,8 @@ button.nav-link {
   --shadow-md: 0 8px 22px rgba(74, 58, 43, 0.1);
   --shadow-lg: 0 22px 48px rgba(74, 58, 43, 0.14);
   --mb-ink: #3a2c20;
-  --mb-cream: #fbf8ef;
-  --mb-blush: #e8c9b9;
-  --mb-sand: #efe2cc;
-  --mb-tan: #9b7d5a;
+  --mb-pink: #ecd0c3;
   --mb-terra: #b9533f;
-  --mb-mustard: #d8b54a;
   --mb-serif: 'Gloock', 'Didot', Georgia, serif;
   --mb-sans: 'Jost', 'Futura', ui-sans-serif, system-ui, sans-serif;
 }
@@ -9427,46 +9424,28 @@ button.nav-link {
   color: var(--ink);
 }
 
-/* The arch, as their desserts page sits in one. */
-.mb-arch {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 420px;
-  margin: 4px auto 0;
-  padding: 44px 20px 22px;
-  border-radius: 220px 220px 26px 26px;
-  background: var(--mb-blush);
+/* The band: their blush pink, straight across, the logo in ink. */
+.mb-band {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  margin: -32px calc(50% - 50vw) 0;
+  padding: 42px 16px 26px;
+  background: var(--mb-pink);
   text-align: center;
 }
 .mb-logo {
   display: block;
-  width: 190px;
+  width: 180px;
   height: auto;
 }
 .mb-since {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 0;
+  margin: 0;
   font-size: 11.5px;
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-2);
-}
-/* "~~~", the wavy rule their captions sit between. */
-.mb-wave {
-  width: 34px;
-  height: 8px;
-  background: radial-gradient(circle at 4px -1px, transparent 4px, var(--ink-2) 4.6px, var(--ink-2) 5.6px, transparent 6.2px) 0 0 / 8px 8px repeat-x;
-  opacity: 0.7;
-}
-.mb-cake {
-  width: 104px;
-  height: auto;
-  margin-top: 12px;
 }
 
 .mb-intro {
@@ -9484,12 +9463,18 @@ button.nav-link {
   letter-spacing: -0.01em;
   color: var(--mb-terra);
 }
-.mb-line {
-  margin: 10px auto 0;
-  max-width: 34ch;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--muted);
+/* Said plainly, where it cannot be missed. */
+.mb-takeaway {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--mb-pink);
+  color: var(--mb-ink);
+  font-size: 13.5px;
+  font-weight: 600;
 }
 .mb-meta {
   display: flex;
@@ -9521,7 +9506,7 @@ button.nav-link {
   border: 1.5px solid var(--mb-ink);
   border-radius: 999px;
   background: var(--mb-ink);
-  color: var(--mb-cream);
+  color: #fffcfa;
   font-family: var(--mb-sans);
   font-weight: 600;
   font-size: 15px;
@@ -9535,13 +9520,6 @@ button.nav-link {
 .mb-dining {
   max-width: 560px;
   margin: 12px auto 0;
-}
-.mb-sketch {
-  display: block;
-  width: 150px;
-  height: auto;
-  margin: 18px auto -6px;
-  opacity: 0.9;
 }
 
 /* Search and section links. */
@@ -9579,21 +9557,10 @@ button.nav-link {
   color: var(--mb-terra);
 }
 
-/* The menu: each section a page of its own colour, as their printed pages
-   are, the name in lowercase serif, dishes in rows. */
+/* The menu: one style throughout — lowercase serif names, dishes in rows. */
 .mb-page .menu-section {
-  position: relative;
-  margin-top: 26px;
-  padding: 22px 18px 10px;
-  border-radius: 22px;
-  background: var(--mb-sand);
-  --mb-head: var(--mb-ink);
+  margin-top: 30px;
 }
-.mb-page .menu-section:nth-of-type(5n + 1) { background: #f4e1d7; --mb-head: var(--mb-terra); }
-.mb-page .menu-section:nth-of-type(5n + 2) { background: var(--mb-sand); --mb-head: #6e553a; }
-.mb-page .menu-section:nth-of-type(5n + 3) { background: #f6ecc8; --mb-head: #8a6a1f; }
-.mb-page .menu-section:nth-of-type(5n + 4) { background: #f1d9cf; --mb-head: #a2463a; }
-.mb-page .menu-section:nth-of-type(5n + 5) { background: #fffdf7; --mb-head: var(--mb-ink); box-shadow: inset 0 0 0 1px var(--line); }
 .mb-page .menu-section h2 {
   font-family: var(--mb-serif);
   font-weight: 400;
@@ -9601,7 +9568,7 @@ button.nav-link {
   line-height: 1.05;
   letter-spacing: -0.01em;
   text-transform: lowercase;
-  color: var(--mb-head);
+  color: var(--mb-terra);
   margin-bottom: 4px;
 }
 .mb-page .item-grid {
@@ -9611,13 +9578,10 @@ button.nav-link {
 .mb-page .item-card {
   background: none;
   border: 0;
-  border-bottom: 1px solid rgba(74, 58, 43, 0.12);
+  border-bottom: 1px solid var(--line);
   border-radius: 0;
   box-shadow: none;
   padding: 13px 0 14px;
-}
-.mb-page .item-card:last-child {
-  border-bottom: 0;
 }
 .mb-page .item-card:hover {
   box-shadow: none;
@@ -9645,7 +9609,7 @@ button.nav-link {
 }
 .mb-page .btn-add {
   border: 1.5px solid var(--mb-ink);
-  background: rgba(255, 255, 255, 0.55);
+  background: transparent;
   color: var(--mb-ink);
   border-radius: 999px;
   font-family: var(--mb-sans);
@@ -9655,110 +9619,16 @@ button.nav-link {
 }
 .mb-page .btn-add:hover {
   background: var(--mb-ink);
-  color: var(--mb-cream);
+  color: #fffcfa;
 }
 .mb-page .stepper {
   background: var(--mb-ink);
   border-radius: 999px;
 }
 .mb-page .offer-note {
-  background: #f4e1d7;
+  background: var(--mb-pink);
   font-family: var(--mb-sans);
 }
 :root[data-theme='beans'] .cart-bar {
   background: var(--mb-ink);
 }
-.scratch-prize {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 4px;
-  text-align: center;
-  padding: 16px;
-}
-.scratch-won {
-  font-size: 11.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.scratch-label {
-  font-family: var(--serif, Georgia, serif);
-  font-size: clamp(30px, 11vw, 44px);
-  line-height: 1;
-  color: var(--accent);
-  letter-spacing: -0.01em;
-}
-.scratch-caption {
-  font-size: 12.5px;
-  color: var(--muted);
-  line-height: 1.45;
-  max-width: 26ch;
-}
-/* The foil, over the top until it is rubbed away. */
-.scratch-foil {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-  transition: opacity 0.45s var(--ease);
-}
-.scratch-foil:active { cursor: grabbing; }
-.scratch.is-open .scratch-foil { opacity: 0; pointer-events: none; }
-.scratch-hint {
-  position: absolute;
-  inset: auto 0 14px;
-  text-align: center;
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #4a524d;
-  pointer-events: none;
-}
-.scratch.is-open .scratch-hint { opacity: 0; }
-/* Sits on the foil, so it is reachable by keyboard and by anyone who would
-   rather press a button than rub a screen. */
-.scratch-skip {
-  position: absolute;
-  inset: auto 0 -2px;
-  margin: 0 auto;
-  width: max-content;
-  padding: 6px 12px;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 12px;
-  color: transparent;
-  cursor: pointer;
-}
-.scratch-skip:focus-visible {
-  color: var(--ink);
-  background: var(--surface);
-  border-radius: 8px;
-  outline: 2px solid var(--accent);
-}
-@media (prefers-reduced-motion: reduce) {
-  .scratch-foil { transition: none; }
-}
-
-/* What it took off, on the checkout and the order. */
-.saving {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 10px;
-  color: var(--good);
-  font-weight: 600;
-}
-.saving small { font-weight: 500; color: var(--muted); font-size: 12px; }
-/* Once it is rubbed: the number, then the one word that matters. */
-.scratch.is-done { background: linear-gradient(160deg, var(--good-soft), var(--surface)); border-color: var(--good); }
-.scratch-applied {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--good);}

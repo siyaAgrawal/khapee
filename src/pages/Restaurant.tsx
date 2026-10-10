@@ -424,6 +424,7 @@ export default function Restaurant() {
                   comingSoon={data.restaurant.comingSoon}
                   hours={data.restaurant.hours}
                   prepMinutes={data.restaurant.prepMinutes}
+                  takeawayOnly={data.restaurant.acceptsDineIn === false && !data.restaurant.acceptsCar}
                 />
                 {data.restaurant.isOpen && !dining && (data.restaurant.acceptsCar || data.restaurant.acceptsPickup) && (
                   <div className="way-in mb-way-in">

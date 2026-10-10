@@ -9366,40 +9366,35 @@ button.nav-link {
   margin-top: 8px;
   min-height: 40px;
 }
-
 /* ======================================== Mr. Beans (theme 'beans'), redone
-   From their own new menu: sage-olive green and cream, blush, tan, terracotta
-   and mustard as accents, lowercase serif headings (Gloock) over a clean
-   geometric sans (Jost), and the wavy scalloped edge their pages end on. The
-   logo is theirs, from mrbeans.in. Set after the older beans rules, which
-   style the engraved layout this page no longer uses. */
+   Their colours, kept plain: the blush pink of their menu as one band across
+   the top, their logo (mrbeans.in) in espresso ink, cream for the menu,
+   lowercase serif headings (Gloock) over a clean geometric sans (Jost). One
+   style for every section — no shapes, no coloured boxes. Set after the older
+   beans rules, which style the engraved layout this page no longer uses. */
 :root[data-theme='beans'] {
-  --bg: #f8f4e8;
-  --bg-tint: #efe9d6;
-  --surface: #fffcf3;
-  --surface-2: #f4efdf;
-  --ink: #262b1a;
-  --ink-2: #3c4229;
-  --muted: #6b6a55;
-  --line: rgba(60, 66, 41, 0.14);
-  --line-strong: rgba(60, 66, 41, 0.28);
-  --accent: #5b6a3a;
-  --accent-ink: #fffcf3;
-  --accent-soft: #e7ead9;
-  --good: #4f6b34;
-  --good-soft: #e5ecd9;
+  --bg: #fbf6f1;
+  --bg-tint: #f4e8e0;
+  --surface: #fffcfa;
+  --surface-2: #f7ede7;
+  --ink: #2f2419;
+  --ink-2: #4a3a2b;
+  --muted: #7a6a5c;
+  --line: rgba(74, 58, 43, 0.13);
+  --line-strong: rgba(74, 58, 43, 0.26);
+  --accent: #b9533f;
+  --accent-ink: #fffcfa;
+  --accent-soft: #f5e1d9;
+  --good: #5f7a3d;
+  --good-soft: #e7eedb;
   --bad: #b04a3c;
   --bad-soft: #f5e1dc;
   --shadow-sm: none;
-  --shadow-md: 0 8px 22px rgba(60, 66, 41, 0.1);
-  --shadow-lg: 0 22px 48px rgba(60, 66, 41, 0.14);
-  --mb-olive: #5b6a3a;
-  --mb-olive-deep: #4a5730;
-  --mb-cream: #f8f4e8;
-  --mb-blush: #e8c9b9;
-  --mb-tan: #9b7d5a;
-  --mb-terra: #c25a49;
-  --mb-mustard: #d8b54a;
+  --shadow-md: 0 8px 22px rgba(74, 58, 43, 0.1);
+  --shadow-lg: 0 22px 48px rgba(74, 58, 43, 0.14);
+  --mb-ink: #3a2c20;
+  --mb-pink: #ecd0c3;
+  --mb-terra: #b9533f;
   --mb-serif: 'Gloock', 'Didot', Georgia, serif;
   --mb-sans: 'Jost', 'Futura', ui-sans-serif, system-ui, sans-serif;
 }
@@ -9409,66 +9404,60 @@ button.nav-link {
 }
 .mb-page {
   font-family: var(--mb-sans);
+  color: var(--ink);
 }
 
-/* The band: olive, the logo in white, finished with their scalloped edge. */
+/* The band: their blush pink, straight across, the logo in ink. */
 .mb-band {
-  position: relative;
   display: grid;
   place-items: center;
   gap: 6px;
   margin: -32px calc(50% - 50vw) 0;
-  padding: 46px 16px 40px;
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.08), transparent 60%),
-    var(--mb-olive);
-  color: var(--mb-cream);
-}
-.mb-band::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 14px;
-  background: radial-gradient(circle at 14px 14px, var(--mb-cream) 9.5px, transparent 10px) -2px 0 / 28px 14px repeat-x;
+  padding: 42px 16px 26px;
+  background: var(--mb-pink);
+  text-align: center;
 }
 .mb-logo {
-  width: 170px;
-  height: auto;
   display: block;
+  width: 180px;
+  height: auto;
 }
 .mb-since {
   margin: 0;
-  font-family: var(--mb-sans);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(248, 244, 232, 0.82);
+  color: var(--ink-2);
 }
 
 .mb-intro {
   max-width: 560px;
   margin: 0 auto;
-  padding: 22px 4px 4px;
+  padding: 20px 4px 2px;
   text-align: center;
 }
 .mb-branch {
   margin: 0;
   font-family: var(--mb-serif);
   font-weight: 400;
-  font-size: clamp(34px, 10vw, 46px);
+  font-size: clamp(36px, 10.5vw, 48px);
   line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--mb-olive);
+  color: var(--mb-terra);
 }
-.mb-line {
-  margin: 10px auto 0;
-  max-width: 34ch;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--muted);
+/* Said plainly, where it cannot be missed. */
+.mb-takeaway {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--mb-pink);
+  color: var(--mb-ink);
+  font-size: 13.5px;
+  font-weight: 600;
 }
 .mb-meta {
   display: flex;
@@ -9497,10 +9486,10 @@ button.nav-link {
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
 }
 .mb-page .way-in-btn {
-  border: 1.5px solid var(--mb-olive);
+  border: 1.5px solid var(--mb-ink);
   border-radius: 999px;
-  background: var(--mb-olive);
-  color: var(--mb-cream);
+  background: var(--mb-ink);
+  color: #fffcfa;
   font-family: var(--mb-sans);
   font-weight: 600;
   font-size: 15px;
@@ -9509,7 +9498,7 @@ button.nav-link {
 }
 .mb-page .way-in-btn.is-chosen {
   background: transparent;
-  color: var(--mb-olive);
+  color: var(--mb-ink);
 }
 .mb-dining {
   max-width: 560px;
@@ -9547,40 +9536,24 @@ button.nav-link {
   color: var(--ink-2);
 }
 .mb-page .chip:hover {
-  border-color: var(--mb-olive);
-  color: var(--mb-olive);
+  border-color: var(--mb-terra);
+  color: var(--mb-terra);
 }
 
-/* The menu: lowercase serif sections, each with one of their accent colours,
-   and dishes set in rows as the printed menu sets them. */
+/* The menu: one style throughout — lowercase serif names, dishes in rows. */
 .mb-page .menu-section {
   margin-top: 30px;
 }
 .mb-page .menu-section h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-family: var(--mb-serif);
   font-weight: 400;
   font-size: 30px;
   line-height: 1.05;
   letter-spacing: -0.01em;
   text-transform: lowercase;
-  color: var(--mb-olive);
-  margin-bottom: 6px;
+  color: var(--mb-terra);
+  margin-bottom: 4px;
 }
-.mb-page .menu-section h2::before {
-  content: '';
-  flex: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--mb-blush);
-}
-.mb-page .menu-section:nth-of-type(5n + 2) h2::before { background: var(--mb-tan); }
-.mb-page .menu-section:nth-of-type(5n + 3) h2::before { background: var(--mb-terra); }
-.mb-page .menu-section:nth-of-type(5n + 4) h2::before { background: var(--mb-mustard); }
-.mb-page .menu-section:nth-of-type(5n + 5) h2::before { background: var(--mb-olive); }
 .mb-page .item-grid {
   grid-template-columns: 1fr;
   gap: 0;
@@ -9591,7 +9564,7 @@ button.nav-link {
   border-bottom: 1px solid var(--line);
   border-radius: 0;
   box-shadow: none;
-  padding: 14px 0 15px;
+  padding: 13px 0 14px;
 }
 .mb-page .item-card:hover {
   box-shadow: none;
@@ -9615,12 +9588,12 @@ button.nav-link {
   font-family: var(--mb-sans);
   font-weight: 600;
   font-size: 16px;
-  color: var(--mb-olive);
+  color: var(--ink);
 }
 .mb-page .btn-add {
-  border: 1.5px solid var(--mb-olive);
+  border: 1.5px solid var(--mb-ink);
   background: transparent;
-  color: var(--mb-olive);
+  color: var(--mb-ink);
   border-radius: 999px;
   font-family: var(--mb-sans);
   font-weight: 600;
@@ -9628,19 +9601,19 @@ button.nav-link {
   padding-right: 18px;
 }
 .mb-page .btn-add:hover {
-  background: var(--mb-olive);
-  color: var(--mb-cream);
+  background: var(--mb-ink);
+  color: #fffcfa;
 }
 .mb-page .stepper {
-  background: var(--mb-olive);
+  background: var(--mb-ink);
   border-radius: 999px;
 }
 .mb-page .offer-note {
-  background: rgba(232, 201, 185, 0.45);
+  background: var(--mb-pink);
   font-family: var(--mb-sans);
 }
 :root[data-theme='beans'] .cart-bar {
-  background: var(--mb-olive-deep);
+  background: var(--mb-ink);
 }
 
 /* ── The scratch card ─────────────────────────────────────────────────────────

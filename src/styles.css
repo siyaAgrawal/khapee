@@ -9306,3 +9306,8 @@ button.nav-link {
 .cart-line-options,
 .item-options { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
 .qrow-items .item-options { display: inline; }
+
+/* Not open yet, and about to be. */
+.badge-soon {
+  color: #a8730f;
+}

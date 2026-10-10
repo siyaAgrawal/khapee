@@ -165,7 +165,7 @@ export default function Restaurant() {
   const onAdd = (item: MenuItem, choice?: Choice) => {
     if (!data) return
     if (!data.restaurant.isOpen) {
-      toast(`${data.restaurant.name} is closed right now.`, 'bad')
+      toast(data.restaurant.comingSoon ? `${data.restaurant.name} is coming soon to Khapee.` : `${data.restaurant.name} is closed right now.`, 'bad')
       return
     }
     // A dish with a size or extras is chosen first; the themed menus hand
@@ -323,7 +323,7 @@ export default function Restaurant() {
                   <p className="noir-hero-line">{data.restaurant.description}</p>
                   <div className="noir-hero-meta">
                     <span className={data.restaurant.isOpen ? 'noir-open' : 'noir-shut'}>
-                      {data.restaurant.isOpen ? 'Open now' : 'Closed'}
+                      {data.restaurant.isOpen ? 'Open now' : data.restaurant.comingSoon ? 'Coming soon' : 'Closed'}
                     </span>
                     <span>{data.restaurant.hours}</span>
                     <span>~{data.restaurant.prepMinutes} min</span>
@@ -442,8 +442,8 @@ export default function Restaurant() {
               <div className="r-hero-body">
                 <div className="row row-wrap" style={{ justifyContent: 'space-between' }}>
                   <h1>{data.restaurant.name}</h1>
-                  <span className={`badge ${data.restaurant.isOpen ? 'badge-open' : 'badge-closed'}`}>
-                    {data.restaurant.isOpen ? 'Open now' : 'Closed'}
+                  <span className={`badge ${data.restaurant.isOpen ? 'badge-open' : data.restaurant.comingSoon ? 'badge-soon' : 'badge-closed'}`}>
+                    {data.restaurant.isOpen ? 'Open now' : data.restaurant.comingSoon ? 'Coming soon' : 'Closed'}
                   </span>
                 </div>
                 {!seated && data.restaurant.description && (

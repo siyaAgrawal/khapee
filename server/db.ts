@@ -545,6 +545,8 @@ addColumn('restaurants', 'published_at', 'TEXT')
 // Reachable by its link, left off the list on the front page — for a place
 // that shares its own link rather than wanting to be found by browsing.
 addColumn('restaurants', 'unlisted', 'INTEGER NOT NULL DEFAULT 0')
+// Not open yet and about to be: says "Coming soon" where a shut place says "Closed".
+addColumn('restaurants', 'coming_soon', 'INTEGER NOT NULL DEFAULT 0')
 
 // A dine-in order the customer is carrying out rather than eating at a table.
 addColumn('orders', 'takeaway', 'INTEGER NOT NULL DEFAULT 0')
@@ -1499,6 +1501,11 @@ if (BACKED_UP) {
         }
       })
     })
+  })
+  // Mr. Beans Saket: listed right after Revery, and "Coming soon" rather than
+  // "Closed" while its Petpooja link is being finished.
+  dataFix('2026-10-10-mr-beans-saket-coming-soon', () => {
+    db.prepare("UPDATE restaurants SET coming_soon = 1, top_rank = 90 WHERE slug = 'mr-beans-saket'").run()
   })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()

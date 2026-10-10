@@ -21,6 +21,8 @@ export type RestaurantCard = {
   emoji: string
   hue: number
   isOpen: boolean
+  /** Not open yet, and about to be. */
+  comingSoon?: boolean
   hours: string
   prepMinutes: number
   rating: number | null
@@ -445,8 +447,8 @@ export default function Home() {
                   </div>
                   <p>{r.description}</p>
                   <div className="r-card-meta">
-                    <span className={`badge ${r.isOpen ? 'badge-open' : 'badge-closed'}`}>
-                      {r.isOpen ? 'Open' : 'Closed'}
+                    <span className={`badge ${r.isOpen ? 'badge-open' : r.comingSoon ? 'badge-soon' : 'badge-closed'}`}>
+                      {r.isOpen ? 'Open' : r.comingSoon ? 'Coming soon' : 'Closed'}
                     </span>
                     <span className="dot-sep">{r.categories.join(' · ')}</span>
                     <span className="dot-sep">{r.prepMinutes} min</span>

@@ -34,6 +34,7 @@ function shapeRestaurant(row: any) {
     city: row.city ?? '',
     /** Above the alphabet and above nearest-first. Zero for almost everywhere. */
     topRank: row.top_rank ?? 0,
+    comingSoon: !row.is_open && !!row.coming_soon,
     acceptsPickup: !!row.accepts_pickup,
     acceptsTakeaway: !!row.accepts_takeaway,
     /**

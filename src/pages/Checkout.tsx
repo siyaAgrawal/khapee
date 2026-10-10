@@ -22,7 +22,7 @@ type Table = { id: number; label: string; seats: number }
  */
 export default function Checkout() {
   const { cart, count, totalCents, clear } = useCart()
-  const { user } = useSession()
+  const { user, adopt } = useSession()
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -506,7 +506,7 @@ export default function Checkout() {
     setPlacing(true)
     setError('')
     try {
-      const r = await api<{ order: any }>('/orders', {
+      const r = await api<{ order: any; session?: { token: string; user: any } | null }>('/orders', {
         body: {
           restaurantId,
           type: where === 'later' ? 'pickup' : 'dine_in',
@@ -533,6 +533,8 @@ export default function Checkout() {
       const order = r.order
       rememberReceipt(order.orderNumber, order.verifyToken)
       saveMe(name, phone)
+      // The first order made them an account; this phone stays signed in.
+      if (r.session?.token && r.session.user) adopt(r.session.token, r.session.user)
       if (restaurantId) {
         saveLastOrder(
           restaurantId,
@@ -604,7 +606,7 @@ export default function Checkout() {
         {/* The one-tap order from the menu, going through by itself. */}
         {go && placing && !payRequest && <LoadingBlock label="Placing your order…" />}
         {go && !ready && !placing && (needsName || needsPhone) && (
-          <p className="quick-once">Just your name and number — only this once.</p>
+          <p className="quick-once">Just your name and number — only this once, then you’re signed in.</p>
         )}
 
         {!lean && (
@@ -825,6 +827,11 @@ export default function Checkout() {
             </div>
           ) : (
             <>
+          {!user && (
+            <p className="co-first">
+              <strong>First time here?</strong> Just your name and number — you’ll stay signed in after this order.
+            </p>
+          )}
           <div className="field">
             <label htmlFor="co-name">Name for the order</label>
             <input

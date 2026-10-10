@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { optionsFor, priceLine } from '../menu-options.ts'
 import { db } from '../db.ts'
 import { pushConfigured, pushPublicKey, pushReason, saveCustomerSubscription } from '../push.ts'
-import { requireAuth } from '../auth.ts'
+import crypto from 'node:crypto'
+import { createSession, hashPassword, requireAuth, userFromToken } from '../auth.ts'
 import { checkAccessCode, createOrder, customerAgrees, getOrder, payOrderByUpi, shapeOrder } from '../orders-service.ts'
 import { cardToSpend, customerKey, discountFor, scratch as scratchCard } from '../scratch.ts'
 import { normalizeCode } from '../ids.ts'
@@ -238,6 +239,32 @@ ordersRouter.post('/payment-request', (req, res) => {
   })
 })
 
+/**
+ * The first order is the sign-up. Somebody not signed in has just typed their
+ * name and number to order; that becomes an account and this phone stays
+ * signed in to it, so there is never a login screen to get through. The
+ * number is not checked — it is what the order already trusted — so the
+ * account is new for this phone, never somebody else's found by number.
+ */
+function quickAccount(order: any, body: any): { token: string; user: any } | null {
+  const name = String(body.customerName ?? '').trim().slice(0, 60)
+  const phone = String(body.contactPhone ?? '').replace(/\D/g, '').slice(-10)
+  if (name.length < 2 || phone.length < 10 || !order?.id) return null
+  try {
+    const email = `phone-${crypto.randomBytes(8).toString('hex')}@guest.khapee.com`
+    const info = db
+      .prepare(`INSERT INTO users (name, email, phone, password_hash, role) VALUES (?, ?, ?, ?, 'customer')`)
+      .run(name, email, phone, hashPassword(crypto.randomBytes(24).toString('hex')))
+    const userId = Number(info.lastInsertRowid)
+    db.prepare('UPDATE orders SET user_id = ? WHERE id = ? AND user_id IS NULL').run(userId, order.id)
+    const token = createSession(userId)
+    return { token, user: userFromToken(token) }
+  } catch (err) {
+    console.error('[quick account]', err)
+    return null
+  }
+}
+
 ordersRouter.post('/', (req, res) => {
   const body = req.body ?? {}
   const result = createOrder({
@@ -265,7 +292,7 @@ ordersRouter.post('/', (req, res) => {
     offerPass: body.offerPass ?? null,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
-  res.status(201).json({ order: result.order })
+  res.status(201).json({ order: result.order, session: req.user ? null : quickAccount(result.order, body) })
 
   /*
    * And, for a kitchen that runs Petpooja, onto their till.

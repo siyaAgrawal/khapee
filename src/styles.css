@@ -10120,3 +10120,13 @@ button.nav-link {
 .co-bar-btn {
   flex: 1;
 }
+
+/* First order = sign-up: one quiet line above the name and number. */
+.co-first {
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.04));
+  font-size: 0.88rem;
+  line-height: 1.4;
+}

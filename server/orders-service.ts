@@ -93,8 +93,11 @@ export type CreateOrderInput = {
    * the clock and does the arithmetic.
    */
   wantInMinutes?: number | null
-  /** An email that qualifies for the restaurant's offer (see server/offers.ts). */
-  offerEmail?: string | null
+  /**
+   * The customer pressed Apply on the restaurant's coupon. It counts only for a
+   * signed-in account whose email qualifies (see server/offers.ts).
+   */
+  applyOffer?: boolean
 }
 
 /**
@@ -409,8 +412,12 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
   }
   // The restaurant's offer, for a customer whose email qualifies: a share of
   // the dishes, never of the delivery fee.
-  const offer = offerFor(input.restaurantId)
-  const offerEmail = qualifyingEmail(offer, input.offerEmail)
+  const offer = input.applyOffer && input.userId ? offerFor(input.restaurantId) : null
+  // The email Google confirmed, not the one typed at sign-up (routes/auth.ts).
+  const accountEmail = offer
+    ? ((db.prepare('SELECT verified_email FROM users WHERE id = ?').get(input.userId) as any)?.verified_email ?? '')
+    : ''
+  const offerEmail = qualifyingEmail(offer, accountEmail)
   const offerPercent = offerEmail && offer ? offer.percent : 0
   const discountCents = discountOn(subtotalCents, offerPercent)
   const totalCents = subtotalCents - discountCents + deliveryFeeCents

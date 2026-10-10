@@ -150,6 +150,72 @@ authRouter.post('/login', (req, res) => {
   res.json({ token, user: userFromToken(token) })
 })
 
+/*
+ * "Continue with Google".
+ *
+ * Google signs a token saying which account this is, and whether Google has
+ * checked that its owner controls the address. That is the only way Khapee
+ * has of knowing an email is real — typed in, anybody can be
+ * anyone@dalycollege.org — so a restaurant offer for one email domain is
+ * checked against the address recorded here, never against the one typed at
+ * sign-up.
+ *
+ * The token is checked with Google's own tokeninfo endpoint rather than by
+ * verifying the signature here: one HTTPS call, no keys to fetch and rotate,
+ * and Google answers whether it is valid. The audience must be our client id,
+ * or a token minted for some other site could be replayed at ours.
+ *
+ * Needs GOOGLE_CLIENT_ID in the environment (a public value, not a secret).
+ */
+authRouter.get('/google-config', (_req, res) => {
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || null })
+})
+
+authRouter.post('/google', async (req: any, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  if (!clientId) return res.status(503).json({ error: 'Google sign-in is not switched on yet.' })
+  const credential = String(req.body?.credential ?? '')
+  if (!credential) return res.status(400).json({ error: 'Google did not send a sign-in.' })
+
+  let info: any = null
+  try {
+    const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`, {
+      signal: AbortSignal.timeout(10_000),
+    })
+    info = r.ok ? await r.json() : null
+  } catch {
+    info = null
+  }
+  if (!info || info.aud !== clientId || !['accounts.google.com', 'https://accounts.google.com'].includes(info.iss)) {
+    return res.status(401).json({ error: 'Google could not confirm that sign-in. Please try again.' })
+  }
+  if (String(info.email_verified) !== 'true' || !info.email || !info.sub) {
+    return res.status(401).json({ error: 'That Google account has no confirmed email.' })
+  }
+  if (Number(info.exp) * 1000 < Date.now()) return res.status(401).json({ error: 'That sign-in has expired. Please try again.' })
+
+  const email = String(info.email).trim().toLowerCase()
+  const sub = String(info.sub)
+  // The same person, found by their Google id first and their email second.
+  let user =
+    (db.prepare('SELECT * FROM users WHERE google_sub = ?').get(sub) as any) ??
+    (db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any)
+  if (!user) {
+    const name = String(info.name || email.split('@')[0]).slice(0, 80)
+    // No password: this account signs in through Google. A random hash that
+    // matches nothing, so the password form can never open it.
+    const id = Number(
+      db
+        .prepare(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'customer')`)
+        .run(name, email, hashPassword(crypto.randomBytes(32).toString('hex'))).lastInsertRowid,
+    )
+    user = { id }
+  }
+  db.prepare('UPDATE users SET verified_email = ?, google_sub = ? WHERE id = ?').run(email, sub, user.id)
+  const token = createSession(user.id)
+  res.json({ token, user: userFromToken(token) })
+})
+
 authRouter.post('/logout', (req, res) => {
   const header = req.headers.authorization
   if (header?.startsWith('Bearer ')) destroySession(header.slice(7).trim())

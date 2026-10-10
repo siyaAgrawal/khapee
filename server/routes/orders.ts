@@ -107,8 +107,8 @@ ordersRouter.post('/payment-request', (req, res) => {
   if (amountCents <= 0) return res.status(400).json({ error: 'Your cart is empty.' })
   // The offer comes off the dishes before anything is asked for, so the UPI
   // request is for what the order will actually come to.
-  const offer = offerFor(restaurantId)
-  if (qualifyingEmail(offer, req.body?.offerEmail)) amountCents -= discountOn(amountCents, offer!.percent)
+  const offer = req.body?.applyOffer ? offerFor(restaurantId) : null
+  if (offer && qualifyingEmail(offer, (req as any).user?.verifiedEmail)) amountCents -= discountOn(amountCents, offer.percent)
 
   // What the customer is actually charged, not just what the dishes cost.
   // This summed the menu lines alone, so a delivery quoted at ₹480 in the
@@ -180,7 +180,7 @@ ordersRouter.post('/', (req, res) => {
     paymentClaim: body.paymentClaim ?? null,
     // The pre-order. Minutes from now, because the server owns the clock.
     wantInMinutes: body.wantInMinutes === undefined ? null : Number(body.wantInMinutes),
-    offerEmail: body.offerEmail ?? null,
+    applyOffer: !!body.applyOffer,
   })
   if (!result.ok) return res.status(result.status).json({ error: result.error })
   res.status(201).json({ order: result.order })
@@ -527,7 +527,7 @@ ordersRouter.post('/:orderNumber/resend', (req, res) => {
     tableId: row.table_id,
     takeaway: !!row.takeaway,
     // The same customer, so the same offer.
-    offerEmail: row.offer_email || null,
+    applyOffer: !!row.offer_email,
   })
   if (!again.ok) return res.status(again.status).json({ error: again.error })
 

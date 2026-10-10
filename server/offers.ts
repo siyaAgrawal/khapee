@@ -2,11 +2,10 @@
  * A restaurant's offer for people from one place — the first being 20% off at
  * Mr. Beans Saket for anyone with a @dalycollege.org email.
  *
- * Deliberately just the email: the customer types it and the discount
- * applies, no code to wait for. That is trusting, so the address rides on the
- * order and is shown to the restaurant beside it — staff can ask for a Daly
- * College ID at the counter, which is where a discount like this is checked
- * in any café.
+ * The customer must be signed in with that email confirmed by Google
+ * ("Continue with Google", routes/auth.ts) — a typed address proves nothing —
+ * and must press Apply on the coupon; it is never applied on its own. The
+ * address rides on the order and is shown to the restaurant beside it.
  *
  * The discount is a share of the dishes, never of a delivery fee, and it is
  * kept as a percentage on the order so that when the kitchen declines a dish

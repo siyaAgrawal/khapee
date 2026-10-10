@@ -545,6 +545,11 @@ addColumn('restaurants', 'published_at', 'TEXT')
 // Reachable by its link, left off the list on the front page — for a place
 // that shares its own link rather than wanting to be found by browsing.
 addColumn('restaurants', 'unlisted', 'INTEGER NOT NULL DEFAULT 0')
+// An email Google has confirmed the person owns, and their Google account id —
+// set by "Continue with Google" (routes/auth.ts). What a restaurant offer for
+// one email domain is checked against, because anyone can type an address.
+addColumn('users', 'verified_email', "TEXT NOT NULL DEFAULT ''")
+addColumn('users', 'google_sub', 'TEXT')
 // Not open yet and about to be: says "Coming soon" where a shut place says "Closed".
 addColumn('restaurants', 'coming_soon', 'INTEGER NOT NULL DEFAULT 0')
 

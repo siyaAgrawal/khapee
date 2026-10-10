@@ -20,6 +20,8 @@ export type AuthUser = {
   restaurantId: number | null
   restaurantName: string | null
   jobTitle: string | null
+  /** An email Google has confirmed this person owns ("Continue with Google"), or ''. */
+  verifiedEmail: string
 }
 
 declare global {
@@ -167,7 +169,7 @@ function verifySigned(token: string): number | null {
   return userId
 }
 
-const USER_FIELDS = 'u.id, u.name, u.email, u.phone, u.created_at, u.role, u.active_restaurant_id'
+const USER_FIELDS = 'u.id, u.name, u.email, u.phone, u.created_at, u.role, u.active_restaurant_id, u.verified_email'
 
 export function userFromToken(token: string | undefined): AuthUser | null {
   if (!token) return null
@@ -220,6 +222,7 @@ function shapeUser(row: any): AuthUser {
     restaurantId: active?.id ?? null,
     restaurantName: active?.name ?? null,
     jobTitle: active?.jobTitle ?? null,
+    verifiedEmail: row.verified_email ?? '',
   }
 }
 

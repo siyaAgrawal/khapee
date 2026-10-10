@@ -9320,25 +9320,34 @@ button.nav-link {
   color: #a8730f;
 }
 
-/* A restaurant offer at checkout. */
-.offer-box {
+/* A restaurant coupon at checkout: a ticket the customer taps to apply. */
+.coupon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0 0 14px;
   padding: 12px 14px;
-  border: 1px dashed rgba(168, 115, 15, 0.45);
+  border: 1.5px dashed rgba(168, 115, 15, 0.5);
   border-radius: 14px;
-  background: rgba(242, 178, 58, 0.08);
+  background: rgba(242, 178, 58, 0.1);
 }
-.offer-box label {
-  display: block;
-  margin-bottom: 8px;
-}
-.offer-box.is-on {
+.coupon.is-on {
   border-style: solid;
-  border-color: rgba(47, 125, 91, 0.45);
-  background: rgba(47, 125, 91, 0.06);
+  border-color: rgba(47, 125, 91, 0.55);
+  background: rgba(47, 125, 91, 0.07);
 }
-.offer-box p {
-  margin: 6px 0 0;
+.coupon.is-locked {
+  background: transparent;
+}
+.coupon-mark {
+  font-size: 22px;
+}
+.coupon-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .offer-ok {
   color: #2f7d5b;
@@ -9352,4 +9361,8 @@ button.nav-link {
   color: inherit;
   font-size: 14px;
   line-height: 1.4;
+}
+.google-button {
+  margin-top: 8px;
+  min-height: 40px;
 }

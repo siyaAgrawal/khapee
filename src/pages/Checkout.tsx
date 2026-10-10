@@ -6,6 +6,7 @@ import VerifyModal from '../components/VerifyModal'
 import { api, ApiError } from '../lib/api'
 import { cartItems, useCart } from '../lib/cart'
 import { useSession } from '../lib/session'
+import GoogleButton from '../components/GoogleButton'
 import { clearDining, readDining, saveDining, type DiningSession } from '../lib/dining'
 import { clearTableContext, readTableContext, rememberReceipt } from '../lib/table-context'
 import { clearIntent, readIntent } from '../lib/intent'
@@ -116,35 +117,23 @@ export default function Checkout() {
   const isDelivery = dining?.serviceMode === 'delivery'
   const deliveryFeeCents = isDelivery ? (dining?.deliveryFeeCents ?? 0) : 0
   /*
-   * The restaurant's offer for people from one place — 20% off at Mr. Beans
-   * Saket with a @dalycollege.org email. Typed once and remembered on this
-   * phone; the server checks the address again and works the discount out
-   * itself, so this is only what the customer is shown.
+   * The restaurant's coupon for people from one place — 20% off at Mr. Beans
+   * Saket for a signed-in @dalycollege.org account. Shown as a coupon the
+   * customer taps to apply, never applied on its own; the server checks the
+   * account and works the discount out itself, so this is only what is shown.
    */
   const [offer, setOffer] = useState<{ domain: string; percent: number; label: string } | null>(null)
-  const [offerEmail, setOfferEmail] = useState(() => {
-    try {
-      return localStorage.getItem('khapee.offerEmail') ?? ''
-    } catch {
-      return ''
-    }
-  })
+  const [offerApplied, setOfferApplied] = useState(false)
   useEffect(() => {
     if (!restaurantId) return
     api<{ offer: any }>(`/orders/offer/${restaurantId}`)
       .then((r) => setOffer(r.offer))
       .catch(() => setOffer(null))
   }, [restaurantId])
-  const offerOk =
-    !!offer && new RegExp(`^[a-z0-9._%+-]+@${offer.domain.replace(/\./g, '\\.')}$`).test(offerEmail.trim().toLowerCase())
-  const discountCents = offerOk && offer ? Math.min(totalCents, Math.round((totalCents * offer.percent) / 100 / 100) * 100) : 0
-  useEffect(() => {
-    try {
-      if (offerOk) localStorage.setItem('khapee.offerEmail', offerEmail.trim().toLowerCase())
-    } catch {
-      /* a private window forgets it */
-    }
-  }, [offerOk, offerEmail])
+  // Only an email Google has confirmed counts — anybody can type an address.
+  const offerEligible = !!offer && !!user && String(user.verifiedEmail ?? '').toLowerCase().endsWith(`@${offer.domain}`)
+  const discountCents =
+    offerEligible && offerApplied && offer ? Math.min(totalCents, Math.round((totalCents * offer.percent) / 100 / 100) * 100) : 0
   const payableCents = totalCents - discountCents + deliveryFeeCents
   const shortOfMinimum = isDelivery ? Math.max(0, (dining?.minOrderCents ?? 0) - totalCents) : 0
 
@@ -360,7 +349,7 @@ export default function Checkout() {
           sessionToken: dining?.token ?? null,
           // Written on the UPI payment, so the restaurant can match it by name.
           customerName: name.trim(),
-          offerEmail: offerOk ? offerEmail.trim() : null,
+          applyOffer: discountCents > 0,
         },
       })
       setPayRequest(r)
@@ -397,7 +386,7 @@ export default function Checkout() {
           paymentClaim: paymentClaim ? { upiRef: paymentClaim.upiRef } : null,
           // Only meaningful for an order placed before setting off.
           wantInMinutes: where === 'later' ? arriveIn : 0,
-          offerEmail: offerOk ? offerEmail.trim() : null,
+          applyOffer: discountCents > 0,
         },
       })
       const order = r.order
@@ -764,31 +753,52 @@ export default function Checkout() {
             )
           )}
 
-          {offer && (
-            <div className={`offer-box ${offerOk ? 'is-on' : ''}`}>
-              <label htmlFor="offer-email">
-                <strong>
-                  {offer.label ? `${offer.label}? ` : ''}Get {offer.percent}% off
-                </strong>
-                <span className="tiny muted"> — enter your @{offer.domain} email</span>
-              </label>
-              <input
-                id="offer-email"
-                className="input"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder={`yourname@${offer.domain}`}
-                value={offerEmail}
-                onChange={(e) => setOfferEmail(e.target.value)}
-              />
-              {offerOk ? (
-                <p className="tiny offer-ok">✓ {offer.percent}% off applied</p>
-              ) : offerEmail.trim() ? (
-                <p className="tiny muted">Only @{offer.domain} emails get this offer.</p>
-              ) : null}
-            </div>
-          )}
+          {offer &&
+            (offerEligible ? (
+              <div className={`coupon ${offerApplied ? 'is-on' : ''}`}>
+                <span className="coupon-mark" aria-hidden>
+                  🎓
+                </span>
+                <span className="coupon-body">
+                  <strong>
+                    {offer.label ? `${offer.label} · ` : ''}
+                    {offer.percent}% off
+                  </strong>
+                  <span className="tiny muted">For your @{offer.domain} account · on the dishes</span>
+                </span>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${offerApplied ? 'btn-secondary' : 'btn-accent'}`}
+                  onClick={() => setOfferApplied((v) => !v)}
+                >
+                  {offerApplied ? 'Remove' : 'Apply'}
+                </button>
+              </div>
+            ) : (
+              <div className="coupon is-locked">
+                <span className="coupon-mark" aria-hidden>
+                  🎓
+                </span>
+                <span className="coupon-body">
+                  <strong>
+                    {offer.label ? `${offer.label}? ` : ''}
+                    {offer.percent}% off coupon
+                  </strong>
+                  <span className="tiny muted">
+                    Continue with your @{offer.domain} Google account to unlock it.
+                  </span>
+                  <GoogleButton
+                    hint={offer.domain}
+                    onSignedIn={(u) => {
+                      if (!String(u.verifiedEmail ?? '').endsWith(`@${offer.domain}`)) {
+                        setError(`That Google account isn't an @${offer.domain} one — the coupon is for those only.`)
+                      }
+                    }}
+                    onError={(m) => setError(m)}
+                  />
+                </span>
+              </div>
+            ))}
 
           {(isDelivery || discountCents > 0) && (
             <div className="summary-row">

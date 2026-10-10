@@ -195,6 +195,10 @@ export function createOrder(input: CreateOrderInput): CreateOrderResult {
     return { ok: false, status: 409, error: `${restaurant.name} is not taking pickup orders right now.` }
   }
   const takeaway = input.type === 'dine_in' && !!input.takeaway
+  // A place that does not serve Khapee orders at its tables.
+  if (input.type === 'dine_in' && !takeaway && restaurant.accepts_dine_in === 0 && input.fromCustomer) {
+    return { ok: false, status: 409, error: `${restaurant.name} takes Khapee orders for takeaway only.` }
+  }
   if (takeaway && !restaurant.accepts_takeaway) {
     return { ok: false, status: 409, error: `${restaurant.name} is not doing takeaway right now.` }
   }

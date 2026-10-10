@@ -552,6 +552,8 @@ addColumn('users', 'verified_email', "TEXT NOT NULL DEFAULT ''")
 addColumn('users', 'google_sub', 'TEXT')
 // Not open yet and about to be: says "Coming soon" where a shut place says "Closed".
 addColumn('restaurants', 'coming_soon', 'INTEGER NOT NULL DEFAULT 0')
+// Off for a place that takes no orders at its tables — takeaway and the car only.
+addColumn('restaurants', 'accepts_dine_in', 'INTEGER NOT NULL DEFAULT 1')
 
 // A dine-in order the customer is carrying out rather than eating at a table.
 addColumn('orders', 'takeaway', 'INTEGER NOT NULL DEFAULT 0')
@@ -1514,6 +1516,10 @@ if (BACKED_UP) {
   // "Closed" while its Petpooja link is being finished.
   dataFix('2026-10-10-mr-beans-saket-coming-soon', () => {
     db.prepare("UPDATE restaurants SET coming_soon = 1, top_rank = 90 WHERE slug = 'mr-beans-saket'").run()
+  })
+  // Mr. Beans Saket takes Khapee orders to carry away, not at its tables.
+  dataFix('2026-10-10-mr-beans-saket-no-dine-in', () => {
+    db.prepare("UPDATE restaurants SET accepts_dine_in = 0 WHERE slug = 'mr-beans-saket'").run()
   })
   dataFix('2026-09-28-delivery-off', () => {
     db.prepare('UPDATE restaurants SET accepts_delivery = 0').run()
